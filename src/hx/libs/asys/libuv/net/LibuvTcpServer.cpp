@@ -183,6 +183,7 @@ hx::asys::libuv::net::LibuvTcpServerImpl::LibuvTcpServerImpl(Dynamic cbSuccess, 
 void hx::asys::libuv::net::LibuvTcpServerImpl::cleanup(uv_handle_t* handle)
 {
 	auto spData    = std::unique_ptr<LibuvTcpServerImpl>(reinterpret_cast<LibuvTcpServerImpl*>(handle->data));
+	auto gcZone    = hx::AutoGCZone();
 	auto cbFailure = Dynamic(spData->cbFailure.rooted);
 
 	cbFailure(hx::asys::libuv::uv_err_to_enum(spData->status));
