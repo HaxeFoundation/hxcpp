@@ -1,3 +1,5 @@
+#pragma once
+
 #include <hxcpp.h>
 #include <memory>
 #include <deque>
@@ -21,7 +23,7 @@ namespace hx::asys::libuv::net
 		std::unique_ptr<hx::asys::libuv::BaseRequest> tryDequeue();
 	};
 
-	class LibuvTcpServerImpl final
+	class LibuvTcpServerImpl final : public BaseRequest
 	{
 	public:
 		uv_tcp_t tcp;
@@ -30,8 +32,11 @@ namespace hx::asys::libuv::net
 		int keepAlive;
 		int sendBufferSize;
 		int recvBufferSize;
+		int status;
 
-		LibuvTcpServerImpl(uv_loop_t* _loop, int keepAlive, int sendBufferSize, int recvBufferSize);
+		LibuvTcpServerImpl(Dynamic cbSuccess, Dynamic cbFailure, uv_loop_t* _loop, int keepAlive, int sendBufferSize, int recvBufferSize);
+
+		static void cleanup(uv_handle_t* handle);
 	};
 
 	class LibuvTcpServer final : public hx::asys::net::TcpServer_obj
