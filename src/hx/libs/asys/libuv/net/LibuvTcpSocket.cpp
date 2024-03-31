@@ -10,15 +10,25 @@ namespace
 		std::unique_ptr<uv_tcp_t> tcp;
 
 		int keepAlive;
-
+		int status;
 		uv_connect_t connect;
 
 		ConnectionRequest(Dynamic _cbSuccess, Dynamic _cbFailure)
 			: hx::asys::libuv::BaseRequest(_cbSuccess, _cbFailure)
 			, tcp(std::make_unique<uv_tcp_t>())
 			, keepAlive(hx::asys::libuv::net::KEEP_ALIVE_VALUE)
+			, status(0)
+			, connect()
 		{
 			connect.data = this;
+		}
+
+		static void cleanup(uv_handle_t* handle)
+		{
+			auto gcZone = hx::AutoGCZone();
+			auto spData = std::unique_ptr<ConnectionRequest>(static_cast<ConnectionRequest*>(handle->data));
+
+			Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spData->status));
 		}
 	};
 
@@ -51,17 +61,22 @@ namespace
 
 	static void onConnection(uv_connect_t* request, const int status)
 	{
-		auto gcZone = hx::AutoGCZone();
-		auto spData = std::unique_ptr<ConnectionRequest>(static_cast<ConnectionRequest*>(request->data));
-
 		if (status < 0)
 		{
-			Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(status));
+			auto connection = static_cast<ConnectionRequest*>(request->data);
 
-			return;
+			connection->tcp->data = connection;
+			connection->status = status;
+
+			uv_close(reinterpret_cast<uv_handle_t*>(connection->tcp.get()), ConnectionRequest::cleanup);
 		}
+		else
+		{
+			auto gcZone = hx::AutoGCZone();
+			auto spData = std::unique_ptr<ConnectionRequest>(static_cast<ConnectionRequest*>(request->data));
 
-		Dynamic(spData->cbSuccess.rooted)(new hx::asys::libuv::net::LibuvTcpSocket(spData->tcp.release(), spData->keepAlive));
+			Dynamic(spData->cbSuccess.rooted)(new hx::asys::libuv::net::LibuvTcpSocket(spData->tcp.release(), spData->keepAlive));
+		}
 	}
 
 	void startConnection(hx::asys::libuv::LibuvAsysContext ctx, sockaddr* const address, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
@@ -90,7 +105,12 @@ namespace
 				auto result = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(request->tcp.get()), &sendSizeValue.valInt);
 				if (result < 0)
 				{
-					cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+					request->tcp->data = request.get();
+					request->status = result;
+
+					uv_close(reinterpret_cast<uv_handle_t*>(request->tcp.get()), ConnectionRequest::cleanup);
+
+					request.release();
 
 					return;
 				}
@@ -102,7 +122,12 @@ namespace
 				auto result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(request->tcp.get()), &recvSizeValue.valInt);
 				if (result < 0)
 				{
-					cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+					request->tcp->data = request.get();
+					request->status = result;
+
+					uv_close(reinterpret_cast<uv_handle_t*>(request->tcp.get()), ConnectionRequest::cleanup);
+
+					request.release();
 
 					return;
 				}
@@ -111,7 +136,12 @@ namespace
 
 		if ((result = uv_tcp_keepalive(request->tcp.get(), request->keepAlive > 0, hx::asys::libuv::net::KEEP_ALIVE_VALUE) < 0))
 		{
-			cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+			request->tcp->data = request.get();
+			request->status = result;
+
+			uv_close(reinterpret_cast<uv_handle_t*>(request->tcp.get()), ConnectionRequest::cleanup);
+
+			request.release();
 
 			return;
 		}
