@@ -89,17 +89,17 @@ namespace
     hx::asys::Writable getWritablePipe(uv_loop_t* loop, uv_stdio_container_t& container)
     {
         auto result = 0;
-        auto pipe   = std::make_unique<uv_pipe_t>();
+        auto pipe   = new uv_pipe_t();
 
-        if ((result = uv_pipe_init(loop, pipe.get(), 0)) < 0)
+        if ((result = uv_pipe_init(loop, pipe, 0)) < 0)
         {
             hx::Throw(HX_CSTRING("Failed to init pipe"));
         }
 
-        auto writer = new hx::asys::libuv::stream::StreamWriter_obj(reinterpret_cast<uv_stream_t*>(pipe.get()));
+        auto writer = new hx::asys::libuv::stream::StreamWriter_obj(reinterpret_cast<uv_stream_t*>(pipe));
 
         container.flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_READABLE_PIPE);
-        container.data.stream = reinterpret_cast<uv_stream_t*>(pipe.release());
+        container.data.stream = reinterpret_cast<uv_stream_t*>(pipe);
 
         return writer;
     }
@@ -107,17 +107,17 @@ namespace
     hx::asys::Readable getReadablePipe(uv_loop_t* loop, uv_stdio_container_t& container)
     {
         auto result = 0;
-        auto pipe   = std::make_unique<uv_pipe_t>();
+        auto pipe   = new uv_pipe_t();
 
-        if ((result = uv_pipe_init(loop, pipe.get(), 0)) < 0)
+        if ((result = uv_pipe_init(loop, pipe, 0)) < 0)
         {
             hx::Throw(HX_CSTRING("Failed to init pipe"));
         }
 
-        auto reader = new hx::asys::libuv::stream::StreamReader_obj(reinterpret_cast<uv_stream_t*>(pipe.get()));
+        auto reader = new hx::asys::libuv::stream::StreamReader_obj(reinterpret_cast<uv_stream_t*>(pipe));
 
         container.flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_WRITABLE_PIPE);
-        container.data.stream = reinterpret_cast<uv_stream_t*>(pipe.release());
+        container.data.stream = reinterpret_cast<uv_stream_t*>(pipe);
 
         return reader;
     }
@@ -220,13 +220,15 @@ namespace
             break;
         }
         }
+
+        return null();
     }
 }
 
 void hx::asys::system::Process_obj::open(Context ctx, String command, hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto uvContext = hx::asys::libuv::context(ctx);
-    auto process   = std::make_unique<hx::asys::libuv::system::LibuvChildProcess::Ctx>();
+    auto process   = new hx::asys::libuv::system::LibuvChildProcess::Ctx();
 
     getCwd(process->options.cwd, options);
     getArguments(process->arguments, command, options);
@@ -245,7 +247,7 @@ void hx::asys::system::Process_obj::open(Context ctx, String command, hx::Anon o
         o_stderr = getStdioReadable(uvContext->uvLoop, io->__Field(HX_CSTRING("stderr"), HX_PROP_DYNAMIC), process->containers.at(2), 2);
     }
 
-    process->request.data        = process.get();
+    process->request.data        = process;
     process->options.args        = process->arguments.data();
     process->options.env         = process->environment.empty() ? nullptr : process->environment.data();
     process->options.stdio       = process->containers.data();
@@ -291,6 +293,6 @@ void hx::asys::system::Process_obj::open(Context ctx, String command, hx::Anon o
     }
     else
     {
-        cbSuccess(ChildProcess(new hx::asys::libuv::system::LibuvChildProcess(process.release(), o_stdin, o_stdout, o_stderr)));
+        cbSuccess(ChildProcess(new hx::asys::libuv::system::LibuvChildProcess(process, o_stdin, o_stdout, o_stderr)));
     }
 }

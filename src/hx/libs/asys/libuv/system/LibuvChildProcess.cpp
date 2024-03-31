@@ -101,9 +101,7 @@ void hx::asys::libuv::system::LibuvChildProcess::exitCode(Dynamic cbSuccess, Dyn
 
 void hx::asys::libuv::system::LibuvChildProcess::close(Dynamic cbSuccess, Dynamic cbFailure)
 {
-	uv_close(reinterpret_cast<uv_handle_t*>(&ctx->request), [](uv_handle_t* handle) {
-		delete reinterpret_cast<hx::asys::libuv::system::LibuvChildProcess::Ctx*>(handle->data);
-	});
+	uv_close(reinterpret_cast<uv_handle_t*>(&ctx->request), nullptr);
 
 	cbSuccess();
 }
