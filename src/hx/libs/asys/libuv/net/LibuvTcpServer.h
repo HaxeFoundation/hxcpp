@@ -7,44 +7,38 @@
 
 namespace hx::asys::libuv::net
 {
-	/// <summary>
-	/// Every time the user calls `Accept` on the server the callback is rooted and stored in this queue.
-	/// Whenever libuv notifies us of a incoming connection the front of the queue will be popped and used.
-	/// </summary>
-	class ConnectionQueue final
-	{
-		std::deque<std::unique_ptr<hx::asys::libuv::BaseRequest>> queue;
-
-	public:
-		ConnectionQueue();
-
-		void clear();
-		void enqueue(Dynamic cbSuccess, Dynamic cbFailure);
-		std::unique_ptr<hx::asys::libuv::BaseRequest> tryDequeue();
-	};
-
-	class LibuvTcpServerImpl final : public BaseRequest
-	{
-	public:
-		uv_tcp_t tcp;
-		uv_loop_t* loop;
-		ConnectionQueue connections;
-		int keepAlive;
-		int sendBufferSize;
-		int recvBufferSize;
-		int status;
-
-		LibuvTcpServerImpl(Dynamic cbSuccess, Dynamic cbFailure, uv_loop_t* _loop, int keepAlive, int sendBufferSize, int recvBufferSize);
-
-		static void cleanup(uv_handle_t* handle);
-	};
-
 	class LibuvTcpServer final : public hx::asys::net::TcpServer_obj
 	{
-		LibuvTcpServerImpl* server;
-
 	public:
-		LibuvTcpServer(LibuvTcpServerImpl* _server);
+		class ConnectionQueue final
+		{
+			std::deque<std::unique_ptr<hx::asys::libuv::BaseRequest>> queue;
+
+		public:
+			ConnectionQueue();
+
+			void clear();
+			void enqueue(Dynamic cbSuccess, Dynamic cbFailure);
+			std::unique_ptr<hx::asys::libuv::BaseRequest> tryDequeue();
+		};
+
+		class Ctx final : public BaseRequest
+		{
+		public:
+			uv_tcp_t tcp;
+			ConnectionQueue connections;
+			int keepAlive;
+			int status;
+
+			Ctx(Dynamic cbSuccess, Dynamic cbFailure, int keepAlive);
+
+			static void failure(uv_handle_t* handle);
+			static void success(uv_handle_t* handle);
+		};
+
+		Ctx* ctx;
+
+		LibuvTcpServer(Ctx* _server);
 
 		void accept(Dynamic cbSuccess, Dynamic cbFailure) override;
 		void close(Dynamic cbSuccess, Dynamic cbFailure) override;

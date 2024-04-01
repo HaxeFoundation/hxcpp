@@ -10,13 +10,28 @@ namespace hx::asys::libuv::net
 
 	class LibuvTcpSocket final : public hx::asys::net::TcpSocket_obj
 	{
-		uv_tcp_t* tcp;
-		int keepAlive;
 		hx::asys::libuv::stream::StreamWriter writer;
 		hx::asys::libuv::stream::StreamReader reader;
 
 	public:
-		LibuvTcpSocket(uv_tcp_t* _socket, int keepAlive);
+		struct Ctx final : public BaseRequest, public hx::asys::libuv::stream::StreamReader_obj::Ctx
+		{
+			uv_tcp_t tcp;
+			uv_connect_t connection;
+			uv_shutdown_t shutdown;
+			int keepAlive;
+			int status;
+
+			Ctx(Dynamic cbSuccess, Dynamic cbFailure);
+
+			static void onSuccess(uv_handle_t* handle);
+			static void onFailure(uv_handle_t* handle);
+			static void onShutdown(uv_shutdown_t* handle, int status);
+		};
+
+		Ctx* ctx;
+
+		LibuvTcpSocket(Ctx* ctx);
 
 		void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) override;
 		void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) override;

@@ -53,8 +53,15 @@ hx::asys::libuv::stream::StreamReader_obj::QueuedRead::QueuedRead(const Array<ui
 {
 }
 
+hx::asys::libuv::stream::StreamReader_obj::StreamReader_obj(Ctx* ctx, uv_alloc_cb cbAlloc, uv_read_cb cbRead)
+    : ctx(ctx)
+    , cbAlloc(cbAlloc)
+    , cbRead(cbRead) {}
+
 hx::asys::libuv::stream::StreamReader_obj::StreamReader_obj(uv_stream_t* stream)
     : ctx(new Ctx(stream))
+    , cbAlloc(onAlloc)
+    , cbRead(onRead)
 {
     stream->data = ctx;
 
@@ -75,7 +82,7 @@ void hx::asys::libuv::stream::StreamReader_obj::read(Array<uint8_t> output, int 
             return;
         }
 
-        auto result = uv_read_start(ctx->stream, onAlloc, onRead);
+        auto result = uv_read_start(ctx->stream, cbAlloc, cbRead);
         if (result < 0 && result != UV_EALREADY)
         {
             cbFailure(uv_err_to_enum(result));

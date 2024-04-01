@@ -37,11 +37,7 @@ namespace
 	};
 }
 
-hx::asys::libuv::stream::StreamWriter_obj::StreamWriter_obj(uv_stream_t* stream)
-    : stream(stream)
-{
-	HX_OBJ_WB_NEW_MARKED_OBJECT(this);
-}
+hx::asys::libuv::stream::StreamWriter_obj::StreamWriter_obj(uv_stream_t* stream) : stream(stream) {}
 
 void hx::asys::libuv::stream::StreamWriter_obj::write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
 {

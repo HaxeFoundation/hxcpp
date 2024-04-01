@@ -17,8 +17,8 @@ namespace hx::asys::libuv
 
     struct BaseRequest
     {
-        const hx::RootedObject<hx::Object> cbSuccess;
-        const hx::RootedObject<hx::Object> cbFailure;
+        hx::RootedObject<hx::Object> cbSuccess;
+        hx::RootedObject<hx::Object> cbFailure;
 
         BaseRequest(Dynamic _cbSuccess, Dynamic _cbFailure);
         virtual ~BaseRequest() = default;
