@@ -2,4 +2,3 @@
 -cpp cpp64
 -D HXCPP_M64
 -cp ../unit
--lib hx4compat

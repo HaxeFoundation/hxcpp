@@ -3,4 +3,3 @@
 -D HXCPP_M32
 -D HXCPP_DEBUGGER
 -cp ../unit
--lib hx4compat
