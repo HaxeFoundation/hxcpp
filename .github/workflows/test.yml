@@ -21,7 +21,7 @@ on:
 jobs:
   haxe:
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.os }}) haxe
+    name: (${{ inputs.arch }}bit ${{ inputs.os }}) haxe
     defaults:
       run:
         working-directory: test/haxe
@@ -39,7 +39,7 @@ jobs:
 
   cffi:
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.os }}) cffi
+    name: (${{ inputs.arch }}bit ${{ inputs.os }}) cffi
     defaults:
       run:
         working-directory: test/cffi
