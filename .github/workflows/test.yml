@@ -11,15 +11,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13, windows-latest]
-        arch: [ 64 ]
+        arch:
+          - 64
+        os:
+          - version: ubuntu-latest
+            lib-ext: .dso
+            sep: '/'
+          - version: macos-13
+            lib-ext: .dylib
+            sep: '/'
+          - version: windows-latest
+            lib-ext: .dll
+            sep: '\'
         include:
-          - os: ubuntu-latest
+          - os.version: ubuntu-latest
             arch: 32
-          - os: windows-latest
+          - os.version: windows-latest
             arch: 32
-    runs-on: ${{ matrix.os }}
-    name: test ${{ matrix.os }} (${{ matrix.arch }}bit)
+    runs-on: ${{ matrix.os.version }}
+    name: test ${{ matrix.os.version }} (${{ matrix.arch }}bit)
     steps:
       - name: Checkout
         uses: actions/checkout@v3
