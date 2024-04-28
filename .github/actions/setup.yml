@@ -1,0 +1,30 @@
+name: setup
+inputs:
+  haxe:
+    required: true
+    type: string
+runs:
+  using: "composite"
+  steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    
+    - name: install haxe
+      uses: krdlab/setup-haxe@v1
+      with:
+        haxe-version: ${{ inputs.haxe }}
+
+    - name: install haxe libraries
+      run: |
+        haxelib install utest
+        haxelib git hx4compat https://github.com/HaxeFoundation/hx4compat
+        haxelib dev hxcpp ${{ github.workspace }}
+        haxelib list
+
+    - name: build run.n
+      working-directory: tools/run
+      run: haxe compile.hxml
+
+    - name: build hxcpp
+      working-directory: tools/hxcpp
+      run: haxe compile.hxml
