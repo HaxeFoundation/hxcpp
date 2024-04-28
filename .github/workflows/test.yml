@@ -102,7 +102,7 @@ jobs:
       - name: build cffi project
         run: |
           cd ${{ github.workspace }}/test/cffi/project
-          haxelib run hxcpp build.xml --debug -D HXCPP_M${{ matrix.arch }}
+          haxelib run hxcpp build.xml -D debug -D HXCPP_M${{ matrix.arch }}
 
       - name: cffi test - compile
         run: |
