@@ -31,6 +31,7 @@ jobs:
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          hxcpp: ${{ github.workspace }}
       - name: build
         run: haxe compile.hxml --debug -D HXCPP_M${{ inputs.arch }}
       - name: run
@@ -48,6 +49,7 @@ jobs:
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          hxcpp: ${{ github.workspace }}
       - name: build project
         working-directory: test/cffi/project
         run: haxelib run hxcpp build.xml -Ddebug -DHXCPP_M${{ inputs.arch }}

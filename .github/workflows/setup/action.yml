@@ -3,6 +3,9 @@ inputs:
   haxe:
     required: true
     type: string
+  hxcpp:
+    required: true
+    type: string
 runs:
   using: composite
   steps:
@@ -17,7 +20,7 @@ runs:
         set -ex
         haxelib install utest
         haxelib git hx4compat https://github.com/HaxeFoundation/hx4compat
-        haxelib dev hxcpp ${{ github.workspace }}
+        haxelib dev hxcpp ${{ inputs.hxcpp }}
         haxelib list
 
     - name: build run.n
