@@ -12,7 +12,9 @@ runs:
         haxe-version: ${{ inputs.haxe }}
 
     - name: install haxe libraries
+      shell: bash
       run: |
+        set -ex
         haxelib install utest
         haxelib git hx4compat https://github.com/HaxeFoundation/hx4compat
         haxelib dev hxcpp ${{ github.workspace }}
@@ -20,8 +22,10 @@ runs:
 
     - name: build run.n
       working-directory: tools/run
+      shell: bash
       run: haxe compile.hxml
 
     - name: build hxcpp
       working-directory: tools/hxcpp
+      shell: bash
       run: haxe compile.hxml
