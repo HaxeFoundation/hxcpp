@@ -193,6 +193,6 @@ jobs:
       - name: build client
         run: haxe compile-client.hxml -D HXCPP_M${{ inputs.arch }}
       - name: run
-        run: bin${{ inputs.sep }}CppiaHost bin${{ inputs.sep }}cppia.client ${{ matrix.suffix }}
+        run: bin${{ inputs.sep }}CppiaHost bin${{ inputs.sep }}client.cppia ${{ matrix.suffix }}
   # haxe-suite:
   #   runs-on: ${{ inputs.os }}
