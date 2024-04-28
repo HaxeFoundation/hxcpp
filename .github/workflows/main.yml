@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         haxe: [ 4.3.4, latest ]
-    uses: ./.github/workflows/test.yml
+    uses: ./.github/workflows/test-expander.yml
     name: test haxe ${{ matrix.haxe }}
     with:
       haxe: ${{ matrix.haxe }}
