@@ -6,9 +6,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: checkout
-      uses: actions/checkout@v4
-    
     - name: install haxe
       uses: krdlab/setup-haxe@v1
       with:
