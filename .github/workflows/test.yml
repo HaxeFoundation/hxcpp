@@ -54,7 +54,7 @@ jobs:
     needs: dependencies
     defaults:
       run:
-        working-directory: test/haxe
+        working-directory: ${{ github.workspace }}/test/haxe
     steps:
       - name: build
         run: haxe compile.hxml --debug -D HXCPP_M${{ inputs.arch }}
@@ -66,10 +66,10 @@ jobs:
     needs: dependencies
     defaults:
       run:
-        working-directory: test/cffi
+        working-directory: ${{ github.workspace }}/test/cffi
     steps:
       - name: build project
-        working-directory: test/cffi/project
+        working-directory: ${{ github.workspace }}/test/cffi/project
         run: haxelib run hxcpp build.xml -Ddebug -DHXCPP_M${{ inputs.arch }}
       - name: build
         run: haxe compile.hxml --debug
@@ -87,7 +87,7 @@ jobs:
         run: bin${{ inputs.sep }}cpp-utf8${{ inputs.sep }}TestMain-debug
       - name: run (neko)
         if: inputs.arch == '64'
-        working-directory: cffi/bin/neko
+        working-directory: ${{ github.workspace }}/cffi/bin/neko
         run: neko TestMain.n
 
   # telemetry:
