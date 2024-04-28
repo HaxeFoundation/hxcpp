@@ -14,19 +14,22 @@ jobs:
         os: [ubuntu-latest, macos-13, windows-latest]
         arch: [ 64 ]
         include:
+          # Add 32bit variants for Windows and Linux
           - os: ubuntu-latest
             arch: 32
           - os: windows-latest
             arch: 32
-          - os: ubuntu-latest
-            lib-ext: .dso
-            sep: '/'
-          - os: macos-13
-            lib-ext: .dylib
-            sep: '/'
-          - os: windows-latest
-            lib-ext: .dll
-            sep: '\'
+
+          # Add some extra OS specific variables
+          - sep: '/'
+          - sep: '\'
+            os: windows-latest
+          - libext: '.dso'
+            os: ubuntu-latest
+          - libext: '.dylib'
+            os: macos-13
+          - libext: '.dll'
+            os: windows-latest
     runs-on: ${{ matrix.os }}
     name: test ${{ matrix.os }} (${{ matrix.arch }}bit)
     steps:
@@ -95,23 +98,33 @@ jobs:
           cd ${{ github.workspace }}/test/haxe
           bin${{ matrix.sep }}TestMain-debug
 
-      # - name: Haxe
-      #   working-directory: test/haxe 
-      #   run: |
-      #     haxe compile.hxml --debug -D HXCPP_M${{ matrix.arch }}
-      #     bin/TestMain-debug
+      ## CFFI
+      - name: build cffi project
+        run: |
+          cd ${{ github.workspace }}/test/cffi/project
+          haxelib run hxcpp build.xml --debug -D HXCPP_M${{ matrix.arch }}
 
-      # - name: Telemetry
-      #   run: haxe
+      - name: cffi test - compile
+        run: |
+          cd ${{ github.workspace }}/test/cffi
+          set -ex
+          haxe compile.hxml      --debug -D HXCPP_M${{ matrix.arch }}
+          haxe compile-utf8.hxml --debug -D HXCPP_M${{ matrix.arch }}
+          haxe compile-neko.hxml --debug -D HXCPP_M${{ matrix.arch }}
 
-      # - name: Std
-      #   run: haxe
+      - name: cffi test - run
+        run: |
+          cd ${{ github.workspace }}/test/cffi
+          bin${{ matrix.sep }}cpp${{ matrix.sep }}TestMain-debug
 
-      # - name: Debugger
-      #   run: haxe
+      - name: cffi-utf8 test - run
+        run: |
+          cd ${{ github.workspace }}/test/cffi
+          bin${{ matrix.sep }}cpp-utf8${{ matrix.sep }}TestMain-debug
 
-      # - name: Native
-      #   run: haxe
-
-      # - name: Haxe Unit Tests
-      #   run: haxe
+      - name: cffi-neko test - run
+        if: matrix.arch == '64'
+        run: |
+          cp test/cffi/project/ndll/*/prime${{ matrix.libext }} test/cffi/bin/neko/prime.ndll
+          cd ${{ github.workspace }}/test/cffi/bin/neko
+          neko TestMain.n
