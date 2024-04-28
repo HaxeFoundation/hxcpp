@@ -173,3 +173,31 @@ jobs:
         run: |
           cd ${{ github.workspace }}/test/native
           bin${{ matrix.sep }}Native
+
+      ## Haxe Unit Tests
+      - name: haxe unit test - clone haxe repo (latest)
+        if: ${{ inputs.haxe }} == 'latest'
+        run: |
+          cd ${{ github.workspace }}
+          git clone -q https://github.com/HaxeFoundation/haxe.git
+          cd haxe
+          git checkout -b development
+      - name: haxe unit test - clone haxe repo (${{ inputs.haxe }})
+        if: ${{ inputs.haxe }} != 'latest'
+        run: |
+          cd ${{ github.workspace }}
+          git clone -q https://github.com/HaxeFoundation/haxe.git
+          cd haxe
+          git checkout -b ${{ inputs.haxe }}
+      - name: haxe unit test - install haxelib
+        run: |
+          cd ${{ github.workspace }}/haxe/tests/unit
+          haxelib install compile-cpp.hxml --always
+      - name: haxe unit test - compile
+        run: |
+          cd ${{ github.workspace }}/haxe/tests/unit
+          haxe compile-cpp.hxml -D HXCPP_M${{ matrix.arch }} -D no_http
+      - name: haxe unit test - run
+        run: |
+          cd ${{ github.workspace }}/haxe/tests/unit
+          bin${{ matrix.sep }}cpp${{ matrix.sep }}TestMain-debug

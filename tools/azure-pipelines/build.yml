@@ -34,8 +34,6 @@ jobs:
             sudo apt-get remove -qqy mysql-common
             sudo apt-get autoremove -qqy
             sudo apt-get install -qqy mariadb-server
-            # remaining packages
-            sudo apt-get install -qqy gcc-multilib g++-multilib
           displayName: Install dependencies
         - script: |
             set -ex
