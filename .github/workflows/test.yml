@@ -125,3 +125,51 @@ jobs:
           cp test/cffi/project/ndll/*/prime${{ matrix.libext }} test/cffi/bin/neko/prime.ndll
           cd ${{ github.workspace }}/test/cffi/bin/neko
           neko TestMain.n
+
+      ## Telemetry (debug and non debug)
+      - name: telemetry test (debug) - compile
+        run: |
+          cd ${{ github.workspace }}/test/telemetry
+          haxe compile.hxml --debug -D HXCPP_M${{ matrix.arch }}
+      - name: telemetry test (debug) - run
+        run: |
+          cd ${{ github.workspace }}/test/telemetry
+          bin${{ matrix.sep }}TestMain-debug
+      - name: telemetry test - compile
+        run: |
+          cd ${{ github.workspace }}/test/telemetry
+          haxe compile.hxml -D HXCPP_M${{ matrix.arch }}
+      - name: telemetry test - run
+        run: |
+          cd ${{ github.workspace }}/test/telemetry
+          bin${{ matrix.sep }}TestMain
+
+      ## Std
+      - name: std test - compile
+        run: |
+          cd ${{ github.workspace }}/test/std
+          haxe compile.hxml -D HXCPP_M${{ matrix.arch }}
+      - name: std test - run
+        run: |
+          cd ${{ github.workspace }}/test/std
+          bin${{ matrix.sep }}Test
+      
+      ## Debugger
+      - name: debugger test - compile
+        run: |
+          cd ${{ github.workspace }}/test/debugger
+          haxe compile.hxml -D HXCPP_M${{ matrix.arch }}
+      - name: debugger test - run
+        run: |
+          cd ${{ github.workspace }}/test/debugger
+          bin${{ matrix.sep }}App-debug
+
+      ## Native
+      - name: native test - compile
+        run: |
+          cd ${{ github.workspace }}/test/native
+          haxe compile.hxml -D HXCPP_M${{ matrix.arch }}
+      - name: native test - run
+        run: |
+          cd ${{ github.workspace }}/test/native
+          bin${{ matrix.sep }}Native
