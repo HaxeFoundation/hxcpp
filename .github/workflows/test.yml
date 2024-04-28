@@ -176,14 +176,14 @@ jobs:
 
       ## Haxe Unit Tests
       - name: haxe unit test - clone haxe repo (latest)
-        if: ${{ inputs.haxe }} == 'latest'
+        if: inputs.haxe == 'latest'
         run: |
           cd ${{ github.workspace }}
           git clone -q https://github.com/HaxeFoundation/haxe.git
           cd haxe
           git switch development
       - name: haxe unit test - clone haxe repo (${{ inputs.haxe }})
-        if: ${{ inputs.haxe }} != 'latest'
+        if: inputs.haxe != 'latest'
         run: |
           cd ${{ github.workspace }}
           git clone -q https://github.com/HaxeFoundation/haxe.git
