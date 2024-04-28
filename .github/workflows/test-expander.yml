@@ -36,28 +36,3 @@ jobs:
       sep: ${{ matrix.sep }}
       ext: ${{ matrix.ext }}
       os: ${{ matrix.os }}
-
-    #   ## Haxe Unit Tests
-    #   - name: haxe unit test - clone haxe repo
-    #     uses: actions/checkout@v4
-    #     with:
-    #       repository: HaxeFoundation/haxe
-    #       path: haxe
-    #       fetch-tags: true
-    #   - name: haxe unit test - switch haxe repo
-    #     if: inputs.haxe != 'latest'
-    #     run: |
-    #       cd ${{ github.workspace }}/haxe
-    #       git switch ${{ inputs.haxe }} --detach
-    #   - name: haxe unit test - install haxelib
-    #     run: |
-    #       cd ${{ github.workspace }}/haxe/tests/unit
-    #       haxelib install compile-cpp.hxml --always
-    #   - name: haxe unit test - compile
-    #     run: |
-    #       cd ${{ github.workspace }}/haxe/tests/unit
-    #       haxe compile-cpp.hxml -D HXCPP_M${{ matrix.arch }} -D no_http
-    #   - name: haxe unit test - run
-    #     run: |
-    #       cd ${{ github.workspace }}/haxe/tests/unit
-    #       bin${{ matrix.sep }}cpp${{ matrix.sep }}TestMain-debug
