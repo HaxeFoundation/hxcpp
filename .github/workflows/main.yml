@@ -12,6 +12,7 @@ jobs:
 
   package_matrix:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
     runs-on: ${{ matrix.os }}
