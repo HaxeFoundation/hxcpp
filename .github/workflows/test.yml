@@ -148,11 +148,11 @@ jobs:
       - name: std test - compile
         run: |
           cd ${{ github.workspace }}/test/std
-          haxe compile.hxml -D HXCPP_M${{ matrix.arch }}
+          haxe compile${{ matrix.arch }}.hxml
       - name: std test - run
         run: |
           cd ${{ github.workspace }}/test/std
-          bin${{ matrix.sep }}Test
+          bin${{ matrix.arch }}${{ matrix.sep }}Test
       
       ## Debugger
       - name: debugger test - compile
