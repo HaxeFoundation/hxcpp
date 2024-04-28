@@ -18,6 +18,15 @@ jobs:
             arch: 32
           - os: windows-latest
             arch: 32
+          - os: ubuntu-latest
+            lib-ext: .dso
+            sep: '/'
+          - os: macos-13
+            lib-ext: .dylib
+            sep: '/'
+          - os: windows-latest
+            lib-ext: .dll
+            sep: '\'
     runs-on: ${{ matrix.os }}
     name: test ${{ matrix.os }} (${{ matrix.arch }}bit)
     steps:
@@ -27,6 +36,31 @@ jobs:
       - uses: krdlab/setup-haxe@v1
         with:
           haxe-version: ${{ inputs.haxe }}
+
+      ## Dependency Setup
+      - name: Install MariaDB
+        if: runner.os == 'Linux'
+        run: |
+          set -ex
+          sudo rm -R /var/lib/mysql/
+          # mariadb
+          curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup > mariadb_repo_setup
+          curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup.sha256 > mariadb_repo_setup.sha256
+          sha256sum --check mariadb_repo_setup.sha256
+          sudo bash mariadb_repo_setup
+          sudo apt-get update -qqy
+          sudo apt-get remove -qqy mysql-common
+          sudo apt-get autoremove -qqy
+          sudo apt-get install -qqy mariadb-server
+          # remaining packages
+          sudo apt-get install -qqy gcc-multilib g++-multilib
+
+      - name: Configure MariaDB
+        if: runner.os == 'Linux'
+        run: |
+          set -ex
+          sudo systemctl start mysql
+          sudo mysql -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
 
       - name: Install Haxe Libraries
         run: |
@@ -49,6 +83,17 @@ jobs:
         run: |
           cd ${{ github.workspace }}/project
           haxe compile-cppia.hxml
+
+      ## Haxe
+      - name: haxe test - compile
+        run: |
+          cd ${{ github.workspace }}/test/haxe
+          haxe compile.hxml --debug -D HXCPP_M${{ matrix.arch }}
+
+      - name: haxe test - run
+        run: |
+          cd ${{ github.workspace }}/test/haxe
+          bin${{ matrix.sep }}TestMain-debug
 
       # - name: Haxe
       #   working-directory: test/haxe 
