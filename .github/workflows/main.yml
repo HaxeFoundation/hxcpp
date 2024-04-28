@@ -1,8 +1,14 @@
-name: CI
+name: main
 on: [push]
 
 jobs:
- build_matrix:
+  build_matrix:
+    strategy:
+      matrix:
+        haxe: [ 4.3.4, latest ]
+    uses: ./.github/workflows/build.yml
+
+  package_matrix:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -85,7 +91,7 @@ jobs:
           name: mac-64
           path: |
             bin/Mac64/Cppia
- release:
+  release:
     name: Release
     needs: build_matrix
     runs-on: ubuntu-latest
