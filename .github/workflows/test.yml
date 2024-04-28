@@ -58,7 +58,6 @@ jobs:
       - name: build (utf8)
         run: haxe compile-utf8.hxml --debug
       - name: build (neko)
-        if: inputs.arch == '64'
         run: haxe compile-neko.hxml --debug
       - name: copy
         run: cp project/ndll/*/prime${{ inputs.ext }} bin/neko/prime.ndll
