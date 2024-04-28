@@ -4,7 +4,7 @@ inputs:
     required: true
     type: string
 runs:
-  using: "composite"
+  using: composite
   steps:
     - name: checkout
       uses: actions/checkout@v4
