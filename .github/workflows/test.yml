@@ -107,7 +107,6 @@ jobs:
       - name: cffi test - compile
         run: |
           cd ${{ github.workspace }}/test/cffi
-          set -ex
           haxe compile.hxml      --debug -D HXCPP_M${{ matrix.arch }}
           haxe compile-utf8.hxml --debug -D HXCPP_M${{ matrix.arch }}
           haxe compile-neko.hxml --debug -D HXCPP_M${{ matrix.arch }}
