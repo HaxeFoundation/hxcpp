@@ -90,21 +90,21 @@ jobs:
         working-directory: cffi/bin/neko
         run: neko TestMain.n
 
-  telemetry:
-    runs-on: ${{ inputs.os }}
-    needs: dependencies
-  debugger:
-    runs-on: ${{ inputs.os }}
-    needs: dependencies
-  cppia:
-    runs-on: ${{ inputs.os }}
-    needs: dependencies
-  native:
-    runs-on: ${{ inputs.os }}
-    needs: dependencies
-  std:
-    runs-on: ${{ inputs.os }}
-    needs: dependencies
-  haxe-suite:
-    runs-on: ${{ inputs.os }}
-    needs: dependencies
+  # telemetry:
+  #   runs-on: ${{ inputs.os }}
+  #   needs: dependencies
+  # debugger:
+  #   runs-on: ${{ inputs.os }}
+  #   needs: dependencies
+  # cppia:
+  #   runs-on: ${{ inputs.os }}
+  #   needs: dependencies
+  # native:
+  #   runs-on: ${{ inputs.os }}
+  #   needs: dependencies
+  # std:
+  #   runs-on: ${{ inputs.os }}
+  #   needs: dependencies
+  # haxe-suite:
+  #   runs-on: ${{ inputs.os }}
+  #   needs: dependencies
