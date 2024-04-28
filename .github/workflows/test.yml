@@ -70,21 +70,31 @@ jobs:
         working-directory: test/cffi/bin/neko
         run: neko TestMain.n
 
-  # telemetry:
-  #   runs-on: ${{ inputs.os }}
-  #   needs: dependencies
+  telemetry:
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [ debug, release ]
+        include:
+          - suffix: -debug
+            mode: debug
+    runs-on: ${{ inputs.os }}
+    name: (${{ inputs.arch }}bit ${{ inputs.os }}) telemetry (${{ matrix.mode }})
+    defaults:
+      run:
+        working-directory: test/telemetry
+    steps:
+      - name: build
+        run: haxe compile.hxml ${{ matrix.suffix }} -D HXCPP_M${{ inputs.arch }}
+      - name: run
+        run: bin${{ inputs.sep }}TestMain${{ matrix.suffix }}
   # debugger:
   #   runs-on: ${{ inputs.os }}
-  #   needs: dependencies
   # cppia:
   #   runs-on: ${{ inputs.os }}
-  #   needs: dependencies
   # native:
   #   runs-on: ${{ inputs.os }}
-  #   needs: dependencies
   # std:
   #   runs-on: ${{ inputs.os }}
-  #   needs: dependencies
   # haxe-suite:
   #   runs-on: ${{ inputs.os }}
-  #   needs: dependencies
