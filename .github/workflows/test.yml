@@ -152,7 +152,7 @@ jobs:
       - name: std test - run
         run: |
           cd ${{ github.workspace }}/test/std
-          bin${{ matrix.arch }}${{ matrix.sep }}Test
+          cpp${{ matrix.arch }}${{ matrix.sep }}Test
       
       ## Debugger
       - name: debugger test - compile
