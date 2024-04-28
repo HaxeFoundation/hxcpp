@@ -3,9 +3,6 @@ inputs:
   haxe:
     required: true
     type: string
-  hxcpp:
-    required: true
-    type: string
 runs:
   using: composite
   steps:
@@ -15,25 +12,19 @@ runs:
         haxe-version: ${{ inputs.haxe }}
 
     - name: install haxe libraries
-      shell: bash
+      shell: pwsh
       run: |
-        set -ex
         haxelib install utest
         haxelib git hx4compat https://github.com/HaxeFoundation/hx4compat
-        haxelib dev hxcpp ${{ inputs.hxcpp }}
+        haxelib dev hxcpp ${{ github.workspace }}
         haxelib list
-
-    - name: install native libraries
-      if: runner.os == 'Linux'
-      shell: bash
-      run: sudo apt-get install -qqy gcc-multilib g++-multilib
 
     - name: build run.n
       working-directory: tools/run
-      shell: bash
+      shell: pwsh
       run: haxe compile.hxml
 
     - name: build hxcpp
       working-directory: tools/hxcpp
-      shell: bash
+      shell: pwsh
       run: haxe compile.hxml
