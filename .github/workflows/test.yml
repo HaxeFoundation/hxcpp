@@ -12,14 +12,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-13, windows-latest]
-        arch: [ 64 ]
+        arch: [ 32, 64 ]
+        exclude:
+          # Remove 32bit variants for Mac
+          - os: macos-13
+            arch: 32
         include:
-          # Add 32bit variants for Windows and Linux
-          - os: ubuntu-latest
-            arch: 32
-          - os: windows-latest
-            arch: 32
-
           # Add some extra OS specific variables
           - sep: '/'
           - sep: '\'
