@@ -84,6 +84,12 @@ jobs:
       run:
         working-directory: test/telemetry
     steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
       - name: build
         run: haxe compile.hxml ${{ matrix.suffix }} -D HXCPP_M${{ inputs.arch }}
       - name: run
