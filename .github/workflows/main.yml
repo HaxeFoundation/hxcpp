@@ -7,6 +7,8 @@ jobs:
       matrix:
         haxe: [ 4.3.4, latest ]
     uses: ./.github/workflows/build.yml
+    with:
+      haxe: ${{ matrix.haxe }}
 
   package_matrix:
     strategy:
