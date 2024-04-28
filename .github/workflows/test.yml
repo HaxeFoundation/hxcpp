@@ -22,14 +22,33 @@ jobs:
     name: test ${{ matrix.os }} (${{ matrix.arch }}bit)
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - uses: krdlab/setup-haxe@v1
         with:
           haxe-version: ${{ inputs.haxe }}
 
-      - name: Check
-        run: haxe --version
+      - name: Install Haxe Libraries
+        run: |
+          haxelib install utest
+          haxelib git hx4compat https://github.com/HaxeFoundation/hx4compat
+          haxelib dev hxcpp ${{ github.workspace }}
+          haxelib list
+
+      - name: Build run.n
+        run: |
+          cd ${{ github.workspace }}/tools/run
+          haxe compile.hxml
+
+      - name: Build Hxcpp
+        run: |
+          cd ${{ github.workspace }}/tools/hxcpp
+          haxe compile.hxml
+
+      - name: Build Cppia
+        run: |
+          cd ${{ github.workspace }}/project
+          haxe compile-cppia.hxml
 
       # - name: Haxe
       #   working-directory: test/haxe 
