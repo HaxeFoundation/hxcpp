@@ -23,6 +23,11 @@ runs:
         haxelib dev hxcpp ${{ inputs.hxcpp }}
         haxelib list
 
+    - name: install native libraries
+      if: runner.os == 'Linux'
+      shell: bash
+      run: sudo apt-get install -qqy gcc-multilib g++-multilib
+
     - name: build run.n
       working-directory: tools/run
       shell: bash
