@@ -28,7 +28,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: setup
-        uses: ./github/workflows/setup
+        uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
       - name: build
@@ -45,7 +45,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: setup
-        uses: ./github/workflows/setup
+        uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
       - name: build project
