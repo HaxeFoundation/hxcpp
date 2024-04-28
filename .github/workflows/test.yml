@@ -94,13 +94,105 @@ jobs:
         run: haxe compile.hxml ${{ matrix.suffix }} -D HXCPP_M${{ inputs.arch }}
       - name: run
         run: bin${{ inputs.sep }}TestMain${{ matrix.suffix }}
-  # debugger:
-  #   runs-on: ${{ inputs.os }}
-  # cppia:
-  #   runs-on: ${{ inputs.os }}
-  # native:
-  #   runs-on: ${{ inputs.os }}
-  # std:
-  #   runs-on: ${{ inputs.os }}
+
+  debugger:
+    runs-on: ${{ inputs.os }}
+    name: (${{ inputs.arch }}bit ${{ inputs.os }}) debugger
+    defaults:
+      run:
+        working-directory: test/debugger
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
+      - name: build
+        run: haxe compile.hxml -D HXCPP_M${{ inputs.arch }}
+      - name: run
+        run: bin${{ inputs.sep }}App-debug
+        
+  native:
+      runs-on: ${{ inputs.os }}
+      name: (${{ inputs.arch }}bit ${{ inputs.os }}) native
+      defaults:
+        run:
+          working-directory: test/native
+      steps:
+        - name: checkout
+          uses: actions/checkout@v4
+        - name: setup
+          uses: ./.github/workflows/setup
+          with:
+            haxe: ${{ inputs.haxe }}
+        - name: build
+          run: haxe compile.hxml -D HXCPP_M${{ inputs.arch }}
+        - name: run
+          run: bin${{ inputs.sep }}Native
+
+  std:
+      runs-on: ${{ inputs.os }}
+      name: (${{ inputs.arch }}bit ${{ inputs.os }}) std
+      defaults:
+        run:
+          working-directory: test/std
+      steps:
+        - name: checkout
+          uses: actions/checkout@v4
+        - name: setup
+          uses: ./.github/workflows/setup
+          with:
+            haxe: ${{ inputs.haxe }}
+        - name: install mariadb
+          if: runner.os == 'Linux'
+          run: |
+            set -ex
+            sudo rm -R /var/lib/mysql/
+            curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup > mariadb_repo_setup
+            curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup.sha256 > mariadb_repo_setup.sha256
+            sha256sum --check mariadb_repo_setup.sha256
+            sudo bash mariadb_repo_setup
+            sudo apt-get update -qqy
+            sudo apt-get remove -qqy mysql-common
+            sudo apt-get autoremove -qqy
+            sudo apt-get install -qqy mariadb-server
+        - name: configure mariadb
+          if: runner.os == 'Linux'
+          run: |
+            set -ex
+            sudo systemctl start mysql
+            sudo mysql -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
+        - name: build
+          run: haxe compile${{ inputs.arch }}.hxml
+        - name: run
+          run: cpp${{ inputs.arch }}${{ inputs.sep }}Test
+
+  cppia:
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [ interp, jit ]
+        include:
+          - suffix: -jit
+            mode: jit
+    runs-on: ${{ inputs.os }}
+    name: (${{ inputs.arch }}bit ${{ inputs.os }}) cppia (${{ matrix.mode }})
+    defaults:
+      run:
+        working-directory: test/cppia
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
+      - name: build host
+        run: haxe compile-host.hxml -D HXCPP_M${{ inputs.arch }}
+      - name: build client
+        run: haxe compile-client.hxml -D HXCPP_M${{ inputs.arch }}
+      - name: run
+        run: bin${{ inputs.sep }}CppiaHost bin${{ inputs.sep }}cppia.client ${{ matrix.suffix }}
   # haxe-suite:
   #   runs-on: ${{ inputs.os }}
