@@ -38,52 +38,54 @@ jobs:
           haxelib list
 
       - name: build run.n
-        working-directory: ./tools/run
+        working-directory: tools/run
         run: haxe compile.hxml
 
       - name: build hxcpp
-        working-directory: ./tools/hxcpp
+        working-directory: tools/hxcpp
         run: haxe compile.hxml
 
   haxe:
     runs-on: ${{ inputs.os }}
     needs: dependencies
-    defaults:
-      run:
-        working-directory: ./test/haxe
     steps:
       - name: build
+        working-directory: test/haxe
         run: haxe compile.hxml --debug -D HXCPP_M${{ inputs.arch }}
       - name: run
+        working-directory: test/haxe
         run: bin${{ inputs.sep }}TestMain-debug
 
   cffi:
     runs-on: ${{ inputs.os }}
     needs: dependencies
-    defaults:
-      run:
-        working-directory: ./test/cffi
     steps:
       - name: build project
-        working-directory: ./test/cffi/project
+        working-directory: test/cffi/project
         run: haxelib run hxcpp build.xml -Ddebug -DHXCPP_M${{ inputs.arch }}
       - name: build
+        working-directory: test/cffi
         run: haxe compile.hxml --debug
       - name: build (utf8)
+        working-directory: test/cffi
         run: haxe compile-utf8.hxml --debug
       - name: build (neko)
         if: inputs.arch == '64'
+        working-directory: test/cffi
         run: haxe compile-neko.hxml --debug
       - name: copy
         if: inputs.arch == '64'
+        working-directory: test/cffi
         run: cp test/cffi/project/ndll/*/prime${{ inputs.ext }} test/cffi/bin/neko/prime.ndll
       - name: run
+        working-directory: test/cffi
         run: bin${{ inputs.sep }}cpp${{ inputs.sep }}TestMain-debug
       - name: run (utf8)
+        working-directory: test/cffi
         run: bin${{ inputs.sep }}cpp-utf8${{ inputs.sep }}TestMain-debug
       - name: run (neko)
         if: inputs.arch == '64'
-        working-directory: ./cffi/bin/neko
+        working-directory: cffi/bin/neko
         run: neko TestMain.n
 
   # telemetry:
