@@ -60,14 +60,14 @@ jobs:
         run: haxe compile-neko.hxml --debug
       - name: copy
         if: inputs.arch == '64'
-        run: cp test/cffi/project/ndll/*/prime${{ inputs.ext }} test/cffi/bin/neko/prime.ndll
+        run: cp project/ndll/*/prime${{ inputs.ext }} bin/neko/prime.ndll
       - name: run
         run: bin${{ inputs.sep }}cpp${{ inputs.sep }}TestMain-debug
       - name: run (utf8)
         run: bin${{ inputs.sep }}cpp-utf8${{ inputs.sep }}TestMain-debug
       - name: run (neko)
         if: inputs.arch == '64'
-        working-directory: ./cffi/bin/neko
+        working-directory: test/cffi/bin/neko
         run: neko TestMain.n
 
   # telemetry:
