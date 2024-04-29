@@ -2,14 +2,70 @@ name: main
 on: [push]
 
 jobs:
-  Tests:
+  Windows32:
     strategy:
       matrix:
         haxe: [ 4.3.4, latest ]
-    uses: ./.github/workflows/test-expander.yml
-    name: test haxe ${{ matrix.haxe }}
+    uses: ./.github/workflows/test.yml
+    name: Test Windows (32bit)
     with:
-      haxe: ${{ matrix.haxe }}
+      haxe: ${{ matrix.haxe  }}
+      arch: 32
+      sep: \
+      ext: .dll
+      os: windows-latest
+
+  Windows64:
+    strategy:
+      matrix:
+        haxe: [ 4.3.4, latest ]
+    uses: ./.github/workflows/test.yml
+    name: Test Windows (64bit)
+    with:
+      haxe: ${{ matrix.haxe  }}
+      arch: 64
+      sep: \
+      ext: .dll
+      os: windows-latest
+
+  MacOS:
+    strategy:
+      matrix:
+        haxe: [ 4.3.4, latest ]
+    uses: ./.github/workflows/test.yml
+    name: Test MacOS
+    with:
+      haxe: ${{ matrix.haxe  }}
+      arch: 64
+      sep: /
+      ext: .dylib
+      os: macos-13
+
+  Linux32:
+    strategy:
+      matrix:
+        haxe: [ 4.3.4, latest ]
+    uses: ./.github/workflows/test.yml
+    name: Test Linux (32bit)
+    with:
+      haxe: ${{ matrix.haxe  }}
+      arch: 32
+      sep: /
+      ext: .dso
+      os: ubuntu-latest
+
+  Linux64:
+    strategy:
+      matrix:
+        haxe: [ 4.3.4, latest ]
+    uses: ./.github/workflows/test.yml
+    name: Test Linux (64bit)
+    with:
+      haxe: ${{ matrix.haxe  }}
+      arch: 64
+      sep: /
+      ext: .dso
+      os: ubuntu-latest
 
   Package:
     strategy:
@@ -17,7 +73,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
     runs-on: ${{ matrix.os }}
-    needs: Tests
+    needs: [ Windows32, Windows64, MacOS, Linux32, Linux64 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -96,8 +152,8 @@ jobs:
           name: mac-64
           path: |
             bin/Mac64/Cppia
-  release:
-    name: Release
+
+  Release:
     needs: Package
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'

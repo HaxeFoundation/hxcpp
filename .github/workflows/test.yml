@@ -21,7 +21,7 @@ on:
 jobs:
   haxe:
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.arch }}bit ${{ inputs.os }}) haxe
+    name: (${{ inputs.haxe }}) haxe
     defaults:
       run:
         working-directory: test/haxe
@@ -39,7 +39,7 @@ jobs:
 
   cffi:
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.arch }}bit ${{ inputs.os }}) cffi
+    name: (${{ inputs.haxe }}) cffi
     defaults:
       run:
         working-directory: test/cffi
@@ -79,7 +79,7 @@ jobs:
           - suffix: -debug
             mode: debug
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.arch }}bit ${{ inputs.os }}) telemetry (${{ matrix.mode }})
+    name: (${{ inputs.haxe }}) telemetry (${{ matrix.mode }})
     defaults:
       run:
         working-directory: test/telemetry
@@ -97,7 +97,7 @@ jobs:
 
   debugger:
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.arch }}bit ${{ inputs.os }}) debugger
+    name: (${{ inputs.haxe }}) debugger
     defaults:
       run:
         working-directory: test/debugger
@@ -115,7 +115,7 @@ jobs:
         
   native:
       runs-on: ${{ inputs.os }}
-      name: (${{ inputs.arch }}bit ${{ inputs.os }}) native
+      name: (${{ inputs.haxe }}) native
       defaults:
         run:
           working-directory: test/native
@@ -133,7 +133,7 @@ jobs:
 
   std:
       runs-on: ${{ inputs.os }}
-      name: (${{ inputs.arch }}bit ${{ inputs.os }}) std
+      name: (${{ inputs.haxe }}) std
       defaults:
         run:
           working-directory: test/std
@@ -177,7 +177,7 @@ jobs:
           - suffix: -jit
             mode: jit
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.arch }}bit ${{ inputs.os }}) cppia (${{ matrix.mode }})
+    name: (${{ inputs.haxe }}) cppia (${{ matrix.mode }})
     defaults:
       run:
         working-directory: test/cppia
@@ -197,7 +197,7 @@ jobs:
 
   suite:
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.arch }}bit ${{ inputs.os }}) haxe test suite
+    name: (${{ inputs.haxe }}) haxe test suite
     defaults:
       run:
         working-directory: haxe/tests/unit
