@@ -21,7 +21,7 @@ on:
 jobs:
   haxe:
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.haxe }}) haxe
+    name: haxe
     defaults:
       run:
         working-directory: test/haxe
@@ -39,7 +39,7 @@ jobs:
 
   cffi:
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.haxe }}) cffi
+    name: cffi
     defaults:
       run:
         working-directory: test/cffi
@@ -79,7 +79,7 @@ jobs:
           - suffix: -debug
             mode: debug
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.haxe }}) telemetry (${{ matrix.mode }})
+    name: telemetry (${{ matrix.mode }})
     defaults:
       run:
         working-directory: test/telemetry
@@ -97,7 +97,7 @@ jobs:
 
   debugger:
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.haxe }}) debugger
+    name: debugger
     defaults:
       run:
         working-directory: test/debugger
@@ -115,7 +115,7 @@ jobs:
         
   native:
       runs-on: ${{ inputs.os }}
-      name: (${{ inputs.haxe }}) native
+      name: native
       defaults:
         run:
           working-directory: test/native
@@ -133,7 +133,7 @@ jobs:
 
   std:
       runs-on: ${{ inputs.os }}
-      name: (${{ inputs.haxe }}) std
+      name: std
       defaults:
         run:
           working-directory: test/std
@@ -177,7 +177,7 @@ jobs:
           - suffix: -jit
             mode: jit
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.haxe }}) cppia (${{ matrix.mode }})
+    name: cppia (${{ matrix.mode }})
     defaults:
       run:
         working-directory: test/cppia
@@ -197,7 +197,7 @@ jobs:
 
   suite:
     runs-on: ${{ inputs.os }}
-    name: (${{ inputs.haxe }}) haxe test suite
+    name: haxe test suite
     defaults:
       run:
         working-directory: haxe/tests/unit
