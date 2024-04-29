@@ -54,11 +54,11 @@ jobs:
         working-directory: test/cffi/project
         run: haxelib run hxcpp build.xml -Ddebug -DHXCPP_M${{ inputs.arch }}
       - name: build
-        run: haxe compile.hxml --debug
+        run: haxe compile.hxml --debug -D HXCPP_M${{ inputs.arch }}
       - name: build (utf8)
-        run: haxe compile-utf8.hxml --debug
+        run: haxe compile-utf8.hxml --debug -D HXCPP_M${{ inputs.arch }}
       - name: build (neko)
-        run: haxe compile-neko.hxml --debug
+        run: haxe compile-neko.hxml --debug -D HXCPP_M${{ inputs.arch }}
       - name: copy
         run: cp project/ndll/*/prime${{ inputs.ext }} bin/neko/prime.ndll
       - name: run
