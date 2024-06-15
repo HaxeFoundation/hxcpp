@@ -10,7 +10,6 @@
 typedef int SOCKET;
 #endif
 
-
 #include <hxcpp.h>
 #include <hx/OS.h>
 
@@ -31,7 +30,6 @@ typedef size_t socket_int;
 #include "mbedtls/oid.h"
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/ssl.h"
-#include "mbedtls/net.h"
 #include "mbedtls/debug.h"
 
 #define val_ssl(o)	((sslctx*)o.mPtr)
@@ -608,7 +606,7 @@ Array<String> _hx_ssl_cert_get_altnames( Dynamic hcert ){
 	sslcert *cert = val_cert(hcert);
 	mbedtls_asn1_sequence *cur;
 	Array<String> result(0,1);
-	if( cert->c->ext_types & MBEDTLS_X509_EXT_SUBJECT_ALT_NAME ){
+	if(mbedtls_x509_crt_has_ext_type(cert->c, MBEDTLS_X509_EXT_SUBJECT_ALT_NAME)){
 		cur = &cert->c->subject_alt_names;
 
 		while( cur != NULL ){
@@ -706,7 +704,7 @@ Dynamic _hx_ssl_key_from_der( Array<unsigned char> buf, bool pub ){
 	if( pub )
 		r = mbedtls_pk_parse_public_key( pk->k, &buf[0], buf->length );
 	else
-		r = mbedtls_pk_parse_key( pk->k, &buf[0], buf->length, NULL, 0 );
+		r = mbedtls_pk_parse_key( pk->k, &buf[0], buf->length, NULL, 0, mbedtls_ctr_drbg_random, NULL);
 	if( r != 0 ){
 		pk->destroy();
 		ssl_error(r);
@@ -728,11 +726,11 @@ Dynamic _hx_ssl_key_from_pem( String data, bool pub, String pass ){
 	if( pub ){
 		r = mbedtls_pk_parse_public_key( pk->k, b, data.length+1 );
 	}else if( pass == null() ){
-		r = mbedtls_pk_parse_key( pk->k, b, data.length+1, NULL, 0 );
+		r = mbedtls_pk_parse_key( pk->k, b, data.length+1, NULL, 0, mbedtls_ctr_drbg_random, NULL);
 	}else{
       Array<unsigned char> pbytes(0,0);
       __hxcpp_bytes_of_string(pbytes,pass);
-		r = mbedtls_pk_parse_key( pk->k, b, data.length+1, (const unsigned char *)pbytes->GetBase(), pbytes->length );
+		r = mbedtls_pk_parse_key( pk->k, b, data.length+1, (const unsigned char *)pbytes->GetBase(), pbytes->length, mbedtls_ctr_drbg_random, NULL);
 	}
 	free(b);
 	if( r != 0 ){
@@ -772,7 +770,7 @@ Array<unsigned char> _hx_ssl_dgst_sign( Array<unsigned char> buf, Dynamic hpkey,
 		ssl_error(r);
 
 	Array<unsigned char> result = Array_obj<unsigned char>::__new(MBEDTLS_MPI_MAX_SIZE,MBEDTLS_MPI_MAX_SIZE);
-	if( r = mbedtls_pk_sign( pk->k, mbedtls_md_get_type(md), hash, 0, &result[0], &olen, mbedtls_ctr_drbg_random, &ctr_drbg ) != 0 )
+	if( r = mbedtls_pk_sign( pk->k, mbedtls_md_get_type(md), hash, 0, &result[0], MBEDTLS_MPI_MAX_SIZE, &olen, mbedtls_ctr_drbg_random, &ctr_drbg ) != 0 )
 		ssl_error(r);
 
 	result[olen] = 0;
@@ -843,6 +841,8 @@ void _hx_ssl_init() {
 	mbedtls_threading_set_alt( threading_mutex_init_alt, threading_mutex_free_alt,
                            threading_mutex_lock_alt, threading_mutex_unlock_alt );
 #endif
+
+	psa_crypto_init();
 
 	// Init RNG
 	mbedtls_entropy_init( &entropy );
