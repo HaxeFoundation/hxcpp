@@ -727,7 +727,8 @@ Dynamic _hx_ssl_key_from_pem( String data, bool pub, String pass ){
 	if( pub ){
 		r = mbedtls_pk_parse_public_key( pk->k, b, data.length+1 );
 	}else if( pass == null() ){
-		r = mbedtls_pk_parse_key( pk->k, b, data.length+1, NULL, 0, mbedtls_ctr_drbg_random, NULL);
+		r = mbedtls_pk_parse_key( pk->k, b, data.length+1, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
+
 	}else{
       Array<unsigned char> pbytes(0,0);
       __hxcpp_bytes_of_string(pbytes,pass);
