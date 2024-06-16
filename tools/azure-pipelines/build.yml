@@ -39,6 +39,7 @@ jobs:
           displayName: Install dependencies
         - script: |
             set -ex
+            sudo systemctl unmask mysql.service 
             sudo systemctl start mysql
             sudo mysql -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
           displayName: Configure MariaDB
