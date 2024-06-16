@@ -731,7 +731,8 @@ Dynamic _hx_ssl_key_from_pem( String data, bool pub, String pass ){
 	}else{
       Array<unsigned char> pbytes(0,0);
       __hxcpp_bytes_of_string(pbytes,pass);
-		r = mbedtls_pk_parse_key( pk->k, b, data.length+1, (const unsigned char *)pbytes->GetBase(), pbytes->length, mbedtls_ctr_drbg_random, NULL);
+		r = mbedtls_pk_parse_key( pk->k, b, data.length+1, (const unsigned char *)pbytes->GetBase(), pbytes->length, mbedtls_ctr_drbg_random, &ctr_drbg);
+
 	}
 	free(b);
 	if( r != 0 ){
