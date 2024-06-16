@@ -161,6 +161,7 @@ jobs:
           if: runner.os == 'Linux'
           run: |
             set -ex
+            sudo systemctl unmask mysql.service
             sudo systemctl start mysql
             sudo mysql -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
         - name: build
