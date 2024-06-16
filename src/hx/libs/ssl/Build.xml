@@ -139,6 +139,9 @@
     
 	  <cache value="true" asLibrary="true" />
 
+    <compilerflag value="/std:c11" if="windows"/>
+    <compilerflag value="-std=c99" unless="windows"/>
+
     <compilerflag value="-DMBEDTLS_CONFIG_FILE=&lt;mbedtls_config.h&gt;"/>
 	  <compilerflag value="-I${MBEDTLS_DIR}/include"/>
 	  <compilerflag value="-I${this_dir}"/>
