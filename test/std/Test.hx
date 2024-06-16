@@ -420,17 +420,30 @@ class Test
 
    }
 
-   public static function testHost()
+   public static function testLocalhost()
    {
       log("Test Host");
       try
       {
       var localhost = Host.localhost();
       v('localhost :$localhost');
-      var host = new Host(localhost);
+      if (localhost == null || localhost.length == 0)
+         return error("null or empty localhost");
+      return ok();
+      }
+      catch(e:Dynamic)
+      {
+         return error("Unexpected error in testHost: " + e);
+      }
+   }
+
+   public static function testHost()
+   {
+      log("Test Host");
+      try
+      {
+      var host = new Host("github.com");
       v('host :$host');
-      // var reverse = host.reverse();
-      // v('reverse :$reverse');
       return ok();
       }
       catch(e:Dynamic)
