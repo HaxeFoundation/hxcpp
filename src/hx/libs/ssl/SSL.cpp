@@ -704,7 +704,8 @@ Dynamic _hx_ssl_key_from_der( Array<unsigned char> buf, bool pub ){
 	if( pub )
 		r = mbedtls_pk_parse_public_key( pk->k, &buf[0], buf->length );
 	else
-		r = mbedtls_pk_parse_key( pk->k, &buf[0], buf->length, NULL, 0, mbedtls_ctr_drbg_random, NULL);
+		r = mbedtls_pk_parse_key( pk->k, &buf[0], buf->length, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
+
 	if( r != 0 ){
 		pk->destroy();
 		ssl_error(r);
