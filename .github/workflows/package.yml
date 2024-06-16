@@ -1,7 +1,5 @@
 name: package
-on:
-  push:
-    branches: [master]
+on: [push]
 
 jobs:
   Package:
