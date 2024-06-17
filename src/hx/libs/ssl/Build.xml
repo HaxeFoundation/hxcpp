@@ -8,13 +8,13 @@
 	<depend files="hxcpp-depends"/>
 	<depend name="${this_dir}/Build.xml" dateOnly="true" />
 	<cache value="true" asLibrary="true" />
+  <compilerflag value="-std=c99" unless="MSVC_VER"/>
 	<compilerflag value="-I${MBEDTLS_DIR}/include"/>
 	<compilerflag value="-I${this_dir}"/>
-
-	<file name="${this_dir}/SSL.cpp"/>
-
   <compilerflag value="-DWIN32_LEAN_AND_MEAN" if="windows"/>
   <compilerflag value="-DMBEDTLS_CONFIG_FILE=&lt;mbedtls_config.h&gt;"/>
+
+	<file name="${this_dir}/SSL.cpp"/>
 
   <file name="${MBEDTLS_DIR}/library/aes.c"/>
   <file name="${MBEDTLS_DIR}/library/aesni.c"/>
