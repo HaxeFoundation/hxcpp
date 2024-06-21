@@ -86,7 +86,7 @@ namespace hx
 
    };
 
-   HXCPP_CLASS_ATTRIBUTES const char *Init();
+   HXCPP_CLASS_ATTRIBUTES const char *Init(bool stayAttached=true);
    HXCPP_CLASS_ATTRIBUTES void PushTopOfStack(void *);
    HXCPP_CLASS_ATTRIBUTES void PopTopOfStack();
    HXCPP_CLASS_ATTRIBUTES void GcAddOffsetRoot(void *inRoot, int inOffset);
