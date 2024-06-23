@@ -266,6 +266,10 @@ void hx::asys::system::Process_obj::open(Context ctx, String command, hx::Anon o
         }
     };
 
+#if HX_WINDOWS
+    process->options.flags |= UV_PROCESS_WINDOWS_FILE_PATH_EXACT_NAME;
+#endif
+
     auto uidOption = options->__Field(HX_CSTRING("user"), HX_PROP_DYNAMIC);
     if (!uidOption.isNull())
     {

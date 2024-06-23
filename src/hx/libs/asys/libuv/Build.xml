@@ -2,7 +2,7 @@
 
     <pragma once='true' />
 
-    <set name='LIBUV_DIR' value='${HXCPP}/project/thirdparty/libuv-1.47.0' />
+    <set name='LIBUV_DIR' value='${HXCPP}/project/thirdparty/libuv-1.48.0' />
 
     <files id='libuv'>
         <depend name="${this_dir}/Build.xml" dateOnly="true"/>
