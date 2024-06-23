@@ -229,8 +229,8 @@ public:
    {
       if (inSize<length)
       {
-         /*int s = GetElementSize();
-         memset(mBase + inSize*s, 0, (length-inSize)*s);*/
+         int s = GetElementSize();
+         memset(mBase + inSize*s, 0, (length-inSize)*s);
          length = inSize;
       }
       else if (inSize>length)
