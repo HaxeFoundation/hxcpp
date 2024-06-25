@@ -2,17 +2,17 @@
 <!-- MACOS TOOLS -->
 
 <set name="HXCPP_USE_LIBTOOL" value="1" />
-<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11 || HXCPP_CPP14" />
+<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11 || HXCPP_CPP14 || HXCPP_CPP17" />
 
 
 <include name="toolchain/gcc-toolchain.xml"/>
-<setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.9" if="HXCPP_CPP11||HXCPP_CPP14" unless="MACOSX_DEPLOYMENT_TARGET"/>
+<setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.9" if="HXCPP_CPP11||HXCPP_CPP14||HXCPP_CPP17" unless="MACOSX_DEPLOYMENT_TARGET"/>
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.7" if="OBJC_ARC" unless="MACOSX_DEPLOYMENT_TARGET" />
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.6" unless="MACOSX_DEPLOYMENT_TARGET" />
 <path name="${DEVELOPER_DIR}/usr/bin" />
 <set name="HXCPP_LTO_THIN" value="1" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
 
-<set name="STDLIBCPP" value="1" unless="HXCPP_GCC || HXCPP_CPP11 || HXCPP_CPP14" />
+<set name="STDLIBCPP" value="1" unless="HXCPP_GCC || HXCPP_CPP11 || HXCPP_CPP14 || HXCPP_CPP17" />
 
 
 <section unless="HXCPP_ARCH">
@@ -29,6 +29,8 @@
   <cppflag value="-std=c++11" if="HXCPP_CPP11"/>
   <cppflag value="-std=c++14" if="HXCPP_CPP14"/>
   <cppflag value="-Wc++14-extensions" if="HXCPP_CPP14"/>
+  <cppflag value="-std=c++17" if="HXCPP_CPP17"/>
+  <cppflag value="-Wc++17-extensions" if="HXCPP_CPP17"/>
   <flag value="-stdlib=libc++" unless="STDLIBCPP" />
   <flag value="-stdlib=libstdc++" if="STDLIBCPP" />
   <cppflag value="-frtti"/>
