@@ -187,6 +187,10 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx);
 void GCAddRoot(hx::Object **inRoot);
 void GCRemoveRoot(hx::Object **inRoot);
 
+#if (HXCPP_API_LEVEL>=500)
+void GCPinPtr(void* inPtr);
+void GCUnpinPtr(void* inPtr);
+#endif
 
 // This is used internally in hxcpp
 // It calls InternalNew, and takes care of null-terminating the result
