@@ -12,34 +12,61 @@ struct MyStruct
 
 extern void __hxcpp_collect(bool inMajor);
 
+bool checkAttachNone(const char *where)
+{
+   if (hx::GcGetThreadAttachedCount()!=0)
+   {
+      printf("Bad attach count - something attached: %s\n",where);
+      return false;
+   }
+   return true;
+}
+
 int main(int argc, char **argv)
 {
    MyStruct *myStruct = new MyStruct();
 
 
-   const char *err = hx::Init();
-   if (err)
-   {
-      printf("Could not initialize library: %s\n", err);
+   if (!checkAttachNone("before creation"))
       return -1;
-   }
-   else
+
    {
       hx::NativeAttach autoAttach;
-
-      api::HaxeObject *obj = api::HaxeApi::createBase();
-      obj->setName("child");
-
-      myStruct->haxeRef = obj;
-      obj->setName("Name");
-
-      api::HaxeObject *child = obj->createChild();
+      const char *err = hx::Init(false);
+      if (err)
+      {
+         printf("Could not initialize library: %s\n", err);
+         return -1;
+      }
    }
+
+
+   if (!checkAttachNone("after init"))
+      return -1;
+
+   {
+   hx::NativeAttach autoAttach;
+
+   api::HaxeObject *obj = api::HaxeApi::createBase();
+   obj->setName("child");
+
+   myStruct->haxeRef = obj;
+   obj->setName("Name");
+
+   api::HaxeObject *child = obj->createChild();
+   }
+
+
+   if (!checkAttachNone("after interaction"))
+      return -1;
 
    {
       hx::NativeAttach autoAttach;
       __hxcpp_collect(true);
    }
+
+   if (!checkAttachNone("after collect"))
+      return -1;
 
    {
       hx::NativeAttach autoAttach;
@@ -61,11 +88,9 @@ int main(int argc, char **argv)
          return -1;
       }
    }
-   if (hx::GcGetThreadAttachedCount()!=0)
-   {
-      printf("Bad clear attach count\n");
+
+   if (!checkAttachNone("after clear"))
       return -1;
-   }
 
    printf("all good\n");
    return 0;

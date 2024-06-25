@@ -442,6 +442,8 @@ struct BlockExpr : public CppiaExpr
    BlockExprRun(hx::Object *,runObject,0)
    void  runVoid(CppiaCtx *ctx)
    {
+      if (expressions.size()==0)
+         return;
       CppiaExpr **e = &expressions[0];
       CppiaExpr **end = e+expressions.size();
       for(;e<end && !ctx->breakContReturn;e++)

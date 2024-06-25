@@ -60,7 +60,7 @@
 <set name="LIBEXTRA" value="-x86" if="HXCPP_X86" />
 <set name="LIBEXTRA" value="-x86_64" if="HXCPP_X86_64" />
 <set name="LIBEXTRA" value="-v7" if="HXCPP_ARMV7" unless="LIBEXTRA||linux" />
-<set name="LIBEXTRA" value="-64" if="HXCPP_ARM64" unless="LIBEXTRA||linux||isMsvc" />
+<set name="LIBEXTRA" value="-64" if="HXCPP_ARM64" unless="LIBEXTRA||linux||isMsvc||macos" />
 <set name="LIBEXTRA" value="-x86" if="tizen"/>
 <set name="LIBEXTRA" value="" if="tizen" unless="simulator" />
 <set name="LIBEXT" value=".a" />
@@ -75,8 +75,8 @@
 <set name="haxelink" value="dll" if="dll_import"/>
 <set name="haxelink" value="dll" if="dll_link"/>
 
-<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphoneos"/>
-<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphonesim"/>
+<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11 || HXCPP_CPP17" if="iphoneos"/>
+<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11 || HXCPP_CPP17" if="iphonesim"/>
 <set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="appletvos"/>
 <set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="appletvsim"/>
 

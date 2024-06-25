@@ -3,7 +3,7 @@
 
 <echo value="Using iOS SDK ${IPHONE_VER}" if="VERBOSE"/>
 
-<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11" />
+<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11 || HXCPP_CPP17" />
 
 <set name="ARCH" value ="-v7" if="HXCPP_ARMV7" />
 <set name="ARCH" value ="-v7s" if="HXCPP_ARMV7S" />
@@ -16,6 +16,7 @@
 
 <set name="FORCE_LIBGCC" value="1" if="HXCPP_IOS_STDCPP" unless="HXCPP_GCC" />
 <set name="OBJGCC" value="-c11" if="HXCPP_CPP11" />
+<set name="OBJGCC" value="-c17" if="HXCPP_CPP17" />
 <set name="OBJGCC" value="-gcc" if="HXCPP_GCC" />
 <set name="OBJDBG" value="-dbg" if="debug" />
 
@@ -32,11 +33,13 @@
   <pchflag value="c++-header" />
 
   <cppflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
-  <cppflag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <cppflag value="-stdlib=libc++" if="HXCPP_CPP11 || HXCPP_CPP17" />
   <cppflag value="-std=c++11" if="HXCPP_CPP11" />
+  <cppflag value="-std=c++17" if="HXCPP_CPP17" />
   <mmflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
-  <mmflag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <mmflag value="-stdlib=libc++" if="HXCPP_CPP11 || HXCPP_CPP17" />
   <mmflag value="-std=c++11" if="HXCPP_CPP11" />
+  <mmflag value="-std=c++17" if="HXCPP_CPP17" />
 
   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-O2" unless="debug"/>
@@ -93,7 +96,7 @@
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang++" />
   <flag value="-Wl,-cache_path_lto,/tmp" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug"/>
   <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
-  <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <flag value="-stdlib=libc++" if="HXCPP_CPP11 || HXCPP_CPP17" />
   <flag value="-dynamiclib"/>
   <flag value="-arch"/>
   <flag value="armv6" if="HXCPP_ARMV6" />
