@@ -42,7 +42,7 @@ jobs:
       arch: 64
       sep: /
       ext: .dylib
-      os: macos-13
+      os: macos-latest
 
   Linux32:
     strategy:
