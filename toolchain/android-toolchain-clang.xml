@@ -67,6 +67,7 @@
   <flag value="-D${ANDROID_PLATFORM_DEFINE}"/>
   
   <!-- Options -->
+  <cppflag value="-std=c++17" if="HXCPP_CPP17" />
   <flag value="-flto" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
   <flag value="-fvisibility=hidden"/>
   <flag value="-ffunction-sections"/>

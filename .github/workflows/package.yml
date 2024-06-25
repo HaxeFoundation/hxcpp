@@ -1,0 +1,148 @@
+name: package
+on:
+  push:
+    branches: [master]
+
+jobs:
+  Package:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: Aidan63/setup-haxe@e4b347bc45596200a68804b232be9d73f80868a6
+        with:
+          haxe-version: 4.3.4
+
+      - name: Set Haxelib
+        run: |
+          haxe -version
+          haxelib dev hxcpp .
+          
+      - name: Set Version
+        run: haxe -cp tools/version --run Write ${{github.run_number}} > version.env
+
+
+      - name: Build Tool
+        run: |
+          cd tools/hxcpp
+          haxe compile.hxml
+
+        
+      - name: Check XCode
+        if: startsWith(matrix.os,'macos')
+        run: xcode-select -p
+          
+      - name: Build Cppia
+        run: |
+          cd project
+          haxe compile-cppia.hxml -D HXCPP_M64
+          
+      - name: Clean Project
+        if: startsWith(matrix.os,'ubuntu')
+        run: |
+          rm -rf project/cppia_bin
+
+      - name: Archive Linux Results
+        if: startsWith(matrix.os,'ubuntu')
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-64
+          path: |
+             bin/Linux64/Cppia
+             tools
+             toolchain
+             version.env
+             src
+             run.n
+             include
+             hxcpp.n
+             haxelib.json
+             Changes.md
+             hxcpp
+             test
+             docs
+             project
+             README.md
+             build-tool
+             java
+             haxelib.xml
+             LICENSE.txt
+
+      - name: Archive Windows Results
+        if: startsWith(matrix.os,'windows')
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-64
+          path: |
+            bin/Windows64/Cppia.exe
+
+      - name: Archive Mac Results
+        if: startsWith(matrix.os,'macos')
+        uses: actions/upload-artifact@v3
+        with:
+          name: mac-64
+          path: |
+            bin/Mac64/Cppia
+
+  Release:
+    needs: Package
+    runs-on: ubuntu-latest
+    steps:
+        - name: Download Linux
+          uses: actions/download-artifact@v3
+          with:
+             name: linux-64
+             path: hxcpp
+
+        - name: Download Mac
+          uses: actions/download-artifact@v3
+          with:
+             name: mac-64
+             path: hxcpp/bin/Mac64/
+
+        - name: Download Windows
+          uses: actions/download-artifact@v3
+          with:
+             name: windows-64
+             path: hxcpp/bin/Windows64/
+
+        - name: List Files
+          run: ls -R
+
+        - name: Get Version
+          run: |
+             cat hxcpp/version.env
+             cat hxcpp/version.env >> $GITHUB_ENV
+             rm hxcpp/version.env
+
+        - name: Zip release
+          run: |
+             mv hxcpp hxcpp-${{ env.hxcpp_release }}
+             zip -r hxcpp-${{ env.hxcpp_release }}.zip hxcpp-${{ env.hxcpp_release }} 
+      
+        - name: Create Release
+          id: create_release
+          uses: actions/create-release@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            tag_name: v${{ env.hxcpp_release }}
+            release_name: Release ${{ env.hxcpp_release }}
+            draft: false
+            prerelease: false
+
+        - name: Upload Release Asset
+          id: upload-release-asset 
+          uses: actions/upload-release-asset@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+            asset_path: ./hxcpp-${{ env.hxcpp_release }}.zip
+            asset_name: hxcpp-${{ env.hxcpp_release }}.zip
+            asset_content_type: application/zip

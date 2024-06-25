@@ -18,6 +18,7 @@ test/extern-lib/gen-externs
 test/cffi/project/ndll
 test/snippets/messagebox/cpp
 test/haxe/gc/big.txt
+tools/hxcpp/cpp
 hxcpp.n
 .DS_Store
 
