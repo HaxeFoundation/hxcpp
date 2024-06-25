@@ -197,16 +197,25 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
 extern "C" void __hxcpp_lib_main();
 namespace hx
 {
-   const char *Init()
+   static std::string initReturnBuffer;
+   const char *Init(bool stayAttached)
    {
       try
       {
          __hxcpp_lib_main();
+         if (!stayAttached)
+            SetTopOfStack(0,true);
          return 0;
       }
       catch(Dynamic e)
       {
          HX_TOP_OF_STACK
+         if (!stayAttached)
+         {
+            initReturnBuffer = e->toString().utf8_str();
+            SetTopOfStack(0,true);
+            return initReturnBuffer.c_str();
+         }
          return e->toString().utf8_str();
       }
    }

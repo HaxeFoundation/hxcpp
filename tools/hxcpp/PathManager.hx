@@ -106,7 +106,7 @@ class PathManager
          
          try
          {
-            output = ProcessManager.runProcess(Sys.getEnv ("HAXEPATH"), "haxelib", [ "path", name ], true, false);
+            output = ProcessManager.runProcess("", "haxelib", [ "path", name ], true, false);
          }
          catch (e:Dynamic) {}
          

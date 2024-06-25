@@ -33,7 +33,7 @@ using cpp.AtomicInt;
 @:buildXml('<include name="${HXCPP}/src/hx/libs/ssl/Build.xml"/>')
 extern class SslTest
 {
-   @:extern @:native("_hx_ssl_init")
+   @:native("_hx_ssl_init")
    extern public static function socket_init():Void;
 }
 
@@ -132,7 +132,7 @@ class Test
       for( row in rset )
       {
          var pass:Dynamic = row.password;
-         var password = Std.is(pass, haxe.io.BytesData) ? haxe.io.Bytes.ofData(pass) : pass;
+         var password = Std.isOfType(pass, haxe.io.BytesData) ? haxe.io.Bytes.ofData(pass) : pass;
          var md5 = haxe.crypto.Md5.make(password).toHex().substr(0,8);
          v("  user "+row.name+" is "+row.age+" years old,  password:" + md5);
          if (md5!="5f80e231" && md5!="8ed0b363")
@@ -412,17 +412,30 @@ class Test
 
    }
 
-   public static function testHost()
+   public static function testLocalhost()
    {
       log("Test Host");
       try
       {
       var localhost = Host.localhost();
       v('localhost :$localhost');
-      var host = new Host(localhost);
+      if (localhost == null || localhost.length == 0)
+         return error("null or empty localhost");
+      return ok();
+      }
+      catch(e:Dynamic)
+      {
+         return error("Unexpected error in testHost: " + e);
+      }
+   }
+
+   public static function testHost()
+   {
+      log("Test Host");
+      try
+      {
+      var host = new Host("github.com");
       v('host :$host');
-      // var reverse = host.reverse();
-      // v('reverse :$reverse');
       return ok();
       }
       catch(e:Dynamic)
