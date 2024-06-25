@@ -4,3 +4,4 @@
 -D HXCPP_DEBUGGER
 -cp ../unit
 -lib hx4compat
+-lib utest

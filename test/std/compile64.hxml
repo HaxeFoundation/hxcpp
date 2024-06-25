@@ -3,3 +3,4 @@
 -D HXCPP_M64
 -cp ../unit
 -lib hx4compat
+-lib utest

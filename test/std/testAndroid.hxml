@@ -4,6 +4,7 @@
 -D exe_link
 -cp ../unit
 -lib hx4compat
+-lib utest
 -cmd adb push arm32/Test /storage/ext_sd
 -cmd adb push Test.hx /storage/ext_sd
 -cmd adb shell "cd /storage/ext_sd && ./Test"
