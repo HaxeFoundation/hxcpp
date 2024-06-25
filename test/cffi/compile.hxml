@@ -1,4 +1,4 @@
--cp src
--main TestMain
--cpp bin/cpp
--cp ../unit
+-p src
+-m TestMain
+-L utest
+--cpp bin/cpp

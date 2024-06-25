@@ -2,6 +2,5 @@
 -r TestMain.hx
 -D HXCPP_TELEMETRY
 -D HXCPP_STACK_TRACE
--p ../unit
 -L utest
 --cpp bin

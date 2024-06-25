@@ -9,8 +9,10 @@ import neko.vm.Gc;
 import Loader;
 
 import haxe.io.BytesData;
+import utest.Test;
+import utest.Assert;
 
-class TestCffi extends TestBase
+class TestCffi extends Test
 {
    static var isBool:Dynamic->Bool = Lib.load("prime", "isBool", 1);
    static var isNull:Dynamic->Bool = Lib.load("prime", "isNull", 1);
@@ -49,37 +51,37 @@ class TestCffi extends TestBase
    {
       cpp.Prime.nekoInit("prime");
 
-      assertTrue( isBool!=null );
-      assertTrue( isBool(true) );
-      assertTrue( isBool(false) );
-      assertFalse( isBool(21) );
-      assertFalse( isBool("Hello") );
-      assertFalse( isBool(null) );
+      Assert.isTrue( isBool!=null );
+      Assert.isTrue( isBool(true) );
+      Assert.isTrue( isBool(false) );
+      Assert.isFalse( isBool(21) );
+      Assert.isFalse( isBool("Hello") );
+      Assert.isFalse( isBool(null) );
 
-      assertTrue( isNull!=null );
-      assertTrue( isNull(null) );
-      assertFalse( isNull(false) );
-      assertFalse( isNull(32) );
-      assertFalse( isNull("") );
+      Assert.isTrue( isNull!=null );
+      Assert.isTrue( isNull(null) );
+      Assert.isFalse( isNull(false) );
+      Assert.isFalse( isNull(32) );
+      Assert.isFalse( isNull("") );
 
-      assertTrue( allocNull!=null );
-      assertEquals(null, allocNull() );
+      Assert.isTrue( allocNull!=null );
+      Assert.isNull( allocNull() );
 
-      assertTrue( appendString!=null );
-      assertTrue( bufferToString!=null );
-      assertTrue( getRoot!=null );
-      assertTrue( setRoot!=null );
+      Assert.isTrue( appendString!=null );
+      Assert.isTrue( bufferToString!=null );
+      Assert.isTrue( getRoot!=null );
+      Assert.isTrue( setRoot!=null );
 
-      assertTrue( createAnon!=null );
+      Assert.isTrue( createAnon!=null );
 
 
-      assertFalse( valIsBuffer(null) );
-      assertFalse( valIsBuffer(1) );
-      assertFalse( valIsBuffer({}) );
-      assertFalse( valIsBuffer("String Buf") );
+      Assert.isFalse( valIsBuffer(null) );
+      Assert.isFalse( valIsBuffer(1) );
+      Assert.isFalse( valIsBuffer({}) );
+      Assert.isFalse( valIsBuffer("String Buf") );
 
       if (cppObjectAsDynamic!=null)
-         assertTrue( getObjectAsString()==null);
+         Assert.isTrue( getObjectAsString()==null);
 
       var anon = createAnon();
       for(f in Reflect.fields(anon))
@@ -87,7 +89,7 @@ class TestCffi extends TestBase
          #if cpp
          var value:Dynamic = Reflect.field(anon, f);
          //trace(f + " " + Type.typeof(value) );
-         assertTrue( Std.string(Type.typeof(value)) == f );
+         Assert.isTrue( Std.string(Type.typeof(value)) == f );
          #end
       }
 
@@ -102,49 +104,49 @@ class TestCffi extends TestBase
       var bytes = haxe.io.Bytes.ofString(base).getData();
 
       #if !neko
-      assertTrue( valIsBuffer(bytes) );
+      Assert.isTrue( valIsBuffer(bytes) );
       // Can't acess neko buffer from haxe code
       bytes = appendString(bytes,"World");
       var result = bufferToString(bytes);
-      assertEq(result,"Hello World");
+      Assert.equals(result,"Hello World");
       #end
 
-      assertEq(valToString(null,1),"String:null1");
-      assertEq(valToString("x",1.1),"String:x1.1");
-      assertEq(valToString("Hello"," World"),"String:Hello World");
-      assertEq(valToString([1],[]),"String:[1][]");
+      Assert.equals(valToString(null,1),"String:null1");
+      Assert.equals(valToString("x",1.1),"String:x1.1");
+      Assert.equals(valToString("Hello"," World"),"String:Hello World");
+      Assert.equals(valToString([1],[]),"String:[1][]");
 
-      assertEq(subBuffer("hello",4),"Cold as hell");
+      Assert.equals(subBuffer("hello",4),"Cold as hell");
 
       #if !neko
-      assertEq(charString(99,97,116),"A cat");
+      Assert.equals(charString(99,97,116),"A cat");
       #end
 
       var bytes = haxe.io.Bytes.ofString("String Buffer");
-      assertEq( byteDataSize(bytes), 13 );
-      assertEq( byteDataByte(bytes,1), 't'.code );
+      Assert.equals( byteDataSize(bytes), 13 );
+      Assert.equals( byteDataByte(bytes,1), 't'.code );
 
-      assertEq( getAbstractFreeCount(), 0 );
+      Assert.equals( getAbstractFreeCount(), 0 );
 
       var createdAbs = createAbstract();
-      assertTrue( createdAbs!=null );
-      assertEq( getAbstract(createdAbs), 99 );
+      Assert.notNull( createdAbs );
+      Assert.equals( getAbstract(createdAbs), 99 );
       // Explicitly freeing abstract does not call finalizer
       freeAbstract( createdAbs );
-      assertEq( getAbstractFreeCount(), 0 );
-      assertEq( getAbstract(createdAbs), -1 );
-      assertEq( getAbstractFreeCount(), 0 );
+      Assert.equals( getAbstractFreeCount(), 0 );
+      Assert.equals( getAbstract(createdAbs), -1 );
+      Assert.equals( getAbstractFreeCount(), 0 );
       createdAbs = null;
       Gc.run(true);
-      assertEq( getAbstractFreeCount(), 0 );
+      Assert.equals( getAbstractFreeCount(), 0 );
 
       var allocatedAbs = allocAbstract();
-      assertTrue( allocatedAbs!=null );
-      assertEq( getAbstract(allocatedAbs), 99 );
-      assertEq( getAbstractFreeCount(), 0 );
+      Assert.notNull( allocatedAbs );
+      Assert.equals( getAbstract(allocatedAbs), 99 );
+      Assert.equals( getAbstractFreeCount(), 0 );
       freeAbstract( allocatedAbs );
-      assertEq( getAbstract(allocatedAbs), -1 );
-      assertEq( getAbstractFreeCount(), 0 );
+      Assert.equals( getAbstract(allocatedAbs), -1 );
+      Assert.equals( getAbstractFreeCount(), 0 );
       allocatedAbs = null;
 
 
@@ -160,14 +162,14 @@ class TestCffi extends TestBase
       }
 
       for(i in 0...100)
-        assertEq( getRoot(i)+"", [i]+"" );
+        Assert.equals( getRoot(i)+"", [i]+"" );
 
       clearRoots();
 
       for(i in 0...100)
-        assertEq( getRoot(i), null );
+        Assert.isNull( getRoot(i) );
 
-      assertEq( getAbstractFreeCount(), 2 );
+      Assert.equals( getAbstractFreeCount(), 2 );
    }
 
    function clearStack(count:Int, ?nothing:Dynamic):Dynamic
