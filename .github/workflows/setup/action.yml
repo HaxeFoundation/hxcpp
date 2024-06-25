@@ -1,0 +1,35 @@
+name: setup
+inputs:
+  haxe:
+    required: true
+    type: string
+runs:
+  using: composite
+  steps:
+    - name: install haxe
+      uses: Aidan63/setup-haxe@e4b347bc45596200a68804b232be9d73f80868a6
+      with:
+        haxe-version: ${{ inputs.haxe }}
+
+    - name: install haxe libraries
+      shell: pwsh
+      run: |
+        haxelib install utest
+        haxelib git hx4compat https://github.com/HaxeFoundation/hx4compat
+        haxelib dev hxcpp ${{ github.workspace }}
+        haxelib list
+
+    - name: install native libraries
+      if: runner.os == 'Linux'
+      shell: pwsh
+      run: sudo apt-get install -qqy gcc-multilib g++-multilib
+
+    - name: build run.n
+      working-directory: tools/run
+      shell: pwsh
+      run: haxe compile.hxml
+
+    - name: build hxcpp
+      working-directory: tools/hxcpp
+      shell: pwsh
+      run: haxe compile.hxml

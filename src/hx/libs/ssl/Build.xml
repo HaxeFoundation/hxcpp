@@ -8,11 +8,11 @@
 	<depend files="hxcpp-depends"/>
 	<depend name="${this_dir}/Build.xml" dateOnly="true" />
 	<cache value="true" asLibrary="true" />
-  <compilerflag value="-std=c99" unless="MSVC_VER"/>
+    <compilerflag value="-std=c99" unless="MSVC_VER"/>
 	<compilerflag value="-I${MBEDTLS_DIR}/include"/>
-	<compilerflag value="-I${this_dir}"/>
-  <compilerflag value="-DWIN32_LEAN_AND_MEAN" if="windows"/>
-  <compilerflag value="-DMBEDTLS_CONFIG_FILE=&lt;mbedtls_config.h&gt;"/>
+    <compilerflag value="-I${this_dir}"/>
+    <compilerflag value="-DWIN32_LEAN_AND_MEAN" if="windows"/>
+    <compilerflag value="-DMBEDTLS_CONFIG_FILE=&lt;mbedtls_config.h&gt;"/>
 
 	<file name="${this_dir}/SSL.cpp"/>
 
@@ -136,8 +136,8 @@
 <target id="haxe">
 	<files id="hxcpp_ssl" />
 
-  <lib name="advapi32.lib" if="windows" unless="static_link" />
-  <lib name="crypt32.lib" if="windows" unless="static_link" />
+    <lib name="advapi32.lib" if="windows" unless="static_link" />
+    <lib name="crypt32.lib" if="windows" unless="static_link" />
 	<lib name="bcrypt.lib" if="windows" unless="static_link" />
 	<lib name="ws2_32.lib" if="windows" unless="static_link" />
 

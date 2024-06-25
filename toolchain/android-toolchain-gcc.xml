@@ -43,6 +43,15 @@
   <set name="PLATFORM" value="android-19" unless="PLATFORM" />
 </section>
 
+<section if="HXCPP_X86_64">
+  <set name="ARCH" value="-x86_64" />
+  <set name="ABI" value="x86_64"  />
+  <set name="PLATFORM_ARCH" value="arch-x86_64" />
+  <set name="TOOLCHAIN" value="x86_64-${TOOLCHAIN_VERSION}" />
+  <set name="EXEPREFIX" value="x86_64-linux-android" />
+  <set name="PLATFORM" value="android-21" unless="PLATFORM"/>
+</section>
+
 <set name="prebuiltBase" value="${ANDROID_NDK_ROOT}/toolchains/${TOOLCHAIN}/prebuilt/${ANDROID_HOST}" />
 
 <path name="${prebuiltBase}/bin" />
@@ -84,7 +93,7 @@
   <cppflag value="-std=c++11" if="HXCPP_CPP11"/>
   <flag value="-DHXCPP_CPP11" if="HXCPP_CPP11"/>
 
-  <section unless="HXCPP_X86">
+  <section unless="HXCPP_X86 || HXCPP_X86_64">
 
     <section if="HXCPP_ARM64">
        <flag value="-DHXCPP_ARM64"  />
@@ -108,6 +117,9 @@
   </section>
   <section if="HXCPP_X86">
     <flag value="-DANDROID_X86"/>
+  </section>
+  <section if="HXCPP_X86_64">
+    <flag value="-DANDROID_X86_64"/>
   </section>
 
 
@@ -168,11 +180,18 @@
   <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/${ABI}/libgnustl_static.a" if="NDKV7" unless="dll_import" />
   <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/${ABI}/libgnustl_static.a" if="NDKV8+" unless="dll_import" />
 
-  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/crtbegin_so.o"/>
   <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}/libgcc.a" unless="NDKV12+"/>
   <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}.x/libgcc.a" if="NDKV12+"/>
-  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libc.so"/>
-  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libm.so"/>
+  <section if="HXCPP_X86_64">
+    <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib64/libc.so"/>
+    <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib64/libm.so"/>
+    <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib64/crtbegin_so.o"/>
+  </section>
+  <section unless="HXCPP_X86_64">
+    <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libc.so"/>
+    <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libm.so"/>
+    <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/crtbegin_so.o"/>
+  </section>
   <lib name="-llog"/>
   <lib name="-ldl"/>
 </linker>
@@ -200,11 +219,16 @@
   <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/${ABI}/libgnustl_static.a" if="NDKV7" unless="dll_import" />
   <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/${ABI}/libgnustl_static.a" if="NDKV8+" unless="dll_import" />
 
-  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/crtbegin_static.o"/>
-  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}/libgcc.a" unless="NDKV12+"/>
-  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}.x/libgcc.a" if="NDKV12+"/>
-  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libc.so"/>
-  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libm.so"/>
+  <section if="HXCPP_X86_64">
+    <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib64/libc.so"/>
+    <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib64/libm.so"/>
+    <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib64/crtbegin_so.o"/>
+  </section>
+  <section unless="HXCPP_X86_64">
+    <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libc.so"/>
+    <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libm.so"/>
+    <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/crtbegin_so.o"/>
+  </section>
   <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/crtend_android.o"/>
   <lib name="-llog"/>
   <lib name="-ldl"/>
