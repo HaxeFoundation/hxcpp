@@ -1,6 +1,7 @@
--cpp bin
--main TestMain
--resource TestMain.hx
+-m TestMain
+-r TestMain.hx
 -D HXCPP_TELEMETRY
 -D HXCPP_STACK_TRACE
--cp ../unit
+-p ../unit
+-L utest
+--cpp bin
