@@ -52,8 +52,8 @@ class TestWeakHash extends Test
       if (oddFound>2)
          trace("Too many odd values retained " + oddFound);
       if (!(valid>=expect && valid<expect+2))
-         trace("WeakHash invalid range "+ expect + "..." + valid + "..." + (expect+2) );
-      Assert.isTrue(valid>=expect && valid<expect+2);
+      Assert.isTrue(oddFound<=2, "Too many odd values retained " + oddFound);
+      Assert.isTrue(valid>=expect && valid<expect+2, "WeakHash invalid range "+ expect + "..." + valid + "..." + (expect+2));
    }
    function deepCheckMap(inDepth:Int, map:WeakMap<WeakObjectData,Int>, expect:Int)
    {
