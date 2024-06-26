@@ -889,7 +889,7 @@ public:
    #if (HXCPP_API_LEVEL>=500)
    template<class TO>
    Array<TO> map(MappingFunc<TO> inFunc);
-   #else HXCPP_API_LEVEL>=330
+   #else
    cpp::VirtualArray map(MappingFunc inFunc);
    #endif
    Array<ELEM_> filter(FilterFunc inFunc);
