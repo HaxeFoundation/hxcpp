@@ -171,7 +171,7 @@ class TestCffi extends Test
       Assert.equals( 2, getAbstractFreeCount() );
    }
 
-   function clearStack(count:Int, ?nothing:Dynamic):Dynamic
+   function clearStack(count:Int, ?_:Dynamic, ?_:Dynamic, ?_:Dynamic, ?_:Dynamic, ?_:Dynamic):Dynamic
    {
       if (count==0)
          return 0;

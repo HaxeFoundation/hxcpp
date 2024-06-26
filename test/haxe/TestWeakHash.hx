@@ -49,9 +49,6 @@ class TestWeakHash extends Test
             valid++;
       }
       // There may be one or two values lurking on the stack, which is conservatively marked
-      if (oddFound>2)
-         trace("Too many odd values retained " + oddFound);
-      if (!(valid>=expect && valid<expect+2))
       Assert.isTrue(oddFound<=2, "Too many odd values retained " + oddFound);
       Assert.isTrue(valid>=expect && valid<expect+2, "WeakHash invalid range "+ expect + "..." + valid + "..." + (expect+2));
    }
