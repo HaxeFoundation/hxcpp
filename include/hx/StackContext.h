@@ -335,13 +335,7 @@ struct ExceptionStackFrame
    int line;
    #endif
 
-   #if HXCPP_API_LEVEL > 330
    const hx::StackPosition *position;
-   #else
-   const char *className;
-   const char *functionName;
-   const char *fileName;
-   #endif
 
    ExceptionStackFrame(const StackFrame &inFrame);
    ::String format(bool inForDisplay);

@@ -2,7 +2,7 @@
 
 <!-- MINGW TOOLS -------------------------------------->
 
-<section if="linux_host">
+<section if="linux_host||mac_host">
   <section if="HXCPP_M64">
     <set name="HXCPP_MINGW_EXE" value="x86_64-w64-mingw32-g++" unless="HXCPP_MINGW_EXE" />
     <set name="MINGW_ROOT" value="/usr/x86_64-w64-mingw32" unless="MINGW_ROOT" />
@@ -24,7 +24,7 @@
 
 <unset name="USE_PRECOMPILED_HEADERS"/>
 
-<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11" />
+<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11 || HXCPP_CPP17" />
 
 <set name="SUBSYSTEMWINDOWS" value="1" if="no_console" unless="HXCPP_DEBUGGER" />
 
@@ -41,7 +41,7 @@
   <flag value="-DHX_WINDOWS"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <cppflag value="-std=c++11" if="HXCPP_CPP11" />
-  <cppflag value="-U__STRICT_ANSI__" />
+  <cppflag value="-std=c++17" if="HXCPP_CPP17" />
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
