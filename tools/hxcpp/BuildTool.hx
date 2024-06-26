@@ -138,17 +138,20 @@ class BuildTool
       if (m64==m32 && !arm64 && !otherArmArchitecture)
       {
          var arch = mDefines.get("HXCPP_ARCH");
-         if (arch != null) {
-            m64 = arch == "x86_64";
-            m32 = arch == "x86";
-            arm64 = arch == "arm64";
-         } else {
+         if (arch!=null)
+         {
+            m64 = arch=="x86_64";
+            m32 = arch=="x86";
+            arm64 = arch=="arm64";
+         }
+         else
+         {
             var hostArch = getArch();
 
             // Default to the current OS version.  windowsArm runs m32 code too
-            m64 = hostArch == "m64";
-            m32 = hostArch == "m32";
-            arm64 = hostArch == "arm64";
+            m64 = hostArch=="m64";
+            m32 = hostArch=="m32";
+            arm64 = hostArch=="arm64";
          }
 
          mDefines.remove(m32 ? "HXCPP_M64" : "HXCPP_M32");
