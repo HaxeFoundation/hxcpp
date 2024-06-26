@@ -108,47 +108,46 @@ class TestCffi extends Test
       // Can't acess neko buffer from haxe code
       bytes = appendString(bytes,"World");
       var result = bufferToString(bytes);
-      Assert.equals(result,"Hello World");
+      Assert.equals("Hello World", result);
       #end
 
-      Assert.equals(valToString(null,1),"String:null1");
-      Assert.equals(valToString("x",1.1),"String:x1.1");
-      Assert.equals(valToString("Hello"," World"),"String:Hello World");
-      Assert.equals(valToString([1],[]),"String:[1][]");
+      Assert.equals("String:null1", valToString(null,1));
+      Assert.equals("String:x1.1", valToString("x",1.1));
+      Assert.equals("String:Hello World", valToString("Hello"," World"));
+      Assert.equals("String:[1][]", valToString([1],[]));
 
-      Assert.equals(subBuffer("hello",4),"Cold as hell");
+      Assert.equals("Cold as hell", subBuffer("hello",4));
 
       #if !neko
-      Assert.equals(charString(99,97,116),"A cat");
+      Assert.equals("A cat", charString(99,97,116));
       #end
 
       var bytes = haxe.io.Bytes.ofString("String Buffer");
-      Assert.equals( byteDataSize(bytes), 13 );
-      Assert.equals( byteDataByte(bytes,1), 't'.code );
+      Assert.equals( 13, byteDataSize(bytes) );
+      Assert.equals( 't'.code, byteDataByte(bytes,1) );
 
-      Assert.equals( getAbstractFreeCount(), 0 );
+      Assert.equals( 0, getAbstractFreeCount() );
 
       var createdAbs = createAbstract();
       Assert.notNull( createdAbs );
-      Assert.equals( getAbstract(createdAbs), 99 );
+      Assert.equals( 99, getAbstract(createdAbs) );
       // Explicitly freeing abstract does not call finalizer
       freeAbstract( createdAbs );
-      Assert.equals( getAbstractFreeCount(), 0 );
-      Assert.equals( getAbstract(createdAbs), -1 );
-      Assert.equals( getAbstractFreeCount(), 0 );
+      Assert.equals( 0, getAbstractFreeCount() );
+      Assert.equals( -1, getAbstract(createdAbs) );
+      Assert.equals( 0, getAbstractFreeCount() );
       createdAbs = null;
       Gc.run(true);
-      Assert.equals( getAbstractFreeCount(), 0 );
+      Assert.equals( 0, getAbstractFreeCount() );
 
       var allocatedAbs = allocAbstract();
       Assert.notNull( allocatedAbs );
-      Assert.equals( getAbstract(allocatedAbs), 99 );
-      Assert.equals( getAbstractFreeCount(), 0 );
+      Assert.equals( 99, getAbstract(allocatedAbs) );
+      Assert.equals( 0, getAbstractFreeCount() );
       freeAbstract( allocatedAbs );
-      Assert.equals( getAbstract(allocatedAbs), -1 );
-      Assert.equals( getAbstractFreeCount(), 0 );
+      Assert.equals( -1, getAbstract(allocatedAbs) );
+      Assert.equals( 0, getAbstractFreeCount() );
       allocatedAbs = null;
-
 
       createDeepAbstracts(2);
       clearStack(12);
@@ -158,18 +157,18 @@ class TestCffi extends Test
       var freeCount = getAbstractFreeCount();
       if (freeCount!=2)
       {
-        Sys.println('\nWarning: $freeCount != 2');
+        Assert.warn('$freeCount != 2');
       }
 
       for(i in 0...100)
-        Assert.equals( getRoot(i)+"", [i]+"" );
+        Assert.equals( [i]+"", getRoot(i)+"" );
 
       clearRoots();
 
       for(i in 0...100)
         Assert.isNull( getRoot(i) );
 
-      Assert.equals( getAbstractFreeCount(), 2 );
+      Assert.equals( 2, getAbstractFreeCount() );
    }
 
    function clearStack(count:Int, ?nothing:Dynamic):Dynamic
