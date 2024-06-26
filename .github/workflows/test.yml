@@ -1,0 +1,230 @@
+name: test
+on:
+  workflow_call:
+    inputs:
+      haxe:
+        required: true
+        type: string
+      arch:
+        required: true
+        type: string
+      sep:
+        required: true
+        type: string
+      ext:
+        required: true
+        type: string
+      os:
+        required: true
+        type: string
+
+jobs:
+  haxe:
+    runs-on: ${{ inputs.os }}
+    name: haxe
+    defaults:
+      run:
+        working-directory: test/haxe
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
+      - name: build
+        run: haxe compile.hxml --debug -D HXCPP_M${{ inputs.arch }}
+      - name: run
+        run: bin${{ inputs.sep }}TestMain-debug
+
+  cffi:
+    runs-on: ${{ inputs.os }}
+    name: cffi
+    defaults:
+      run:
+        working-directory: test/cffi
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
+      - name: build project
+        working-directory: test/cffi/project
+        run: haxelib run hxcpp build.xml -Ddebug -DHXCPP_M${{ inputs.arch }}
+      - name: build
+        run: haxe compile.hxml --debug -D HXCPP_M${{ inputs.arch }}
+      - name: build (utf8)
+        run: haxe compile-utf8.hxml --debug -D HXCPP_M${{ inputs.arch }}
+      - name: build (neko)
+        run: haxe compile-neko.hxml --debug -D HXCPP_M${{ inputs.arch }}
+      - name: copy
+        run: cp project/ndll/*/prime${{ inputs.ext }} bin/neko/prime.ndll
+      - name: run
+        run: bin${{ inputs.sep }}cpp${{ inputs.sep }}TestMain-debug
+      - name: run (utf8)
+        run: bin${{ inputs.sep }}cpp-utf8${{ inputs.sep }}TestMain-debug
+      - name: run (neko)
+        if: inputs.arch == '64'
+        working-directory: test/cffi/bin/neko
+        run: neko TestMain.n
+
+  telemetry:
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [ debug, release ]
+        include:
+          - suffix: -debug
+            mode: debug
+    runs-on: ${{ inputs.os }}
+    name: telemetry (${{ matrix.mode }})
+    defaults:
+      run:
+        working-directory: test/telemetry
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
+      - name: build
+        run: haxe compile.hxml ${{ matrix.suffix }} -D HXCPP_M${{ inputs.arch }}
+      - name: run
+        run: bin${{ inputs.sep }}TestMain${{ matrix.suffix }}
+
+  debugger:
+    runs-on: ${{ inputs.os }}
+    name: debugger
+    defaults:
+      run:
+        working-directory: test/debugger
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
+      - name: build
+        run: haxe compile.hxml -D HXCPP_M${{ inputs.arch }}
+      - name: run
+        run: bin${{ inputs.sep }}App-debug
+        
+  native:
+      runs-on: ${{ inputs.os }}
+      name: native
+      defaults:
+        run:
+          working-directory: test/native
+      steps:
+        - name: checkout
+          uses: actions/checkout@v4
+        - name: setup
+          uses: ./.github/workflows/setup
+          with:
+            haxe: ${{ inputs.haxe }}
+        - name: build
+          run: haxe compile.hxml -D HXCPP_M${{ inputs.arch }}
+        - name: run
+          run: bin${{ inputs.sep }}Native
+
+  std:
+      runs-on: ${{ inputs.os }}
+      name: std
+      defaults:
+        run:
+          working-directory: test/std
+      steps:
+        - name: checkout
+          uses: actions/checkout@v4
+        - name: setup
+          uses: ./.github/workflows/setup
+          with:
+            haxe: ${{ inputs.haxe }}
+        - name: install mariadb
+          if: runner.os == 'Linux'
+          run: |
+            set -ex
+            sudo rm -R /var/lib/mysql/
+            curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup > mariadb_repo_setup
+            curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup.sha256 > mariadb_repo_setup.sha256
+            sha256sum --check mariadb_repo_setup.sha256
+            sudo bash mariadb_repo_setup
+            sudo apt-get update -qqy
+            sudo apt-get remove -qqy mysql-common
+            sudo apt-get autoremove -qqy
+            sudo apt-get install -qqy mariadb-server
+        - name: configure mariadb
+          if: runner.os == 'Linux'
+          run: |
+            set -ex
+            sudo systemctl unmask mysql.service
+            sudo systemctl start mysql
+            sudo mysql -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
+        - name: build
+          run: haxe compile${{ inputs.arch }}.hxml
+        - name: run
+          run: cpp${{ inputs.arch }}${{ inputs.sep }}Test
+
+  cppia:
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [ interp, jit ]
+        include:
+          - suffix: -jit
+            mode: jit
+    runs-on: ${{ inputs.os }}
+    name: cppia (${{ matrix.mode }})
+    defaults:
+      run:
+        working-directory: test/cppia
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
+      - name: build host
+        run: haxe compile-host.hxml -D HXCPP_M${{ inputs.arch }}
+      - name: build client
+        run: haxe compile-client.hxml -D HXCPP_M${{ inputs.arch }}
+      - name: run
+        run: bin${{ inputs.sep }}CppiaHost bin${{ inputs.sep }}client.cppia ${{ matrix.suffix }}
+
+  suite:
+    runs-on: ${{ inputs.os }}
+    name: haxe test suite
+    defaults:
+      run:
+        working-directory: haxe/tests/unit
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: checkout haxe (latest)
+        if: inputs.haxe == 'latest'
+        uses: actions/checkout@v4
+        with:
+          repository: HaxeFoundation/haxe
+          path: haxe
+      - name: checkout haxe (stable)
+        if: inputs.haxe != 'latest'
+        uses: actions/checkout@v4
+        with:
+          repository: HaxeFoundation/haxe
+          path: haxe
+          ref: ${{ inputs.haxe }}
+      - name: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
+      - name: install haxe libs
+        run: haxelib install compile-cpp.hxml --always
+      - name: build
+        run: haxe compile-cpp.hxml -D HXCPP_M${{ inputs.arch }} -D no_http
+      - name: run
+        run: bin${{ inputs.sep }}cpp${{ inputs.sep }}TestMain-debug

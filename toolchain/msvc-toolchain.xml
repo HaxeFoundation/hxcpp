@@ -69,6 +69,7 @@
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-D${HXCPP_XP_DEFINE}" if="HXCPP_XP_DEFINE"/>
   <flag value="-GR"/>
+  <flag value="/std:c++17" if="HXCPP_CPP17"/>
 
   <!-- standard optimization flags -->
   <flag value="-Od" if="debug" tag="optim-std" />

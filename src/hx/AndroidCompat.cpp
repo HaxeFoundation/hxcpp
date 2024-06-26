@@ -15,8 +15,8 @@ extern "C" {
 
 char * stpcpy(char *dest, const char *src)
 {
-  register char *d = dest;
-  register const char *s = src;
+  char *d = dest;
+  const char *s = src;
   do
     *d++ = *s;
   while (*s++ != '\0');

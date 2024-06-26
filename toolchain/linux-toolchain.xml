@@ -26,7 +26,7 @@
    </section>
 </section>
 
-<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11" />
+<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11 || HXCPP_CPP17" />
 
 <include name="toolchain/gcc-toolchain.xml"/>
 <set name="noM32" value="1" if="HXCPP_NO_M32" />
@@ -41,6 +41,7 @@
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
   <cppflag value="-std=c++11" if="HXCPP_CPP11" />
+  <cppflag value="-std=c++17" if="HXCPP_CPP17"/>
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-fpic"/>

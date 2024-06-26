@@ -19,11 +19,7 @@
        name(::CONSTRUCT_ARGS::) : ::CONSTRUCT_VARS:: {}::end::
 #endif
 
-#if (HXCPP_API_LEVEL>=330)
-  #define HX_LOCAL_RUN _hx_run
-#else
-  #define HX_LOCAL_RUN run
-#endif
+#define HX_LOCAL_RUN _hx_run
 
 ::foreach LOCALS::
 #define HX_END_LOCAL_FUNC::ARG::(ret) HX_DYNAMIC_CALL::ARG::(ret, HX_LOCAL_RUN ) };::end::

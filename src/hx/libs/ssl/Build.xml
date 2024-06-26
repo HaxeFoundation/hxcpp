@@ -10,6 +10,7 @@
 	<cache value="true" asLibrary="true" />
 	<compilerflag value="-I${MBEDTLS_DIR}/include"/>
 	<compilerflag value="-I${this_dir}"/>
+	<compilerflag value="-std=c99" unless="MSVC_VER" />
 
 	<file name="${this_dir}/SSL.cpp"/>
 

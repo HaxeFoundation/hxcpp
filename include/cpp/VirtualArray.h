@@ -91,10 +91,7 @@ public:
       return result;
    }
 
-   #if (HXCPP_API_LEVEL>330)
    int __Compare(const hx::Object *inRHS) const;
-   #endif
-
 
    inline int get_length() const
    {

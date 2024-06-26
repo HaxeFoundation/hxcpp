@@ -604,18 +604,9 @@ public:
    std::string  name;
    ScriptNamedFunction *functions;
 
-   #if (HXCPP_API_LEVEL >= 330)
    void *scriptTable;
 
    HaxeNativeInterface(const std::string &inName, ScriptNamedFunction *inFunctions,void *inScriptTable);
-
-   #else
-   const hx::type_info *mType;
-   ScriptableInterfaceFactory factory;
-
-   HaxeNativeInterface(const std::string &inName, ScriptNamedFunction *inFunctions,hx::ScriptableInterfaceFactory inFactory,const hx::type_info *inType);
-   #endif
-
 
    ScriptFunction findFunction(const std::string &inName);
 
@@ -654,12 +645,8 @@ public:
    int       interfaceSlotSize;
    void      **vtable;
    std::string name;
-   #if (HXCPP_API_LEVEL>=330)
    std::map<int, void *> interfaceScriptTables;
    std::vector<ScriptNamedFunction *> nativeInterfaceFunctions;
-   #else
-   std::map<std::string, void **> interfaceVTables;
-   #endif
    std::set<String> nativeProperties;
    hx::Class     mClass;
 
@@ -749,11 +736,6 @@ public:
    void dumpVars(const char *inMessage, std::vector<CppiaVar *> &vars);
    void dumpFunctions(const char *inMessage, std::vector<CppiaFunction *> &funcs);
    void dump();
-
-   #if (HXCPP_API_LEVEL < 330)
-   void **getInterfaceVTable(const std::string &inName) { return interfaceVTables[inName]; }
-   void **createInterfaceVTable(int inTypeId);
-   #endif
 
    void mark(hx::MarkContext *__inCtx);
    void markInstance(hx::Object *inThis, hx::MarkContext *__inCtx);
