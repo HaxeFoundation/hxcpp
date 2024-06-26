@@ -81,7 +81,7 @@ class TestCffi extends Test
       Assert.isFalse( valIsBuffer("String Buf") );
 
       if (cppObjectAsDynamic!=null)
-         Assert.isTrue( getObjectAsString()==null);
+         Assert.isNull( getObjectAsString() );
 
       var anon = createAnon();
       for(f in Reflect.fields(anon))
