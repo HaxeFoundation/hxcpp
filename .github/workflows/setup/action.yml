@@ -14,7 +14,7 @@ runs:
     - name: install haxe libraries
       shell: pwsh
       run: |
-        haxelib install utest
+        haxelib git utest https://github.com/haxe-utest/utest
         haxelib git hx4compat https://github.com/HaxeFoundation/hx4compat
         haxelib dev hxcpp ${{ github.workspace }}
         haxelib list

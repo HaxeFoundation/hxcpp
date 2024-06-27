@@ -1,5 +1,5 @@
--main Test
--cpp cpp64
+-m Test
 -D HXCPP_M64
--cp ../unit
--lib hx4compat
+-L hx4compat
+-L utest
+--cpp cpp64

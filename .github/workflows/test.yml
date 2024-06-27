@@ -33,9 +33,9 @@ jobs:
         with:
           haxe: ${{ inputs.haxe }}
       - name: build
-        run: haxe compile.hxml --debug -D HXCPP_M${{ inputs.arch }}
+        run: haxe compile.hxml -D HXCPP_M${{ inputs.arch }}
       - name: run
-        run: bin${{ inputs.sep }}TestMain-debug
+        run: bin${{ inputs.sep }}TestMain
 
   cffi:
     runs-on: ${{ inputs.os }}
