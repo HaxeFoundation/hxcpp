@@ -14,7 +14,8 @@
     <compilerflag value="-DWIN32_LEAN_AND_MEAN" if="windows"/>
     <compilerflag value="-DMBEDTLS_CONFIG_FILE=&lt;mbedtls_config.h&gt;"/>
 
-	<file name="${this_dir}/SSL.cpp"/>
+	<file name="${this_dir}/SSL.cpp" unless="windows"/>
+  <file name="${this_dir}/SSL.win.cpp" if="windows"/>
 
   <file name="${MBEDTLS_DIR}/library/aes.c"/>
   <file name="${MBEDTLS_DIR}/library/aesni.c"/>
