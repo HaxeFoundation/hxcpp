@@ -5,7 +5,6 @@
 <set name="MBEDTLS_DIR" value="${HXCPP}/project/thirdparty/mbedtls-2.28.2" />
 
 <files id="mbedtls">
-	<depend files="hxcpp-depends" />
 	<depend name="${this_dir}/Build.xml" dateOnly="true" />
 	<cache value="true" asLibrary="true" />
 
