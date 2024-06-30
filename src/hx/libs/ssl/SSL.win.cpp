@@ -435,6 +435,38 @@ Dynamic _hx_ssl_cert_add_der(Dynamic hcert, Array<unsigned char> buf)
 	return null();
 }
 
+// ---- SSL KEY ---- //
+
+class CNGKey_obj : public hx::Object
+{
+	static void destroy(Dynamic obj)
+	{
+		auto cert = reinterpret_cast<CNGKey_obj*>(obj.mPtr);
+
+		BCryptDestroyKey(cert->handle);
+		BCryptCloseAlgorithmProvider(cert->alg, 0);
+
+		cert->handle = BCRYPT_KEY_HANDLE();
+		cert->alg = BCRYPT_ALG_HANDLE();
+	}
+
+public:
+	HX_IS_INSTANCE_OF enum { _hx_classId = hx::clsIdSslKey };
+
+	BCRYPT_ALG_HANDLE alg;
+	BCRYPT_KEY_HANDLE handle;
+
+	CNGKey_obj(BCRYPT_ALG_HANDLE inAlg, BCRYPT_KEY_HANDLE inHandle) : alg(inAlg), handle(inHandle)
+	{
+		_hx_set_finalizer(this, destroy);
+	}
+
+	String toString()
+	{
+		return HX_CSTRING("CNGKey");
+	}
+};
+
 Dynamic _hx_ssl_key_from_der(Array<unsigned char> buf, bool pub)
 {
 	return null();
@@ -442,8 +474,106 @@ Dynamic _hx_ssl_key_from_der(Array<unsigned char> buf, bool pub)
 
 Dynamic _hx_ssl_key_from_pem(String data, bool pub, String pass)
 {
-	return null();
+	if (pub)
+	{
+		return null();
+	}
+	else
+	{
+		auto result = 0;
+		auto string = data.utf8_str();
+		auto cb     = DWORD{ 0 };
+
+		auto derKeyLength = DWORD{ 0 };
+		if (!CryptStringToBinaryA(string, 0, CRYPT_STRING_BASE64HEADER, nullptr, &derKeyLength, nullptr, nullptr))
+		{
+			hx::Throw(HX_CSTRING("Failed to parse certificate : ") + Win32ErrorToString(GetLastError()));
+		}
+
+		auto derKey = std::vector<uint8_t>(derKeyLength);
+		if (!CryptStringToBinaryA(string, 0, CRYPT_STRING_BASE64HEADER, derKey.data(), &derKeyLength, nullptr, nullptr))
+		{
+			hx::Throw(HX_CSTRING("Failed to parse certificate : ") + Win32ErrorToString(GetLastError()));
+		}
+
+		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_PRIVATE_KEY_INFO, derKey.data(), derKey.size(), CRYPT_DECODE_NOCOPY_FLAG, nullptr, nullptr, &cb))
+		{
+			hx::Throw(HX_CSTRING("Failed to decode object size : ") + Win32ErrorToString(GetLastError()));
+		}
+
+		auto keyInfoBuffer = std::vector<uint8_t>(cb);
+		auto keyInfo       = reinterpret_cast<PCRYPT_PRIVATE_KEY_INFO>(keyInfoBuffer.data());
+		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_PRIVATE_KEY_INFO, derKey.data(), derKey.size(), CRYPT_DECODE_NOCOPY_FLAG, nullptr, keyInfoBuffer.data(), &cb))
+		{
+			hx::Throw(HX_CSTRING("Failed to decode object size : ") + Win32ErrorToString(GetLastError()));
+		}
+
+		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PRIVATE_KEY_BLOB, keyInfo->PrivateKey.pbData, keyInfo->PrivateKey.cbData, 0, nullptr, nullptr, &cb))
+		{
+			hx::Throw(HX_CSTRING("Failed to decode object : ") + Win32ErrorToString(GetLastError()));
+		}
+
+		auto rsaKeyBuffer = std::vector<uint8_t>(cb);
+		auto rsaKey       = reinterpret_cast<BCRYPT_RSAKEY_BLOB*>(rsaKeyBuffer.data());
+ 		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PRIVATE_KEY_BLOB, keyInfo->PrivateKey.pbData, keyInfo->PrivateKey.cbData, 0, nullptr, rsaKeyBuffer.data(), &cb))
+		{
+			hx::Throw(HX_CSTRING("Failed to decode object : ") + Win32ErrorToString(GetLastError()));
+		}
+
+		auto algorithm = BCRYPT_ALG_HANDLE();
+		if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_RSA_ALGORITHM, nullptr, 0)))
+		{
+			hx::Throw(HX_CSTRING("Failed to open RSA provider"));
+		}
+
+		auto key = BCRYPT_KEY_HANDLE();
+		if (!BCRYPT_SUCCESS(result = BCryptImportKeyPair(algorithm, nullptr, BCRYPT_RSAPRIVATE_BLOB, &key, reinterpret_cast<PUCHAR>(rsaKeyBuffer.data()), rsaKeyBuffer.size(), BCRYPT_NO_KEY_VALIDATION)))
+		{
+			hx::Throw(HX_CSTRING("Failed to import private key"));
+		}
+
+		return CNGKey(new CNGKey_obj(algorithm, key));
+	}
+
+	//if (pub)
+	//{
+	//	auto string          = data.utf8_str();
+	//	auto derPubKey       = std::vector<uint8_t>(strlen(string));
+	//	auto derPubKeyLength = static_cast<DWORD>(derPubKey.size());
+	//	if (!CryptStringToBinaryA(string, 0, CRYPT_STRING_BASE64HEADER, derPubKey.data(), &derPubKeyLength, nullptr, nullptr))
+	//	{
+	//		hx::Throw(HX_CSTRING("Failed to parse certificate : ") + Win32ErrorToString(GetLastError()));
+	//	}
+
+	//	auto cert = CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, derPubKey.data(), derPubKeyLength);
+	//	if (nullptr == cert)
+	//	{
+	//		hx::Throw(HX_CSTRING("Failed to parse certificate : ") + Win32ErrorToString(GetLastError()));
+	//	}
+
+	//	auto key = BCRYPT_KEY_HANDLE();
+	//	if (!BCRYPT_SUCCESS(CryptImportPublicKeyInfoEx2(cert->dwCertEncodingType, &cert->pCertInfo->SubjectPublicKeyInfo, 0, nullptr, &key)))
+	//	{
+	//		hx::Throw(HX_CSTRING("Failed to import public key from certificate : ") + Win32ErrorToString(GetLastError()));
+	//	}
+
+	//	return CNGKey(new CNGKey_obj(cert, key));
+	//}
+	//else
+	//{
+	//	auto string          = data.utf8_str();
+	//	auto derPubKey       = std::vector<uint8_t>(strlen(string));
+	//	auto derPubKeyLength = static_cast<DWORD>(derPubKey.size());
+	//	if (!CryptStringToBinaryA(string, 0, CRYPT_STRING_BASE64HEADER, derPubKey.data(), &derPubKeyLength, nullptr, nullptr))
+	//	{
+	//		hx::Throw(HX_CSTRING("Failed to parse certificate : ") + Win32ErrorToString(GetLastError()));
+	//	}
+
+	//	return null();
+	//}
 }
+
+// ---- SSL DIGEST ---- //
 
 Array<unsigned char> _hx_ssl_dgst_make(Array<unsigned char> buf, String alg)
 {
