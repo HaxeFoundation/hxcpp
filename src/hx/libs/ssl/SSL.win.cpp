@@ -6,6 +6,7 @@
 #include <vector>
 
 HX_DECLARE_CLASS0(SChannelCert);
+HX_DECLARE_CLASS0(CNGKey);
 
 class SChannelCert_obj : public hx::Object
 {
@@ -264,7 +265,7 @@ Dynamic _hx_ssl_cert_load_file(String file)
 
 	auto derPubKey = std::vector<uint8_t>(readLength.QuadPart);
 	auto derPubKeyLength = static_cast<DWORD>(readLength.QuadPart);
-	if (!CryptStringToBinary(pubKey.data(), 0, CRYPT_STRING_BASE64HEADER, derPubKey.data(), &derPubKeyLength, nullptr, nullptr))
+	if (!CryptStringToBinaryA(pubKey.data(), 0, CRYPT_STRING_BASE64HEADER, derPubKey.data(), &derPubKeyLength, nullptr, nullptr))
 	{
 		hx::Throw(HX_CSTRING("Failed to parse certificate : ") + Win32ErrorToString(GetLastError()));
 	}
@@ -583,6 +584,67 @@ Array<unsigned char> _hx_ssl_dgst_make(Array<unsigned char> buf, String alg)
 
 	if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&algorithm, alg.wchar_str(), nullptr, 0)))
 	{
+		hx::Throw(HX_CSTRING("Failed to open algorithm provider : ") + Win32ErrorToString(GetLastError()));
+	}
+
+	auto objectLength = DWORD{ 0 };
+	if (!BCRYPT_SUCCESS(result = BCryptGetProperty(algorithm, BCRYPT_OBJECT_LENGTH, reinterpret_cast<PUCHAR>(&objectLength), sizeof(DWORD), &dummy, 0)))
+	{
+		BCryptCloseAlgorithmProvider(algorithm, 0);
+
+		hx::Throw(HX_CSTRING("Failed to get object length : ") + Win32ErrorToString(GetLastError()));
+	}
+
+	auto object = std::vector<uint8_t>(objectLength);
+	auto hash   = BCRYPT_HASH_HANDLE();
+	if (!BCRYPT_SUCCESS(result = BCryptCreateHash(algorithm, &hash, object.data(), object.size(), nullptr, 0, 0)))
+	{
+		BCryptCloseAlgorithmProvider(algorithm, 0);
+
+		hx::Throw(HX_CSTRING("Failed to create hash object : ") + Win32ErrorToString(GetLastError()));
+	}
+
+	auto hashLength = DWORD{ 0 };
+	if (!BCRYPT_SUCCESS(result = BCryptGetProperty(algorithm, BCRYPT_HASH_LENGTH, reinterpret_cast<PUCHAR>(&hashLength), sizeof(DWORD), &dummy, 0)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(algorithm, 0);
+
+		hx::Throw(HX_CSTRING("Failed to get object length : ") + Win32ErrorToString(GetLastError()));
+	}
+
+	if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(buf->GetBase()), buf->length, 0)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(algorithm, 0);
+
+		hx::Throw(HX_CSTRING("Failed to hash data : "));
+	}
+
+	auto output = Array<uint8_t>(hashLength, hashLength);
+	if (!BCRYPT_SUCCESS(result = BCryptFinishHash(hash, reinterpret_cast<PUCHAR>(output->GetBase()), output->length, 0)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(algorithm, 0);
+
+		hx::Throw(HX_CSTRING("Failed to finish hash : "));
+	}
+
+	BCryptDestroyHash(hash);
+	BCryptCloseAlgorithmProvider(algorithm, 0);
+
+	return output;
+}
+
+Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buf, Dynamic hpkey, String alg)
+{
+	auto key       = hpkey.Cast<CNGKey>();
+	auto result    = 0;
+	auto dummy     = DWORD{ 0 };
+
+	auto algorithm = BCRYPT_ALG_HANDLE();
+	if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&algorithm, alg.wchar_str(), nullptr, 0)))
+	{
 		hx::Throw(HX_CSTRING("Failed to open algorithm provider"));
 	}
 
@@ -620,8 +682,8 @@ Array<unsigned char> _hx_ssl_dgst_make(Array<unsigned char> buf, String alg)
 		hx::Throw(HX_CSTRING("Failed to hash data"));
 	}
 
-	auto output = Array<uint8_t>(hashLength, hashLength);
-	if (!BCRYPT_SUCCESS(result = BCryptFinishHash(hash, reinterpret_cast<PUCHAR>(output->GetBase()), output->length, 0)))
+	auto hashed = std::vector<uint8_t>(hashLength);
+	if (!BCRYPT_SUCCESS(result = BCryptFinishHash(hash, reinterpret_cast<PUCHAR>(hashed.data()), hashed.size(), 0)))
 	{
 		BCryptDestroyHash(hash);
 		BCryptCloseAlgorithmProvider(algorithm, 0);
@@ -629,15 +691,23 @@ Array<unsigned char> _hx_ssl_dgst_make(Array<unsigned char> buf, String alg)
 		hx::Throw(HX_CSTRING("Failed to finish hash"));
 	}
 
+	auto signatureLength = DWORD{ 0 };
+	if (!BCRYPT_SUCCESS(result = BCryptSignHash(key->handle, nullptr, reinterpret_cast<PUCHAR>(hashed.data()), hashed.size(), nullptr, 0, &signatureLength, 0)))
+	{
+		hx::Throw(HX_CSTRING("Failed to signature length"));
+	}
+
+	auto signature = Array<uint8_t>(signatureLength, signatureLength);
+	auto pi        = BCRYPT_PKCS1_PADDING_INFO{ alg.wchar_str() };
+	if (!BCRYPT_SUCCESS(result = BCryptSignHash(key->handle, &pi, reinterpret_cast<PUCHAR>(hashed.data()), hashed.size(), reinterpret_cast<PUCHAR>(signature->GetBase()), signature->length, &signatureLength, BCRYPT_PAD_PKCS1)))
+	{
+		hx::Throw(HX_CSTRING("Failed to sign hash"));
+	}
+
 	BCryptDestroyHash(hash);
 	BCryptCloseAlgorithmProvider(algorithm, 0);
 
-	return output;
-}
-
-Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buf, Dynamic hpkey, String alg)
-{
-	return null();
+	return signature;
 }
 
 bool _hx_ssl_dgst_verify(Array<unsigned char> buf, Array<unsigned char> sign, Dynamic hpkey, String alg)
