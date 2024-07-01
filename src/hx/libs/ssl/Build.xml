@@ -12,7 +12,7 @@
 	<compilerflag value="-I${MBEDTLS_DIR}/include"/>
     <compilerflag value="-I${this_dir}"/>
     <compilerflag value="-DWIN32_LEAN_AND_MEAN" if="windows"/>
-    <compilerflag value="-DMBEDTLS_CONFIG_FILE=&lt;mbedtls_config.h&gt;"/>
+    <compilerflag value="-DMBEDTLS_USER_CONFIG_FILE=&lt;mbedtls_config.h&gt;"/> 
 
 	<file name="${this_dir}/SSL.cpp"/>
 
