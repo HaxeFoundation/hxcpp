@@ -1,26 +1,22 @@
 #pragma once
+
 #include <hxcpp.h>
-#include <Windows.h>
+#include <winbase.h>
 
-namespace hx::ssl::windows::utils
+namespace hx
 {
-	String Win32ErrorToString(DWORD error)
+	namespace ssl
 	{
-		auto messageBuffer = LPSTR{ nullptr };
+		namespace windows
+		{
+			namespace utils
+			{
+				String Win32ErrorToString(DWORD error);
 
-		FormatMessageA(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL,
-			error,
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			(LPSTR)&messageBuffer,
-			0,
-			NULL);
+				String HResultErrorToString(HRESULT error);
 
-		auto hxStr = String::create(messageBuffer);
-
-		LocalFree(messageBuffer);
-
-		return hxStr;
+				String NTStatusErrorToString(NTSTATUS error);
+			}
+		}
 	}
 }
