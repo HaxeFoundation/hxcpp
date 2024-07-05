@@ -1,0 +1,245 @@
+#include <hxcpp.h>
+#include "SSL.h"
+#include <Windows.h>
+
+Array<unsigned char> _hx_ssl_dgst_make(Array<unsigned char> buf, String alg)
+{
+	auto handle    = BCRYPT_ALG_HANDLE();
+	auto result    = 0;
+	auto cb        = DWORD{ 0 };
+	auto algorithm = alg.wchar_str();
+
+	hx::EnterGCFreeZone();
+
+	if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&handle, algorithm, nullptr, 0)))
+	{
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to open algorithm provider"));
+	}
+
+	auto objectLength = DWORD{ 0 };
+	if (!BCRYPT_SUCCESS(result = BCryptGetProperty(handle, BCRYPT_OBJECT_LENGTH, reinterpret_cast<PUCHAR>(&objectLength), sizeof(DWORD), &cb, 0)))
+	{
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to get object length"));
+	}
+
+	auto object = std::vector<uint8_t>(objectLength);
+	auto hash   = BCRYPT_HASH_HANDLE();
+	if (!BCRYPT_SUCCESS(result = BCryptCreateHash(handle, &hash, object.data(), object.size(), nullptr, 0, 0)))
+	{
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to create hash object"));
+	}
+
+	auto hashLength = DWORD{ 0 };
+	if (!BCRYPT_SUCCESS(result = BCryptGetProperty(handle, BCRYPT_HASH_LENGTH, reinterpret_cast<PUCHAR>(&hashLength), sizeof(DWORD), &cb, 0)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to get object length"));
+	}
+
+	if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(buf->GetBase()), buf->length, 0)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to hash data"));
+	}
+
+	hx::ExitGCFreeZone();
+	auto output = Array<uint8_t>(hashLength, hashLength);
+	hx::EnterGCFreeZone();
+
+	if (!BCRYPT_SUCCESS(result = BCryptFinishHash(hash, reinterpret_cast<PUCHAR>(output->GetBase()), output->length, 0)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to finish hash"));
+	}
+
+	BCryptDestroyHash(hash);
+	BCryptCloseAlgorithmProvider(handle, 0);
+
+	hx::ExitGCFreeZone();
+
+	return output;
+}
+
+Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buf, Dynamic hpkey, String alg)
+{
+	auto key       = hpkey.Cast<hx::ssl::windows::Key>();
+	auto result    = 0;
+	auto dummy     = DWORD{ 0 };
+	auto algorithm = alg.wchar_str();
+	auto padding   = BCRYPT_PKCS1_PADDING_INFO{ algorithm };
+
+	hx::EnterGCFreeZone();
+
+	auto handle = BCRYPT_ALG_HANDLE();
+	if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&handle, algorithm, nullptr, 0)))
+	{
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to open algorithm provider"));
+	}
+
+	auto objectLength = DWORD{ 0 };
+	if (!BCRYPT_SUCCESS(result = BCryptGetProperty(handle, BCRYPT_OBJECT_LENGTH, reinterpret_cast<PUCHAR>(&objectLength), sizeof(DWORD), &dummy, 0)))
+	{
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to get object length"));
+	}
+
+	auto object = std::vector<uint8_t>(objectLength);
+	auto hash   = BCRYPT_HASH_HANDLE();
+	if (!BCRYPT_SUCCESS(result = BCryptCreateHash(handle, &hash, object.data(), object.size(), nullptr, 0, 0)))
+	{
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to create hash object"));
+	}
+
+	auto hashLength = DWORD{ 0 };
+	if (!BCRYPT_SUCCESS(result = BCryptGetProperty(handle, BCRYPT_HASH_LENGTH, reinterpret_cast<PUCHAR>(&hashLength), sizeof(DWORD), &dummy, 0)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to get object length"));
+	}
+
+	if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(buf->GetBase()), buf->length, 0)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to hash data"));
+	}
+
+	auto hashed = std::vector<uint8_t>(hashLength);
+	if (!BCRYPT_SUCCESS(result = BCryptFinishHash(hash, reinterpret_cast<PUCHAR>(hashed.data()), hashed.size(), 0)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to finish hash"));
+	}
+
+	auto signatureLength = DWORD{ 0 };
+	if (!BCRYPT_SUCCESS(result = BCryptSignHash(key->ctx, nullptr, reinterpret_cast<PUCHAR>(hashed.data()), hashed.size(), nullptr, 0, &signatureLength, 0)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to signature length"));
+	}
+
+	hx::ExitGCFreeZone();
+	auto signature = Array<uint8_t>(signatureLength, signatureLength);
+	hx::EnterGCFreeZone();
+
+	if (!BCRYPT_SUCCESS(result = BCryptSignHash(key->ctx, &padding, reinterpret_cast<PUCHAR>(hashed.data()), hashed.size(), reinterpret_cast<PUCHAR>(signature->GetBase()), signature->length, &signatureLength, BCRYPT_PAD_PKCS1)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to sign hash"));
+	}
+
+	BCryptDestroyHash(hash);
+	BCryptCloseAlgorithmProvider(handle, 0);
+
+	hx::ExitGCFreeZone();
+
+	return signature;
+}
+
+bool _hx_ssl_dgst_verify(Array<unsigned char> buf, Array<unsigned char> sign, Dynamic hpkey, String alg)
+{
+	auto key       = hpkey.Cast<hx::ssl::windows::Key>();
+	auto handle    = BCRYPT_ALG_HANDLE();
+	auto result    = 0;
+	auto cb        = DWORD{ 0 };
+	auto algorithm = alg.wchar_str();
+	auto padding   = BCRYPT_PKCS1_PADDING_INFO{ algorithm };
+
+	hx::EnterGCFreeZone();
+
+	if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&handle, algorithm, nullptr, 0)))
+	{
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to open algorithm provider"));
+	}
+
+	auto objectLength = DWORD{ 0 };
+	if (!BCRYPT_SUCCESS(result = BCryptGetProperty(handle, BCRYPT_OBJECT_LENGTH, reinterpret_cast<PUCHAR>(&objectLength), sizeof(DWORD), &cb, 0)))
+	{
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to get object length"));
+	}
+
+	auto object = std::vector<uint8_t>(objectLength);
+	auto hash   = BCRYPT_HASH_HANDLE();
+	if (!BCRYPT_SUCCESS(result = BCryptCreateHash(handle, &hash, object.data(), object.size(), nullptr, 0, 0)))
+	{
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to create hash object"));
+	}
+
+	auto hashLength = DWORD{ 0 };
+	if (!BCRYPT_SUCCESS(result = BCryptGetProperty(handle, BCRYPT_HASH_LENGTH, reinterpret_cast<PUCHAR>(&hashLength), sizeof(DWORD), &cb, 0)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to get object length"));
+	}
+
+	if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(buf->GetBase()), buf->length, 0)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to hash data"));
+	}
+
+	auto output = Array<uint8_t>(hashLength, hashLength);
+	if (!BCRYPT_SUCCESS(result = BCryptFinishHash(hash, reinterpret_cast<PUCHAR>(output->GetBase()), output->length, 0)))
+	{
+		BCryptDestroyHash(hash);
+		BCryptCloseAlgorithmProvider(handle, 0);
+
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to finish hash : "));
+	}
+
+	auto success = BCRYPT_SUCCESS(BCryptVerifySignature(key->ctx, &padding, reinterpret_cast<PUCHAR>(output->GetBase()), output->length, reinterpret_cast<PUCHAR>(sign->GetBase()), sign->length, BCRYPT_PAD_PKCS1));
+
+	hx::ExitGCFreeZone();
+
+	return success;
+}
