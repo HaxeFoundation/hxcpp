@@ -101,13 +101,14 @@ namespace
 		LocalFree(pv);
 	}
 
-	HRESULT DecryptPrivateKey(PCRYPT_ENCRYPTED_PRIVATE_KEY_INFO pepki, String password)
+	HRESULT DecryptPrivateKey(PCRYPT_ENCRYPTED_PRIVATE_KEY_INFO privateKey, String password)
 	{
 		using GetPKCS12Map = CryptCNGMap * (WINAPI*)(void);
 
-		auto hFuncSet = HCRYPTOIDFUNCSET();
-		if (nullptr == (hFuncSet = CryptInitOIDFunctionSet("CryptCNGPKCS12GetMap", 0)))
+		auto functionSet = HCRYPTOIDFUNCSET();
+		if (nullptr == (functionSet = CryptInitOIDFunctionSet("CryptCNGPKCS12GetMap", 0)))
 		{
+			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failed to find the \"CryptCNGPKCS12GetMap\" instruction set"));
 		}
 
@@ -116,13 +117,14 @@ namespace
 		auto result     = 0;
 
 		if (!CryptGetOIDFunctionAddress(
-			hFuncSet,
+			functionSet,
 			X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-			pepki->EncryptionAlgorithm.pszObjId,
+			privateKey->EncryptionAlgorithm.pszObjId,
 			CRYPT_GET_INSTALLED_OID_FUNC_FLAG,
 			reinterpret_cast<void**>(&pvFuncAddr),
 			&hFuncAddr))
 		{
+			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failed to decode encryption algorithm parameters"));
 		}
 
@@ -130,14 +132,15 @@ namespace
 		auto cdp = CryptCNGMap::ENCODE_DECODE_PARA{ PkiAlloc, PkiFree };
 
 		if (FAILED(result = map->ParamsDecode(
-			pepki->EncryptionAlgorithm.Parameters.pbData,
-			pepki->EncryptionAlgorithm.Parameters.cbData,
+			privateKey->EncryptionAlgorithm.Parameters.pbData,
+			privateKey->EncryptionAlgorithm.Parameters.cbData,
 			&cdp,
-			&pepki->EncryptionAlgorithm.Parameters.pbData,
-			&pepki->EncryptionAlgorithm.Parameters.cbData)))
+			&privateKey->EncryptionAlgorithm.Parameters.pbData,
+			&privateKey->EncryptionAlgorithm.Parameters.cbData)))
 		{
 			CryptFreeOIDFunctionAddress(hFuncAddr, 0);
 
+			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failed to decode encryption algorithm parameters"));
 		}
 
@@ -147,11 +150,12 @@ namespace
 		if (FAILED(result = map->InitDecrypt(
 			&hAlgorithm,
 			&cb,
-			pepki->EncryptionAlgorithm.Parameters.pbData,
-			pepki->EncryptionAlgorithm.Parameters.cbData)))
+			privateKey->EncryptionAlgorithm.Parameters.pbData,
+			privateKey->EncryptionAlgorithm.Parameters.cbData)))
 		{
 			CryptFreeOIDFunctionAddress(hFuncAddr, 0);
 
+			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failed to init decryption"));
 		}
 
@@ -174,9 +178,9 @@ namespace
 		auto pbIV  = PBYTE{ 0 };
 		auto cbIV  = ULONG{ 0 };
 		auto bUTF8 = false;
-		auto py    = reinterpret_cast<CRYPT_PKCS12_PBES2_PARAMS*>(pepki->EncryptionAlgorithm.Parameters.pbData);
+		auto py    = reinterpret_cast<CRYPT_PKCS12_PBES2_PARAMS*>(privateKey->EncryptionAlgorithm.Parameters.pbData);
 
-		if (sizeof(CRYPT_PKCS12_PBES2_PARAMS) == pepki->EncryptionAlgorithm.Parameters.cbData && !strcmp(szOID_PKCS_5_PBKDF2, py->pszObjId))
+		if (sizeof(CRYPT_PKCS12_PBES2_PARAMS) == privateKey->EncryptionAlgorithm.Parameters.cbData && !strcmp(szOID_PKCS_5_PBKDF2, py->pszObjId))
 		{
 			pbIV = py->pbIV;
 			cbIV = py->cbIV;
@@ -184,6 +188,7 @@ namespace
 			{
 				CryptFreeOIDFunctionAddress(hFuncAddr, 0);
 
+				hx::ExitGCFreeZone();
 				hx::Throw(HX_CSTRING("Bad data"));
 			}
 		}
@@ -194,12 +199,13 @@ namespace
 
 			if (FAILED(result = map->InitDecryptKey(hAlgorithm, &hKey,
 				(PBYTE)alloca(cb), cb, reinterpret_cast<PBYTE>(str), strlen(str),
-				pepki->EncryptionAlgorithm.Parameters.pbData,
-				pepki->EncryptionAlgorithm.Parameters.cbData
+				privateKey->EncryptionAlgorithm.Parameters.pbData,
+				privateKey->EncryptionAlgorithm.Parameters.cbData
 			)))
 			{
 				CryptFreeOIDFunctionAddress(hFuncAddr, 0);
 
+				hx::ExitGCFreeZone();
 				hx::Throw(HX_CSTRING("Failed to init decryption key"));
 			}
 		}
@@ -209,12 +215,13 @@ namespace
 
 			if (FAILED(result = map->InitDecryptKey(hAlgorithm, &hKey,
 				(PBYTE)alloca(cb), cb, reinterpret_cast<PBYTE>(str), wcslen(str),
-				pepki->EncryptionAlgorithm.Parameters.pbData,
-				pepki->EncryptionAlgorithm.Parameters.cbData
+				privateKey->EncryptionAlgorithm.Parameters.pbData,
+				privateKey->EncryptionAlgorithm.Parameters.cbData
 			)))
 			{
 				CryptFreeOIDFunctionAddress(hFuncAddr, 0);
 
+				hx::ExitGCFreeZone();
 				hx::Throw(HX_CSTRING("Failed to init decryption key"));
 			}
 		}
@@ -222,13 +229,14 @@ namespace
 		BCryptCloseAlgorithmProvider(hAlgorithm, 0);
 
 		if (FAILED(result = BCryptDecrypt(hKey,
-			pepki->EncryptedPrivateKey.pbData,
-			pepki->EncryptedPrivateKey.cbData,
+			privateKey->EncryptedPrivateKey.pbData,
+			privateKey->EncryptedPrivateKey.cbData,
 			0, pbIV, cbIV,
-			pepki->EncryptedPrivateKey.pbData,
-			pepki->EncryptedPrivateKey.cbData,
-			&pepki->EncryptedPrivateKey.cbData, 0)))
+			privateKey->EncryptedPrivateKey.pbData,
+			privateKey->EncryptedPrivateKey.cbData,
+			&privateKey->EncryptedPrivateKey.cbData, 0)))
 		{
+			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failed to decrypt key"));
 		}
 
@@ -290,76 +298,73 @@ namespace
 		return hx::ssl::windows::Key(new hx::ssl::windows::Key_obj(key));
 	}
 
-	Dynamic DecodePrivateKey()
-	{
-		return null();
-	}
-}
-
-Dynamic _hx_ssl_key_from_der(Array<unsigned char> buf, bool pub)
-{
-	return null();
-}
-
-Dynamic _hx_ssl_key_from_pem(String data, bool pub, String pass)
-{
-	if (pub)
+	Dynamic DecodeUnencryptedPrivateKey(uint8_t* derKey, int derKeySize)
 	{
 		auto result = 0;
-		auto string = data.utf8_str();
 		auto cb     = DWORD{ 0 };
 
-		hx::EnterGCFreeZone();
-
-		auto derKeyLength = DWORD{ 0 };
-		if (!CryptStringToBinaryA(string, 0, CRYPT_STRING_BASE64HEADER, nullptr, &derKeyLength, nullptr, nullptr))
+		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_PRIVATE_KEY_INFO, derKey, derKeySize, CRYPT_DECODE_NOCOPY_FLAG, nullptr, nullptr, &cb))
 		{
 			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to parse certificate : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
+			hx::Throw(HX_CSTRING("Failed to decode private key size : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
 		}
 
-		auto derKey = std::vector<uint8_t>(derKeyLength);
-		if (!CryptStringToBinaryA(string, 0, CRYPT_STRING_BASE64HEADER, derKey.data(), &derKeyLength, nullptr, nullptr))
+		auto keyInfoBuffer = std::vector<uint8_t>(cb);
+		auto keyInfo       = reinterpret_cast<PCRYPT_PRIVATE_KEY_INFO>(keyInfoBuffer.data());
+		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_PRIVATE_KEY_INFO, derKey, derKeySize, CRYPT_DECODE_NOCOPY_FLAG, nullptr, keyInfoBuffer.data(), &cb))
 		{
 			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to parse certificate : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
+			hx::Throw(HX_CSTRING("Failed to decode private key: ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
 		}
 
-		return DecodePublicKey(derKey.data(), derKey.size());
+		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PRIVATE_KEY_BLOB, keyInfo->PrivateKey.pbData, keyInfo->PrivateKey.cbData, 0, nullptr, nullptr, &cb))
+		{
+			hx::Throw(HX_CSTRING("Failed to decode object : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
+		}
+
+		auto rsaKeyBuffer = std::vector<uint8_t>(cb);
+		auto rsaKey = reinterpret_cast<BCRYPT_RSAKEY_BLOB*>(rsaKeyBuffer.data());
+		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PRIVATE_KEY_BLOB, keyInfo->PrivateKey.pbData, keyInfo->PrivateKey.cbData, 0, nullptr, rsaKeyBuffer.data(), &cb))
+		{
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed to decode object : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
+		}
+
+		auto algorithm = BCRYPT_ALG_HANDLE();
+		if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_RSA_ALGORITHM, nullptr, 0)))
+		{
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed to open RSA provider : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
+		}
+
+		auto key = BCRYPT_KEY_HANDLE();
+		if (!BCRYPT_SUCCESS(result = BCryptImportKeyPair(algorithm, nullptr, BCRYPT_RSAPRIVATE_BLOB, &key, reinterpret_cast<PUCHAR>(rsaKeyBuffer.data()), rsaKeyBuffer.size(), BCRYPT_NO_KEY_VALIDATION)))
+		{
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed to import private key : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
+		}
+
+		hx::ExitGCFreeZone();
+
+		return hx::ssl::windows::Key(new hx::ssl::windows::Key_obj(key));
 	}
-	else
+
+	Dynamic DecodePrivateKey(String pass, uint8_t* derKey, int derKeySize)
 	{
-		auto result = 0;
-		auto string = data.utf8_str();
 		auto cb     = DWORD{ 0 };
-
-		hx::EnterGCFreeZone();
-
-		auto derKeyLength = DWORD{ 0 };
-		if (!CryptStringToBinaryA(string, 0, CRYPT_STRING_BASE64HEADER, nullptr, &derKeyLength, nullptr, nullptr))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to parse certificate : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-		}
-
-		auto derKey = std::vector<uint8_t>(derKeyLength);
-		if (!CryptStringToBinaryA(string, 0, CRYPT_STRING_BASE64HEADER, derKey.data(), &derKeyLength, nullptr, nullptr))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to parse certificate : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-		}
+		auto result = 0;
 
 		if (hx::IsNotNull(pass))
 		{
-			if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_ENCRYPTED_PRIVATE_KEY_INFO, derKey.data(), derKey.size(), 0, nullptr, nullptr, &cb))
+			if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_ENCRYPTED_PRIVATE_KEY_INFO, derKey, derKeySize, 0, nullptr, nullptr, &cb))
 			{
 				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failed to get encrypted key size : ") + hx::ssl::windows::utils::Win32ErrorToString(result));
+				hx::Throw(HX_CSTRING("Failed to get encrypted key size : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
 			}
 
 			auto encryptionInfoBuffer = std::vector<uint8_t>(cb);
 			auto encryptionInfo       = reinterpret_cast<PCRYPT_ENCRYPTED_PRIVATE_KEY_INFO>(encryptionInfoBuffer.data());
-			if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_ENCRYPTED_PRIVATE_KEY_INFO, derKey.data(), derKey.size(), 0, nullptr, encryptionInfoBuffer.data(), &cb))
+			if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_ENCRYPTED_PRIVATE_KEY_INFO, derKey, derKeySize, 0, nullptr, encryptionInfoBuffer.data(), &cb))
 			{
 				hx::ExitGCFreeZone();
 				hx::Throw(HX_CSTRING("Failed to get encrypted key info : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
@@ -371,98 +376,59 @@ Dynamic _hx_ssl_key_from_pem(String data, bool pub, String pass)
 				hx::Throw(HX_CSTRING("Failed to get decrypt key : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
 			}
 
-			if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_PRIVATE_KEY_INFO, encryptionInfo->EncryptedPrivateKey.pbData, encryptionInfo->EncryptedPrivateKey.cbData, CRYPT_DECODE_NOCOPY_FLAG, nullptr, nullptr, &cb))
-			{
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failed to decode private key size : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-			}
-
-			auto keyInfoBuffer = std::vector<uint8_t>(cb);
-			auto keyInfo       = reinterpret_cast<PCRYPT_PRIVATE_KEY_INFO>(keyInfoBuffer.data());
-			if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_PRIVATE_KEY_INFO, encryptionInfo->EncryptedPrivateKey.pbData, encryptionInfo->EncryptedPrivateKey.cbData, CRYPT_DECODE_NOCOPY_FLAG, nullptr, keyInfoBuffer.data(), &cb))
-			{
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failed to decode private key: ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-			}
-
-			if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PRIVATE_KEY_BLOB, keyInfo->PrivateKey.pbData, keyInfo->PrivateKey.cbData, 0, nullptr, nullptr, &cb))
-			{
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failed to decode object : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-			}
-
-			auto rsaKeyBuffer = std::vector<uint8_t>(cb);
-			auto rsaKey       = reinterpret_cast<BCRYPT_RSAKEY_BLOB*>(rsaKeyBuffer.data());
-			if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PRIVATE_KEY_BLOB, keyInfo->PrivateKey.pbData, keyInfo->PrivateKey.cbData, 0, nullptr, rsaKeyBuffer.data(), &cb))
-			{
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failed to decode object : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-			}
-
-			auto algorithm = BCRYPT_ALG_HANDLE();
-			if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_RSA_ALGORITHM, nullptr, 0)))
-			{
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failed to open RSA provider : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
-			}
-
-			auto key = BCRYPT_KEY_HANDLE();
-			if (!BCRYPT_SUCCESS(result = BCryptImportKeyPair(algorithm, nullptr, BCRYPT_RSAPRIVATE_BLOB, &key, reinterpret_cast<PUCHAR>(rsaKeyBuffer.data()), rsaKeyBuffer.size(), BCRYPT_NO_KEY_VALIDATION)))
-			{
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failed to import private key : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
-			}
-
-			hx::ExitGCFreeZone();
-
-			return hx::ssl::windows::Key(new hx::ssl::windows::Key_obj(key));
+			return DecodeUnencryptedPrivateKey(encryptionInfo->EncryptedPrivateKey.pbData, encryptionInfo->EncryptedPrivateKey.cbData);
 		}
 		else
 		{
-			if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_PRIVATE_KEY_INFO, derKey.data(), derKey.size(), CRYPT_DECODE_NOCOPY_FLAG, nullptr, nullptr, &cb))
-			{
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failed to decode private key size : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-			}
-
-			auto keyInfoBuffer = std::vector<uint8_t>(cb);
-			auto keyInfo       = reinterpret_cast<PCRYPT_PRIVATE_KEY_INFO>(keyInfoBuffer.data());
-			if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_PRIVATE_KEY_INFO, derKey.data(), derKey.size(), CRYPT_DECODE_NOCOPY_FLAG, nullptr, keyInfoBuffer.data(), &cb))
-			{
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failed to decode private key: ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-			}
-
-			if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PRIVATE_KEY_BLOB, keyInfo->PrivateKey.pbData, keyInfo->PrivateKey.cbData, 0, nullptr, nullptr, &cb))
-			{
-				hx::Throw(HX_CSTRING("Failed to decode object : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-			}
-
-			auto rsaKeyBuffer = std::vector<uint8_t>(cb);
-			auto rsaKey       = reinterpret_cast<BCRYPT_RSAKEY_BLOB*>(rsaKeyBuffer.data());
-			if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PRIVATE_KEY_BLOB, keyInfo->PrivateKey.pbData, keyInfo->PrivateKey.cbData, 0, nullptr, rsaKeyBuffer.data(), &cb))
-			{
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failed to decode object : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-			}
-
-			auto algorithm = BCRYPT_ALG_HANDLE();
-			if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_RSA_ALGORITHM, nullptr, 0)))
-			{
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failed to open RSA provider"));
-			}
-
-			auto key = BCRYPT_KEY_HANDLE();
-			if (!BCRYPT_SUCCESS(result = BCryptImportKeyPair(algorithm, nullptr, BCRYPT_RSAPRIVATE_BLOB, &key, reinterpret_cast<PUCHAR>(rsaKeyBuffer.data()), rsaKeyBuffer.size(), BCRYPT_NO_KEY_VALIDATION)))
-			{
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failed to import private key"));
-			}
-
-			hx::ExitGCFreeZone();
-
-			return hx::ssl::windows::Key(new hx::ssl::windows::Key_obj(key));
+			return DecodeUnencryptedPrivateKey(derKey, derKeySize);
 		}
+	}
+}
+
+Dynamic _hx_ssl_key_from_der(Array<unsigned char> buf, bool pub)
+{
+	if (pub)
+	{
+		hx::EnterGCFreeZone();
+
+		return DecodePublicKey(reinterpret_cast<uint8_t*>(buf->GetBase()), buf->length);
+	}
+	else
+	{
+		hx::EnterGCFreeZone();
+
+		return DecodePrivateKey(null(), reinterpret_cast<uint8_t*>(buf->GetBase()), buf->length);
+	}
+}
+
+Dynamic _hx_ssl_key_from_pem(String data, bool pub, String pass)
+{
+	auto result = 0;
+	auto string = data.utf8_str();
+	auto cb     = DWORD{ 0 };
+
+	hx::EnterGCFreeZone();
+
+	auto derKeyLength = DWORD{ 0 };
+	if (!CryptStringToBinaryA(string, 0, CRYPT_STRING_BASE64HEADER, nullptr, &derKeyLength, nullptr, nullptr))
+	{
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to parse certificate : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
+	}
+
+	auto derKey = std::vector<uint8_t>(derKeyLength);
+	if (!CryptStringToBinaryA(string, 0, CRYPT_STRING_BASE64HEADER, derKey.data(), &derKeyLength, nullptr, nullptr))
+	{
+		hx::ExitGCFreeZone();
+		hx::Throw(HX_CSTRING("Failed to parse certificate : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
+	}
+
+	if (pub)
+	{
+		return DecodePublicKey(derKey.data(), derKey.size());
+	}
+	else
+	{
+		return DecodePrivateKey(pass, derKey.data(), derKey.size());
 	}
 }
