@@ -125,8 +125,9 @@
 </files>
 
 <target id="haxe">
-	<files id="mbedtls" />
+	<!-- the order is important, mbedtls needs to come after hxcpp_ssl -->
 	<files id="hxcpp_ssl" />
+	<files id="mbedtls" />
 
 	<lib name="advapi32.lib" if="windows" unless="static_link" />
 	<lib name="crypt32.lib" if="windows" unless="static_link" />
