@@ -39,7 +39,7 @@ jobs:
     name: Test MacOS
     with:
       haxe: ${{ matrix.haxe  }}
-      arch: 64
+      arch: Arm64
       sep: /
       ext: .dylib
       os: macos-latest
