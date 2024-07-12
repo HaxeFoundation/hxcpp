@@ -30,13 +30,27 @@ jobs:
       ext: .dll
       os: windows-latest
 
-  MacOS:
+  MacOS64:
     strategy:
       fail-fast: false
       matrix:
         haxe: [ 4.3.4, latest ]
     uses: ./.github/workflows/test.yml
-    name: Test MacOS
+    name: Test MacOS (x86_64)
+    with:
+      haxe: ${{ matrix.haxe  }}
+      arch: 64
+      sep: /
+      ext: .dylib
+      os: macos-13
+
+  MacOSArm:
+    strategy:
+      fail-fast: false
+      matrix:
+        haxe: [ 4.3.4, latest ]
+    uses: ./.github/workflows/test.yml
+    name: Test MacOS (Arm64)
     with:
       haxe: ${{ matrix.haxe  }}
       arch: Arm64
