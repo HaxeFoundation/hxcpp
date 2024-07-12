@@ -2,4 +2,4 @@
 -D HXCPP_ARM64
 -L hx4compat
 -L utest
---cpp cppArm64
+--cpp arm64

@@ -170,7 +170,7 @@ jobs:
         - name: build
           run: haxe compile${{ inputs.arch }}.hxml
         - name: run
-          run: cpp${{ inputs.arch }}${{ inputs.sep }}Test
+          run: ${{ inputs.arch == 'Arm64' && 'arm64' || format('cpp{0}', inputs.arch) }}${{ inputs.sep }}Test
 
   cppia:
     strategy:
