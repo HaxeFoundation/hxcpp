@@ -1,6 +1,7 @@
+import utest.Assert;
+import utest.Test;
 
-
-class TestPrime extends TestBase
+class TestPrime extends Test
 {
    static var add = Loader.load("addInts", "iii" );
    #if cpp
@@ -28,51 +29,51 @@ class TestPrime extends TestBase
    {
       cpp.Prime.nekoInit("prime");
 
-      assertTrue(add!=null);
-      assertEquals(7, add(2,5));
+      Assert.notNull(add);
+      Assert.equals(7, add(2,5));
 
       #if cpp
       printString("Hello World"); 
       #end
 
       var len = distance3d(3,4,5);
-      assertClose(50,len*len);
+      Assert.floatEquals(50,len*len, 0.001);
 
       fields( { x:11, name:"Hello" } );
       fields( null );
 
-      assertEquals("Ok", stringVal("HxString"));
+      Assert.equals("Ok", stringVal("HxString"));
 
-      assertEquals(null, getNullString());
+      Assert.isNull(getNullString());
 
-      assertEquals( ""+[1], ""+select(0, [1], "Hello", {x:1}, add) );
+      Assert.equals( ""+[1], ""+select(0, [1], "Hello", {x:1}, add) );
       var shouldBeNull:String = "" + select(0, null, "Hello", {x:1}, add);
       trace( "null ?" +  shouldBeNull + "/" + shouldBeNull.length );
-      assertEquals( "null", shouldBeNull );
-      //assertEquals( "null", ""+select(0, null, "Hello", {x:1}, add) );
-      assertEquals( ""+"Hello", ""+select(1, [1], "Hello", {x:1}, add));
-      assertEquals( ""+{x:1}, ""+select(2, [1], "Hello", {x:1}, add) );
-      assertEquals( ""+add, ""+select(3, [1], "Hello", {x:1}, add) );
+      Assert.equals( "null", shouldBeNull );
+      //Assert.equals( "null", ""+select(0, null, "Hello", {x:1}, add) );
+      Assert.equals( ""+"Hello", ""+select(1, [1], "Hello", {x:1}, add));
+      Assert.equals( ""+{x:1}, ""+select(2, [1], "Hello", {x:1}, add) );
+      Assert.equals( ""+add, ""+select(3, [1], "Hello", {x:1}, add) );
 
-      assertClose( 7.3, floats(true,4.2,3.1) );
-      assertClose( 1.1, floats(false,4.2,3.1) );
+      Assert.floatEquals( 7.3, floats(true,4.2,3.1), 0.001 );
+      Assert.floatEquals( 1.1, floats(false,4.2,3.1), 0.001 );
 
-      assertEquals( 5, multi5(1,1,1,1,1) );
-      assertEquals( 6, multi6(1,1,1,1,1,1) );
-      assertEquals( 7, multi7(1,1,1,1,1,1,1) );
-      assertEquals( 8, multi8(1,1,1,1,1,1,1,1) );
-      assertEquals( 9, multi9(1,1,1,1,1,1,1,1,1)  );
-      assertEquals( 10, multi10(1,1,1,1,1,1,1,1,1,1) );
-      assertEquals( 11, multi11(1,1,1,1,1,1,1,1,1,1,1) );
-      assertEquals( 12, multi12(1,1,1,1,1,1,1,1,1,1,1,1) );
+      Assert.equals( 5, multi5(1,1,1,1,1) );
+      Assert.equals( 6, multi6(1,1,1,1,1,1) );
+      Assert.equals( 7, multi7(1,1,1,1,1,1,1) );
+      Assert.equals( 8, multi8(1,1,1,1,1,1,1,1) );
+      Assert.equals( 9, multi9(1,1,1,1,1,1,1,1,1)  );
+      Assert.equals( 10, multi10(1,1,1,1,1,1,1,1,1,1) );
+      Assert.equals( 11, multi11(1,1,1,1,1,1,1,1,1,1,1) );
+      Assert.equals( 12, multi12(1,1,1,1,1,1,1,1,1,1,1,1) );
 
       var s0 = "hello";
       var s1 = "こんにちは";
-      assertTrue( addStrings(s0,s0) == s0+s0 );
+      Assert.isTrue( addStrings(s0,s0) == s0+s0 );
       var s01 = addStrings(s0,s1);
-      assertTrue( s01 == s0+s1 );
+      Assert.isTrue( s01 == s0+s1 );
       var s11 = addStrings(s1,s1);
-      assertTrue( s11 == s1+s1 );
+      Assert.isTrue( s11 == s1+s1 );
 
    }
 }

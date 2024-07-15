@@ -1,4 +1,3 @@
--main Client
+-m Client
 -D dll_import=host_classes.info
--cppia bin/client.cppia
--cp ../unit
+--cppia bin/client.cppia

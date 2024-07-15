@@ -1,4 +1,7 @@
-class TestStringHash extends haxe.unit.TestCase
+import utest.Test;
+import utest.Assert;
+
+class TestStringHash extends Test
 {
    function spamAlot()
    {
@@ -72,17 +75,9 @@ class TestStringHash extends haxe.unit.TestCase
 
    public function test()
    {
-      var err = "";
-      try
-      {
-         spamAlot();
-      }
-      catch(e:Dynamic)
-      {
-         trace(e);
-         err = e;
-      }
-      assertTrue(err=="");
+      spamAlot();
+      
+      Assert.pass();
    }
 
 }
