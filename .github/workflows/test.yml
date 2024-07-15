@@ -18,6 +18,9 @@ on:
         required: true
         type: string
 
+env:
+  HXCPP_ARCH_FLAG: ${{ inputs.arch == 'Arm64' && 'HXCPP_ARM64' || format('HXCPP_M{0}', inputs.arch) }}
+
 jobs:
   haxe:
     runs-on: ${{ inputs.os }}
@@ -33,7 +36,7 @@ jobs:
         with:
           haxe: ${{ inputs.haxe }}
       - name: build
-        run: haxe compile.hxml -D HXCPP_M${{ inputs.arch }}
+        run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: run
         run: bin${{ inputs.sep }}TestMain
 
@@ -52,13 +55,13 @@ jobs:
           haxe: ${{ inputs.haxe }}
       - name: build project
         working-directory: test/cffi/project
-        run: haxelib run hxcpp build.xml -Ddebug -DHXCPP_M${{ inputs.arch }}
+        run: haxelib run hxcpp build.xml -Ddebug -D${{ env.HXCPP_ARCH_FLAG }}
       - name: build
-        run: haxe compile.hxml --debug -D HXCPP_M${{ inputs.arch }}
+        run: haxe compile.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: build (utf8)
-        run: haxe compile-utf8.hxml --debug -D HXCPP_M${{ inputs.arch }}
+        run: haxe compile-utf8.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: build (neko)
-        run: haxe compile-neko.hxml --debug -D HXCPP_M${{ inputs.arch }}
+        run: haxe compile-neko.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: copy
         run: cp project/ndll/*/prime${{ inputs.ext }} bin/neko/prime.ndll
       - name: run
@@ -91,7 +94,7 @@ jobs:
         with:
           haxe: ${{ inputs.haxe }}
       - name: build
-        run: haxe compile.hxml ${{ matrix.suffix }} -D HXCPP_M${{ inputs.arch }}
+        run: haxe compile.hxml ${{ matrix.suffix }} -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: run
         run: bin${{ inputs.sep }}TestMain${{ matrix.suffix }}
 
@@ -109,10 +112,10 @@ jobs:
         with:
           haxe: ${{ inputs.haxe }}
       - name: build
-        run: haxe compile.hxml -D HXCPP_M${{ inputs.arch }}
+        run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: run
         run: bin${{ inputs.sep }}App-debug
-        
+
   native:
       runs-on: ${{ inputs.os }}
       name: native
@@ -127,7 +130,7 @@ jobs:
           with:
             haxe: ${{ inputs.haxe }}
         - name: build
-          run: haxe compile.hxml -D HXCPP_M${{ inputs.arch }}
+          run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
         - name: run
           run: bin${{ inputs.sep }}Native
 
@@ -167,7 +170,7 @@ jobs:
         - name: build
           run: haxe compile${{ inputs.arch }}.hxml
         - name: run
-          run: cpp${{ inputs.arch }}${{ inputs.sep }}Test
+          run: ${{ inputs.arch == 'Arm64' && 'arm64' || format('cpp{0}', inputs.arch) }}${{ inputs.sep }}Test
 
   cppia:
     strategy:
@@ -190,9 +193,9 @@ jobs:
         with:
           haxe: ${{ inputs.haxe }}
       - name: build host
-        run: haxe compile-host.hxml -D HXCPP_M${{ inputs.arch }}
+        run: haxe compile-host.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: build client
-        run: haxe compile-client.hxml -D HXCPP_M${{ inputs.arch }}
+        run: haxe compile-client.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: run
         run: bin${{ inputs.sep }}CppiaHost bin${{ inputs.sep }}client.cppia ${{ matrix.suffix }}
 
@@ -225,6 +228,6 @@ jobs:
       - name: install haxe libs
         run: haxelib install compile-cpp.hxml --always
       - name: build
-        run: haxe compile-cpp.hxml -D HXCPP_M${{ inputs.arch }} -D no_http
+        run: haxe compile-cpp.hxml -D ${{ env.HXCPP_ARCH_FLAG }} -D no_http
       - name: run
         run: bin${{ inputs.sep }}cpp${{ inputs.sep }}TestMain-debug
