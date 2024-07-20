@@ -155,7 +155,19 @@ String _hx_ssl_cert_get_subject(Dynamic hcert, String objname)
 
 			if (String::create(oidInfo->pwszName) == objname)
 			{
-				return String::create(reinterpret_cast<char*>(attr.Value.pbData), attr.Value.cbData);
+				switch (attr.dwValueType)
+				{
+				case CERT_RDN_UTF8_STRING:
+				case CERT_RDN_UNICODE_STRING:
+					return String::create(reinterpret_cast<wchar_t*>(attr.Value.pbData), attr.Value.cbData / sizeof(uint16_t));
+				case CERT_RDN_PRINTABLE_STRING:
+				case CERT_RDN_IA5_STRING:
+				case CERT_RDN_NUMERIC_STRING:
+				case CERT_RDN_OCTET_STRING:
+					return String::create(reinterpret_cast<char*>(attr.Value.pbData), attr.Value.cbData / sizeof(uint8_t));
+				default:
+					hx::Throw(HX_CSTRING("Unsupported RDN attribute data"));
+				}
 			}
 		}
 	}
@@ -198,7 +210,19 @@ String _hx_ssl_cert_get_issuer(Dynamic hcert, String objname)
 
 			if (String::create(oidInfo->pwszName) == objname)
 			{
-				return String::create(reinterpret_cast<char*>(attr.Value.pbData), attr.Value.cbData);
+				switch (attr.dwValueType)
+				{
+				case CERT_RDN_UTF8_STRING:
+				case CERT_RDN_UNICODE_STRING:
+					return String::create(reinterpret_cast<wchar_t*>(attr.Value.pbData), attr.Value.cbData / sizeof(uint16_t));
+				case CERT_RDN_PRINTABLE_STRING:
+				case CERT_RDN_IA5_STRING:
+				case CERT_RDN_NUMERIC_STRING:
+				case CERT_RDN_OCTET_STRING:
+					return String::create(reinterpret_cast<char*>(attr.Value.pbData), attr.Value.cbData / sizeof(uint8_t));
+				default:
+					hx::Throw(HX_CSTRING("Unsupported RDN attribute data"));
+				}
 			}
 		}
 	}
@@ -232,7 +256,7 @@ Array<int> _hx_ssl_cert_get_notbefore(Dynamic hcert)
 	auto result = Array<int>(6, 6);
 	result[0] = sysTime.wYear;
 	result[1] = sysTime.wMonth;
-	result[2] = sysTime.wDay;
+	result[2] = sysTime.wDay - 1;
 	result[3] = sysTime.wHour;
 	result[4] = sysTime.wMinute;
 	result[5] = sysTime.wSecond;
@@ -266,7 +290,42 @@ Dynamic _hx_ssl_cert_get_next(Dynamic hcert)
 
 Dynamic _hx_ssl_cert_add_pem(Dynamic hcert, String data)
 {
-	return null();
+	auto str = data.utf8_str();
+
+	if (hx::IsNull(hcert))
+	{
+		hx::EnterGCFreeZone();
+
+		auto derKeyLength = DWORD{ 0 };
+		if (!CryptStringToBinaryA(str, 0, CRYPT_STRING_BASE64HEADER, nullptr, &derKeyLength, nullptr, nullptr))
+		{
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed calculate DER buffer size : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
+		}
+
+		auto derKey = std::vector<uint8_t>(derKeyLength);
+		if (!CryptStringToBinaryA(str, 0, CRYPT_STRING_BASE64HEADER, derKey.data(), &derKeyLength, nullptr, nullptr))
+		{
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed decrypt PEM encoded buffer : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
+		}
+
+		auto cert = CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, derKey.data(), derKeyLength);
+		if (nullptr == cert)
+		{
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed to parse certificate : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
+		}
+
+		hx::ExitGCFreeZone();
+
+		return hx::ssl::windows::Cert(new hx::ssl::windows::Cert_obj(cert));
+	}
+	
+	//auto cert = hcert.Cast<hx::ssl::windows::Cert>();
+
+	hx::ExitGCFreeZone();
+	hx::Throw(HX_CSTRING("Not Implemented"));
 }
 
 Dynamic _hx_ssl_cert_add_der(Dynamic hcert, Array<unsigned char> buf)
