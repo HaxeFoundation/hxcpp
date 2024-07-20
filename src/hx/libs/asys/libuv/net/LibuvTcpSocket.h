@@ -14,13 +14,14 @@ namespace hx::asys::libuv::net
 		hx::asys::libuv::stream::StreamReader reader;
 
 	public:
-		struct Ctx final : public BaseRequest, public hx::asys::libuv::stream::StreamReader_obj::Ctx
+		struct Ctx final : public BaseRequest
 		{
 			uv_tcp_t tcp;
 			uv_connect_t connection;
 			uv_shutdown_t shutdown;
 			int keepAlive;
 			int status;
+			hx::asys::libuv::stream::StreamReader_obj::Ctx stream;
 
 			Ctx(Dynamic cbSuccess, Dynamic cbFailure);
 

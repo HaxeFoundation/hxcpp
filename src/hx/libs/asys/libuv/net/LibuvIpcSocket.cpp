@@ -80,7 +80,7 @@ namespace
 hx::asys::libuv::net::LibuvIpcSocket::LibuvIpcSocket(uv_pipe_t* pipe)
 	: pipe(pipe)
 	, reader(new hx::asys::libuv::stream::StreamReader_obj(reinterpret_cast<uv_stream_t*>(pipe)))
-	, writer(new hx::asys::libuv::stream::StreamReader_obj(reinterpret_cast<uv_stream_t*>(pipe)))
+	, writer(new hx::asys::libuv::stream::StreamWriter_obj(reinterpret_cast<uv_stream_t*>(pipe)))
 {
 	HX_OBJ_WB_NEW_MARKED_OBJECT(this);
 

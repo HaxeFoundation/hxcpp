@@ -111,7 +111,7 @@ namespace
 	void onAlloc(uv_handle_t* handle, const size_t suggested, uv_buf_t* buffer)
 	{
 		auto  ctx     = static_cast<hx::asys::libuv::net::LibuvTcpSocket::Ctx*>(handle->data);
-		auto& staging = ctx->staging.emplace_back(suggested);
+		auto& staging = ctx->stream.staging.emplace_back(suggested);
 
 		buffer->base = staging.data();
 		buffer->len  = staging.size();
@@ -124,24 +124,24 @@ namespace
 
 		if (len <= 0)
 		{
-			ctx->reject(len);
+			ctx->stream.reject(len);
 
 			return;
 		}
 
-		ctx->buffer.insert(ctx->buffer.end(), read->base, read->base + len);
-		ctx->consume();
+		ctx->stream.buffer.insert(ctx->stream.buffer.end(), read->base, read->base + len);
+		ctx->stream.consume();
 	}
 }
 
 hx::asys::libuv::net::LibuvTcpSocket::Ctx::Ctx(Dynamic cbSuccess, Dynamic cbFailure)
 	: hx::asys::libuv::BaseRequest(cbSuccess, cbFailure)
-	, hx::asys::libuv::stream::StreamReader_obj::Ctx(reinterpret_cast<uv_stream_t*>(&tcp))
 	, tcp()
 	, connection()
 	, shutdown()
 	, keepAlive(hx::asys::libuv::net::KEEP_ALIVE_VALUE)
 	, status(0)
+	, stream(reinterpret_cast<uv_stream_t*>(&tcp))
 {
 	shutdown.data   = this;
 	connection.data = this;
@@ -176,7 +176,7 @@ void hx::asys::libuv::net::LibuvTcpSocket::Ctx::onShutdown(uv_shutdown_t* handle
 
 hx::asys::libuv::net::LibuvTcpSocket::LibuvTcpSocket(Ctx* ctx)
 	: ctx(ctx)
-	, reader(new hx::asys::libuv::stream::StreamReader_obj(ctx, onAlloc, onRead))
+	, reader(new hx::asys::libuv::stream::StreamReader_obj(&ctx->stream, onAlloc, onRead))
 	, writer(new hx::asys::libuv::stream::StreamWriter_obj(reinterpret_cast<uv_stream_t*>(&ctx->tcp)))
 {
 	HX_OBJ_WB_NEW_MARKED_OBJECT(this);
