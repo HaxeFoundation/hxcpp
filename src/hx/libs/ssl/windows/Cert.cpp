@@ -300,14 +300,14 @@ Dynamic _hx_ssl_cert_add_pem(Dynamic hcert, String data)
 		if (!CryptStringToBinaryA(str, 0, CRYPT_STRING_BASE64HEADER, nullptr, &derKeyLength, nullptr, nullptr))
 		{
 			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed calculate DER buffer size : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
+			hx::Throw(HX_CSTRING("Failed to calculate DER buffer size : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
 		}
 
 		auto derKey = std::vector<uint8_t>(derKeyLength);
 		if (!CryptStringToBinaryA(str, 0, CRYPT_STRING_BASE64HEADER, derKey.data(), &derKeyLength, nullptr, nullptr))
 		{
 			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed decrypt PEM encoded buffer : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
+			hx::Throw(HX_CSTRING("Failed to decrypt PEM encoded buffer : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
 		}
 
 		auto cert = CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, derKey.data(), derKeyLength);

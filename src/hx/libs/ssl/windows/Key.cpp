@@ -250,47 +250,25 @@ namespace
 	{
 		auto cb = DWORD{ 0 };
 
-		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_CERT_TO_BE_SIGNED, derKey, derKeySize, CRYPT_DECODE_NOCOPY_FLAG, nullptr, nullptr, &cb))
+		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_PUBLIC_KEY_INFO, derKey, derKeySize, CRYPT_DECODE_NOCOPY_FLAG, nullptr, nullptr, &cb))
 		{
 			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failed to decode object size : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
 		}
 
 		auto keyInfoBuffer = std::vector<uint8_t>(cb);
-		auto keyInfo       = reinterpret_cast<CERT_INFO*>(keyInfoBuffer.data());
-		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_CERT_TO_BE_SIGNED, derKey, derKeySize, CRYPT_DECODE_NOCOPY_FLAG, nullptr, keyInfoBuffer.data(), &cb))
+		auto keyInfo       = reinterpret_cast<PCERT_PUBLIC_KEY_INFO>(keyInfoBuffer.data());
+		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_PUBLIC_KEY_INFO, derKey, derKeySize, CRYPT_DECODE_NOCOPY_FLAG, nullptr, keyInfoBuffer.data(), &cb))
 		{
 			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failed to decode object size : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
 		}
 
-		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PUBLIC_KEY_BLOB, keyInfo->SubjectPublicKeyInfo.PublicKey.pbData, keyInfo->SubjectPublicKeyInfo.PublicKey.cbData, 0, nullptr, nullptr, &cb))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to decode object : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-		}
-
-		auto rsaKeyBuffer = std::vector<uint8_t>(cb);
-		auto rsaKey       = reinterpret_cast<BCRYPT_RSAKEY_BLOB*>(rsaKeyBuffer.data());
-		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PUBLIC_KEY_BLOB, keyInfo->SubjectPublicKeyInfo.PublicKey.pbData, keyInfo->SubjectPublicKeyInfo.PublicKey.cbData, 0, nullptr, rsaKeyBuffer.data(), &cb))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to decode object : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-		}
-
-		auto algorithm = BCRYPT_ALG_HANDLE();
-		auto result    = NTSTATUS();
-		if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_RSA_ALGORITHM, nullptr, 0)))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to open RSA provider"));
-		}
-
 		auto key = BCRYPT_KEY_HANDLE();
-		if (!BCRYPT_SUCCESS(result = BCryptImportKeyPair(algorithm, nullptr, BCRYPT_RSAPUBLIC_BLOB, &key, reinterpret_cast<PUCHAR>(rsaKeyBuffer.data()), rsaKeyBuffer.size(), BCRYPT_NO_KEY_VALIDATION)))
+		if (!CryptImportPublicKeyInfoEx2(X509_ASN_ENCODING, keyInfo, 0, nullptr, &key))
 		{
 			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to import private key"));
+			hx::Throw(HX_CSTRING("Failed to import public key : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
 		}
 
 		hx::ExitGCFreeZone();
