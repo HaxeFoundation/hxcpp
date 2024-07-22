@@ -285,6 +285,27 @@ Array<int> _hx_ssl_cert_get_notafter(Dynamic hcert)
 
 Dynamic _hx_ssl_cert_get_next(Dynamic hcert)
 {
+	auto cert  = hcert.Cast<hx::ssl::windows::Cert>();
+	auto param = CERT_CHAIN_PARA();
+	auto chain = PCCERT_CHAIN_CONTEXT{ nullptr };
+
+	if (!CertGetCertificateChain(nullptr, cert->ctx, nullptr, nullptr, &param, 0, nullptr, &chain))
+	{
+		hx::Throw(HX_CSTRING("Failed to get certificate chain : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
+	}
+
+	for (auto i = 0; i < chain->rgpChain[0]->cElement; i++)
+	{
+		if (i + 1 < chain->rgpChain[0]->cElement && CertCompareCertificate(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, cert->ctx->pCertInfo, chain->rgpChain[0]->rgpElement[i]->pCertContext->pCertInfo))
+		{
+			CertFreeCertificateChain(chain);
+
+			return new hx::ssl::windows::Cert_obj(chain->rgpChain[0]->rgpElement[i + 1]->pCertContext);
+		}
+	}
+
+	CertFreeCertificateChain(chain);
+
 	return null();
 }
 
