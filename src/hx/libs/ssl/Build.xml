@@ -149,7 +149,10 @@
 
   <target id="haxe">
     <files id="hxcpp_ssl" unless="windows"/>
-    <files id="hxcpp_ssl_windows" if="windows"/>
+    <section if="windows">
+      <files id="hxcpp_ssl_windows" unless="HXCPP_USE_MBEDTLS"/>
+      <files id="hxcpp_ssl" if="HXCPP_USE_MBEDTLS"/>
+    </section>
 
     <lib name="advapi32.lib" if="windows" unless="static_link" />
     <lib name="crypt32.lib" if="windows" unless="static_link" />
