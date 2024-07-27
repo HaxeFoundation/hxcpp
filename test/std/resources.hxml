@@ -1,0 +1,11 @@
+-r resources/pkcs8/public.key@pkcs8_public_key
+-r resources/pkcs8/private.key@pkcs8_private_key
+-r resources/pkcs8/private_aes.key@pkcs8_aes_private_key
+
+-r resources/pkcs1/public.key@pkcs1_public_key
+-r resources/pkcs1/private.key@pkcs1_private_key
+-r resources/pkcs1/private_aes.key@pkcs1_private_aes_key
+
+-r resources/certs/rootkey.pem@rootkey
+-r resources/certs/rootcert.pem@rootcert
+-r resources/certs/sample.pem@x509sample

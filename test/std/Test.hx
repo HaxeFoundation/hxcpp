@@ -762,7 +762,18 @@ class Test extends utest.Test
          case [ 'socket' ]:
             socketClient();
          case _:
-            utest.UTest.run([ new Test() ]);
+            utest.UTest.run([
+               new Test(),
+               new ssl.CertificateLoadingTests(),
+               new ssl.CertificateTests(),
+               new ssl.DigestTests.MD5Tests(),
+               new ssl.DigestTests.SHA1Tests(),
+               new ssl.DigestTests.SHA256Tests(),
+               new ssl.DigestTests.SHA512Tests(),
+               new ssl.DigestTests.RIPEMD160Tests(),
+               new ssl.TestPKCS1(),
+               new ssl.TestPKCS8()
+            ]);
       }
    }
 }

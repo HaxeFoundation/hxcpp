@@ -1,3 +1,4 @@
+resources.hxml
 -m Test
 -D HXCPP_M32
 -D HXCPP_DEBUGGER
