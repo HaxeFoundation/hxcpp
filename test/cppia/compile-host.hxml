@@ -1,6 +1,5 @@
--main CppiaHost
+-m CppiaHost
 -D scriptable
 -D dll_export=host_classes.info
--dce no
--cpp bin
--cp ../unit
+--dce no
+--cpp bin

@@ -154,7 +154,6 @@
   <file name = "src/hx/gc/Immix.cpp" tags="haxe,gc" />
   <file name = "src/hx/gc/GcRegCapture.cpp" tags="haxe,gc" />
   <file name = "src/hx/Hash.cpp"/>
-  <file name = "src/hx/Interface.cpp"/>
   <file name = "src/hx/Lib.cpp" tags="haxe,static" />
   <file name = "src/hx/Object.cpp"/>
   <file name = "src/hx/StdLibs.cpp" tags="haxe,static" />

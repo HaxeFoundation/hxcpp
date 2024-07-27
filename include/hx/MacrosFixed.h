@@ -30,8 +30,6 @@
 
 // ---- Enum ----------------------
 
-#if (HXCPP_API_LEVEL >= 330)
-
 #define HX_DEFINE_CREATE_ENUM(enum_obj) \
 static  ::Dynamic Create##enum_obj(::String inName,::hx::DynamicArray inArgs) \
 { \
@@ -44,43 +42,11 @@ static  ::Dynamic Create##enum_obj(::String inName,::hx::DynamicArray inArgs) \
    return result->__Run(inArgs); \
 }
 
-
-#else
-
-#define HX_DEFINE_CREATE_ENUM(enum_obj) \
-static  ::Dynamic Create##enum_obj(::String inName,::hx::DynamicArray inArgs) \
-{ \
-   int idx =  enum_obj::__FindIndex(inName); \
-   if (idx<0) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_CONSTRUCTOR(#enum_obj, inName)); \
-   int count =  enum_obj::__FindArgCount(inName); \
-   int args = inArgs.GetPtr() ? inArgs.__length() : 0; \
-   if (args!=count) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_ARG_COUNT(#enum_obj, inName, count, args)); \
-   ::Dynamic result =(new enum_obj())->__Field(inName,HX_PROP_DYNAMIC); \
-   if (args==0 || !result.mPtr) return result; \
-   return result->__Run(inArgs); \
-}
-
-#endif
-
-
 // ---- Fields ----------------------
 
-#if (HXCPP_API_LEVEL<331)
-   #define HX_DO_RTTI_BASE \
-      bool __Is(::hx::Object *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!=0; }
-#else
-   #define HX_DO_RTTI_BASE
-#endif
-
-#if (HXCPP_API_LEVEL>331)
-   #define HX_IS_INSTANCE_OF bool _hx_isInstanceOf(int inClassId) { return inClassId==1 || inClassId==(int)_hx_ClassId; }
-#else
-   #define HX_IS_INSTANCE_OF
-#endif
-
+#define HX_IS_INSTANCE_OF bool _hx_isInstanceOf(int inClassId) { return inClassId==1 || inClassId==(int)_hx_ClassId; }
 
 #define HX_DO_RTTI_ALL \
-   HX_DO_RTTI_BASE \
    static ::hx::ObjectPtr< ::hx::Class_obj> __mClass; \
    ::hx::ObjectPtr< ::hx::Class_obj > __GetClass() const { return __mClass; } \
    inline static ::hx::ObjectPtr< ::hx::Class_obj> &__SGetClass() { return __mClass; } \
@@ -98,7 +64,6 @@ static  ::Dynamic Create##enum_obj(::String inName,::hx::DynamicArray inArgs) \
 	static void __register();
 
 #define HX_DO_ENUM_RTTI_INTERNAL \
-   HX_DO_RTTI_BASE  \
     ::hx::Val __Field(const ::String &inString, ::hx::PropertyAccess inCallProp); \
    static int __FindIndex(::String inName); \
    static int __FindArgCount(::String inName);
