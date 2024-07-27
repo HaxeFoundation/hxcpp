@@ -194,7 +194,6 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
 
 // -- hx::Native -------
 
-#if HXCPP_API_LEVEL >= 330
 extern "C" void __hxcpp_lib_main();
 namespace hx
 {
@@ -221,8 +220,6 @@ namespace hx
       }
    }
 }
-#endif
-
 
 // --- System ---------------------------------------------------------------------
 

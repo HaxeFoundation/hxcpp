@@ -1,6 +1,6 @@
--main Test
--cpp cpp32
+-m Test
 -D HXCPP_M32
 -D HXCPP_DEBUGGER
--cp ../unit
--lib hx4compat
+-L hx4compat
+-L utest
+--cpp cpp32

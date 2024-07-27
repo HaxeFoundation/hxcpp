@@ -25,10 +25,9 @@
   />
 
   <haxelib name="nme" />
+  <haxelib name="utest" />
   <haxedef name="HXCPP_GC_GENERATIONAL" />
   <haxedef name="HXCPP_DEBUG_LINK" />
   <haxeflag name="-resource TestMain.hx" />
-  <cp path="../unit" />
   
 </project>
-

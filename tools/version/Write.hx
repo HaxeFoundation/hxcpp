@@ -5,7 +5,14 @@ class Write
    public static function main()
    {
       var args = Sys.args();
-      var buildNumber = Std.parseInt(args[0]);
+      // AL NOTE: this "30 +" is a bodge around some CI stuff.
+      // Usually the ever incrementing CI run number is provided as the argument, but this ID is per github workflow.
+      // So when the release ci yml moved file the number reset to zero and we started overwriting previous releases.
+      // For now just append 30 since the previous release was 25 or something.
+      //
+      // This will need to be revisited when anything other than the last number increases as you would end up with
+      // something like 5.0.42 instead of 5.0.0.
+      var buildNumber = 30 + Std.parseInt(args[0]);
       if (buildNumber<1 || buildNumber==null)
          throw "Usage: Write buildNumber";
 
