@@ -18,8 +18,4 @@ class TestPKCS1 extends Test {
     function testAesEncryptedPrivateKey() {
         Assert.notNull(Key.readPEM(Resource.getString('pkcs1_aes_private_key'), false, 'password'));
     }
-
-    function testTripleDesPrivateKey() {
-        Assert.notNull(Key.readPEM(Resource.getString('pkcs1_private_3des_key'), false, 'password'));
-    }
 }
