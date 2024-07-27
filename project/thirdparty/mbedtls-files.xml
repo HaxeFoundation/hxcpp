@@ -1,7 +1,7 @@
 <xml>
   <set name="MBEDTLS_DIR" value="${HXCPP}/project/thirdparty/mbedtls-3.6.0" />
 
-  <files id="hxcpp_ssl" >
+  <files id="mbedtls" >
     <depend name="${this_dir}/mbedtls-files.xml" dateOnly="true" />
     <cache value="true" asLibrary="true" />
 
