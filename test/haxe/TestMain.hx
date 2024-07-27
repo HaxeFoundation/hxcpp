@@ -1,4 +1,7 @@
 package;
+
+import utest.Runner;
+import utest.ui.Report;
 import gc.TestGC;
 
 class TestMain #if nme extends nme.display.Sprite #end {
@@ -12,33 +15,35 @@ class TestMain #if nme extends nme.display.Sprite #end {
          passes = Std.parseInt(args[0]);
       #end
 
-      var r = new haxe.unit.TestRunner();
-      r.add(new TestTypes());
-      r.add(new TestKeywords());
-      r.add(new TestSort());
-      r.add(new TestGC());
+      final runner = new Runner();
+      runner.addCase(new TestTypes());
+      runner.addCase(new TestKeywords());
+      runner.addCase(new TestSort());
+      runner.addCase(new TestGC());
       #if !nme
-      r.add(new gc.TestGCThreaded());
+      runner.addCase(new gc.TestGCThreaded());
       #end
-      r.add(new TestIntHash());
-      r.add(new TestStringHash());
-      r.add(new TestObjectHash());
-      r.add(new TestWeakHash());
+      runner.addCase(new TestIntHash());
+      runner.addCase(new TestStringHash());
+      runner.addCase(new TestObjectHash());
+      runner.addCase(new TestWeakHash());
       #if !nme
-      r.add(new file.TestFile());
+      runner.addCase(new file.TestFile());
       #end
       
       #if cpp
-      r.add(new native.TestFinalizer());
+      runner.addCase(new native.TestFinalizer());
       #end
+
+      final report = Report.create(runner);
+
+      runner.run();
 
       for(i in 0...passes)
       {
          var t0 = haxe.Timer.stamp();
-         var success = r.run();
+         runner.run();
          trace(" Time : " + (haxe.Timer.stamp()-t0)*1000 );
-         if (!success)
-            return 1;
       }
       return 0;
    }
@@ -63,13 +68,23 @@ class TestMain #if nme extends nme.display.Sprite #end {
 
    }
 
-   static function endTest(error:Int) trace(error==0 ? "All tests OK" : "Tests Failed!");
    #else
    public static function main()
    {
-      Sys.exit(runTests());
+      utest.UTest.run([
+         new TestTypes(),
+         new TestKeywords(),
+         new TestSort(),
+         new TestGC(),
+         new gc.TestGCThreaded(),
+         new TestIntHash(),
+         new TestStringHash(),
+         new TestObjectHash(),
+         new TestWeakHash(),
+         new file.TestFile(),
+         new native.TestFinalizer()
+      ]);
    }
-   public static function endTest(error:Int) Sys.exit(error);
    #end
 }
 

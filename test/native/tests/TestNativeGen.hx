@@ -1,8 +1,10 @@
 package tests;
 
 import NativeGen;
+import utest.Test;
+import utest.Assert;
 
-class TestNativeGen extends haxe.unit.TestCase
+class TestNativeGen extends Test
 {
    @:unreflective var unreflectiveValue:NativeGen;
 
@@ -16,8 +18,7 @@ class TestNativeGen extends haxe.unit.TestCase
    {
       var nGen:NativeGenStruct = null;
       nGen.x = 22;
-      assertTrue(nGen.getValue()==22);
-
-      assertTrue(unreflectiveFunction(nGen) );
+      Assert.equals(22f64, nGen.getValue());
+      Assert.isTrue(unreflectiveFunction(nGen));
    }
 }

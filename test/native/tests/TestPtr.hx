@@ -1,5 +1,7 @@
 package tests;
 
+import utest.Test;
+import utest.Assert;
 import NativeGen;
 import cpp.NativeGc;
 import cpp.Stdlib;
@@ -92,8 +94,8 @@ struct CVec{
 @:cppFileCode('
   int callPointer(CVec *) { return 5; }
 ')
-class TestPtr extends haxe.unit.TestCase{
-   
+class TestPtr extends Test
+{   
    /*
     Alternate version
    @:generic
@@ -105,10 +107,10 @@ class TestPtr extends haxe.unit.TestCase{
    
     public function testMalloc() {
       var a : Pointer<Vec> = Stdlib.malloc( Stdlib.sizeof(Vec) );
-      assertTrue( a!=null );
-      assertTrue( a.raw!=null );
+      Assert.notNull( a );
+      Assert.notNull( a.raw );
       a.ptr.x = 66;
-      assertTrue( a.ptr.x == 66 );
+      Assert.equals( 66f64, a.ptr.x );
       Stdlib.free(a);
    }
    
@@ -118,7 +120,7 @@ class TestPtr extends haxe.unit.TestCase{
       for(i in 0...5)
          a.setAt(i,i);
       for(i in 0...5)
-         assertTrue( a.postIncRef() == i );
+         Assert.equals( i, a.postIncRef() );
    }
 
    function test9194() {
@@ -132,20 +134,20 @@ class TestPtr extends haxe.unit.TestCase{
       var floatBuffer: cpp.Star<cpp.Float32> = cast buffer;
       // generates correct: float* floatBuffer = ( (float*) buffer ) 
 
-      assertTrue(floatBuffer==null);
+      Assert.isNull(floatBuffer);
    }
 
 
    public function testNull() {
       var nullP : Pointer<Vec> = null;
       var nullRawP = nullP.raw;
-      assertTrue( nullP==null );
-      assertTrue( null==nullP );
-      assertFalse( nullP!=null );
-      assertTrue( nullRawP==null );
-      assertFalse( nullRawP!=null );
+      Assert.isTrue( nullP==null );
+      Assert.isTrue( null==nullP );
+      Assert.isFalse( nullP!=null );
+      Assert.isTrue( nullRawP==null );
+      Assert.isFalse( nullRawP!=null );
       nullRawP = null;
-      assertTrue( nullRawP==null );
+      Assert.isTrue( nullRawP==null );
    }
 
    private function anonOf(d:Dynamic) : Dynamic return {ptr:d};
@@ -155,34 +157,34 @@ class TestPtr extends haxe.unit.TestCase{
       var tmp = e.ptr;
       var tmp1 = e.ref;
       tmp.set99(tmp1);
-      assertTrue(e.ptr.x==99);
+      Assert.equals(99f64, e.ptr.x);
    }
 
-   @:native("callPointer") @:extern
-   private static function callPointer(ptr:cpp.Pointer<Vec>):Int;
+   @:native("callPointer")
+   extern private static function callPointer(ptr:cpp.Pointer<Vec>):Int;
 
    public function testPointerCast() {
       var map = new Map<Int, cpp.Pointer<Vec> >();
       map.set(1,null);
       var result = callPointer( map.get(2) );
-      assertTrue(result==5);
+      Assert.equals(5, result);
    }
 
    public function testDynamic() {
       var a = [1];
       var intPtr = a.address(0);
       var d:Dynamic = intPtr;
-      assertFalse(d==[2].address(0));
-      assertTrue(d==a.address(0));
+      Assert.notEquals(d, [2].address(0));
+      Assert.equals(d, a.address(0));
       var anon = anonOf(d);
-      assertFalse([2].address(0)==d);
-      assertTrue(a.address(0)==d);
-      assertFalse(intPtr==[2].address(0));
-      assertTrue(intPtr==a.address(0));
-      assertFalse(anon.ptr==[2].address(0));
-      assertTrue(anon.ptr==a.address(0));
-      assertFalse([2].address(0)==anon.ptr);
-      assertTrue(a.address(0)==anon.ptr);
+      Assert.notEquals([2].address(0), d);
+      Assert.equals(a.address(0), d);
+      Assert.notEquals(intPtr, [2].address(0));
+      Assert.equals(intPtr, a.address(0));
+      Assert.notEquals(anon.ptr, [2].address(0));
+      Assert.equals(anon.ptr, a.address(0));
+      Assert.notEquals([2].address(0), anon.ptr);
+      Assert.equals(a.address(0), anon.ptr);
    }
 
    function getAnonI(a:Dynamic) : Dynamic
@@ -195,16 +197,16 @@ class TestPtr extends haxe.unit.TestCase{
       var a = [1];
       var intPtr = a.address(0);
       var anon = { i:intPtr };
-      assertTrue( getAnonI(anon)==intPtr );
+      Assert.equals( getAnonI(anon), intPtr );
 
       var vecPtr = VecStructAccess.create(1);
       var anon = { i:vecPtr };
-      assertTrue( getAnonI(anon)==vecPtr );
+      Assert.equals( getAnonI(anon), vecPtr );
 
       var vec:VecStruct = null;
       vec.x = 123;
       var anon = { i:vec };
-      assertTrue( getAnonI(anon)==vec );
+      Assert.equals( getAnonI(anon), vec );
    }
 
    static function callMe(x:Int) return 10+x;
@@ -212,102 +214,94 @@ class TestPtr extends haxe.unit.TestCase{
    static function notProcAddress(module:String, func:String) return null;
 
    public function testArrayAccess() {
-       var array = [ 0.0, 1.1, 2.2, 3.3 ];
-       var ptr = cpp.Pointer.arrayElem(array, 0);
-       assertTrue( ptr[1]==1.1 );
-       ptr[1] = 2;
-       assertTrue( ptr[1]==2 );
-       ptr[1]++;
-       assertTrue( ptr[1]==3 );
-       ptr[1]-=2.5;
-       assertTrue( ptr[1]==0.5 );
+      var array = [ 0.0, 1.1, 2.2, 3.3 ];
+      var ptr = cpp.Pointer.arrayElem(array, 0);
+      Assert.equals( ptr[1], 1.1 );
+      ptr[1] = 2;
+      Assert.equals( ptr[1], 2 );
+      ptr[1]++;
+      Assert.equals( ptr[1], 3 );
+      ptr[1]-=2.5;
+      Assert.equals( ptr[1], 0.5 );
 
-       var raw = ptr.raw;
-       assertTrue( raw[2]==2.2 );
-       raw[2] = 2;
-       assertTrue( raw[2]==2 );
-       raw[2]++;
-       assertTrue( raw[2]==3 );
-       raw[2]-=2.5;
-       assertTrue( raw[2]==0.5 );
-
+      var raw = ptr.raw;
+      Assert.equals( raw[2], 2.2 );
+      raw[2] = 2;
+      Assert.equals( raw[2], 2 );
+      raw[2]++;
+      Assert.equals( raw[2], 3 );
+      raw[2]-=2.5;
+      Assert.equals( raw[2], 0.5 );
    }
 
    public function testFromRaw()
    {
       var i = new IntHolder(3);
       var ptr = cpp.Pointer.fromRaw(cpp.Pointer.addressOf(i).rawCast());
-      assertTrue( ptr.ref.ival==i.ival );
+      Assert.equals( ptr.ref.ival, i.ival );
       ptr.ref.ival==23;
-      assertTrue( ptr.ref.ival==i.ival );
+      Assert.equals( ptr.ref.ival, i.ival );
    }
 
-     private static var output:cpp.Pointer<Array<Int>>;
+   private static var output:cpp.Pointer<Array<Int>>;
 
-     private static var arrayValue:Array<Int>;
-     private static function makeValue():{ a:cpp.Pointer<Array<Int>> }
-     {
-       arrayValue = [9];
-       return { a: cpp.Pointer.addressOf(arrayValue) };
-     }
+   private static var arrayValue:Array<Int>;
+   private static function makeValue():{ a:cpp.Pointer<Array<Int>> }
+   {
+      arrayValue = [9];
+      return { a: cpp.Pointer.addressOf(arrayValue) };
+   }
 
-     @:analyzer(no_fusion)
-     public function testDynamicOutput()
-     {
-       // Declared as structure (just `var val = ...` works too)
-       var val:{ a:cpp.Pointer<Array<Int>> } = makeValue();
+   @:analyzer(no_fusion)
+   public function testDynamicOutput()
+   {
+      // Declared as structure (just `var val = ...` works too)
+      var val:{ a:cpp.Pointer<Array<Int>> } = makeValue();
 
-       var a:cpp.Pointer<Array<Int>> = val.a;
-       output = a;
-       output = (val.a:Dynamic);
-       output = val.a;
-       output = (val.a:cpp.Pointer<Array<Int>>);
-       val.a = output;
+      var a:cpp.Pointer<Array<Int>> = val.a;
+      output = a;
+      output = (val.a:Dynamic);
+      output = val.a;
+      output = (val.a:cpp.Pointer<Array<Int>>);
+      val.a = output;
 
-       // Declared as Dynamic
-       var val2:Dynamic = makeValue();
-       a = val2.a;
-       output = a;
-       output = (val2.a:Dynamic);
-       output = val2.a;
-       output = (val2.a:cpp.Pointer<Array<Int>>);
-       val2.a = output;
-       assertTrue( val2.a==output );
-       assertTrue( output==val.a );
-     }
+      // Declared as Dynamic
+      var val2:Dynamic = makeValue();
+      a = val2.a;
+      output = a;
+      output = (val2.a:Dynamic);
+      output = val2.a;
+      output = (val2.a:cpp.Pointer<Array<Int>>);
+      val2.a = output;
+      Assert.equals( val2.a, output );
+      Assert.equals( output, val.a );
+   }
 
 
 
    public function testAutoCast() {
-       var z = [ 1, 2, 3 ];
-       assertTrue( cpp.NativeArray.address(z, 0).ptr == cpp.NativeArray.address(z, 0).ptr );
-       assertTrue( cpp.NativeArray.address(z, 1).ptr != cpp.NativeArray.address(z, 0).ptr );
-       assertTrue( cpp.NativeArray.address(z, 1).gt(cpp.NativeArray.address(z, 0)) );
-       assertTrue( cpp.NativeArray.address(z, 1).geq(cpp.NativeArray.address(z, 0)) );
-       assertTrue( cpp.NativeArray.address(z, 1).geq(cpp.NativeArray.address(z, 1)) );
-       assertTrue( cpp.NativeArray.address(z, 0).leq(cpp.NativeArray.address(z, 0)) );
-       assertTrue( cpp.NativeArray.address(z, 1).leq(cpp.NativeArray.address(z, 2)) );
-       assertTrue( cpp.NativeArray.address(z, 1).leq(cpp.NativeArray.address(z, 2)) );
-       assertTrue( cpp.NativeArray.address(z, 0) == cpp.Pointer.ofArray(z) );
-       assertTrue( cpp.NativeArray.address(z, 1) == cpp.Pointer.arrayElem(z,1) );
-       assertTrue( cpp.NativeArray.address(z, 1) != cpp.Pointer.fromHandle(null) );
-       assertTrue( cpp.Function.fromStaticFunction(callMe)(1)==11 );
-       try
-       {
-          assertTrue( cpp.Function.fromStaticFunction(notProcAddress)!=cpp.Function.getProcAddress("nomodule","nofunc!") );
-       }
-       catch(e:Dynamic)
-       {
-         // Could not load module - expected
-       }
+      var z = [ 1, 2, 3 ];
+      Assert.isTrue( cpp.NativeArray.address(z, 0).ptr == cpp.NativeArray.address(z, 0).ptr );
+      Assert.isTrue( cpp.NativeArray.address(z, 1).ptr != cpp.NativeArray.address(z, 0).ptr );
+      Assert.isTrue( cpp.NativeArray.address(z, 1).gt(cpp.NativeArray.address(z, 0)) );
+      Assert.isTrue( cpp.NativeArray.address(z, 1).geq(cpp.NativeArray.address(z, 0)) );
+      Assert.isTrue( cpp.NativeArray.address(z, 1).geq(cpp.NativeArray.address(z, 1)) );
+      Assert.isTrue( cpp.NativeArray.address(z, 0).leq(cpp.NativeArray.address(z, 0)) );
+      Assert.isTrue( cpp.NativeArray.address(z, 1).leq(cpp.NativeArray.address(z, 2)) );
+      Assert.isTrue( cpp.NativeArray.address(z, 1).leq(cpp.NativeArray.address(z, 2)) );
+      Assert.equals( cpp.NativeArray.address(z, 0), cpp.Pointer.ofArray(z) );
+      Assert.equals( cpp.NativeArray.address(z, 1), cpp.Pointer.arrayElem(z,1) );
+      Assert.notEquals( cpp.NativeArray.address(z, 1), cpp.Pointer.fromHandle(null) );
+      Assert.equals(11, cpp.Function.fromStaticFunction(callMe)(1));
+      Assert.exception(() -> cpp.Function.fromStaticFunction(notProcAddress)!=cpp.Function.getProcAddress("nomodule","nofunc!"), String);
    }
 
    static function functionCaller(fn:cpp.Function<Void->Int,cpp.abi.Abi>) {
-        var a = fn.call();
-    }
+      var a = fn.call();
+   }
 
    public function testFunctionStructAccess() {
-       assertTrue( functionCaller != null );
+      Assert.notNull( functionCaller );
    }
 
    public function testSetData() {
@@ -315,47 +309,47 @@ class TestPtr extends haxe.unit.TestCase{
       ss.dataLength = 4;
       ss.data = cast "bye!".c_str();
       var b = ss.getDataBytes();
-      assertTrue( b.getString(0, b.length) == "bye!" );
+      Assert.equals( "bye!", b.getString(0, b.length) );
 
       var ss:SomeStruct = null;
       var b = ss.getUnmanagedDataBytes();
-      assertTrue( b.getString(0, b.length) == "Hi!" );
+      Assert.equals( "Hi!", b.getString(0, b.length) );
    }
 
    public function testZero() {
       var a = [1,2,3];
       a.zero();
-      assertTrue(a.length==3);
-      assertTrue(a[0]==0);
-      assertTrue(a[1]==0);
-      assertTrue(a[2]==0);
+      Assert.equals(3, a.length);
+      Assert.equals(0, a[0]);
+      Assert.equals(0, a[1]);
+      Assert.equals(0, a[2]);
    }
 
    public function testMemcmp() {
       var a = [1,2,3];
       var b = [2,2,3];
-      assertTrue( a.memcmp(b) == -1 );
-      assertTrue( b.memcmp(a) == 1 );
-      assertTrue( a.memcmp(a) == 0 );
+      Assert.equals( -1, a.memcmp(b));
+      Assert.equals(  1, b.memcmp(a) );
+      Assert.equals(  0, a.memcmp(a) );
    }
 
    public function testCapacity() {
       var a = [1,2,3];
-      assertTrue( a.capacity() < 1000 );
+      Assert.isTrue( a.capacity() < 1000 );
       a.reserve(1000);
-      assertTrue( a.capacity() == 1000 );
+      Assert.equals( 1000, a.capacity() );
       a[1000] = 1;
-      assertTrue( a.capacity() > 1000 );
+      Assert.isTrue( a.capacity() > 1000 );
    }
 
 
    public function testElementSize() {
       var a = [1];
-      assertTrue( a.getElementSize() == cpp.Stdlib.sizeof(Int)  );
+      Assert.equals( cpp.Stdlib.sizeof(Int), a.getElementSize() );
       var a = ["hello!"];
-      assertTrue( a.getElementSize() == cpp.Stdlib.sizeof(String)  );
+      Assert.equals( cpp.Stdlib.sizeof(String), a.getElementSize() );
       var a = [7.1];
-      assertTrue( a.getElementSize() == cpp.Stdlib.sizeof(Float)  );
+      Assert.equals( cpp.Stdlib.sizeof(Float), a.getElementSize() );
    }
 
 
@@ -364,15 +358,15 @@ class TestPtr extends haxe.unit.TestCase{
       var b = [0,0,0,0];
       b.blit(0,a,0,a.length);
       for(i in 0...4)
-        assertTrue(b[i] == a[i]);
+        Assert.equals(b[i], a[i]);
       for(i in 0...4)
          b.blit(i,a,0,1);
       for(i in 0...4)
-        assertTrue(b[i] == a[0]);
+        Assert.equals(b[i], a[0]);
       for(i in 0...4)
          b.blit(i,a,2,1);
       for(i in 0...4)
-        assertTrue(b[i] == a[2]);
+        Assert.equals(b[i], a[2]);
    }
 }
 
