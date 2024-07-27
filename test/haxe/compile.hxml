@@ -1,5 +1,5 @@
--cpp bin
--main TestMain
--resource TestMain.hx
+-m TestMain
+-r TestMain.hx
 -D HXCPP_GC_GENERATIONAL
--cp ../unit
+-L utest
+--cpp bin

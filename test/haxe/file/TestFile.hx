@@ -1,10 +1,12 @@
 package file;
 
-class TestFile extends haxe.unit.TestCase
+import utest.Test;
+import utest.Assert;
+
+class TestFile extends Test
 {
    public function testGetContentEmptyFile()
    {
-      assertEquals('', sys.io.File.getContent('./file/empty.txt'));
+      Assert.equals('', sys.io.File.getContent('./file/empty.txt'));
    }
-
 }
