@@ -195,7 +195,8 @@ namespace
 
 		if (py->bUTF8)
 		{
-			auto str = const_cast<char*>(password.utf8_str());
+			hx::strbuf buffer;
+			auto str    = const_cast<char*>(password.utf8_str(&buffer));
 
 			if (FAILED(result = map->InitDecryptKey(hAlgorithm, &hKey,
 				(PBYTE)alloca(cb), cb, reinterpret_cast<PBYTE>(str), strlen(str),
@@ -211,7 +212,8 @@ namespace
 		}
 		else
 		{
-			auto str = const_cast<wchar_t*>(password.wchar_str());
+			hx::strbuf buffer;
+			auto str    = const_cast<wchar_t*>(password.wchar_str(&buffer));
 
 			if (FAILED(result = map->InitDecryptKey(hAlgorithm, &hKey,
 				(PBYTE)alloca(cb), cb, reinterpret_cast<PBYTE>(str), wcslen(str),
@@ -382,7 +384,8 @@ Dynamic _hx_ssl_key_from_der(Array<unsigned char> buf, bool pub)
 Dynamic _hx_ssl_key_from_pem(String data, bool pub, String pass)
 {
 	auto result = 0;
-	auto string = data.utf8_str();
+	hx::strbuf buffer;
+	auto string = data.utf8_str(&buffer);
 	auto cb     = DWORD{ 0 };
 
 	hx::EnterGCFreeZone();

@@ -77,7 +77,8 @@ namespace
 
 Dynamic _hx_ssl_cert_load_file(String file)
 {
-	auto handle = CreateFileA(file.utf8_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+	hx::strbuf buffer;
+	auto handle = CreateFileA(file.utf8_str(&buffer), GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (INVALID_HANDLE_VALUE == handle)
 	{
 		hx::Throw(HX_CSTRING("Invalid file handle : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
@@ -294,11 +295,17 @@ Dynamic _hx_ssl_cert_get_next(Dynamic hcert)
 		hx::Throw(HX_CSTRING("Failed to get certificate chain : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
 	}
 
-	for (auto i = 0; i < chain->rgpChain[0]->cElement; i++)
+	auto firstChain = chain->rgpChain[0];
+
+	for (auto i = 0; i < firstChain->cElement; i++)
 	{
-		if (i + 1 < chain->rgpChain[0]->cElement && CertCompareCertificate(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, cert->ctx->pCertInfo, chain->rgpChain[0]->rgpElement[i]->pCertContext->pCertInfo))
+		if (i + 1 < firstChain->cElement && CertCompareCertificate(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, cert->ctx->pCertInfo, firstChain->rgpElement[i]->pCertContext->pCertInfo))
 		{
 			CertFreeCertificateChain(chain);
+
+			// I'm not sure of the lifetime of the PCCERT_CONTEXT objects here.
+			// The Cert_obj will release the cert when it get finalised but would that cause issues if a cert
+			// further up the chain is still alive?
 
 			return new hx::ssl::windows::Cert_obj(chain->rgpChain[0]->rgpElement[i + 1]->pCertContext);
 		}
@@ -311,7 +318,8 @@ Dynamic _hx_ssl_cert_get_next(Dynamic hcert)
 
 Dynamic _hx_ssl_cert_add_pem(Dynamic hcert, String data)
 {
-	auto str = data.utf8_str();
+	hx::strbuf buffer;
+	auto str    = data.utf8_str(&buffer);
 
 	if (hx::IsNull(hcert))
 	{
