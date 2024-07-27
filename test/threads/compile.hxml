@@ -1,4 +1,3 @@
--main Test
--cpp cpp
--debug
--cp ../unit
+-m Test
+--cpp cpp
+--debug

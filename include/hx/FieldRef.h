@@ -42,9 +42,7 @@ public:
    {
       return mObject->__SetField(mName,inRHS, HX_PROP_DYNAMIC );
    }
-   #if HXCPP_API_LEVEL >= 330
    inline operator hx::Val() const { return mObject ? mObject->__Field(mName, HX_PROP_DYNAMIC) : null(); }
-   #endif
    inline operator Dynamic() const { return mObject ? Dynamic(mObject->__Field(mName, HX_PROP_DYNAMIC)) : null(); }
    inline operator double() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
    inline operator float() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
