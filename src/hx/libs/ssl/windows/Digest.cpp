@@ -4,12 +4,14 @@
 #include "SSL.h"
 #include "Utils.h"
 
-Array<unsigned char> _hx_ssl_dgst_make(Array<unsigned char> buf, String alg)
+Array<unsigned char> _hx_ssl_dgst_make(Array<unsigned char> buffer, String alg)
 {
 	auto handle    = BCRYPT_ALG_HANDLE();
 	auto result    = 0;
 	auto cb        = DWORD{ 0 };
-	auto algorithm = alg.wchar_str();
+
+	hx::strbuf buf;
+	auto algorithm = alg.wchar_str(&buf);
 
 	hx::EnterGCFreeZone();
 
@@ -48,7 +50,7 @@ Array<unsigned char> _hx_ssl_dgst_make(Array<unsigned char> buf, String alg)
 		hx::Throw(HX_CSTRING("Failed to get object length : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
 	}
 
-	if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(buf->GetBase()), buf->length, 0)))
+	if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(buffer->GetBase()), buffer->length, 0)))
 	{
 		BCryptDestroyHash(hash);
 		BCryptCloseAlgorithmProvider(handle, 0);
@@ -78,12 +80,13 @@ Array<unsigned char> _hx_ssl_dgst_make(Array<unsigned char> buf, String alg)
 	return output;
 }
 
-Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buf, Dynamic hpkey, String alg)
+Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buffer, Dynamic hpkey, String alg)
 {
 	auto key       = hpkey.Cast<hx::ssl::windows::Key>();
 	auto result    = 0;
 	auto dummy     = DWORD{ 0 };
-	auto algorithm = alg.wchar_str();
+	hx::strbuf buf;
+	auto algorithm = alg.wchar_str(&buf);
 	auto padding   = BCRYPT_PKCS1_PADDING_INFO{ algorithm };
 
 	hx::EnterGCFreeZone();
@@ -124,7 +127,7 @@ Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buf, Dynamic hpkey, 
 		hx::Throw(HX_CSTRING("Failed to get object length : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
 	}
 
-	if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(buf->GetBase()), buf->length, 0)))
+	if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(buffer->GetBase()), buffer->length, 0)))
 	{
 		BCryptDestroyHash(hash);
 		BCryptCloseAlgorithmProvider(handle, 0);
@@ -174,13 +177,14 @@ Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buf, Dynamic hpkey, 
 	return signature;
 }
 
-bool _hx_ssl_dgst_verify(Array<unsigned char> buf, Array<unsigned char> sign, Dynamic hpkey, String alg)
+bool _hx_ssl_dgst_verify(Array<unsigned char> buffer, Array<unsigned char> sign, Dynamic hpkey, String alg)
 {
 	auto key       = hpkey.Cast<hx::ssl::windows::Key>();
 	auto handle    = BCRYPT_ALG_HANDLE();
 	auto result    = 0;
 	auto cb        = DWORD{ 0 };
-	auto algorithm = alg.wchar_str();
+	hx::strbuf buf;
+	auto algorithm = alg.wchar_str(&buf);
 	auto padding   = BCRYPT_PKCS1_PADDING_INFO{ algorithm };
 
 	hx::EnterGCFreeZone();
@@ -220,7 +224,7 @@ bool _hx_ssl_dgst_verify(Array<unsigned char> buf, Array<unsigned char> sign, Dy
 		hx::Throw(HX_CSTRING("Failed to get object length : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
 	}
 
-	if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(buf->GetBase()), buf->length, 0)))
+	if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(buffer->GetBase()), buffer->length, 0)))
 	{
 		BCryptDestroyHash(hash);
 		BCryptCloseAlgorithmProvider(handle, 0);

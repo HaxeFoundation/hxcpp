@@ -15,7 +15,7 @@ class TestPKCS8 extends Test {
         Assert.notNull(Key.readPEM(Resource.getString('pkcs8_private_key'), false));
     }
 
-    function testPerAesEncryptedPrivateKey() {
+    function testPemAesEncryptedPrivateKey() {
         Assert.notNull(Key.readPEM(Resource.getString('pkcs8_aes_private_key'), false, 'password'));
     }
 }

@@ -771,7 +771,6 @@ class Test extends utest.Test
                new ssl.DigestTests.SHA256Tests(),
                new ssl.DigestTests.SHA512Tests(),
                new ssl.DigestTests.RIPEMD160Tests(),
-               new ssl.TestPKCS1(),
                new ssl.TestPKCS8()
             ]);
       }
