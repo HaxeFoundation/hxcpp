@@ -712,7 +712,7 @@ public:
   void Wait() {
 #ifdef HX_WINDOWS
 #ifndef HXCPP_WINXP_COMPAT
-	  SleepConditionVariableCS(cond,&cs,INFINITE);
+	  SleepConditionVariableCS(&cond,&cs,INFINITE);
 #endif
 #else
 	  pthread_cond_wait(cond, mutex);
