@@ -900,6 +900,7 @@ class BuildTool
                case "objcflag" : c.mOBJCFlags.push(substitute(el.att.value));
                case "rcflag" : c.mRcFlags.push( substitute((el.att.value)) );
                case "mmflag" : c.mMMFlags.push(substitute(el.att.value));
+               case "asmflag" : c.mAsmFlags.push(substitute(el.att.value));
                case "pchflag" : c.mPCHFlags.push(substitute(el.att.value));
                case "objdir" : c.mObjDir = substitute((el.att.value));
                case "outflag" : c.mOutFlag = substitute((el.att.value));
@@ -907,6 +908,7 @@ class BuildTool
                case "rcexe" : c.mRcExe = substitute((el.att.name));
                case "rcext" : c.mRcExt = substitute((el.att.value));
                case "ext" : c.mExt = substitute((el.att.value));
+               case "asmExe" : c.mAsmExe = substitute((el.att.value));
                case "pch" : c.setPCH( substitute((el.att.value)) );
                case "getversion" : c.mGetCompilerVersion = substitute((el.att.value));
                case "section" : createCompiler(el,c);

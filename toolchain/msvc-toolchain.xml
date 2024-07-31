@@ -108,6 +108,8 @@
   <flag value="-wd4996"/>
   <outflag value="-Fo"/>
   <ext value=".obj"/>
+  <asmExe value="ml64.exe" if="HXCPP_M64" />
+  <asmExe value="ml.exe" unless="HXCPP_M64" />
   <objdir value="${MSVC_OBJ_DIR}" />
 
   <rcexe name="rc.exe" />
