@@ -89,7 +89,11 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_parse_int(const String &inString);
 HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_parse_float(const String &inString);
 HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_parse_substr_float(const String &inString, int start, int len);
 HXCPP_EXTERN_CLASS_ATTRIBUTES int __hxcpp_parse_substr_int(const String &inString, int start=0, int len=-1);
+#if (HXCPP_API_LEVEL>=500)
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_create_var_args(::hx::Callable<::Dynamic(::cpp::VirtualArray)>& inArrayFunc);
+#else
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc);
+#endif
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_set_float_format(String inFormat);
 
 inline int _hx_idiv(int inNum,int inDenom) { return inNum/inDenom; }
@@ -293,7 +297,11 @@ double __hxcpp_time_stamp();
 
 // --- vm/threading --------------------------------------------------------------------
 
+#if (HXCPP_API_LEVEL>=500)
+Dynamic __hxcpp_thread_create(hx::Callable<void()> inFunc);
+#else
 Dynamic __hxcpp_thread_create(Dynamic inFunc);
+#endif
 Dynamic __hxcpp_thread_current();
 void    __hxcpp_thread_send(Dynamic inThread, Dynamic inMessage);
 Dynamic __hxcpp_thread_read_message(bool inBlocked);
