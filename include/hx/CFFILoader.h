@@ -289,11 +289,13 @@ extern "C" ret name def_args;
    extern FUNC_##name name; \
    ret IMPL_##name def_args \
    { \
-      name = (FUNC_##name)LoadFunc(#name); \
-      if (!name) \
-      { \
-         fprintf(stderr,"Could not find function:" #name " \n"); \
-         exit(1); \
+      if(!name) { \
+         name = (FUNC_##name)LoadFunc(#name); \
+         if (!name) \
+         { \
+            fprintf(stderr,"Could not find function:" #name " \n"); \
+            exit(1); \
+         } \
       } \
       return name call_args; \
    }\
@@ -311,10 +313,12 @@ extern "C" ret name def_args;
    extern FUNC_##name name; \
    ret IMPL_##name def_args \
    { \
-      name = (FUNC_##name)LoadFunc(#name); \
-      if (!name) \
-      { \
-         __android_log_print(ANDROID_LOG_ERROR,"CFFILoader", "Could not find function:" #name "\n"); \
+      if(!name) { \
+         name = (FUNC_##name)LoadFunc(#name); \
+         if (!name) \
+         { \
+            __android_log_print(ANDROID_LOG_ERROR,"CFFILoader", "Could not find function:" #name "\n"); \
+         } \
       } \
       return name call_args; \
    }\
