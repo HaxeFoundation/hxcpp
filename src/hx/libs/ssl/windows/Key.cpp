@@ -501,6 +501,75 @@ namespace
 
 		return hx::ssl::windows::Key(new hx::ssl::windows::Key_obj(nkey));
 	}
+
+	Dynamic DecodePrivatePkcs8Key(uint8_t* data, const DWORD length)
+	{
+		auto provider = NCRYPT_PROV_HANDLE();
+		if (NCryptOpenStorageProvider(&provider, MS_KEY_STORAGE_PROVIDER, 0))
+		{
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed to open Microsoft key storage provider"));
+		}
+
+		auto key = NCRYPT_KEY_HANDLE();
+		if (NCryptImportKey(provider, 0, NCRYPT_PKCS8_PRIVATE_KEY_BLOB, nullptr, &key, data, length, 0))
+		{
+			NCryptFreeObject(provider);
+
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed to import private PKCS8 key"));
+		}
+
+		NCryptFreeObject(provider);
+
+		hx::ExitGCFreeZone();
+
+		return hx::ssl::windows::Key(new hx::ssl::windows::Key_obj(key));
+	}
+
+	Dynamic DecodeEncryptedPrivatePkcs8Key(uint8_t* data, const DWORD length, String pass)
+	{
+		if (hx::IsNull(pass))
+		{
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Encrypted key was found but password was null"));
+		}
+
+		hx::strbuf passbuf;
+
+		auto password = pass.wchar_str(&passbuf);
+		auto buffer   = NCryptBuffer();
+		buffer.BufferType = NCRYPTBUFFER_PKCS_SECRET;
+		buffer.pvBuffer   = const_cast<PWSTR>(password);
+		buffer.cbBuffer   = (1UL + wcslen(password)) * sizeof(WCHAR);
+
+		auto desc = NCryptBufferDesc();
+		desc.cBuffers  = 1;
+		desc.pBuffers  = &buffer;
+		desc.ulVersion = NCRYPTBUFFER_VERSION;
+
+		auto provider = NCRYPT_PROV_HANDLE();
+		if (NCryptOpenStorageProvider(&provider, MS_KEY_STORAGE_PROVIDER, 0))
+		{
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed to open Microsoft key storage provider"));
+		}
+
+		auto key = NCRYPT_KEY_HANDLE();
+		if (NCryptImportKey(provider, 0, NCRYPT_PKCS8_PRIVATE_KEY_BLOB, &desc, &key, data, length, 0))
+		{
+			NCryptFreeObject(provider);
+
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed to import private PKCS8 key"));
+		}
+
+		NCryptFreeObject(provider);
+
+		hx::ExitGCFreeZone();
+
+		return hx::ssl::windows::Key(new hx::ssl::windows::Key_obj(key));
+	}
 }
 
 Dynamic _hx_ssl_key_from_der(Array<unsigned char> buf, bool pub)
@@ -566,6 +635,24 @@ Dynamic _hx_ssl_key_from_pem(String pem, bool pub, String pass)
 	}
 	else
 	{
+		header = "-----BEGIN RSA PRIVATE KEY-----";
+		if (0 == strncmp(string + skipped, header, strlen(header)))
+		{
+			return null();
+		}
+
+		header = "-----BEGIN PRIVATE KEY-----";
+		if (0 == strncmp(string + skipped, header, strlen(header)))
+		{
+			return DecodePrivatePkcs8Key(derKey.data(), derKeyLength);
+		}
+
+		header = "-----BEGIN ENCRYPTED PRIVATE KEY-----";
+		if (0 == strncmp(string + skipped, header, strlen(header)))
+		{
+			return DecodeEncryptedPrivatePkcs8Key(derKey.data(), derKeyLength, pass);
+		}
+
 		return null();
 	}
 }
