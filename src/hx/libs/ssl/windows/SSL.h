@@ -2,7 +2,7 @@
 
 #include <hxcpp.h>
 #include <wincrypt.h>
-#include <bcrypt.h>
+#include <ncrypt.h>
 
 HX_DECLARE_CLASS3(hx, ssl, windows, Cert)
 HX_DECLARE_CLASS3(hx, ssl, windows, Key)
@@ -30,9 +30,9 @@ namespace hx
 			public:
 				HX_IS_INSTANCE_OF enum { _hx_classId = hx::clsIdSslKey };
 
-				BCRYPT_KEY_HANDLE ctx;
+				NCRYPT_KEY_HANDLE ctx;
 
-				Key_obj(BCRYPT_KEY_HANDLE inCtx);
+				Key_obj(NCRYPT_KEY_HANDLE inCtx);
 
 				String toString() override;
 			};

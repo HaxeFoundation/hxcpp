@@ -146,7 +146,9 @@ Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buffer, Dynamic hpke
 		hx::Throw(HX_CSTRING("Failed to finish hash : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
 	}
 
-	auto signatureLength = DWORD{ 0 };
+	return null();
+
+	/*auto signatureLength = DWORD{ 0 };
 	if (!BCRYPT_SUCCESS(result = BCryptSignHash(key->ctx, nullptr, reinterpret_cast<PUCHAR>(hashed.data()), hashed.size(), nullptr, 0, &signatureLength, 0)))
 	{
 		BCryptDestroyHash(hash);
@@ -174,7 +176,7 @@ Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buffer, Dynamic hpke
 
 	hx::ExitGCFreeZone();
 
-	return signature;
+	return signature;*/
 }
 
 bool _hx_ssl_dgst_verify(Array<unsigned char> buffer, Array<unsigned char> sign, Dynamic hpkey, String alg)
@@ -243,9 +245,11 @@ bool _hx_ssl_dgst_verify(Array<unsigned char> buffer, Array<unsigned char> sign,
 		hx::Throw(HX_CSTRING("Failed to finish hash : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
 	}
 
-	auto success = BCRYPT_SUCCESS(BCryptVerifySignature(key->ctx, &padding, output.data(), output.size(), reinterpret_cast<PUCHAR>(sign->GetBase()), sign->length, BCRYPT_PAD_PKCS1));
+	return null();
+
+	/*auto success = BCRYPT_SUCCESS(BCryptVerifySignature(key->ctx, &padding, output.data(), output.size(), reinterpret_cast<PUCHAR>(sign->GetBase()), sign->length, BCRYPT_PAD_PKCS1));
 
 	hx::ExitGCFreeZone();
 
-	return success;
+	return success;*/
 }

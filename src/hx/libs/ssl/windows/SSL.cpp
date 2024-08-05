@@ -18,7 +18,7 @@ namespace
 	{
 		auto key = obj.Cast<hx::ssl::windows::Key>();
 
-		BCryptDestroyKey(key->ctx);
+		NCryptFreeObject(key->ctx);
 	}
 }
 
@@ -32,7 +32,7 @@ String hx::ssl::windows::Cert_obj::toString()
 	return HX_CSTRING("cert");
 }
 
-hx::ssl::windows::Key_obj::Key_obj(BCRYPT_KEY_HANDLE inCtx) : ctx(inCtx)
+hx::ssl::windows::Key_obj::Key_obj(NCRYPT_KEY_HANDLE inCtx) : ctx(inCtx)
 {
 	_hx_set_finalizer(this, DestroyKey);
 }
