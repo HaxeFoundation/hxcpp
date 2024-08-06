@@ -1,5 +1,7 @@
 #include <hxcpp.h>
 #include <Windows.h>
+#include <sstream>
+#include <iostream>
 
 #include "SSL.h"
 #include "Utils.h"
@@ -45,23 +47,59 @@ namespace
 		return hx::ssl::windows::Key(new hx::ssl::windows::Key_obj(key));
 	}
 
-	Dynamic DecodePrivateRsaKey(const uint8_t* data, const DWORD length);
+	Dynamic DecodePrivateRsaKey(const uint8_t* data, const DWORD length)
+	{
+		auto size = DWORD{ 0 };
+		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PRIVATE_KEY_BLOB, data, length, 0, nullptr, nullptr, &size))
+		{
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed to get the size of the RSA private key blob"));
+		}
 
-	Dynamic DecodeEncryptedPrivateRsaKey(const uint8_t* src, const DWORD srcLength, String pass)
+		auto keyblob = std::vector<uint8_t>(size);
+		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PRIVATE_KEY_BLOB, data, length, 0, nullptr, keyblob.data(), &size))
+		{
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed to decode the key into a RSA private key blob"));
+		}
+
+		auto provider = NCRYPT_PROV_HANDLE();
+		if (NCryptOpenStorageProvider(&provider, MS_KEY_STORAGE_PROVIDER, 0))
+		{
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed to open Microsoft key storage provider"));
+		}
+
+		auto key = NCRYPT_KEY_HANDLE();
+		if (NCryptImportKey(provider, 0, BCRYPT_PRIVATE_KEY_BLOB, nullptr, &key, keyblob.data(), size, 0))
+		{
+			NCryptFreeObject(provider);
+
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed to import key"));
+		}
+
+		NCryptFreeObject(provider);
+
+		hx::ExitGCFreeZone();
+
+		return hx::ssl::windows::Key(new hx::ssl::windows::Key_obj(key));
+	}
+
+	Dynamic DecodeEncryptedPrivateRsaKey(std::vector<uint8_t>& encrypted, std::string& iv64, const wchar_t* algorithm, const int keySize, String pass)
 	{
 		auto cb     = DWORD{ 0 };
 		auto result = DWORD{ 0 };
 		auto size   = DWORD{ 0 };
-		auto dekIV  = "5C724CE55C702828F3F74B555F594366";
 
-		if (!CryptStringToBinaryA(dekIV, 0, CRYPT_STRING_HEX, nullptr, &size, nullptr, nullptr))
+		if (!CryptStringToBinaryA(iv64.c_str(), 0, CRYPT_STRING_HEX, nullptr, &size, nullptr, nullptr))
 		{
 			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failure"));
 		}
 
 		auto iv = std::vector<uint8_t>(size);
-		if (!CryptStringToBinaryA(dekIV, 0, CRYPT_STRING_HEX, iv.data(), &size, nullptr, nullptr))
+		if (!CryptStringToBinaryA(iv64.c_str(), 0, CRYPT_STRING_HEX, iv.data(), &size, nullptr, nullptr))
 		{
 			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failure"));
@@ -150,7 +188,7 @@ namespace
 		}
 
 		auto aes = BCRYPT_ALG_HANDLE();
-		if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&aes, BCRYPT_AES_ALGORITHM, nullptr, 0)))
+		if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&aes, algorithm, nullptr, 0)))
 		{
 			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failure"));
@@ -178,20 +216,20 @@ namespace
 		}
 
 		auto outputkey = BCRYPT_KEY_HANDLE();
-		if (!BCRYPT_SUCCESS(result = BCryptGenerateSymmetricKey(aes, &outputkey, aeskey.data(), aeskey.size(), r1_digest.data(), 16, 0)))
+		if (!BCRYPT_SUCCESS(result = BCryptGenerateSymmetricKey(aes, &outputkey, aeskey.data(), aeskey.size(), r1_digest.data(), keySize, 0)))
 		{
 			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failure"));
 		}
 
-		if (!BCRYPT_SUCCESS(result = BCryptDecrypt(outputkey, const_cast<uint8_t*>(src), srcLength, nullptr, iv.data(), iv.size(), nullptr, 0, &size, BCRYPT_BLOCK_PADDING)))
+		if (!BCRYPT_SUCCESS(result = BCryptDecrypt(outputkey, encrypted.data(), encrypted.size(), nullptr, iv.data(), iv.size(), nullptr, 0, &size, BCRYPT_BLOCK_PADDING)))
 		{
 			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failed to get decrypted key size : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
 		}
 
 		auto decrypted = std::vector<uint8_t>(size);
-		if (!BCRYPT_SUCCESS(result = BCryptDecrypt(outputkey, const_cast<uint8_t*>(src), srcLength, nullptr, iv.data(), iv.size(), decrypted.data(), decrypted.size(), &size, BCRYPT_BLOCK_PADDING)))
+		if (!BCRYPT_SUCCESS(result = BCryptDecrypt(outputkey, encrypted.data(), encrypted.size(), nullptr, iv.data(), iv.size(), decrypted.data(), decrypted.size(), &size, BCRYPT_BLOCK_PADDING)))
 		{
 			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failed to decrypt key : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
@@ -200,43 +238,96 @@ namespace
 		return DecodePrivateRsaKey(decrypted.data(), decrypted.size());
 	}
 
-	Dynamic DecodePrivateRsaKey(const uint8_t* data, const DWORD length)
+	Dynamic DecodeEncryptedPrivateRsaKey(const char* pem, String pass)
 	{
-		auto size = DWORD{ 0 };
-		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PRIVATE_KEY_BLOB, data, length, 0, nullptr, nullptr, &size))
+		auto stream = std::istringstream(pem);
+		auto line = std::string();
+
+		auto buffer = std::string();
+		auto blockSize = int{ 0 };
+		auto cipher = (const wchar_t*)nullptr;
+		auto iv = std::string();
+
+		while (std::getline(stream, line))
 		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to get the size of the RSA private key blob"));
+			if (line.at(line.length() - 1) == '\r')
+			{
+				line.pop_back();
+			}
+
+			if (line.find("-----BEGIN") != std::string::npos)
+			{
+				continue;
+			}
+			if (line.find("-----END") != std::string::npos)
+			{
+				continue;
+			}
+			if (line.find("Proc-Type") != std::string::npos)
+			{
+				continue;
+			}
+			if (line.find("DEK-Info") != std::string::npos)
+			{
+				line.erase(0, line.find(':') + sizeof(char));
+
+				if (line.find("AES-256-CBC") != std::string::npos)
+				{
+					blockSize = 32;
+					cipher = BCRYPT_AES_ALGORITHM;
+				}
+				if (line.find("AES-192-CBC") != std::string::npos)
+				{
+					blockSize = 24;
+					cipher = BCRYPT_AES_ALGORITHM;
+				}
+				if (line.find("AES-128-CBC") != std::string::npos)
+				{
+					blockSize = 16;
+					cipher = BCRYPT_AES_ALGORITHM;
+				}
+				if (line.find("DES-EDE3-CBC") != std::string::npos)
+				{
+					blockSize = 24;
+					cipher = BCRYPT_3DES_ALGORITHM;
+				}
+				if (line.find("DES-CBC") != std::string::npos)
+				{
+					blockSize = 8;
+					cipher = BCRYPT_DES_ALGORITHM;
+				}
+
+				if (nullptr == cipher)
+				{
+					hx::ExitGCFreeZone();
+					hx::Throw(HX_CSTRING("Private key contained unsupported encryption cipher"));
+				}
+
+				line.erase(0, line.find(',') + sizeof(char));
+
+				iv.assign(line);
+
+				continue;
+			}
+
+			buffer.append(line);
 		}
 
-		auto keyblob = std::vector<uint8_t>(size);
-		if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CNG_RSA_PRIVATE_KEY_BLOB, data, length, 0, nullptr, keyblob.data(), &size))
+		auto derKeyLength = DWORD{ 0 };
+		if (!CryptStringToBinaryA(buffer.c_str(), 0, CRYPT_STRING_BASE64, nullptr, &derKeyLength, nullptr, nullptr))
 		{
 			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to decode the key into a RSA private key blob"));
+			hx::Throw(HX_CSTRING("Failed to parse certificate : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
 		}
 
-		auto provider = NCRYPT_PROV_HANDLE();
-		if (NCryptOpenStorageProvider(&provider, MS_KEY_STORAGE_PROVIDER, 0))
+		auto derKey = std::vector<uint8_t>(derKeyLength);
+		if (!CryptStringToBinaryA(buffer.c_str(), 0, CRYPT_STRING_BASE64, derKey.data(), &derKeyLength, nullptr, nullptr))
 		{
 			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to open Microsoft key storage provider"));
+			hx::Throw(HX_CSTRING("Failed to parse certificate : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
 		}
 
-		auto key = NCRYPT_KEY_HANDLE();
-		if (NCryptImportKey(provider, 0, BCRYPT_PRIVATE_KEY_BLOB, nullptr, &key, keyblob.data(), size, 0))
-		{
-			NCryptFreeObject(provider);
-
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to import key"));
-		}
-
-		NCryptFreeObject(provider);
-
-		hx::ExitGCFreeZone();
-
-		return hx::ssl::windows::Key(new hx::ssl::windows::Key_obj(key));
+		return DecodeEncryptedPrivateRsaKey(derKey, iv, cipher, blockSize, pass);
 	}
 
 	Dynamic DecodePublicPkcs8Key(const uint8_t* data, const DWORD length)
@@ -480,7 +571,7 @@ Dynamic _hx_ssl_key_from_pem(String pem, bool pub, String pass)
 			}
 			else
 			{
-				return DecodeEncryptedPrivateRsaKey(derKey.data(), derKeyLength, pass);
+				return DecodeEncryptedPrivateRsaKey(string, pass);
 			}
 		}
 
