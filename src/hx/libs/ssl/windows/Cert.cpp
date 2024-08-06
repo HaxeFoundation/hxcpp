@@ -173,8 +173,6 @@ String _hx_ssl_cert_get_subject(Dynamic hcert, String objname)
 		}
 	}
 
-	hx::Throw(HX_CSTRING("Failed to find subject attribute"));
-
 	return null();
 }
 
@@ -227,8 +225,6 @@ String _hx_ssl_cert_get_issuer(Dynamic hcert, String objname)
 			}
 		}
 	}
-
-	hx::Throw(HX_CSTRING("Failed to find issuer attribute"));
 
 	return null();
 }
