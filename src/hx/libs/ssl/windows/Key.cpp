@@ -246,7 +246,7 @@ namespace
 			hx::Throw(HX_CSTRING("Failure"));
 		}
 
-		if (!BCRYPT_SUCCESS(result = BCryptDecrypt(outputkey, encrypted.data(), encrypted.size(), nullptr, iv.data(), iv.size(), nullptr, 0, &size, BCRYPT_BLOCK_PADDING)))
+		if (!BCRYPT_SUCCESS(result = BCryptDecrypt(outputkey, encrypted.data(), encrypted.size(), nullptr, iv.data(), iv.size(), nullptr, 0, &size, BCRYPT_PAD_PKCS1)))
 		{
 			BCryptDestroyHash(hash);
 			BCryptCloseAlgorithmProvider(md5, 0);
@@ -258,7 +258,7 @@ namespace
 		}
 
 		auto decrypted = std::vector<uint8_t>(size);
-		if (!BCRYPT_SUCCESS(result = BCryptDecrypt(outputkey, encrypted.data(), encrypted.size(), nullptr, iv.data(), iv.size(), decrypted.data(), decrypted.size(), &size, BCRYPT_BLOCK_PADDING)))
+		if (!BCRYPT_SUCCESS(result = BCryptDecrypt(outputkey, encrypted.data(), encrypted.size(), nullptr, iv.data(), iv.size(), decrypted.data(), decrypted.size(), &size, BCRYPT_PAD_PKCS1)))
 		{
 			BCryptDestroyHash(hash);
 			BCryptCloseAlgorithmProvider(md5, 0);
