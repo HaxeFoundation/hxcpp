@@ -147,7 +147,7 @@ Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buffer, Dynamic hpke
 	}
 
 	auto signatureLength = DWORD{ 0 };
-	if (!BCRYPT_SUCCESS(result = NCryptSignHash(key->ctx, nullptr, reinterpret_cast<PUCHAR>(hashed.data()), hashed.size(), nullptr, 0, &signatureLength, 0)))
+	if (ERROR_SUCCESS != (result = NCryptSignHash(key->ctx, &padding, reinterpret_cast<PUCHAR>(hashed.data()), hashed.size(), nullptr, 0, &signatureLength, BCRYPT_PAD_PKCS1)))
 	{
 		BCryptDestroyHash(hash);
 		BCryptCloseAlgorithmProvider(handle, 0);
@@ -160,7 +160,7 @@ Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buffer, Dynamic hpke
 	auto signature = Array<uint8_t>(signatureLength, signatureLength);
 	hx::EnterGCFreeZone();
 
-	if (!BCRYPT_SUCCESS(result = NCryptSignHash(key->ctx, &padding, reinterpret_cast<PUCHAR>(hashed.data()), hashed.size(), reinterpret_cast<PUCHAR>(signature->GetBase()), signature->length, &signatureLength, BCRYPT_PAD_PKCS1)))
+	if (ERROR_SUCCESS != (result = NCryptSignHash(key->ctx, &padding, reinterpret_cast<PUCHAR>(hashed.data()), hashed.size(), reinterpret_cast<PUCHAR>(signature->GetBase()), signature->length, &signatureLength, BCRYPT_PAD_PKCS1)))
 	{
 		BCryptDestroyHash(hash);
 		BCryptCloseAlgorithmProvider(handle, 0);
@@ -243,7 +243,7 @@ bool _hx_ssl_dgst_verify(Array<unsigned char> buffer, Array<unsigned char> sign,
 		hx::Throw(HX_CSTRING("Failed to finish hash : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
 	}
 
-	auto success = BCRYPT_SUCCESS(NCryptVerifySignature(key->ctx, &padding, output.data(), output.size(), reinterpret_cast<PUCHAR>(sign->GetBase()), sign->length, BCRYPT_PAD_PKCS1));
+	auto success = ERROR_SUCCESS == NCryptVerifySignature(key->ctx, &padding, output.data(), output.size(), reinterpret_cast<PUCHAR>(sign->GetBase()), sign->length, BCRYPT_PAD_PKCS1);
 
 	hx::ExitGCFreeZone();
 
