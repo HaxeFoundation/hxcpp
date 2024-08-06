@@ -127,64 +127,50 @@ namespace
 			hx::Throw(HX_CSTRING("Failure"));
 		}
 
-		// Round 1
+		auto concat = std::vector<uint8_t>();
+
 		hx::strbuf passbuffer;
+
 		int passlength;
 		auto password = pass.utf8_str(&passbuffer, true, &passlength);
-		
-		if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(const_cast<char*>(password)), passlength, 0)))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
-		if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(iv.data()), 8, 0)))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
 
-		auto hashLength = DWORD{ 0 };
-		if (!BCRYPT_SUCCESS(result = BCryptGetProperty(hash, BCRYPT_HASH_LENGTH, reinterpret_cast<PUCHAR>(&hashLength), sizeof(DWORD), &cb, 0)))
+		while (concat.size() < keySize)
 		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
+			if (!concat.empty())
+			{
+				if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(concat.data()), concat.size(), 0)))
+				{
+					hx::ExitGCFreeZone();
+					hx::Throw(HX_CSTRING("Failure"));
+				}
+			}
 
-		auto r1_digest = std::vector<uint8_t>(hashLength);
-		if (!BCRYPT_SUCCESS(result = BCryptFinishHash(hash, r1_digest.data(), r1_digest.size(), 0)))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
+			if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(const_cast<char*>(password)), passlength, 0)))
+			{
+				hx::ExitGCFreeZone();
+				hx::Throw(HX_CSTRING("Failure"));
+			}
+			if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(iv.data()), 8, 0)))
+			{
+				hx::ExitGCFreeZone();
+				hx::Throw(HX_CSTRING("Failure"));
+			}
 
-		// Round 2
-		if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(r1_digest.data()), r1_digest.size(), 0)))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
-		if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(const_cast<char*>(password)), passlength, 0)))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
-		if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(iv.data()), 8, 0)))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
+			auto hashLength = DWORD{ 0 };
+			if (!BCRYPT_SUCCESS(result = BCryptGetProperty(hash, BCRYPT_HASH_LENGTH, reinterpret_cast<PUCHAR>(&hashLength), sizeof(DWORD), &cb, 0)))
+			{
+				hx::ExitGCFreeZone();
+				hx::Throw(HX_CSTRING("Failure"));
+			}
 
-		if (!BCRYPT_SUCCESS(result = BCryptGetProperty(hash, BCRYPT_HASH_LENGTH, reinterpret_cast<PUCHAR>(&hashLength), sizeof(DWORD), &cb, 0)))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
+			auto digest = std::vector<uint8_t>(hashLength);
+			if (!BCRYPT_SUCCESS(result = BCryptFinishHash(hash, digest.data(), digest.size(), 0)))
+			{
+				hx::ExitGCFreeZone();
+				hx::Throw(HX_CSTRING("Failure"));
+			}
 
-		auto r2_digest = std::vector<uint8_t>(hashLength);
-		if (!BCRYPT_SUCCESS(result = BCryptFinishHash(hash, r2_digest.data(), r2_digest.size(), 0)))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
+			concat.insert(concat.end(), digest.begin(), digest.end());
 		}
 
 		auto aes = BCRYPT_ALG_HANDLE();
@@ -216,7 +202,7 @@ namespace
 		}
 
 		auto outputkey = BCRYPT_KEY_HANDLE();
-		if (!BCRYPT_SUCCESS(result = BCryptGenerateSymmetricKey(aes, &outputkey, aeskey.data(), aeskey.size(), r1_digest.data(), keySize, 0)))
+		if (!BCRYPT_SUCCESS(result = BCryptGenerateSymmetricKey(aes, &outputkey, aeskey.data(), aeskey.size(), concat.data(), keySize, 0)))
 		{
 			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failure"));
