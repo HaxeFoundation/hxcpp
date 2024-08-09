@@ -1037,6 +1037,7 @@ class BuildTool
                   substitute(el.att.variable), substitute(el.att.target)  );
                case "options" : group.addOptions( substitute(el.att.name) );
                case "config" : group.mConfig = substitute(el.att.name);
+               case "assembler" : group.mAssembler = substitute(el.att.name);
                case "compilerflag" :
                   if (el.has.name)
                      group.addCompilerFlag( substitute(el.att.name) );

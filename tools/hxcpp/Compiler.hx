@@ -1,6 +1,7 @@
 import haxe.crypto.Md5;
 import haxe.io.Path;
 import sys.FileSystem;
+using StringTools;
 
 private class FlagInfo
 {
@@ -306,7 +307,8 @@ class Compiler
       var args = getArgs(inFile);
       var nvcc = inFile.isNvcc();
       var asm = inFile.isAsm();
-      var exe = asm ? mAsmExe : nvcc ? BuildTool.getNvcc() : mExe;
+      var exe = asm ? inFile.getAsmExe(mAsmExe) : nvcc ? BuildTool.getNvcc() : mExe;
+      var nasm = asm && (exe.endsWith("nasm") || exe.endsWith("nasm.exe"));
       var isRc =  mRcExe!=null && inFile.isResource();
       if (isRc)
          exe = mRcExe;
@@ -368,7 +370,7 @@ class Compiler
                args.push( (new Path( inFile.mDir + inFile.mName)).toString() );
          }
 
-         var out = nvcc ? "-o " : mOutFlag;
+         var out = (nvcc||nasm) ? "-o " : mOutFlag;
          if (out.substr(-1)==" ")
          {
             args.push(out.substr(0,out.length-1));
