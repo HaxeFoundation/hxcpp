@@ -395,47 +395,14 @@ namespace
 			hx::Throw(HX_CSTRING("Failed to import public key : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
 		}
 
-		if (!BCRYPT_SUCCESS(BCryptGetProperty(key, BCRYPT_ALGORITHM_NAME, nullptr, 0, &size, 0)))
+		if (!BCRYPT_SUCCESS(BCryptExportKey(key, nullptr, BCRYPT_PUBLIC_KEY_BLOB, nullptr, 0, &size, 0)))
 		{
 			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failed to get export key size"));
 		}
 
-		auto name = std::vector<uint8_t>(size);
-		if (!BCRYPT_SUCCESS(BCryptGetProperty(key, BCRYPT_ALGORITHM_NAME, name.data(), name.size(), &size, 0)))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to get export key size"));
-		}
-
-		auto ident = (const wchar_t*)nullptr;
-		if (0 == wcscmp(reinterpret_cast<wchar_t*>(name.data()), BCRYPT_RSA_ALGORITHM))
-		{
-			ident = BCRYPT_RSAPUBLIC_BLOB;
-		}
-		if (0 == wcscmp(reinterpret_cast<wchar_t*>(name.data()), BCRYPT_DSA_ALGORITHM))
-		{
-			ident = BCRYPT_DSA_PUBLIC_BLOB;
-		}
-		if (0 == wcsncmp(reinterpret_cast<wchar_t*>(name.data()), L"EC", 2))
-		{
-			ident = BCRYPT_ECCPUBLIC_BLOB;
-		}
-
-		if (nullptr == ident)
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Unexpected key type"));
-		}
-
-		if (!BCRYPT_SUCCESS(BCryptExportKey(key, nullptr, ident, nullptr, 0, &size, 0)))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failed to get export key size"));
-		}
-
-		auto eccKey = std::vector<uint8_t>(size);
-		if (!BCRYPT_SUCCESS(BCryptExportKey(key, nullptr, ident, eccKey.data(), size, &size, 0)))
+		auto blob = std::vector<uint8_t>(size);
+		if (!BCRYPT_SUCCESS(BCryptExportKey(key, nullptr, BCRYPT_PUBLIC_KEY_BLOB, blob.data(), size, &size, 0)))
 		{
 			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failed to export key"));
@@ -451,7 +418,7 @@ namespace
 		}
 
 		auto nkey = NCRYPT_KEY_HANDLE();
-		if (NCryptImportKey(provider, 0, ident, nullptr, &nkey, eccKey.data(), size, 0))
+		if (NCryptImportKey(provider, 0, BCRYPT_PUBLIC_KEY_BLOB, nullptr, &nkey, blob.data(), size, 0))
 		{
 			NCryptFreeObject(provider);
 			BCryptDestroyKey(key);
