@@ -10,38 +10,46 @@ namespace hx
 	{
 		namespace windows
 		{
-			template<class T>
-			T getProperty(BCRYPT_HANDLE handle, const wchar_t* prop)
+			struct CngObject
 			{
-				hx::EnterGCFreeZone();
+				BCRYPT_HANDLE handle;
 
-				auto result = DWORD{ 0 };
-				auto size   = ULONG{ 0 };
-				if (!BCRYPT_SUCCESS(result = BCryptGetProperty(handle, prop, nullptr, 0, &size, 0)))
+				virtual ~CngObject() = 0;
+
+				CngObject(BCRYPT_HANDLE inHandle) : handle(inHandle) {}
+
+				template<class T>
+				T getProperty(const wchar_t* prop) const
 				{
+					hx::EnterGCFreeZone();
+
+					auto result = DWORD{ 0 };
+					auto cb     = ULONG{ 0 };
+
+					auto buffer = T();
+					if (!BCRYPT_SUCCESS(result = BCryptGetProperty(handle, prop, reinterpret_cast<PUCHAR>(&buffer), sizeof(T), &cb, 0)))
+					{
+						hx::ExitGCFreeZone();
+						hx::Throw(HX_CSTRING("Failed to get property : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
+					}
+
 					hx::ExitGCFreeZone();
-					hx::Throw(HX_CSTRING("Failed to get property size : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
+
+					return buffer;
 				}
 
-				auto buffer = std::vector<UCHAR>(size);
-				if (!BCRYPT_SUCCESS(result = BCryptGetProperty(handle, prop, buffer.data(), buffer.size(), &size, 0)))
+				void setProperty(const wchar_t* prop) const
 				{
-					hx::ExitGCFreeZone();
-					hx::Throw(HX_CSTRING("Failed to get property : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
+
 				}
+			};
 
-				hx::ExitGCFreeZone();
-
-				return static_cast<T>(buffer[0]);
-			}
-
-			struct CngHash
+			struct CngHash : CngObject
 			{
-				BCRYPT_HASH_HANDLE handle;
 				std::unique_ptr<std::vector<uint8_t>> object;
 
 				CngHash(BCRYPT_HASH_HANDLE inHandle, std::unique_ptr<std::vector<uint8_t>> inObject)
-					: handle(inHandle)
+					: CngObject(inHandle)
 					, object(std::move(inObject))
 				{
 					//
@@ -97,7 +105,7 @@ namespace hx
 				Array<uint8_t> finish() const
 				{
 					auto result = DWORD{ 0 };
-					auto length = getProperty<DWORD>(handle, BCRYPT_HASH_LENGTH);
+					auto length = getProperty<DWORD>(BCRYPT_HASH_LENGTH);
 					auto output = Array<uint8_t>(length, length);
 
 					hx::EnterGCFreeZone();
@@ -114,9 +122,9 @@ namespace hx
 				}
 			};
 
-			struct CngAlgorithm
+			struct CngAlgorithm : CngObject
 			{
-				CngAlgorithm(BCRYPT_ALG_HANDLE inHandle) : handle(inHandle) {}
+				CngAlgorithm(BCRYPT_ALG_HANDLE inHandle) : CngObject(inHandle) {}
 
 			public:
 				BCRYPT_ALG_HANDLE handle;
@@ -126,13 +134,13 @@ namespace hx
 					BCryptCloseAlgorithmProvider(handle, 0);
 				}
 
-				std::unique_ptr<CngHash> hash()
+				std::unique_ptr<CngHash> hash() const
 				{
 					hx::EnterGCFreeZone();
 
 					auto result = DWORD{ 0 };
 					auto hHash  = BCRYPT_HASH_HANDLE();
-					auto object = std::make_unique<std::vector<uint8_t>>(getProperty<DWORD>(handle, BCRYPT_OBJECT_LENGTH));
+					auto object = std::make_unique<std::vector<uint8_t>>(getProperty<DWORD>(BCRYPT_OBJECT_LENGTH));
 
 					if (!BCRYPT_SUCCESS(result = BCryptCreateHash(handle, &hHash, object->data(), object->size(), nullptr, 0, BCRYPT_HASH_REUSABLE_FLAG)))
 					{
