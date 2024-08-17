@@ -80,11 +80,14 @@ static void CriticalErrorHandler(String inErr, bool allowFixup)
 #ifdef HXCPP_STACK_TRACE
    hx::StackContext *ctx = hx::StackContext::getCurrent();
    ctx->beginCatch(true);
-   ctx->dumpExceptionStack();
 #endif
 
    if (sCriticalErrorHandler!=null())
       sCriticalErrorHandler(inErr);
+
+#ifdef HXCPP_STACK_TRACE
+   ctx->dumpExceptionStack();
+#endif
 
     DBGLOG("Critical Error: %s\n", inErr.utf8_str());
 
