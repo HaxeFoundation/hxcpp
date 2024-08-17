@@ -6,6 +6,31 @@
 
 namespace
 {
+	Array<int> FileTimeToDate(const FILETIME* time)
+	{
+		auto localTime = SYSTEMTIME();
+
+		hx::EnterGCFreeZone();
+
+		if (!FileTimeToSystemTime(time, &localTime))
+		{
+			hx::ExitGCFreeZone();
+			hx::Throw(HX_CSTRING("Failed to get system time : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
+		}
+
+		hx::ExitGCFreeZone();
+
+		auto date = Array<int>(6, 6);
+		date[0] = localTime.wYear;
+		date[1] = localTime.wMonth;
+		date[2] = localTime.wDay;
+		date[3] = localTime.wHour;
+		date[4] = localTime.wMinute;
+		date[5] = localTime.wSecond;
+
+		return date;
+	}
+
 	void AddAltNamesFrom(hx::ssl::windows::Cert cert, const char* source, Array<String> result)
 	{
 		auto ext = CertFindExtension(source, cert->ctx->pCertInfo->cExtension, cert->ctx->pCertInfo->rgExtension);
@@ -242,42 +267,12 @@ Array<String> _hx_ssl_cert_get_altnames(Dynamic hcert)
 
 Array<int> _hx_ssl_cert_get_notbefore(Dynamic hcert)
 {
-	auto cert = hcert.Cast<hx::ssl::windows::Cert>();
-	auto sysTime = SYSTEMTIME();
-
-	if (!FileTimeToSystemTime(&cert->ctx->pCertInfo->NotBefore, &sysTime))
-	{
-		hx::Throw(HX_CSTRING("Failed to get system time : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-	}
-
-	auto result = Array<int>(6, 6);
-	result[0] = sysTime.wYear;
-	result[1] = sysTime.wMonth;
-	result[2] = sysTime.wDay - 1;
-	result[3] = sysTime.wHour;
-	result[4] = sysTime.wMinute;
-	result[5] = sysTime.wSecond;
-	return result;
+	return FileTimeToDate(&hcert.Cast<hx::ssl::windows::Cert>()->ctx->pCertInfo->NotBefore);
 }
 
 Array<int> _hx_ssl_cert_get_notafter(Dynamic hcert)
 {
-	auto cert = hcert.Cast<hx::ssl::windows::Cert>();
-	auto sysTime = SYSTEMTIME();
-
-	if (!FileTimeToSystemTime(&cert->ctx->pCertInfo->NotAfter, &sysTime))
-	{
-		hx::Throw(HX_CSTRING("Failed to get system time : ") + hx::ssl::windows::utils::Win32ErrorToString(GetLastError()));
-	}
-
-	auto result = Array<int>(6, 6);
-	result[0] = sysTime.wYear;
-	result[1] = sysTime.wMonth;
-	result[2] = sysTime.wDay;
-	result[3] = sysTime.wHour;
-	result[4] = sysTime.wMinute;
-	result[5] = sysTime.wSecond;
-	return result;
+	return FileTimeToDate(&hcert.Cast<hx::ssl::windows::Cert>()->ctx->pCertInfo->NotAfter);
 }
 
 Dynamic _hx_ssl_cert_get_next(Dynamic hcert)

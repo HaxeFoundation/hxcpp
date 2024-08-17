@@ -16,7 +16,7 @@ class CertificateTests extends Test {
     function testNonExistingSubject() {
         final cert = Certificate.fromString(Resource.getString('x509sample'));
 
-        Assert.exception(() -> cert.subject('QQ'));
+        Assert.isNull(cert.subject('QQ'));
     }
 
     function testSubjectCommonName() {
@@ -46,7 +46,7 @@ class CertificateTests extends Test {
     function testNonExistingIssuer() {
         final cert = Certificate.fromString(Resource.getString('x509sample'));
 
-        Assert.exception(() -> cert.issuer('QQ'));
+        Assert.isNull(cert.issuer('QQ'));
     }
 
     function testIssuerCommonName() {
@@ -94,25 +94,25 @@ class CertificateTests extends Test {
     function testBefore() {
         final cert = Certificate.fromString(Resource.getString('x509sample'));
 
-        Assert.equals(2012, cert.notBefore.getUTCFullYear());
-        Assert.equals(7, cert.notBefore.getUTCMonth());
-        Assert.equals(22, cert.notBefore.getUTCDate());
+        Assert.equals(2012, cert.notBefore.getFullYear());
+        Assert.equals(7, cert.notBefore.getMonth());
+        Assert.equals(22, cert.notBefore.getDate());
 
-        Assert.equals(0, cert.notBefore.getUTCSeconds());
-        Assert.equals(28, cert.notBefore.getUTCMinutes());
-        Assert.equals(6, cert.notBefore.getUTCHours());
+        Assert.equals(0, cert.notBefore.getSeconds());
+        Assert.equals(28, cert.notBefore.getMinutes());
+        Assert.equals(5, cert.notBefore.getHours());
     }
 
     function testAfter() {
         final cert = Certificate.fromString(Resource.getString('x509sample'));
 
-        Assert.equals(2017, cert.notAfter.getUTCFullYear());
-        Assert.equals(7, cert.notAfter.getUTCMonth());
-        Assert.equals(21, cert.notAfter.getUTCDate());
+        Assert.equals(2017, cert.notAfter.getFullYear());
+        Assert.equals(7, cert.notAfter.getMonth());
+        Assert.equals(21, cert.notAfter.getDate());
 
-        Assert.equals(0, cert.notAfter.getUTCSeconds());
-        Assert.equals(28, cert.notAfter.getUTCMinutes());
-        Assert.equals(6, cert.notAfter.getUTCHours());
+        Assert.equals(0, cert.notAfter.getSeconds());
+        Assert.equals(28, cert.notAfter.getMinutes());
+        Assert.equals(5, cert.notAfter.getHours());
     }
 
     function testNext() {

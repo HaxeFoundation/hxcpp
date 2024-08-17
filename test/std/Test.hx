@@ -766,12 +766,12 @@ class Test extends utest.Test
                new Test(),
                new ssl.CertificateLoadingTests(),
                new ssl.CertificateTests(),
-               new ssl.DigestTests.MD5Tests(),
-               new ssl.DigestTests.SHA1Tests(),
-               new ssl.DigestTests.SHA256Tests(),
-               new ssl.DigestTests.SHA512Tests(),
-               new ssl.DigestTests.RIPEMD160Tests(),
-               new ssl.TestPKCS8()
+               new ssl.TestPKCS8(),
+               new ssl.TestPKCS1(),
+               new ssl.DigestTests.RsaMD5Tests(),
+               new ssl.DigestTests.RsaSHA1Tests(),
+               new ssl.DigestTests.RsaSHA256Tests(),
+               new ssl.DigestTests.RsaSHA512Tests(),
             ]);
       }
    }

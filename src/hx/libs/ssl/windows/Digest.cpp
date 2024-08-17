@@ -37,7 +37,7 @@ Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buffer, Dynamic hpke
 	if (ERROR_SUCCESS != (result = NCryptSignHash(key->ctx, &padding, reinterpret_cast<PUCHAR>(hashed.data()), hashed.size(), nullptr, 0, &signatureLength, BCRYPT_PAD_PKCS1)))
 	{
 		hx::ExitGCFreeZone();
-		hx::Throw(HX_CSTRING("Failed to signature length : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
+		hx::Throw(HX_CSTRING("Failed to calculate signature length : ") + hx::ssl::windows::utils::HResultErrorToString(result));
 	}
 
 	hx::ExitGCFreeZone();
@@ -47,7 +47,7 @@ Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buffer, Dynamic hpke
 	if (ERROR_SUCCESS != (result = NCryptSignHash(key->ctx, &padding, reinterpret_cast<PUCHAR>(hashed.data()), hashed.size(), reinterpret_cast<PUCHAR>(signature->GetBase()), signature->length, &signatureLength, BCRYPT_PAD_PKCS1)))
 	{
 		hx::ExitGCFreeZone();
-		hx::Throw(HX_CSTRING("Failed to sign hash : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
+		hx::Throw(HX_CSTRING("Failed to sign hash : ") + hx::ssl::windows::utils::HResultErrorToString(result));
 	}
 
 	hx::ExitGCFreeZone();
