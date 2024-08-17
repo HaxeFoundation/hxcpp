@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "SSL.h"
-#include "Utils.h"
+#include "Cng.h"
 
 namespace
 {
@@ -105,33 +105,12 @@ namespace
 			hx::Throw(HX_CSTRING("Failure"));
 		}
 
-		auto md5 = BCRYPT_ALG_HANDLE();
-		if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&md5, BCRYPT_MD5_ALGORITHM, nullptr, BCRYPT_HASH_REUSABLE_FLAG)))
-		{
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
+		hx::ExitGCFreeZone();
 
-		auto objectLength = DWORD{ 0 };
-		if (!BCRYPT_SUCCESS(result = BCryptGetProperty(md5, BCRYPT_OBJECT_LENGTH, reinterpret_cast<PUCHAR>(&objectLength), sizeof(DWORD), &cb, 0)))
-		{
-			BCryptCloseAlgorithmProvider(md5, 0);
-
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
-
-		auto object = std::vector<uint8_t>(objectLength);
-		auto hash   = BCRYPT_HASH_HANDLE();
-		if (!BCRYPT_SUCCESS(result = BCryptCreateHash(md5, &hash, object.data(), object.size(), nullptr, 0, BCRYPT_HASH_REUSABLE_FLAG)))
-		{
-			BCryptCloseAlgorithmProvider(md5, 0);
-
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
-
-		auto concat = std::vector<uint8_t>();
+		auto md5    = hx::ssl::windows::CngAlgorithm::create(BCRYPT_MD5_ALGORITHM, BCRYPT_HASH_REUSABLE_FLAG);
+		auto hash   = md5->hash();
+		auto concat = std::vector<UCHAR>();
+		auto digest = std::vector<UCHAR>(hash->getProperty<DWORD>(BCRYPT_HASH_LENGTH));
 
 		hx::strbuf passbuffer;
 
@@ -142,115 +121,35 @@ namespace
 		{
 			if (!concat.empty())
 			{
-				if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(concat.data()), concat.size(), 0)))
-				{
-					BCryptDestroyHash(hash);
-					BCryptCloseAlgorithmProvider(md5, 0);
-
-					hx::ExitGCFreeZone();
-					hx::Throw(HX_CSTRING("Failure"));
-				}
+				hash->hash(concat.data(), concat.size());
 			}
 
-			if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(const_cast<char*>(password)), passlength, 0)))
-			{
-				BCryptDestroyHash(hash);
-				BCryptCloseAlgorithmProvider(md5, 0);
+			hash->hash(reinterpret_cast<PUCHAR>(const_cast<char*>(password)), passlength);
+			hash->hash(reinterpret_cast<PUCHAR>(iv.data()), 8);
+			hash->finish(digest.data(), digest.size());
 
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failure"));
-			}
-			if (!BCRYPT_SUCCESS(result = BCryptHashData(hash, reinterpret_cast<PUCHAR>(iv.data()), 8, 0)))
-			{
-				BCryptDestroyHash(hash);
-				BCryptCloseAlgorithmProvider(md5, 0);
-
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failure"));
-			}
-
-			auto hashLength = DWORD{ 0 };
-			if (!BCRYPT_SUCCESS(result = BCryptGetProperty(hash, BCRYPT_HASH_LENGTH, reinterpret_cast<PUCHAR>(&hashLength), sizeof(DWORD), &cb, 0)))
-			{
-				BCryptDestroyHash(hash);
-				BCryptCloseAlgorithmProvider(md5, 0);
-
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failure"));
-			}
-
-			auto digest = std::vector<uint8_t>(hashLength);
-			if (!BCRYPT_SUCCESS(result = BCryptFinishHash(hash, digest.data(), digest.size(), 0)))
-			{
-				BCryptDestroyHash(hash);
-				BCryptCloseAlgorithmProvider(md5, 0);
-
-				hx::ExitGCFreeZone();
-				hx::Throw(HX_CSTRING("Failure"));
-			}
-
+			hx::EnterGCFreeZone();
 			concat.insert(concat.end(), digest.begin(), digest.end());
-		}
-
-		auto aes = BCRYPT_ALG_HANDLE();
-		if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&aes, algorithm, nullptr, 0)))
-		{
-			BCryptDestroyHash(hash);
-			BCryptCloseAlgorithmProvider(md5, 0);
-
 			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
 		}
 
-		if (!BCRYPT_SUCCESS(result = BCryptGetProperty(aes, BCRYPT_OBJECT_LENGTH, reinterpret_cast<PUCHAR>(&size), sizeof(DWORD), &cb, 0)))
-		{
-			BCryptDestroyHash(hash);
-			BCryptCloseAlgorithmProvider(md5, 0);
-			BCryptCloseAlgorithmProvider(aes, 0);
+		auto aes = hx::ssl::windows::CngAlgorithm::create(algorithm, 0);
 
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
+		aes->setProperty(BCRYPT_CHAINING_MODE, reinterpret_cast<PUCHAR>(BCRYPT_CHAIN_MODE_CBC), wcslen(BCRYPT_CHAIN_MODE_CBC));
 
-		auto aeskey = std::vector<uint8_t>(size);
+		auto aeskey = std::vector<uint8_t>(aes->getProperty<DWORD>(BCRYPT_OBJECT_LENGTH));
 
-		auto blockLength = DWORD{ 0 };
-		if (!BCRYPT_SUCCESS(result = BCryptGetProperty(aes, BCRYPT_BLOCK_LENGTH, reinterpret_cast<PUCHAR>(&blockLength), sizeof(DWORD), &cb, 0)))
-		{
-			BCryptDestroyHash(hash);
-			BCryptCloseAlgorithmProvider(md5, 0);
-			BCryptCloseAlgorithmProvider(aes, 0);
-
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
-
-		if (!BCRYPT_SUCCESS(result = BCryptSetProperty(aes, BCRYPT_CHAINING_MODE, reinterpret_cast<PUCHAR>(BCRYPT_CHAIN_MODE_CBC), wcslen(BCRYPT_CHAIN_MODE_CBC), 0)))
-		{
-			BCryptDestroyHash(hash);
-			BCryptCloseAlgorithmProvider(md5, 0);
-			BCryptCloseAlgorithmProvider(aes, 0);
-
-			hx::ExitGCFreeZone();
-			hx::Throw(HX_CSTRING("Failure"));
-		}
+		hx::EnterGCFreeZone();
 
 		auto outputkey = BCRYPT_KEY_HANDLE();
-		if (!BCRYPT_SUCCESS(result = BCryptGenerateSymmetricKey(aes, &outputkey, aeskey.data(), aeskey.size(), concat.data(), keySize, 0)))
+		if (!BCRYPT_SUCCESS(result = BCryptGenerateSymmetricKey(aes->handle, &outputkey, aeskey.data(), aeskey.size(), concat.data(), keySize, 0)))
 		{
-			BCryptDestroyHash(hash);
-			BCryptCloseAlgorithmProvider(md5, 0);
-			BCryptCloseAlgorithmProvider(aes, 0);
-
 			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failure"));
 		}
 
 		if (!BCRYPT_SUCCESS(result = BCryptDecrypt(outputkey, encrypted.data(), encrypted.size(), nullptr, iv.data(), iv.size(), nullptr, 0, &size, BCRYPT_PAD_PKCS1)))
 		{
-			BCryptDestroyHash(hash);
-			BCryptCloseAlgorithmProvider(md5, 0);
-			BCryptCloseAlgorithmProvider(aes, 0);
 			BCryptDestroyKey(outputkey);
 
 			hx::ExitGCFreeZone();
@@ -260,18 +159,12 @@ namespace
 		auto decrypted = std::vector<uint8_t>(size);
 		if (!BCRYPT_SUCCESS(result = BCryptDecrypt(outputkey, encrypted.data(), encrypted.size(), nullptr, iv.data(), iv.size(), decrypted.data(), decrypted.size(), &size, BCRYPT_PAD_PKCS1)))
 		{
-			BCryptDestroyHash(hash);
-			BCryptCloseAlgorithmProvider(md5, 0);
-			BCryptCloseAlgorithmProvider(aes, 0);
 			BCryptDestroyKey(outputkey);
 
 			hx::ExitGCFreeZone();
 			hx::Throw(HX_CSTRING("Failed to decrypt key : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
 		}
 
-		BCryptDestroyHash(hash);
-		BCryptCloseAlgorithmProvider(md5, 0);
-		BCryptCloseAlgorithmProvider(aes, 0);
 		BCryptDestroyKey(outputkey);
 
 		return DecodePrivateRsaKey(decrypted.data(), decrypted.size());
@@ -563,8 +456,7 @@ Dynamic _hx_ssl_key_from_pem(String pem, bool pub, String pass)
 			return DecodePublicPkcs8Key(derKey.data(), derKeyLength);
 		}
 
-		hx::ExitGCFreeZone();
-		hx::Throw(HX_CSTRING("Unsupported public key type in PEM"));
+		return null();
 	}
 	else
 	{

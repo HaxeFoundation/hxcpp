@@ -14,8 +14,6 @@ namespace hx
 			{
 				BCRYPT_HANDLE handle;
 
-				virtual ~CngObject() = 0;
-
 				CngObject(BCRYPT_HANDLE inHandle) : handle(inHandle) {}
 
 				template<class T>
@@ -38,9 +36,19 @@ namespace hx
 					return buffer;
 				}
 
-				void setProperty(const wchar_t* prop) const
+				void setProperty(const wchar_t* prop, PUCHAR input, const ULONG length) const
 				{
+					hx::EnterGCFreeZone();
 
+					auto result = DWORD{ 0 };
+
+					if (!BCRYPT_SUCCESS(result = BCryptSetProperty(handle, prop, input, length, 0)))
+					{
+						hx::ExitGCFreeZone();
+						hx::Throw(HX_CSTRING("Failure"));
+					}
+
+					hx::ExitGCFreeZone();
 				}
 			};
 
@@ -124,11 +132,11 @@ namespace hx
 
 			struct CngAlgorithm : CngObject
 			{
-				CngAlgorithm(BCRYPT_ALG_HANDLE inHandle) : CngObject(inHandle) {}
+				ULONG flags;
+
+				CngAlgorithm(BCRYPT_ALG_HANDLE inHandle, ULONG inFlags) : CngObject(inHandle), flags(inFlags) {}
 
 			public:
-				BCRYPT_ALG_HANDLE handle;
-
 				~CngAlgorithm()
 				{
 					BCryptCloseAlgorithmProvider(handle, 0);
@@ -136,13 +144,13 @@ namespace hx
 
 				std::unique_ptr<CngHash> hash() const
 				{
-					hx::EnterGCFreeZone();
-
 					auto result = DWORD{ 0 };
 					auto hHash  = BCRYPT_HASH_HANDLE();
 					auto object = std::make_unique<std::vector<uint8_t>>(getProperty<DWORD>(BCRYPT_OBJECT_LENGTH));
 
-					if (!BCRYPT_SUCCESS(result = BCryptCreateHash(handle, &hHash, object->data(), object->size(), nullptr, 0, BCRYPT_HASH_REUSABLE_FLAG)))
+					hx::EnterGCFreeZone();
+
+					if (!BCRYPT_SUCCESS(result = BCryptCreateHash(handle, &hHash, object->data(), object->size(), nullptr, 0, flags)))
 					{
 						hx::ExitGCFreeZone();
 						hx::Throw(HX_CSTRING("Failed to create hash object : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
@@ -153,14 +161,14 @@ namespace hx
 					return std::make_unique<CngHash>(hHash, std::move(object));
 				}
 
-				static std::unique_ptr<CngAlgorithm> create(const wchar_t* algId)
+				static std::unique_ptr<CngAlgorithm> create(const wchar_t* algId, ULONG flags)
 				{
-					hx::EnterGCFreeZone();
-
 					auto result = DWORD{ 0 };
 					auto handle = BCRYPT_ALG_HANDLE();
 
-					if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&handle, algId, nullptr, BCRYPT_HASH_REUSABLE_FLAG)))
+					hx::EnterGCFreeZone();
+
+					if (!BCRYPT_SUCCESS(result = BCryptOpenAlgorithmProvider(&handle, algId, nullptr, flags)))
 					{
 						hx::ExitGCFreeZone();
 						hx::Throw(HX_CSTRING("Failed to open algorithm provider : ") + hx::ssl::windows::utils::NTStatusErrorToString(result));
@@ -168,7 +176,7 @@ namespace hx
 
 					hx::ExitGCFreeZone();
 
-					return std::make_unique<CngAlgorithm>(handle);
+					return std::make_unique<CngAlgorithm>(handle, flags);
 				}
 			};
 		}

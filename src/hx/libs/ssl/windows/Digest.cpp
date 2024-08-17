@@ -8,7 +8,7 @@ Array<unsigned char> _hx_ssl_dgst_make(Array<unsigned char> buffer, String algId
 {
 	hx::strbuf buf;
 
-	auto algorithm = hx::ssl::windows::CngAlgorithm::create(algId.wchar_str(&buf));
+	auto algorithm = hx::ssl::windows::CngAlgorithm::create(algId.wchar_str(&buf), 0);
 	auto hash      = algorithm->hash();
 
 	hash->hash(buffer);
@@ -22,7 +22,7 @@ Array<unsigned char> _hx_ssl_dgst_sign(Array<unsigned char> buffer, Dynamic hpke
 
 	auto key       = hpkey.Cast<hx::ssl::windows::Key>();
 	auto algorithm = algId.wchar_str(&buf);
-	auto alg       = hx::ssl::windows::CngAlgorithm::create(algorithm);
+	auto alg       = hx::ssl::windows::CngAlgorithm::create(algorithm, 0);
 	auto hash      = alg->hash();
 	auto hashed    = std::vector<uint8_t>(hash->getProperty<DWORD>(BCRYPT_HASH_LENGTH));
 
@@ -61,7 +61,7 @@ bool _hx_ssl_dgst_verify(Array<unsigned char> buffer, Array<unsigned char> sign,
 
 	auto key       = hpkey.Cast<hx::ssl::windows::Key>();
 	auto algorithm = algId.wchar_str(&buf);
-	auto alg       = hx::ssl::windows::CngAlgorithm::create(algorithm);
+	auto alg       = hx::ssl::windows::CngAlgorithm::create(algorithm, 0);
 	auto hash      = alg->hash();
 	auto hashed    = std::vector<uint8_t>(hash->getProperty<DWORD>(BCRYPT_HASH_LENGTH));
 
