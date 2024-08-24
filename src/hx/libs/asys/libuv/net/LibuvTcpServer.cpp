@@ -325,8 +325,10 @@ void hx::asys::libuv::net::LibuvTcpServer::__Visit(hx::VisitContext* __inCtx)
 
 void hx::asys::net::TcpServer_obj::open_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
 {
+	hx::strbuf buffer;
+
 	auto address = sockaddr_in();
-	auto result  = uv_ip4_addr(host.utf8_str(), port, &address);
+	auto result  = uv_ip4_addr(host.utf8_str(&buffer), port, &address);
 
 	if (result < 0)
 	{
@@ -340,8 +342,10 @@ void hx::asys::net::TcpServer_obj::open_ipv4(Context ctx, const String host, int
 
 void hx::asys::net::TcpServer_obj::open_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
 {
+	hx::strbuf buffer;
+
 	auto address = sockaddr_in6();
-	auto result  = uv_ip6_addr(host.utf8_str(), port, &address);
+	auto result  = uv_ip6_addr(host.utf8_str(&buffer), port, &address);
 
 	if (result < 0)
 	{

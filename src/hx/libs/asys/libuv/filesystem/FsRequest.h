@@ -7,10 +7,23 @@ namespace hx::asys::libuv::filesystem
 {
     struct FsRequest : hx::asys::libuv::BaseRequest
     {
+        hx::strbuf buffer;
+
     public:
         uv_fs_t uv;
 
-        FsRequest(Dynamic _cbSuccess, Dynamic _cbFailure) : BaseRequest(_cbSuccess, _cbFailure)
+        const char* path;
+
+        FsRequest(Dynamic _cbSuccess, Dynamic _cbFailure)
+            : BaseRequest(_cbSuccess, _cbFailure)
+            , path(nullptr)
+        {
+            uv.data = this;
+        }
+
+        FsRequest(String _path, Dynamic _cbSuccess, Dynamic _cbFailure)
+            : BaseRequest(_cbSuccess, _cbFailure)
+            , path(_path.utf8_str(&buffer))
         {
             uv.data = this;
         }

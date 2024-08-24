@@ -74,6 +74,7 @@ namespace hx
             public:
                 static void open(Context ctx, String path, int flags, Dynamic cbSuccess, Dynamic cbFailure);
                 static void temp(Context ctx, Dynamic cbSuccess, Dynamic cbFailure);
+                static void info(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
 
                 const String path;
 
@@ -98,7 +99,7 @@ namespace hx
                 Directory_obj(String _path) : path(_path) {}
 
                 static void open(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
-                static void create(Context ctx, String path, int permissions, bool recursive, Dynamic cbSuccess, Dynamic cbFailure);
+                static void create(Context ctx, String path, int permissions, Dynamic cbSuccess, Dynamic cbFailure);
                 static void rename(Context ctx, String oldPath, String newPath, Dynamic cbSuccess, Dynamic cbFailure);
                 static void check(Context ctx, String path, FileAccessMode accessMode, Dynamic cbSuccess, Dynamic cbFailure);
                 static void deleteFile(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);

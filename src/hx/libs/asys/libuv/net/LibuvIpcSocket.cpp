@@ -3,15 +3,21 @@
 
 namespace
 {
-	struct ConnectionRequest final : hx::asys::libuv::BaseRequest
+	class ConnectionRequest final : hx::asys::libuv::BaseRequest
 	{
+		hx::strbuf buffer;
+
+	public:
 		std::unique_ptr<uv_pipe_t> pipe;
 
 		uv_connect_t handle;
 
-		ConnectionRequest(Dynamic _cbSuccess, Dynamic _cbFailure, std::unique_ptr<uv_pipe_t> pipe)
+		const char* name;
+
+		ConnectionRequest(String _name, Dynamic _cbSuccess, Dynamic _cbFailure, std::unique_ptr<uv_pipe_t> pipe)
 			: hx::asys::libuv::BaseRequest(_cbSuccess, _cbFailure)
 			, pipe(std::move(pipe))
+			, name(_name.utf8_str(&buffer))
 		{
 			handle.data = this;
 		}
@@ -135,7 +141,8 @@ void hx::asys::net::IpcSocket_obj::bind(Context ctx, String name, Dynamic cbSucc
 		return;
 	}
 
-	if ((result = uv_pipe_bind(pipe.get(), name.utf8_str())) < 0)
+	hx::strbuf buffer;
+	if ((result = uv_pipe_bind(pipe.get(), name.utf8_str(&buffer))) < 0)
 	{
 		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
@@ -158,7 +165,7 @@ void hx::asys::net::IpcSocket_obj::connect(Context ctx, String name, Dynamic cbS
 		return;
 	}
 
-	auto request = new ConnectionRequest(cbSuccess, cbFailure, std::move(pipe));
+	auto request = new ConnectionRequest(name, cbSuccess, cbFailure, std::move(pipe));
 
-	uv_pipe_connect(&request->handle, request->pipe.get(), name.utf8_str(), ConnectionRequest::onConnection);
+	uv_pipe_connect(&request->handle, request->pipe.get(), request->name, ConnectionRequest::onConnection);
 }

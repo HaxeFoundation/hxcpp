@@ -34,7 +34,9 @@ String hx::asys::net::ip::name(const Ipv6Address ip)
 
 hx::EnumBase hx::asys::net::ip::parse(const String ip)
 {
-    auto str = ip.utf8_str();
+    hx::strbuf buffer;
+
+    auto str = ip.utf8_str(&buffer);
 
     {
         auto addr   = sockaddr_in();
