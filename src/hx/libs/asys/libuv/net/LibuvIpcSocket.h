@@ -8,16 +8,25 @@ namespace hx::asys::libuv::net
 {
 	class LibuvIpcSocket final : public hx::asys::net::IpcSocket_obj
 	{
-		uv_pipe_t* pipe;
-		hx::asys::libuv::stream::StreamWriter writer;
-		hx::asys::libuv::stream::StreamReader reader;
-
 	public:
-		LibuvIpcSocket(uv_pipe_t* pipe);
+		struct Ctx final : hx::asys::libuv::BaseRequest
+		{
+			uv_pipe_t pipe;
+			uv_connect_t connection;
+			uv_shutdown_t shutdown;
+			hx::strbuf buffer;
+			hx::asys::libuv::stream::StreamReader_obj::Ctx stream;
 
-		void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override;
-		void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override;
-		void flush(Dynamic cbSuccess, Dynamic cbFailure) override;
+			Ctx(Dynamic cbSuccess, Dynamic cbFailure);
+
+			static void onClose(uv_handle_t* handle);
+			static void onShutdown(uv_shutdown_t* request, int status);
+		};
+
+		Ctx* ctx;
+
+		LibuvIpcSocket(Ctx* ctx);
+
 		void close(Dynamic cbSuccess, Dynamic cbFailure) override;
 
 		void __Mark(hx::MarkContext* __inCtx) override;

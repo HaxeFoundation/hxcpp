@@ -19,6 +19,5 @@ namespace hx::asys::libuv::stream
 
         void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override;
         void flush(Dynamic cbSuccess, Dynamic cbFailure) override;
-        void close(Dynamic cbSuccess, Dynamic cbFailure) override;
     };
 }

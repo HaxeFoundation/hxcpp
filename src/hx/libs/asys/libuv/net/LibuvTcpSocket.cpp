@@ -174,13 +174,12 @@ void hx::asys::libuv::net::LibuvTcpSocket::Ctx::onShutdown(uv_shutdown_t* handle
 }
 
 
-hx::asys::libuv::net::LibuvTcpSocket::LibuvTcpSocket(Ctx* ctx)
-	: ctx(ctx)
-	, reader(new hx::asys::libuv::stream::StreamReader_obj(&ctx->stream, onAlloc, onRead))
-	, writer(new hx::asys::libuv::stream::StreamWriter_obj(reinterpret_cast<uv_stream_t*>(&ctx->tcp)))
+hx::asys::libuv::net::LibuvTcpSocket::LibuvTcpSocket(Ctx* ctx) : ctx(ctx)
 {
 	HX_OBJ_WB_NEW_MARKED_OBJECT(this);
 
+	reader        = hx::asys::Readable(new hx::asys::libuv::stream::StreamReader_obj(&ctx->stream, onAlloc, onRead));
+	writer        = hx::asys::Writable(new hx::asys::libuv::stream::StreamWriter_obj(reinterpret_cast<uv_stream_t*>(&ctx->tcp)));
 	localAddress  = hx::asys::libuv::net::getLocalAddress(&ctx->tcp);
 	remoteAddress = hx::asys::libuv::net::getRemoteAddress(&ctx->tcp);
 }
@@ -261,21 +260,6 @@ void hx::asys::libuv::net::LibuvTcpSocket::setRecvBufferSize(int size, Dynamic c
 	{
 		cbSuccess(size);
 	}
-}
-
-void hx::asys::libuv::net::LibuvTcpSocket::read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
-{
-	reader->read(output, offset, length, cbSuccess, cbFailure);
-}
-
-void hx::asys::libuv::net::LibuvTcpSocket::write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
-{
-	writer->write(data, offset, length, cbSuccess, cbFailure);
-}
-
-void hx::asys::libuv::net::LibuvTcpSocket::flush(Dynamic cbSuccess, Dynamic cbFailure)
-{
-	writer->flush(cbSuccess, cbFailure);
 }
 
 void hx::asys::libuv::net::LibuvTcpSocket::close(Dynamic cbSuccess, Dynamic cbFailure)

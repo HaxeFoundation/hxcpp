@@ -10,9 +10,6 @@ namespace hx::asys::libuv::net
 
 	class LibuvTcpSocket final : public hx::asys::net::TcpSocket_obj
 	{
-		hx::asys::libuv::stream::StreamWriter writer;
-		hx::asys::libuv::stream::StreamReader reader;
-
 	public:
 		struct Ctx final : public BaseRequest
 		{
@@ -42,9 +39,6 @@ namespace hx::asys::libuv::net
 		void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) override;
 		void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) override;
 
-		void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override;
-		void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override;
-		void flush(Dynamic cbSuccess, Dynamic cbFailure) override;
 		void close(Dynamic cbSuccess, Dynamic cbFailure) override;
 
 		void __Mark(hx::MarkContext* __inCtx) override;

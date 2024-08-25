@@ -3,40 +3,20 @@
 
 namespace
 {
-	class ConnectionRequest final : hx::asys::libuv::BaseRequest
+	static void onConnection(uv_connect_t* request, const int status)
 	{
-		hx::strbuf buffer;
+		auto gcZone = hx::AutoGCZone();
+		auto spData = std::unique_ptr<hx::asys::libuv::net::LibuvIpcSocket::Ctx>(static_cast<hx::asys::libuv::net::LibuvIpcSocket::Ctx*>(request->data));
 
-	public:
-		std::unique_ptr<uv_pipe_t> pipe;
-
-		uv_connect_t handle;
-
-		const char* name;
-
-		ConnectionRequest(String _name, Dynamic _cbSuccess, Dynamic _cbFailure, std::unique_ptr<uv_pipe_t> pipe)
-			: hx::asys::libuv::BaseRequest(_cbSuccess, _cbFailure)
-			, pipe(std::move(pipe))
-			, name(_name.utf8_str(&buffer))
+		if (status < 0)
 		{
-			handle.data = this;
+			Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(status));
+
+			return;
 		}
 
-		static void onConnection(uv_connect_t* request, const int status)
-		{
-			auto gcZone = hx::AutoGCZone();
-			auto spData = std::unique_ptr<ConnectionRequest>(static_cast<ConnectionRequest*>(request->data));
-
-			if (status < 0)
-			{
-				Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(status));
-
-				return;
-			}
-
-			Dynamic(spData->cbSuccess.rooted)(hx::asys::net::IpcSocket(new hx::asys::libuv::net::LibuvIpcSocket(spData->pipe.release())));
-		}
-	};
+		Dynamic(spData->cbSuccess.rooted)(hx::asys::net::IpcSocket(new hx::asys::libuv::net::LibuvIpcSocket(spData.release())));
+	}
 
 	String getSocketName(const uv_pipe_t* pipe)
 	{
@@ -83,35 +63,51 @@ namespace
 	}
 }
 
-hx::asys::libuv::net::LibuvIpcSocket::LibuvIpcSocket(uv_pipe_t* pipe)
-	: pipe(pipe)
-	, reader(new hx::asys::libuv::stream::StreamReader_obj(reinterpret_cast<uv_stream_t*>(pipe)))
-	, writer(new hx::asys::libuv::stream::StreamWriter_obj(reinterpret_cast<uv_stream_t*>(pipe)))
+hx::asys::libuv::net::LibuvIpcSocket::Ctx::Ctx(Dynamic _cbSuccess, Dynamic _cbFailure)
+	: BaseRequest(_cbSuccess, _cbFailure)
+	, pipe()
+	, connection()
+	, shutdown()
+	, stream(reinterpret_cast<uv_stream_t*>(&pipe))
+{
+	pipe.data = this;
+	connection.data = this;
+	shutdown.data = this;
+}
+
+void hx::asys::libuv::net::LibuvIpcSocket::Ctx::onClose(uv_handle_t* handle)
+{
+	auto spData = std::unique_ptr<Ctx>(reinterpret_cast<Ctx*>(handle->data));
+	auto gcZone = hx::AutoGCZone();
+
+	Dynamic(spData->cbSuccess.rooted)();
+}
+
+void hx::asys::libuv::net::LibuvIpcSocket::Ctx::onShutdown(uv_shutdown_t* shutdown, int status)
+{
+	uv_close(reinterpret_cast<uv_handle_t*>(shutdown->handle), hx::asys::libuv::net::LibuvIpcSocket::Ctx::onClose);
+}
+
+hx::asys::libuv::net::LibuvIpcSocket::LibuvIpcSocket(Ctx* _ctx) : ctx(_ctx)
 {
 	HX_OBJ_WB_NEW_MARKED_OBJECT(this);
 
-	socketName = getSocketName(pipe);
-	peerName   = getPeerName(pipe);
-}
-
-void hx::asys::libuv::net::LibuvIpcSocket::read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
-{
-	reader->read(output, offset, length, cbSuccess, cbFailure);
-}
-
-void hx::asys::libuv::net::LibuvIpcSocket::write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
-{
-	writer->write(data, offset, length, cbSuccess, cbFailure);
-}
-
-void hx::asys::libuv::net::LibuvIpcSocket::flush(Dynamic cbSuccess, Dynamic cbFailure)
-{
-	writer->flush(cbSuccess, cbFailure);
+	reader     = hx::asys::Readable(new hx::asys::libuv::stream::StreamReader_obj(nullptr, nullptr, nullptr));
+	writer     = hx::asys::Writable(new hx::asys::libuv::stream::StreamWriter_obj(reinterpret_cast<uv_stream_t*>(&ctx->pipe)));
+	socketName = getSocketName(&ctx->pipe);
+	peerName   = getPeerName(&ctx->pipe);
 }
 
 void hx::asys::libuv::net::LibuvIpcSocket::close(Dynamic cbSuccess, Dynamic cbFailure)
 {
-	uv_close(reinterpret_cast<uv_handle_t*>(pipe), nullptr);
+	ctx->cbSuccess.rooted = cbSuccess.mPtr;
+	ctx->cbFailure.rooted = cbFailure.mPtr;
+
+	auto result = uv_shutdown(&ctx->shutdown, reinterpret_cast<uv_stream_t*>(&ctx->pipe), hx::asys::libuv::net::LibuvIpcSocket::Ctx::onShutdown);
+	if (result < 0)
+	{
+		uv_close(reinterpret_cast<uv_handle_t*>(&ctx->pipe), hx::asys::libuv::net::LibuvIpcSocket::Ctx::onClose);
+	}
 }
 
 void hx::asys::libuv::net::LibuvIpcSocket::__Mark(hx::MarkContext* __inCtx)
@@ -131,10 +127,10 @@ void hx::asys::libuv::net::LibuvIpcSocket::__Visit(hx::VisitContext* __inCtx)
 void hx::asys::net::IpcSocket_obj::bind(Context ctx, String name, Dynamic cbSuccess, Dynamic cbFailure)
 {
 	auto libuvCtx = hx::asys::libuv::context(ctx);
-	auto pipe     = std::make_unique<uv_pipe_t>();
+	auto socket   = std::make_unique<hx::asys::libuv::net::LibuvIpcSocket::Ctx>(null(), null());
 	auto result   = 0;
 
-	if ((result = uv_pipe_init(libuvCtx->uvLoop, pipe.get(), false)) < 0)
+	if ((result = uv_pipe_init(libuvCtx->uvLoop, &socket->pipe, false)) < 0)
 	{
 		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
@@ -142,30 +138,28 @@ void hx::asys::net::IpcSocket_obj::bind(Context ctx, String name, Dynamic cbSucc
 	}
 
 	hx::strbuf buffer;
-	if ((result = uv_pipe_bind(pipe.get(), name.utf8_str(&buffer))) < 0)
+	if ((result = uv_pipe_bind(&socket->pipe, name.utf8_str(&buffer))) < 0)
 	{
 		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
 		return;
 	}
 
-	cbSuccess(IpcSocket(new hx::asys::libuv::net::LibuvIpcSocket(pipe.release())));
+	cbSuccess(IpcSocket(new hx::asys::libuv::net::LibuvIpcSocket(socket.release())));
 }
 
 void hx::asys::net::IpcSocket_obj::connect(Context ctx, String name, Dynamic cbSuccess, Dynamic cbFailure)
 {
 	auto libuvCtx = hx::asys::libuv::context(ctx);
-	auto pipe     = std::make_unique<uv_pipe_t>();
+	auto socket   = std::make_unique<hx::asys::libuv::net::LibuvIpcSocket::Ctx>(cbSuccess, cbFailure);
 	auto result   = 0;
 
-	if ((result = uv_pipe_init(libuvCtx->uvLoop, pipe.get(), false)) < 0)
+	if ((result = uv_pipe_init(libuvCtx->uvLoop, &socket->pipe, false)) < 0)
 	{
 		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
 		return;
 	}
 
-	auto request = new ConnectionRequest(name, cbSuccess, cbFailure, std::move(pipe));
-
-	uv_pipe_connect(&request->handle, request->pipe.get(), request->name, ConnectionRequest::onConnection);
+	uv_pipe_connect(&socket->connection, &socket->pipe, name.utf8_str(&socket->buffer), onConnection);
 }

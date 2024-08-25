@@ -5,7 +5,6 @@
 HX_DECLARE_CLASS2(hx, asys, Context)
 HX_DECLARE_CLASS2(hx, asys, Writable)
 HX_DECLARE_CLASS2(hx, asys, Readable)
-HX_DECLARE_CLASS2(hx, asys, Duplex)
 HX_DECLARE_CLASS3(hx, asys, filesystem, File)
 HX_DECLARE_CLASS3(hx, asys, filesystem, Directory)
 HX_DECLARE_CLASS3(hx, asys, net, TcpServer)
@@ -40,23 +39,12 @@ namespace hx
         public:
             virtual void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-            virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
         };
 
         class Readable_obj : public Object
         {
         public:
             virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-            virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-        };
-
-        class Duplex_obj : public Object
-        {
-        public:
-            virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-            virtual void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-            virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-            virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
         };
 
         namespace filesystem
@@ -155,11 +143,14 @@ namespace hx
                 virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
-            class TcpSocket_obj : public Duplex_obj
+            class TcpSocket_obj : public Object
             {
             public:
                 hx::Anon localAddress;
                 hx::Anon remoteAddress;
+
+                Writable writer;
+                Readable reader;
 
                 static void connect_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
                 static void connect_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
@@ -171,6 +162,8 @@ namespace hx
                 virtual void setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+
+                virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
             class SecureSession_obj : public Object
@@ -183,14 +176,19 @@ namespace hx
                 static void authenticateAsClient(TcpSocket socket, String host, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
             };
 
-            class IpcSocket_obj : public Duplex_obj
+            class IpcSocket_obj : public Object
             {
             public:
                 String socketName;
                 String peerName;
 
+                Writable writer;
+                Readable reader;
+
                 static void bind(Context ctx, String name, Dynamic cbSuccess, Dynamic cbFailure);
                 static void connect(Context ctx, String name, Dynamic cbSuccess, Dynamic cbFailure);
+
+                virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
             // class UdpSocket_obj : public Object
