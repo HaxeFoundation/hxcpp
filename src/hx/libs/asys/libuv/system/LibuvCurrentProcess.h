@@ -4,7 +4,7 @@
 #include <deque>
 #include <array>
 #include <optional>
-#include <unordered_map>
+#include <map>
 #include "../LibuvUtils.h"
 #include "../stream/StreamReader.h"
 #include "../stream/StreamWriter.h"
@@ -14,11 +14,29 @@ namespace hx::asys::libuv::system
 	class LibuvCurrentProcess final : public hx::asys::system::CurrentProcess_obj
 	{
 	public:
-		Dynamic signalMap;
+		struct SignalHandler
+		{
+			hx::RootedObject<hx::Object> callback;
+			uv_signal_t* signal;
 
-		LibuvAsysContext ctx;
+			SignalHandler(Dynamic cb);
+			~SignalHandler();
+		};
 
-		LibuvCurrentProcess(LibuvAsysContext ctx);
+		struct Ctx
+		{
+			uv_loop_t* loop;
+			std::array<uv_tty_t, 3> ttys;
+			std::map<int, std::unique_ptr<SignalHandler>> signals;
+
+			hx::asys::libuv::stream::StreamReader_obj::Ctx reader;
+
+			Ctx(uv_loop_t* loop);
+		};
+
+		Ctx* ctx;
+
+		LibuvCurrentProcess(Ctx* ctx);
 
 		Pid pid() override;
 

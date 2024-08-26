@@ -13,12 +13,22 @@ namespace hx::asys::libuv::system
 	class LibuvChildProcess final : public hx::asys::system::ChildProcess_obj
 	{
 	public:
-		struct Ctx {
+		struct Stream
+		{
+			uv_pipe_t pipe;
+			hx::asys::libuv::stream::StreamReader_obj::Ctx reader;
+
+			Stream();
+		};
+
+		struct Ctx
+		{
 			uv_process_t request;
 			uv_process_options_t options;
 			std::vector<char*> arguments;
 			std::vector<char*> environment;
 			std::array<uv_stdio_container_t, 3> containers;
+			std::array<Stream, 3> streams;
 			std::optional<int64_t> currentExitCode;
 			hx::RootedObject<hx::Object> exitCallback;
 

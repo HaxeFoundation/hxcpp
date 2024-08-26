@@ -5,24 +5,30 @@
 #include <memory>
 #include "LibuvChildProcess.h"
 
+hx::asys::libuv::system::LibuvChildProcess::Stream::Stream()
+	: pipe()
+	, reader(reinterpret_cast<uv_stream_t*>(&pipe))
+{
+	pipe.data = this;
+}
+
 hx::asys::libuv::system::LibuvChildProcess::Ctx::Ctx()
 	: request()
 	, options()
 	, arguments()
 	, environment()
 	, containers()
+	, streams()
 	, currentExitCode()
 	, exitCallback(null())
 {
 }
 
-hx::asys::libuv::system::LibuvChildProcess::LibuvChildProcess(Ctx* ctx, Writable oStdin, Readable oStdout, Readable oStderr) : ctx(ctx)
+hx::asys::libuv::system::LibuvChildProcess::LibuvChildProcess(Ctx* ctx, Writable oStdin, Readable oStdout, Readable oStderr)
+	: hx::asys::system::ChildProcess_obj(oStdin, oStdout, oStderr)
+	, ctx(ctx)
 {
 	HX_OBJ_WB_NEW_MARKED_OBJECT(this);
-
-	stdio_in  = oStdin;
-	stdio_out = oStdout;
-	stdio_err = oStderr;
 }
 
 hx::asys::Pid hx::asys::libuv::system::LibuvChildProcess::pid()

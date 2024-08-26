@@ -25,10 +25,13 @@ namespace hx
 
         class Context_obj : public Object
         {
+        protected:
+            Context_obj(system::CurrentProcess _process) : process(_process) {}
+
         public:
             static Context create();
 
-            system::CurrentProcess process;
+            const system::CurrentProcess process;
 
             virtual bool loop() = 0;
             virtual void close() = 0;
@@ -222,6 +225,11 @@ namespace hx
             class ChildProcess_obj : public Process_obj
             {
             public:
+                ChildProcess_obj(Writable _stdio_in, Readable _stdio_out, Readable _stdio_err)
+                    : stdio_in(_stdio_in)
+                    , stdio_out(_stdio_out)
+                    , stdio_err(_stdio_err) {}
+
                 Writable stdio_in;
                 Readable stdio_out;
                 Readable stdio_err;
@@ -233,6 +241,11 @@ namespace hx
             class CurrentProcess_obj : public Process_obj
             {
             public:
+                CurrentProcess_obj(Readable _stdio_in, Writable _stdio_out, Writable _stdio_err)
+                    : stdio_in(_stdio_in)
+                    , stdio_out(_stdio_out)
+                    , stdio_err(_stdio_err) {}
+
                 virtual void setSignalAction(hx::EnumBase signal, hx::EnumBase action) = 0;
 
                 Readable stdio_in;

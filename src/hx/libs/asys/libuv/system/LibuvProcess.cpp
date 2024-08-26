@@ -72,8 +72,8 @@ namespace
 
         for (auto i = size_t(0); i < keys->length; i++)
         {
-            auto& key = keys[i];
-            auto value = __string_hash_get_string(hash, key);
+            auto& key   = keys[i];
+            auto  value = __string_hash_get_string(hash, key);
 
             if (null() == value)
             {
@@ -86,49 +86,68 @@ namespace
         }
     }
 
-    hx::asys::Writable getWritablePipe(uv_loop_t* loop, uv_stdio_container_t& container)
+    hx::asys::Writable getWritablePipe(uv_loop_t* loop, uv_stdio_container_t& container, hx::asys::libuv::system::LibuvChildProcess::Stream& stream)
     {
         auto result = 0;
-        auto pipe   = new uv_pipe_t();
 
-        if ((result = uv_pipe_init(loop, pipe, 0)) < 0)
+        if ((result = uv_pipe_init(loop, &stream.pipe, 0)) < 0)
         {
             hx::Throw(HX_CSTRING("Failed to init pipe"));
         }
-
-        auto writer = new hx::asys::libuv::stream::StreamWriter_obj(reinterpret_cast<uv_stream_t*>(pipe));
 
         container.flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_READABLE_PIPE);
-        container.data.stream = reinterpret_cast<uv_stream_t*>(pipe);
+        container.data.stream = reinterpret_cast<uv_stream_t*>(&stream.pipe);
 
-        return writer;
+        return new hx::asys::libuv::stream::StreamWriter_obj(reinterpret_cast<uv_stream_t*>(&stream.pipe));
     }
 
-    hx::asys::Readable getReadablePipe(uv_loop_t* loop, uv_stdio_container_t& container)
+    void onAlloc(uv_handle_t* handle, const size_t suggested, uv_buf_t* buffer)
+    {
+        auto  ctx     = static_cast<hx::asys::libuv::system::LibuvChildProcess::Stream*>(handle->data);
+        auto& staging = ctx->reader.staging.emplace_back(suggested);
+
+        buffer->base = staging.data();
+        buffer->len = staging.size();
+    }
+
+    void onRead(uv_stream_t* stream, const ssize_t len, const uv_buf_t* read)
+    {
+        auto  gc  = hx::AutoGCZone();
+        auto  ctx = static_cast<hx::asys::libuv::system::LibuvChildProcess::Stream*>(stream->data);
+
+        if (len <= 0)
+        {
+            ctx->reader.reject(len);
+
+            return;
+        }
+
+        ctx->reader.buffer.insert(ctx->reader.buffer.end(), read->base, read->base + len);
+        ctx->reader.consume();
+    }
+
+    hx::asys::Readable getReadablePipe(uv_loop_t* loop, uv_stdio_container_t& container, hx::asys::libuv::system::LibuvChildProcess::Stream& stream)
     {
         auto result = 0;
-        auto pipe   = new uv_pipe_t();
 
-        if ((result = uv_pipe_init(loop, pipe, 0)) < 0)
+        if ((result = uv_pipe_init(loop, &stream.pipe, 0)) < 0)
         {
             hx::Throw(HX_CSTRING("Failed to init pipe"));
         }
 
-        auto reader = new hx::asys::libuv::stream::StreamReader_obj(reinterpret_cast<uv_stream_t*>(pipe));
-
         container.flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_WRITABLE_PIPE);
-        container.data.stream = reinterpret_cast<uv_stream_t*>(pipe);
+        container.data.stream = reinterpret_cast<uv_stream_t*>(&stream.pipe);
 
-        return reader;
+        return new hx::asys::libuv::stream::StreamReader_obj(&stream.reader, onAlloc, onRead);
     }
 
-    hx::asys::Writable getStdioWritable(uv_loop_t* loop, hx::EnumBase field, uv_stdio_container_t& container, int index)
+    hx::asys::Writable getStdioWritable(uv_loop_t* loop, hx::EnumBase field, uv_stdio_container_t& container, hx::asys::libuv::system::LibuvChildProcess::Stream& stream, const int index)
     {
         switch (field->_hx_getIndex())
         {
         case 0:
         {
-            return getWritablePipe(loop, container);
+            return getWritablePipe(loop, container, stream);
         }
 
         case 1:
@@ -175,7 +194,7 @@ namespace
         return null();
     }
 
-    hx::asys::Readable getStdioReadable(uv_loop_t* loop, hx::EnumBase field, uv_stdio_container_t& container, int index)
+    hx::asys::Readable getStdioReadable(uv_loop_t* loop, hx::EnumBase field, uv_stdio_container_t& container, hx::asys::libuv::system::LibuvChildProcess::Stream& stream, int index)
     {
         switch (field->_hx_getIndex())
         {
@@ -186,7 +205,7 @@ namespace
 
         case 1:
         {
-            return getReadablePipe(loop, container);
+            return getReadablePipe(loop, container, stream);
         }
 
         case 2:
@@ -242,9 +261,9 @@ void hx::asys::system::Process_obj::open(Context ctx, String command, hx::Anon o
     {
         auto io = hx::Anon(options->__Field(HX_CSTRING("stdio"), HX_PROP_DYNAMIC));
 
-        o_stdin  = getStdioWritable(uvContext->uvLoop, io->__Field(HX_CSTRING("stdin"), HX_PROP_DYNAMIC), process->containers.at(0), 0);
-        o_stdout = getStdioReadable(uvContext->uvLoop, io->__Field(HX_CSTRING("stdout"), HX_PROP_DYNAMIC), process->containers.at(1), 1);
-        o_stderr = getStdioReadable(uvContext->uvLoop, io->__Field(HX_CSTRING("stderr"), HX_PROP_DYNAMIC), process->containers.at(2), 2);
+        o_stdin  = getStdioWritable(uvContext->uvLoop, io->__Field(HX_CSTRING("stdin"), HX_PROP_DYNAMIC), process->containers.at(0), process->streams.at(0), 0);
+        o_stdout = getStdioReadable(uvContext->uvLoop, io->__Field(HX_CSTRING("stdout"), HX_PROP_DYNAMIC), process->containers.at(1), process->streams.at(1), 1);
+        o_stderr = getStdioReadable(uvContext->uvLoop, io->__Field(HX_CSTRING("stderr"), HX_PROP_DYNAMIC), process->containers.at(2), process->streams.at(2), 2);
     }
 
     process->request.data        = process;

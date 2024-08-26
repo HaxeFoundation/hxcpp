@@ -193,12 +193,12 @@ namespace
 		{
 			if (hx::IsNull(error))
 			{
-				handshake->socket->read(
+				/*handshake->socket->read(
 					handshake->buffer,
 					handshake->offset,
 					handshake->buffer->length - handshake->offset,
 					new on_handshake_read(handshake),
-					handshake->cbFailure);
+					handshake->cbFailure);*/
 			}
 			else
 			{
@@ -289,7 +289,7 @@ namespace
 
 			FreeContextBuffer(outputBuffer.pvBuffer);
 
-			socket->write(output, 0, output->length, new on_handshake_sent(this), cbFailure);
+			//socket->write(output, 0, output->length, new on_handshake_sent(this), cbFailure);
 		}
 
 		void handshake(int count)
@@ -326,12 +326,12 @@ namespace
 			{
 				offset += count;
 
-				socket->read(
+				/*socket->read(
 					buffer,
 					offset,
 					buffer->length - offset,
 					new on_handshake_read(this),
-					cbFailure);
+					cbFailure);*/
 
 				break;
 			}
@@ -356,7 +356,7 @@ namespace
 
 				FreeContextBuffer(outputBuffers[0].pvBuffer);
 
-				socket->write(output, 0, output->length, new on_handshake_sent(this), cbFailure);
+				//socket->write(output, 0, output->length, new on_handshake_sent(this), cbFailure);
 
 				break;
 			}

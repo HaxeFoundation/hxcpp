@@ -13,7 +13,7 @@ namespace hx::asys::libuv
     public:
         uv_loop_t* uvLoop;
 
-        LibuvAsysContext_obj(uv_loop_t* uvLoop);
+        LibuvAsysContext_obj(uv_loop_t* uvLoop, hx::asys::system::CurrentProcess process);
 
         bool loop();
         void close();

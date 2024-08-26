@@ -10,17 +10,31 @@ hx::asys::Context hx::asys::Context_obj::create()
     auto loop   = std::make_unique<uv_loop_t>();
     auto result = uv_loop_init(loop.get());
 
-    if (result < 0) {
+    if (result < 0)
+    {
         hx::Throw(String::create(uv_strerror(result)));
     }
 
-    return Context(new libuv::LibuvAsysContext_obj(loop.release()));
+    auto current = std::make_unique<hx::asys::libuv::system::LibuvCurrentProcess::Ctx>(loop.get());
+
+    for (auto i = 0; i < current->ttys.size(); i++)
+    {
+        if ((result = uv_tty_init(loop.get(), &current->ttys.at(i), i, false)) < 0)
+        {
+            hx::Throw(HX_CSTRING("Failed to init tty : ") + hx::asys::libuv::uv_err_to_enum(result)->GetEnumName());
+        }
+    }
+
+    return
+        Context(
+            new libuv::LibuvAsysContext_obj(
+                loop.release(),
+                hx::asys::system::CurrentProcess(new hx::asys::libuv::system::LibuvCurrentProcess(current.release()))));
 }
 
-hx::asys::libuv::LibuvAsysContext_obj::LibuvAsysContext_obj(uv_loop_t* uvLoop) : uvLoop(uvLoop)
-{
-    process = hx::asys::system::CurrentProcess(new hx::asys::libuv::system::LibuvCurrentProcess(this));
-}
+hx::asys::libuv::LibuvAsysContext_obj::LibuvAsysContext_obj(uv_loop_t* _uvLoop, hx::asys::system::CurrentProcess _process)
+    : hx::asys::Context_obj(_process)
+    , uvLoop(_uvLoop) {}
 
 bool hx::asys::libuv::LibuvAsysContext_obj::loop()
 {
