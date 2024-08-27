@@ -13,6 +13,7 @@
   <compilerflag value="-DSTDC" unless="windows" />
   <compilerflag value="-DHAVE_UNISTD_H" unless="windows" />
   <compilerflag value="-Wno-deprecated-non-prototype" unless="MSVC_VER" />
+  <compilerflag value="-Wno-unknown-warning" unless="MSVC_VER" />
 
   <file name="ZLib.cpp"/>
 
