@@ -5,34 +5,41 @@
 
 namespace
 {
-	void onConnection(uv_connect_t* request, const int status)
+	struct CtxDeleter
 	{
-		if (status < 0)
+		void operator()(hx::asys::libuv::net::LibuvTcpSocket::Ctx* ctx)
 		{
-			auto ctx = static_cast<hx::asys::libuv::net::LibuvTcpSocket::Ctx*>(request->data);
+			if (0 == ctx->tcp.type)
+			{
+				hx::asys::libuv::net::LibuvTcpSocket::Ctx::onFailure(reinterpret_cast<uv_handle_t*>(&ctx->tcp));
 
-			ctx->status = status;
+				return;
+			}
 
 			uv_close(reinterpret_cast<uv_handle_t*>(&ctx->tcp), hx::asys::libuv::net::LibuvTcpSocket::Ctx::onFailure);
 		}
-		else
-		{
-			auto ctx    = static_cast<hx::asys::libuv::net::LibuvTcpSocket::Ctx*>(request->data);
-			auto gcZone = hx::AutoGCZone();
+	};
 
-			Dynamic(ctx->cbSuccess.rooted)(new hx::asys::libuv::net::LibuvTcpSocket(ctx));
+	void onConnection(uv_connect_t* request, const int status)
+	{
+		auto ctx = std::unique_ptr<hx::asys::libuv::net::LibuvTcpSocket::Ctx, CtxDeleter>{ static_cast<hx::asys::libuv::net::LibuvTcpSocket::Ctx*>(request->data) };
+
+		if ((ctx->status = status) < 0)
+		{
+			return;
 		}
+		
+		auto gcZone = hx::AutoGCZone();
+
+		Dynamic(ctx->cbSuccess.rooted)(new hx::asys::libuv::net::LibuvTcpSocket(ctx.release()));
 	}
 
 	void startConnection(hx::asys::libuv::LibuvAsysContext ctx, sockaddr* const address, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
 	{
-		auto request = std::make_unique<hx::asys::libuv::net::LibuvTcpSocket::Ctx>(cbSuccess, cbFailure);
-		auto result  = 0;
+		auto request = std::unique_ptr<hx::asys::libuv::net::LibuvTcpSocket::Ctx, CtxDeleter>{ new hx::asys::libuv::net::LibuvTcpSocket::Ctx(cbSuccess, cbFailure) };
 
-		if ((result = uv_tcp_init(ctx->uvLoop, &request->tcp)) < 0)
+		if ((request->status = uv_tcp_init(ctx->uvLoop, &request->tcp)) < 0)
 		{
-			cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
 			return;
 		}
 
@@ -51,16 +58,12 @@ namespace
 				{
 					if ((request->status = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(&request->tcp), &sendSizeValue.valInt)) < 0)
 					{
-						uv_close(reinterpret_cast<uv_handle_t*>(&request.release()->tcp), hx::asys::libuv::net::LibuvTcpSocket::Ctx::onFailure);
-
 						return;
 					}
 				}
 				else
 				{
 					request->status = UV_EINVAL;
-
-					uv_close(reinterpret_cast<uv_handle_t*>(&request.release()->tcp), hx::asys::libuv::net::LibuvTcpSocket::Ctx::onFailure);
 
 					return;
 				}
@@ -73,16 +76,12 @@ namespace
 				{
 					if ((request->status = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(&request->tcp), &recvSizeValue.valInt)) < 0)
 					{
-						uv_close(reinterpret_cast<uv_handle_t*>(&request.release()->tcp), hx::asys::libuv::net::LibuvTcpSocket::Ctx::onFailure);
-
 						return;
 					}
 				}
 				else
 				{
 					request->status = UV_EINVAL;
-
-					uv_close(reinterpret_cast<uv_handle_t*>(&request.release()->tcp), hx::asys::libuv::net::LibuvTcpSocket::Ctx::onFailure);
 
 					return;
 				}
@@ -96,10 +95,8 @@ namespace
 			return;
 		}
 
-		if ((result = uv_tcp_connect(&request->connection, &request->tcp, address, onConnection)) < 0)
+		if ((request->status = uv_tcp_connect(&request->connection, &request->tcp, address, onConnection)) < 0)
 		{
-			uv_close(reinterpret_cast<uv_handle_t*>(&request.release()->tcp), hx::asys::libuv::net::LibuvTcpSocket::Ctx::onFailure);
-
 			return;
 		}
 		else
