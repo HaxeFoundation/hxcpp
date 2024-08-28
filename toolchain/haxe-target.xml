@@ -1,7 +1,7 @@
 <xml>
 
 <!-- make sure hxcpp.n is up to date -->
-<pleaseUpdateHxcppTool version="4" />
+<pleaseUpdateHxcppTool version="5" />
 
 <pragma once="true" />
 
