@@ -28,9 +28,10 @@
         But you may be able to adjust the node stack size ti fix this.
    <set name="HXCPP_OPTIM_LEVEL" value="-O2" />
    -->
-   <set name="HXCPP_OPTIM_LEVEL" value="-O1" />
+   <set name="HXCPP_OPTIM_LEVEL" value="-O2" />
    <set name="HXCPP_OPTIM_LEVEL" value="-g" if="debug" />
 </section>
+
 
 <compiler id="emscripten" exe="emcc">
   <exe name="${CXX}" if="CXX" />
@@ -99,6 +100,11 @@
     <flag value="${HXCPP_LINK_MEM_FILE}"/>
   </section>
 
+  <section if="WASM" >
+     <flag name="-s" value="WASM=1" />
+     <flag name="-s" value="BINARYEN_EXTRA_PASSES='--spill-pointers'" unless="HXCPP_NO_GC_LINK" />
+  </section>
+
   <!-- <flag value="-DBUILD_AS_SHARED_LIBRARY" /> -->
   <!-- <lib name="-ldl"/> -->
   <!-- <ext value=".js"/> -->
@@ -141,27 +147,23 @@
 
   <section if="HXCPP_LINK_EMRUN" >
      <flag value="--emrun" />
-     <flag value="-s" />
-     <flag value="DEMANGLE_SUPPORT=1" />
   </section>
 
   <section if="HXCPP_DEBUG_LINK" >
-     <flag value="-s" />
-     <flag value="DEMANGLE_SUPPORT=1" />
      <flag value="-debug" />
   </section>
 
   <section if="WASM" >
-     <flag value="-s"/>
-     <flag value="WASM=1" />
+     <flag name="-s" value="WASM=1" />
+     <flag name="-s" value="BINARYEN_EXTRA_PASSES='--spill-pointers'" unless="HXCPP_NO_GC_LINK" />
   </section>
 
   <section if="BINARYEN_METHOD" >
-     <flag name="-s" />
+     <flag value="-s" />
      <flag value="BINARYEN_METHOD='${BINARYEN_METHOD}'" />
   </section>
 
-  <flag value="--bind" if="HXCPP_JS_PRIME" />
+  <flag value="--bind" />
 
   <!-- <lib name="-ldl"/> -->
   <ext value="${HXCPP_LINK_EMSCRIPTEN_EXT}"/>
