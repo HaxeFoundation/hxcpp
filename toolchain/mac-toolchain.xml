@@ -31,8 +31,11 @@
   <cppflag value="-Wc++14-extensions" if="HXCPP_CPP14"/>
   <cppflag value="-std=c++17" if="HXCPP_CPP17"/>
   <cppflag value="-Wc++17-extensions" if="HXCPP_CPP17"/>
-  <flag value="-stdlib=libc++" unless="STDLIBCPP" />
-  <flag value="-stdlib=libstdc++" if="STDLIBCPP" />
+  <cppflag value="-stdlib=libc++" unless="STDLIBCPP" />
+  <cppflag value="-stdlib=libstdc++" if="STDLIBCPP" />
+  <mmflag value="-stdlib=libc++" unless="STDLIBCPP" />
+  <mmflag value="-stdlib=libstdc++" if="STDLIBCPP" />
+  
   <cppflag value="-frtti"/>
   <pchflag value="-x" />
   <pchflag value="c++-header" />
@@ -49,7 +52,6 @@
   <flag value="-Wno-parentheses" />
   <flag value="-Wno-null-dereference" if="HXCPP_CLANG"/>
   <flag value="-Wno-unused-value" />
-  <flag value="-Wno-unused-command-line-argument" />
   <flag value="-Wno-format-extra-args" />
   <flag value="-Wno-overflow" />
   <flag value="-fsanitize=thread" if="HXCPP_THREAD_SANITIZE" />
@@ -75,8 +77,10 @@
   <fromfile value="" if="GCC_OLD" />
   <flag value="-Wl,-bundle,-bundle_loader,${dll_import_link}" if="dll_import_link" />
   <flag value="-Wl,-cache_path_lto,/tmp" if="HXCPP_LTO_THIN" unless="debug"/>
-  <flag value="-stdlib=libc++" unless="STDLIBCPP" />
-  <flag value="-stdlib=libstdc++" if="STDLIBCPP" />
+  <cppflag value="-stdlib=libc++" unless="STDLIBCPP" />
+  <cppflag value="-stdlib=libstdc++" if="STDLIBCPP" />
+  <mmflag value="-stdlib=libc++" unless="STDLIBCPP" />
+  <mmflag value="-stdlib=libstdc++" if="STDLIBCPP" />
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-dynamiclib"/>
@@ -87,7 +91,6 @@
   <flag value="-isysroot" unless="LEGACY_MACOSX_SDK"/>
   <flag value="${DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk" unless="LEGACY_MACOSX_SDK"/>
   <flag value="-fvisibility=hidden"/>
-  <flag value="-Wno-unused-command-line-argument" />
   <!-- <flag value="-debug" if="debug"/> -->
   <ext value=".dylib"/>
   <outflag value="-o "/>
@@ -101,12 +104,14 @@
   <flag value="-Wl,-rpath,${HXCPP_RPATH}" if="HXCPP_RPATH" />
   <flag value="-Wl,-cache_path_lto,/tmp" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug"/>
   <fromfile value="" if="GCC_OLD" />
-  <flag value="-stdlib=libstdc++" if="STDLIBCPP" />
+  <cppflag value="-stdlib=libc++" unless="STDLIBCPP" />
+  <cppflag value="-stdlib=libstdc++" if="STDLIBCPP" />
+  <mmflag value="-stdlib=libc++" unless="STDLIBCPP" />
+  <mmflag value="-stdlib=libstdc++" if="STDLIBCPP" />
   <flag value="-framework"/>
   <flag value="Cocoa"/>
   <flag value="-isysroot" unless="LEGACY_MACOSX_SDK"/>
   <flag value="${DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk" unless="LEGACY_MACOSX_SDK"/>
-  <flag value="-Wno-unused-command-line-argument" />
   <flag value="-fsanitize=thread" if="HXCPP_THREAD_SANITIZE" />
   <!-- <flag value="-debug" if="debug"/> -->
   <flag value="-arch" />
