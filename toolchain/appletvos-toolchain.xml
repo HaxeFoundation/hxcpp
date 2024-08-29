@@ -24,8 +24,10 @@
   <!-- <cppflag value="-fvisibility-inlines-hidden"/> -->
   <pchflag value="-x" />
   <pchflag value="c++-header" />
-  <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
-  <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <cppflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <cppflag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <mmflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <mmflag value="-stdlib=libc++" if="HXCPP_CPP11" />
   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-arch"/>
@@ -69,8 +71,10 @@
 <linker id="dll" exe="g++" >
   <exe name="xcrun --sdk appletvos${TVOS_VER} g++" if="HXCPP_GCC" />
   <exe name="xcrun --sdk appletvos${TVOS_VER} clang++" />
-  <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
-  <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <cppflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <cppflag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <mmflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <mmflag value="-stdlib=libc++" if="HXCPP_CPP11" />
   <flag value="-dynamiclib"/>
   <flag value="-arch"/>
   <flag value="arm64" if="HXCPP_ARM64" />
