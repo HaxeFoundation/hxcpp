@@ -1612,8 +1612,8 @@ class BuildTool
       {
          Setup.initHXCPPConfig(defines);
          Setup.setupEmscripten(defines);
-         var node = defines.get("EMSCRIPTEN_NODE_JS");
-         Log.v( node==null ? "EMSCRIPTEN_NODE_JS undefined, using 'node'" : 'Using $node from EMSCRIPTEN_NODE_JS');
+         var node = defines.get("EMSDK_NODE");
+         Log.v( node==null ? "EMSDK_NODE undefined, using 'node'" : 'Using $node from EMSDK_NODE');
          if (node=="" || node==null)
             node = "node";
 
@@ -2347,7 +2347,7 @@ class BuildTool
    public function checkToolVersion(inVersion:String)
    {
       var ver = Std.parseInt(inVersion);
-      if (ver>5)
+      if (ver>6)
          Log.error("Your version of hxcpp.n is out-of-date.  Please update by compiling 'haxe compile.hxml' in hxcpp/tools/hxcpp.");
    }
 

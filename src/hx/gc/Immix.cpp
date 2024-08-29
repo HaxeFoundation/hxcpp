@@ -7,6 +7,14 @@
 #include "GcRegCapture.h"
 #include <hx/Unordered.h>
 
+#ifdef EMSCRIPTEN
+   #include <emscripten/stack.h>
+   #ifdef HXCPP_SINGLE_THREADED_APP
+      // Use provided tools to measure stack extent
+      #define HXCPP_EXPLICIT_STACK_EXTENT
+   #endif
+#endif
+
 #include <string>
 #include <stdlib.h>
 
@@ -28,7 +36,6 @@ int gSlowPath = 0;
 using hx::gByteMarkID;
 using hx::gRememberedByteMarkID;
 
-// #define HXCPP_SINGLE_THREADED_APP
 
 namespace hx
 {
@@ -106,10 +113,6 @@ static size_t sWorkingMemorySize          = 10*1024*1024;
 static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 #else
 static size_t sgMaximumFreeSpace  = 1024*1024*1024;
-#endif
-
-#ifdef EMSCRIPTEN
-// #define HXCPP_STACK_UP
 #endif
 
 
@@ -5762,8 +5765,10 @@ class LocalAllocator : public hx::StackContext
 
    bool           mMoreHoles;
 
+   #ifndef HXCPP_EXPLICIT_STACK_EXTENT
    int *mTopOfStack;
    int *mBottomOfStack;
+   #endif
 
    hx::RegisterCaptureBuffer mRegisterBuf;
    int                   mRegisterBufSize;
@@ -5801,7 +5806,9 @@ public:
 
    void AttachThread(int *inTopOfStack)
    {
+      #ifndef HXCPP_EXPLICIT_STACK_EXTENT
       mTopOfStack = mBottomOfStack = inTopOfStack;
+      #endif
 
       mRegisterBufSize = 0;
       mStackLocks = 0;
@@ -5859,7 +5866,9 @@ public:
       }
       #endif
 
+      #ifndef HXCPP_EXPLICIT_STACK_EXTENT
       mTopOfStack = mBottomOfStack = 0;
+      #endif
 
       sGlobalAlloc->RemoveLocalLocked(this);
 
@@ -5891,7 +5900,7 @@ public:
    // Other places may call this to ensure the the current thread is registered
    //  indefinitely (until forcefully revoked)
    //
-   // Normally liraries/mains will then let this dangle.
+   // Normally libraries/mains will then let this dangle.
    //
    // However after the main, on android it calls SetTopOfStack(0,true), to unregister the thread,
    // because it is likely to be the ui thread, and the remaining call will be from
@@ -5916,13 +5925,28 @@ public:
    //  SetTopOfStack(top,true) -> add stack lock
    //  SetTopOfStack(0,_) -> pop stack lock. If all gone, clear global stack lock
    //
+
+   #ifdef HXCPP_EXPLICIT_STACK_EXTENT // {
+
+   void SetTopOfStack(int *inTop,bool inPush) { }
+   void PushTopOfStack(void *inTop) { }
+   void PopTopOfStack() { }
+   void SetBottomOfStack(int *inBottom) { }
+   void PauseForCollect() { }
+   void EnterGCFreeZone() { }
+   bool TryGCFreeZone() { return true; }
+   bool TryExitGCFreeZone() { return false; }
+   void ExitGCFreeZoneLocked() { }
+
+
+   #else // } !HXCPP_EXPLICIT_STACK_EXTENT {
    void SetTopOfStack(int *inTop,bool inPush)
    {
       if (inTop)
       {
          if (!mTopOfStack)
             mTopOfStack = inTop;
-         // EMSCRIPTEN the stack grows upwards
+         // EMSCRIPTEN the stack grows upwards - not wasm.
          // It could be that the main routine was called from deep with in the stack,
          //  then some callback was called from a higher location on the stack
          #ifdef HXCPP_STACK_UP
@@ -5985,39 +6009,6 @@ public:
       #ifdef VerifyStackRead
       VerifyStackRead(mBottomOfStack, mTopOfStack)
       #endif
-   }
-
-   virtual void SetupStackAndCollect(bool inMajor, bool inForceCompact, bool inLocked=false,bool inFreeIsFragged=false)
-   {
-      #ifndef HXCPP_SINGLE_THREADED_APP
-        #if HXCPP_DEBUG
-        if (mGCFreeZone)
-           CriticalGCError("Collecting from a GC-free thread");
-        #endif
-      #endif
-
-      volatile int dummy = 1;
-      mBottomOfStack = (int *)&dummy;
-
-      CAPTURE_REGS;
-
-      if (!mTopOfStack)
-         mTopOfStack = mBottomOfStack;
-      // EMSCRIPTEN the stack grows upwards
-      #ifdef HXCPP_STACK_UP
-      if (mBottomOfStack < mTopOfStack)
-         mTopOfStack = mBottomOfStack;
-      #else
-      if (mBottomOfStack > mTopOfStack)
-         mTopOfStack = mBottomOfStack;
-      #endif
-
-      #ifdef VerifyStackRead
-      VerifyStackRead(mBottomOfStack, mTopOfStack)
-      #endif
-
-
-      sGlobalAlloc->Collect(inMajor, inForceCompact, inLocked, inFreeIsFragged);
    }
 
 
@@ -6144,6 +6135,58 @@ public:
          mCollectDone.Set();
       #endif
    }
+
+   #endif // }  HXCPP_EXPLICIT_STACK_EXTENT
+
+
+   void SetupStackAndCollect(bool inMajor, bool inForceCompact, bool inLocked=false,bool inFreeIsFragged=false)
+   {
+      #ifndef HXCPP_SINGLE_THREADED_APP
+        #if HXCPP_DEBUG
+        if (mGCFreeZone)
+           CriticalGCError("Collecting from a GC-free thread");
+        #endif
+      #endif
+
+      #ifndef HXCPP_EXPLICIT_STACK_EXTENT
+      volatile int dummy = 1;
+      mBottomOfStack = (int *)&dummy;
+
+      CAPTURE_REGS;
+
+      if (!mTopOfStack)
+         mTopOfStack = mBottomOfStack;
+
+      // EMSCRIPTEN the stack grows upwards
+      #ifdef HXCPP_STACK_UP
+      if (mBottomOfStack < mTopOfStack)
+         mTopOfStack = mBottomOfStack;
+      #else
+      if (mBottomOfStack > mTopOfStack)
+         mTopOfStack = mBottomOfStack;
+      #endif
+
+      #ifdef VerifyStackRead
+      VerifyStackRead(mBottomOfStack, mTopOfStack)
+      #endif
+
+      #endif
+
+
+      sGlobalAlloc->Collect(inMajor, inForceCompact, inLocked, inFreeIsFragged);
+   }
+
+
+
+
+
+
+
+
+
+
+
+
 
    void ExpandAlloc(int &ioSize)
    {
@@ -6331,11 +6374,13 @@ public:
 
    void Mark(hx::MarkContext *__inCtx)
    {
+      #ifndef HXCPP_SINGLE_THREADED_APP
       if (!mTopOfStack)
       {
          Reset();
          return;
       }
+      #endif
 
       #ifdef SHOW_MEM_EVENTS
       //int here = 0;
@@ -6345,19 +6390,33 @@ public:
       #ifdef HXCPP_DEBUG
          MarkPushClass("Stack",__inCtx);
          MarkSetMember("Stack",__inCtx);
+
+         #ifdef HXCPP_EXPLICIT_STACK_EXTENT
+           hx::MarkConservative( (int *)emscripten_stack_get_current(),(int *)emscripten_stack_get_base(), __inCtx);
+         #else
          if (mTopOfStack && mBottomOfStack)
             hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
+         #endif
+
          #ifdef HXCPP_SCRIPTABLE
             MarkSetMember("ScriptStack",__inCtx);
             hx::MarkConservative((int *)(stack), (int *)(pointer),__inCtx);
          #endif
          MarkSetMember("Registers",__inCtx);
          hx::MarkConservative(CAPTURE_REG_START, CAPTURE_REG_END, __inCtx);
+
+
          MarkPopClass(__inCtx);
       #else
-         if (mTopOfStack && mBottomOfStack)
-            hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
-         hx::MarkConservative(CAPTURE_REG_START, CAPTURE_REG_END, __inCtx);
+
+         #ifdef HXCPP_EXPLICIT_STACK_EXTENT
+           hx::MarkConservative( (int *)emscripten_stack_get_current(), (int *) emscripten_stack_get_base(), __inCtx);
+         #else
+            if (mTopOfStack && mBottomOfStack)
+               hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
+            hx::MarkConservative(CAPTURE_REG_START, CAPTURE_REG_END, __inCtx);
+         #endif
+
          #ifdef HXCPP_SCRIPTABLE
             hx::MarkConservative((int *)(stack), (int *)(pointer),__inCtx);
          #endif
@@ -6390,6 +6449,7 @@ inline LocalAllocator *GetLocalAlloc(bool inAllowEmpty=false)
    #endif
 }
 
+#ifndef HXCPP_SINGLE_THREADED_APP
 void WaitForSafe(LocalAllocator *inAlloc)
 {
    inAlloc->WaitForSafe();
@@ -6399,6 +6459,7 @@ void ReleaseFromSafe(LocalAllocator *inAlloc)
 {
    inAlloc->ReleaseFromSafe();
 }
+#endif
 
 void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx)
 {
