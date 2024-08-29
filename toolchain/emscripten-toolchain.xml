@@ -1,17 +1,60 @@
 <xml>
 
+<!--
+  The Emscipten hxcpp compiler can be invoked from haxe with the 'emscripten' define.
+    haxe -main Main -cpp cpp -D emscripten
+
+  Setup:
+    Emscripten can be installed as per website, then EMSDK, EMSDK_PYTHON and optionally EMSDK_NODE should be set.
+
+  Hxcpp will now generate wasm, not asmjs.
+    Wasm output consists of a ".js" boot file and a ".wasm" file.  The .js file can be run from node directly or
+     via the hxcpp tool, eg: haxelib run hxcpp cpp/Test.js
+
+    If -D HXCPP_LINK_EMSCRIPTEN_EXT=".html" is passed or specified, then an additional html output,
+    eg, Test.html, will be generated.
+
+      Specifying HXCPP_LINK_EMRUN adds code ro redirect output secially for the emrun server.
+
+      The resulting can be used for running the code in a browser from a local server.
+        eg: $EMSDK/upstream/emscripten/emrun(.bat) cpp/Test.html
+
+  Exceptions:
+    You can specify HXCPP_LINK_NO_EXCEPTIONS to reduce overhead by removing exceptions,
+    for example if compiling non-haxe code.  Generally, haxe code needs exceptions.
+
+    -fwasm-exceptions is a newer addition and will be used by default.  If you need
+      greater compatibility, you can specify HXCPP_NO_WASM_EXEPTIONS
+
+  Garbage Collection:
+    Currently, the 'spill-pointers' options is needed for GC.  If you do not need gc,
+    for example compiling non-haxe code, you can disable by specifying HXCPP_NO_GC_LINK
+
+    emscripten target will default to single-threaded, which allows for some GC optimizations
+
+
+-->
+
 <setup name="emscripten" />
 <set name="HXCPP_LINK_EMSCRIPTEN_EXT" value=".js" unless="HXCPP_LINK_EMSCRIPTEN_EXT" />
 
-<path name="${EMSCRIPTEN_SDK}" if="EMSCRIPTEN_SDK" />
-<path name="${dir:EMSCRIPTEN_PYTHON}" if="EMSCRIPTEN_PYTHON" />
+<set name="EMSCRIPTEN_ROOT" value="${EMSDK}/upstream/emscripten" if="EMSDK" unless="EMSCRIPTEN_ROOT" />
+
+<set name="HXCPP_SINGLE_THREADED_APP" value="1" unless="HXCPP_MULTI_THREADED_APP" />
+
+<path name="${EMSDK}" if="EMSDK" />
+<path name="${EMSCRIPTEN_ROOT}" if="EMSCRIPTEN_ROOT" />
+<path name="${dir:EMSDK_PYTHON}" if="EMSDK_PYTHON" />
 <set name="HXCPP_RANLIB" value="emranlib" />
 <set name="HXCPP_AR" value="emar" />
+<set name="HXCPP_M32" value="1"/>
+<unset name="HXCPP_M64" />
 
 <section if="windows_host">
-   <set name="HXCPP_RANLIB" value='python "${EMSCRIPTEN_SDK}/emranlib.py"' />
-   <set name="HXCPP_AR" value='python "${EMSCRIPTEN_SDK}/emar.py"' />
-   <set name="CXX" value='python "${EMSCRIPTEN_SDK}/emcc.py"' />
+   <error value="Please provide EMSDK" unless="EMSCRIPTEN_ROOT" />
+   <set name="HXCPP_RANLIB" value='python "${EMSCRIPTEN_ROOT}/emranlib.py"' />
+   <set name="HXCPP_AR" value='python "${EMSCRIPTEN_ROOT}/emar.py"' />
+   <set name="CXX" value='python "${EMSCRIPTEN_ROOT}/emcc.py"' />
 </section>
 
 <set name="nostrip" value="1" if="emscripten"/>
@@ -28,9 +71,10 @@
         But you may be able to adjust the node stack size ti fix this.
    <set name="HXCPP_OPTIM_LEVEL" value="-O2" />
    -->
-   <set name="HXCPP_OPTIM_LEVEL" value="-O1" />
+   <set name="HXCPP_OPTIM_LEVEL" value="-O2" />
    <set name="HXCPP_OPTIM_LEVEL" value="-g" if="debug" />
 </section>
+
 
 <compiler id="emscripten" exe="emcc">
   <exe name="${CXX}" if="CXX" />
@@ -40,6 +84,10 @@
   <pchflag value="-x" />
   <pchflag value="c++-header" />
   <cppflag value="--std=c++11" />
+  <section unless="HXCPP_LINK_NO_EXCEPTIONS" >
+     <flag name="-s" value="DISABLE_EXCEPTION_CATCHING=0" if="HXCPP_NO_WASM_EXEPTIONS" />
+     <flag value="-fwasm-exceptions" unless="HXCPP_NO_WASM_EXEPTIONS" />
+  </section>
   <flag value="${HXCPP_OPTIM_LEVEL}" />
   <flag value="-fpic" if="HXCPP_EMSCRIPTEN_FPIC" />
   <flag value="-fPIC" if="HXCPP_EMSCRIPTEN_FPIC" />
@@ -99,6 +147,14 @@
     <flag value="${HXCPP_LINK_MEM_FILE}"/>
   </section>
 
+  <flag name="-s" value="WASM=1" />
+  <flag value="--Wno-limited-postlink-optimizations" unless="HXCPP_NO_GC_LINK" />
+  <flag name="-s" value="BINARYEN_EXTRA_PASSES='--spill-pointers'" unless="HXCPP_NO_GC_LINK" />
+  <section unless="HXCPP_LINK_NO_EXCEPTIONS" >
+     <flag name="-s" value="DISABLE_EXCEPTION_CATCHING=0" if="HXCPP_NO_WASM_EXEPTIONS" />
+     <flag value="-fwasm-exceptions" unless="HXCPP_NO_WASM_EXEPTIONS" />
+  </section>
+
   <!-- <flag value="-DBUILD_AS_SHARED_LIBRARY" /> -->
   <!-- <lib name="-ldl"/> -->
   <!-- <ext value=".js"/> -->
@@ -113,18 +169,13 @@
   <fromfile value="" if="GCC_OLD" />
   <flag value="${HXCPP_LINK_OPTIM_LEVEL}" />
 
-  <section unless="HXCPP_LINK_NO_EXCEPTIONS" >
-     <flag value="-s" />
-     <flag value="DISABLE_EXCEPTION_CATCHING=0" />
-  </section>
-
   <section if="HXCPP_LINK_MEMORY_GROWTH" >
      <flag value="-s" />
      <flag value="ALLOW_MEMORY_GROWTH=1" />
   </section>
 
 
-  <section if="HXCPP_LINK_SAFE_HEAP" >
+  <section if="HXCPP_LINK_SAFE_HEAP">
      <flag value="-s" />
      <flag value="SAFE_HEAP=1" />
   </section>
@@ -134,34 +185,36 @@
      <flag value="TOTAL_MEMORY=${HXCPP_LINK_TOTAL_MEMORY}" />
   </section>
 
+
+  <!-- Only for asmjs
   <section if="HXCPP_LINK_MEM_FILE" >
     <flag value="--memory-init-file"/>
     <flag value="${HXCPP_LINK_MEM_FILE}"/>
   </section>
+  -->
 
   <section if="HXCPP_LINK_EMRUN" >
      <flag value="--emrun" />
-     <flag value="-s" />
-     <flag value="DEMANGLE_SUPPORT=1" />
   </section>
 
   <section if="HXCPP_DEBUG_LINK" >
-     <flag value="-s" />
-     <flag value="DEMANGLE_SUPPORT=1" />
      <flag value="-debug" />
   </section>
 
-  <section if="WASM" >
-     <flag value="-s"/>
-     <flag value="WASM=1" />
+  <flag name="-s" value="WASM=1" />
+  <flag value="--Wno-limited-postlink-optimizations" unless="HXCPP_NO_GC_LINK" />
+  <flag name="-s" value="BINARYEN_EXTRA_PASSES='--spill-pointers'" unless="HXCPP_NO_GC_LINK" />
+  <section unless="HXCPP_LINK_NO_EXCEPTIONS" >
+     <flag name="-s" value="DISABLE_EXCEPTION_CATCHING=0" if="HXCPP_NO_WASM_EXEPTIONS" />
+     <flag value="-fwasm-exceptions" unless="HXCPP_NO_WASM_EXEPTIONS" />
   </section>
 
   <section if="BINARYEN_METHOD" >
-     <flag name="-s" />
+     <flag value="-s" />
      <flag value="BINARYEN_METHOD='${BINARYEN_METHOD}'" />
   </section>
 
-  <flag value="--bind" if="HXCPP_JS_PRIME" />
+  <flag value="--bind" />
 
   <!-- <lib name="-ldl"/> -->
   <ext value="${HXCPP_LINK_EMSCRIPTEN_EXT}"/>
