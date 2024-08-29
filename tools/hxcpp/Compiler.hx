@@ -1,6 +1,13 @@
 import haxe.crypto.Md5;
 import haxe.io.Path;
 import sys.FileSystem;
+#if haxe4
+import sys.thread.Mutex;
+#elseif cpp
+import cpp.vm.Mutex;
+#else
+import neko.vm.Mutex;
+#end
 
 private class FlagInfo
 {
@@ -300,6 +307,8 @@ class Compiler
       catch(e:Dynamic) { }
    }
 
+   static public var printMutex = new Mutex();
+
    public function compile(inFile:File,inTid:Int,headerFunc:Void->Void,pchTimeStamp:Null<Float>,inProgess:Null<Progress>)
    {
       var obj_name = getObjName(inFile);
@@ -380,34 +389,41 @@ class Compiler
          if (delayedFilename!=null)
            args.push(delayedFilename);
 
-         var tagInfo = inFile.mTags==null ? "" : " " + inFile.mTags.split(",");
+         if (!Log.verbose)
+         {
+            var tagInfo = inFile.mTags==null ? "" : " " + inFile.mTags.split(",");
 
-         var fileName = inFile.mName;
-         var split = fileName.split ("/");
-         if (split.length > 1)
-         {
-            fileName = " \x1b[2m-\x1b[0m \x1b[33m" + split.slice(0, split.length - 1).join("/") + "/\x1b[33;1m" + split[split.length - 1] + "\x1b[0m";
-         }
-         else
-         {
-            fileName = " \x1b[2m-\x1b[0m \x1b[33;1m" + fileName + "\x1b[0m";
-         }
-         fileName += " \x1b[3m" + tagInfo + "\x1b[0m";
+            var fileName = inFile.mName;
+            var split = fileName.split ("/");
+            if (split.length > 1)
+            {
+               fileName = " \x1b[2m-\x1b[0m \x1b[33m" + split.slice(0, split.length - 1).join("/") + "/\x1b[33;1m" + split[split.length - 1] + "\x1b[0m";
+            }
+            else
+            {
+               fileName = " \x1b[2m-\x1b[0m \x1b[33;1m" + fileName + "\x1b[0m";
+            }
+            fileName += " \x1b[3m" + tagInfo + "\x1b[0m";
 
-         if (inProgess!=null)
-         {
-            inProgess.progress(1);
-            fileName = inProgess.getProgress() + fileName;
+            printMutex.acquire();
+
+            if (inProgess != null)
+            {
+               inProgess.progress(1);
+               fileName = inProgess.getProgress() + fileName;
+            }
+
+            if((inTid >= 0 && BuildTool.threadExitCode == 0) || inTid < 0)
+            {
+               Log.info(fileName);
+            }
+            printMutex.release();
          }
 
          if (inTid >= 0)
          {
             if (BuildTool.threadExitCode == 0)
             {
-               if (!Log.verbose)
-               {
-                  Log.info(fileName);
-               }
                var err = ProcessManager.runProcessThreaded(exe, args, null);
                cleanTmp(tmpFile);
                if (err!=0)
@@ -420,10 +436,6 @@ class Compiler
          }
          else
          {
-            if (!Log.verbose)
-            {
-               Log.info(fileName);
-            }
             var result = ProcessManager.runProcessThreaded(exe, args, null);
             cleanTmp(tmpFile);
             if (result!=0)
