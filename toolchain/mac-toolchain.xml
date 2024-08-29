@@ -49,6 +49,7 @@
   <flag value="-Wno-parentheses" />
   <flag value="-Wno-null-dereference" if="HXCPP_CLANG"/>
   <flag value="-Wno-unused-value" />
+  <flag value="-Wno-unused-command-line-argument" />
   <flag value="-Wno-format-extra-args" />
   <flag value="-Wno-overflow" />
   <flag value="-fsanitize=thread" if="HXCPP_THREAD_SANITIZE" />
@@ -86,6 +87,7 @@
   <flag value="-isysroot" unless="LEGACY_MACOSX_SDK"/>
   <flag value="${DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk" unless="LEGACY_MACOSX_SDK"/>
   <flag value="-fvisibility=hidden"/>
+  <flag value="-Wno-unused-command-line-argument" />
   <!-- <flag value="-debug" if="debug"/> -->
   <ext value=".dylib"/>
   <outflag value="-o "/>
@@ -104,6 +106,7 @@
   <flag value="Cocoa"/>
   <flag value="-isysroot" unless="LEGACY_MACOSX_SDK"/>
   <flag value="${DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk" unless="LEGACY_MACOSX_SDK"/>
+  <flag value="-Wno-unused-command-line-argument" />
   <flag value="-fsanitize=thread" if="HXCPP_THREAD_SANITIZE" />
   <!-- <flag value="-debug" if="debug"/> -->
   <flag value="-arch" />
