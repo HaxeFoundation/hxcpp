@@ -53,16 +53,6 @@ namespace hx
     };
 
     template<class TReturn, class... TArgs>
-    class HXCPP_EXTERN_CLASS_ATTRIBUTES Closure_obj;
-
-    template<class TReturn, class... TArgs>
-    class HXCPP_EXTERN_CLASS_ATTRIBUTES Closure_obj<TReturn(TArgs...)> : public Callable_obj<TReturn(TArgs...)>
-    {
-    public:
-        //
-    };
-
-    template<class TReturn, class... TArgs>
     class HXCPP_EXTERN_CLASS_ATTRIBUTES Callable;
 
     template<class TReturn, class... TArgs>
@@ -93,7 +83,7 @@ namespace hx
         Callable(::cpp::Function<TReturn(TArgs...)> inFunction)
             : super(nullptr)
         {
-            struct FunctionCallable final : public Closure_obj<TReturn(TArgs...)>
+            struct FunctionCallable final : public Callable_obj<TReturn(TArgs...)>
             {
                 ::cpp::Function<TReturn(TArgs...)> func;
 
@@ -115,7 +105,7 @@ namespace hx
         Callable(const Callable<TOtherReturn(TOtherArgs...)>& inCallable)
             : super(nullptr)
         {
-            struct AdapterCallable final : public Closure_obj<TReturn(TArgs...)>
+            struct AdapterCallable final : public Callable_obj<TReturn(TArgs...)>
             {
                 Callable<TOtherReturn(TOtherArgs...)> wrapped;
 
@@ -148,7 +138,7 @@ namespace hx
         Callable(const Callable<void(TOtherArgs...)>& inCallable)
             : super(nullptr)
         {
-            struct AdapterCallable final : public Closure_obj<TReturn(TArgs...)>
+            struct AdapterCallable final : public Callable_obj<TReturn(TArgs...)>
             {
                 Callable<void(TOtherArgs...)> wrapped;
 
@@ -191,7 +181,7 @@ namespace hx
             {
                 if (::hx::IsNotNull(inDynamic) && inDynamic->__GetType() == vtFunction)
                 {
-                    struct DynamicCallable final : public Closure_obj<TReturn(TArgs...)>
+                    struct DynamicCallable final : public Callable_obj<TReturn(TArgs...)>
                     {
                         Dynamic wrapped;
 
@@ -263,7 +253,7 @@ namespace hx
         Callable(::cpp::Function<void(TArgs...)> inFunction)
             : super(nullptr)
         {
-            struct FunctionCallable final : public Closure_obj<void(TArgs... )>
+            struct FunctionCallable final : public Callable_obj<void(TArgs... )>
             {
                 ::cpp::Function<void(TArgs...)> func;
 
@@ -282,7 +272,7 @@ namespace hx
         Callable(const Callable<TOtherReturn(TOtherArgs...)>& inCallable)
             : super(nullptr)
         {
-            struct AdapterCallable final : public Closure_obj<void(TArgs...)>
+            struct AdapterCallable final : public Callable_obj<void(TArgs...)>
             {
                 Callable<TOtherReturn(TOtherArgs...)> wrapped;
 
@@ -323,7 +313,7 @@ namespace hx
             {
                 if (::hx::IsNotNull(inDynamic) && inDynamic->__GetType() == vtFunction)
                 {
-                    struct DynamicCallable final : public Closure_obj<void(TArgs...)>
+                    struct DynamicCallable final : public Callable_obj<void(TArgs...)>
                     {
                         Dynamic wrapped;
 

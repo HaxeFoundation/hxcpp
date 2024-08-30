@@ -1398,7 +1398,7 @@ cpp::VirtualArray Array_obj<ELEM_>::map(MappingFunc inFunc)
     template<class ELEM_> \
     ::hx::Callable<value(args_list)> Array_obj<ELEM_>::name##_dyn() \
     { \
-        struct _hx_array_##name : public ::hx::Closure_obj<value(args_list)> \
+        struct _hx_array_##name : public ::hx::Callable_obj<value(args_list)> \
         { \
             Array<ELEM_> mThis; \
             _hx_array_##name(Array<ELEM_> inThis) : mThis(inThis) \
@@ -1447,7 +1447,7 @@ template<class ELEM_>
 template<class TO>
 ::hx::Callable<Array<TO>(hx::Callable<TO(ELEM_)>)> Array_obj<ELEM_>::map_dyn()
 {
-    struct _hx_array_map : public ::hx::Closure_obj<Array<TO>(hx::Callable<TO(ELEM_)>)>
+    struct _hx_array_map : public ::hx::Callable_obj<Array<TO>(hx::Callable<TO(ELEM_)>)>
     {
         Array<ELEM_> mThis;
         _hx_array_map(Array<ELEM_> inThis) : mThis(inThis)

@@ -353,7 +353,7 @@ typedef PropertyAccessMode PropertyAccess;
 #include <hx/Native.h>
 #include <hx/Operators.h>
 #if (HXCPP_API_LEVEL>=500)
-#include <hx/Closure.h>
+#include <hx/Invoker.h>
 #endif
 // second time ...
 #include <cpp/Variant.h>
