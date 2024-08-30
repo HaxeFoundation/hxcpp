@@ -4632,11 +4632,11 @@ public:
 
       char strBuf[100];
       if (bytes<k)
-         sprintf(strBuf,"%d", (int)bytes);
+         snprintf(strBuf,sizeof(strBuf),"%d", (int)bytes);
       else if (bytes<meg)
-         sprintf(strBuf,"%.2fk", (double)bytes/k);
+         snprintf(strBuf,sizeof(strBuf),"%.2fk", (double)bytes/k);
       else
-         sprintf(strBuf,"%.2fmb", (double)bytes/meg);
+         snprintf(strBuf,sizeof(strBuf),"%.2fmb", (double)bytes/meg);
       return strBuf;
    }
    #endif
