@@ -673,7 +673,7 @@ hx::Object * val_call0(hx::Object * arg1) THROWS
 #if (HXCPP_API_LEVEL>=500)
    return hx::invoker::invoke(arg1).GetPtr();
 #else
-   arg1->__run().GetPtr();
+   return arg1->__run().GetPtr();
 #endif
 }
 
@@ -685,7 +685,7 @@ hx::Object * val_call0_traceexcept(hx::Object * arg1) THROWS
 #if (HXCPP_API_LEVEL>=500)
    return hx::invoker::invoke(arg1).GetPtr();
 #else
-   arg1->__run().GetPtr();
+   return arg1->__run().GetPtr();
 #endif
    }
    catch(Dynamic e)
