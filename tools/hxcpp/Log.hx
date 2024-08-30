@@ -158,7 +158,7 @@ class Log
                      break;
                   }
                }
-               if (!colorSupported)
+               if (colorSupported != true)
                {
                   if (Sys.getEnv("CI_NAME") == "codeship")
                   {
@@ -167,7 +167,7 @@ class Log
                }
             }
 
-            if (!colorSupported)
+            if (colorSupported != true)
             {
                if (Sys.getEnv("TEAMCITY_VERSION") != null)
                {
@@ -179,22 +179,22 @@ class Log
                }
             }
 
-            if (!colorSupported)
+            if (colorSupported != true)
             {
                colorSupported = Sys.getEnv("TERM_PROGRAM") == "iTerm.app" || Sys.getEnv("TERM_PROGRAM") == "Apple_Terminal";
             }
 
-            if (!colorSupported)
+            if (colorSupported != true)
             {
                colorSupported = ~/(?i)-256(color)?$/.match(term);
             }
 
-            if (!colorSupported)
+            if (colorSupported != true)
             {
                colorSupported = ~/(?i)^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/.match(term) || (colorTerm != null);
             }
 
-            if (!colorSupported)
+            if (colorSupported != true)
             {
                colorSupported = Sys.getEnv("COLORTERM") != null || Sys.getEnv("ANSICON") != null || Sys.getEnv("ConEmuANSI") != null
                   || Sys.getEnv("WT_SESSION") != null || Sys.getEnv("FORCE_COLOR") != null;
