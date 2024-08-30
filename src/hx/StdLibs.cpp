@@ -733,7 +733,11 @@ struct VarArgFunc : public hx::Object
    void *__GetHandle() const { return mRealFunc.GetPtr(); }
    Dynamic __Run(const Array<Dynamic> &inArgs)
    {
+#if (HXCPP_API_LEVEL>=500)
        return hx::invoker::invoke(mRealFunc.mPtr, inArgs);
+#else
+       return mRealFunc->__run(inArgs);
+#endif
    }
 
    Dynamic mRealFunc;
