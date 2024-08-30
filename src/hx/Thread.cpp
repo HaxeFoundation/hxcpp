@@ -272,7 +272,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 	if ( info[0]->mFunction.GetPtr() )
 	{
 		// Try ... catch
-		info[0]->mFunction->__run();
+		info[0]->mFunction();
 	}
 
     // Call the debugger function to annouce that a thread has terminated

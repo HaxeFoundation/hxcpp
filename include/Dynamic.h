@@ -284,12 +284,7 @@ public:
 
 #if (HXCPP_API_LEVEL>=500)
    template<class... TArgs>
-   ::Dynamic operator()(const TArgs&... args)
-   {
-       CheckFPtr();
-
-       return mPtr->__run(args...);
-   }
+   ::Dynamic operator()(const TArgs&... args);
 #else
    inline  ::Dynamic operator()() { CheckFPtr(); return mPtr->__run(); }
    inline  ::Dynamic operator()(const Dynamic& inArg0) { CheckFPtr(); return mPtr->__run(inArg0); }

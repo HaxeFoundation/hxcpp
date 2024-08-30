@@ -911,7 +911,11 @@ void _hx_ssl_conf_close( Dynamic hconf );
 void _hx_ssl_conf_set_ca( Dynamic hconf, Dynamic hcert );
 void _hx_ssl_conf_set_verify( Dynamic hconf, int mode );
 void _hx_ssl_conf_set_cert( Dynamic hconf, Dynamic hcert, Dynamic hpkey );
+#if (HXCPP_API_LEVEL>=500)
+void _hx_ssl_conf_set_servername_callback(Dynamic hconf, ::hx::Callable<::Dynamic(::String)> obj);
+#else
 void _hx_ssl_conf_set_servername_callback( Dynamic hconf, Dynamic obj );
+#endif
 Dynamic _hx_ssl_cert_load_defaults();
 Dynamic _hx_ssl_cert_load_file( String file );
 Dynamic _hx_ssl_cert_load_path( String path );

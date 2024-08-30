@@ -247,9 +247,6 @@ public:
    virtual Dynamic __run(D a,D b,D c);
    virtual Dynamic __run(D a,D b,D c,D d);
    virtual Dynamic __run(D a,D b,D c,D d,D e);
-#else
-   template <class... TArgs>
-   Dynamic __run(const TArgs&... rest);
 #endif
 
    virtual int __ArgCount() const { return -1; }

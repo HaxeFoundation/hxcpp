@@ -47,7 +47,7 @@ namespace hx
             return sizeof...(TArgs);
         }
 
-        Dynamic __Run(const Array<Dynamic>& inArgs) = 0;
+        Dynamic __Run(const Array<Dynamic>& inArgs) override final;
 
         virtual TReturn _hx_run(TArgs... args) = 0;
     };
@@ -59,7 +59,7 @@ namespace hx
     class HXCPP_EXTERN_CLASS_ATTRIBUTES Closure_obj<TReturn(TArgs...)> : public Callable_obj<TReturn(TArgs...)>
     {
     public:
-        Dynamic __Run(const Array<Dynamic>& inArgs) override final;
+        //
     };
 
     template<class TReturn, class... TArgs>

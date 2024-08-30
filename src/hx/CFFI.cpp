@@ -669,7 +669,7 @@ void val_buffer(buffer inBuffer,value inValue)
 hx::Object * val_call0(hx::Object * arg1) THROWS
 {
    if (!arg1) Dynamic::ThrowBadFunctionError();
-   return arg1->__run().GetPtr();
+   return hx::invoker::invoke(arg1).GetPtr();
 }
 
 hx::Object * val_call0_traceexcept(hx::Object * arg1) THROWS
@@ -677,7 +677,7 @@ hx::Object * val_call0_traceexcept(hx::Object * arg1) THROWS
    try
    {
    if (!arg1) Dynamic::ThrowBadFunctionError();
-   return arg1->__run().GetPtr();
+   return hx::invoker::invoke(arg1).GetPtr();
    }
    catch(Dynamic e)
    {
@@ -692,21 +692,21 @@ hx::Object * val_call0_traceexcept(hx::Object * arg1) THROWS
 hx::Object * val_call1(hx::Object * arg1,hx::Object * arg2) THROWS
 {
    if (!arg1) Dynamic::ThrowBadFunctionError();
-   return arg1->__run(arg2).GetPtr();
+   return hx::invoker::invoke(arg1, arg2).GetPtr();
 }
 
 
 hx::Object * val_call2(hx::Object * arg1,hx::Object * arg2,hx::Object * arg3) THROWS
 {
    if (!arg1) Dynamic::ThrowBadFunctionError();
-   return arg1->__run(arg2,arg3).GetPtr();
+   return hx::invoker::invoke(arg1, arg2,arg3).GetPtr();
 }
 
 
 hx::Object * val_call3(hx::Object * arg1,hx::Object * arg2,hx::Object * arg3,hx::Object * arg4) THROWS
 {
    if (!arg1) Dynamic::ThrowBadFunctionError();
-   return arg1->__run(arg2,arg3,arg4).GetPtr();
+   return hx::invoker::invoke(arg1, arg2,arg3,arg4).GetPtr();
 }
 
 
@@ -724,35 +724,35 @@ hx::Object * val_callN(hx::Object * arg1,hx::Object ** arg2, int nCount) THROWS
 hx::Object * val_ocall0(hx::Object * arg1,int arg2) THROWS
 {
    if (!arg1) hx::Throw(HX_INVALID_OBJECT);
-   return arg1->__IField(arg2)->__run().GetPtr();
+   return hx::invoker::invoke(arg1->__IField(arg2)).GetPtr();
 }
 
 
 hx::Object * val_ocall1(hx::Object * arg1,int arg2,hx::Object * arg3) THROWS
 {
    if (!arg1) hx::Throw(HX_INVALID_OBJECT);
-   return arg1->__IField(arg2)->__run(arg3).GetPtr();
+   return hx::invoker::invoke(arg1->__IField(arg2), arg3).GetPtr();
 }
 
 
 hx::Object * val_ocall2(hx::Object * arg1,int arg2,hx::Object * arg3,hx::Object * arg4) THROWS
 {
    if (!arg1) hx::Throw(HX_INVALID_OBJECT);
-   return arg1->__IField(arg2)->__run(arg3,arg4).GetPtr();
+   return hx::invoker::invoke(arg1->__IField(arg2), arg3,arg4).GetPtr();
 }
 
 
 hx::Object * val_ocall3(hx::Object * arg1,int arg2,hx::Object * arg3,hx::Object * arg4,hx::Object * arg5) THROWS
 {
    if (!arg1) hx::Throw(HX_INVALID_OBJECT);
-   return arg1->__IField(arg2)->__run(arg3,arg4,arg5).GetPtr();
+   return hx::invoker::invoke(arg1->__IField(arg2), arg3,arg4,arg5).GetPtr();
 }
 
 
 hx::Object * val_ocallN(hx::Object * arg1,int arg2,hx::Object * arg3) THROWS
 {
    if (!arg1) hx::Throw(HX_INVALID_OBJECT);
-   return arg1->__IField(arg2)->__run(Dynamic(arg3)).GetPtr();
+   return hx::invoker::invoke(arg1->__IField(arg2), Dynamic(arg3)).GetPtr();
 }
 
 

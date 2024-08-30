@@ -154,25 +154,46 @@ namespace hx
                 return invoker::wrap::toDynamic(callable(invoker::unwrap::fromDynamic<TArgs>(inArgs[I]) ...));
             }
         };
+
+        inline Dynamic invoke(hx::Object* obj)
+        {
+            return obj->__Run(Array_obj<::Dynamic>::__new(0, 0));
+        }
+
+        template<class ...TArgs>
+        inline Dynamic invoke(hx::Object* obj, const TArgs & ...args)
+        {
+            using unused = int[];
+
+            auto arr = Array_obj<::Dynamic>::__new(0, sizeof...(args));
+
+            (void)unused {
+                0, (arr->push(invoker::wrap::toDynamic(args)), 0)...
+            };
+
+            return obj->__Run(arr);
+        }
 	}
 }
 
 template<class ...TArgs>
-Dynamic hx::Object::__run(const TArgs& ...args)
+::Dynamic Dynamic::operator()(const TArgs & ...args)
 {
-    using unused = int[];
+    CheckFPtr();
 
-    auto arr = Array_obj<::Dynamic>::__new(0, sizeof...(args));
+    return hx::invoker::invoke(mPtr, args...);
+}
 
-    (void)unused {
-        0, (arr->push(invoker::wrap::toDynamic(args)), 0)...
-    };
+template<class ...TArgs>
+::Dynamic cpp::Variant::operator()(const TArgs & ...args)
+{
+    CheckFPtr();
 
-    return __Run(arr);
+    return hx::invoker::invoke(valObject, args...);
 }
 
 template<class TReturn, class... TArgs>
-::Dynamic hx::Closure_obj<TReturn(TArgs...)>::__Run(const Array<Dynamic>& inArgs)
+::Dynamic hx::Callable_obj<TReturn(TArgs...)>::__Run(const Array<Dynamic>& inArgs)
 {
     return invoker::Invoker<std::is_void<TReturn>::value, TReturn, TArgs...>::call(this, inArgs, invoker::index::Helper::index_sequence_for<TArgs...>());
 }

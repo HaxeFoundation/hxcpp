@@ -328,15 +328,7 @@ namespace cpp
       if (isNull())  Dynamic::ThrowBadFunctionError();
    }
 
-#if (HXCPP_API_LEVEL>=500)
-   template<class... TArgs>
-   inline Dynamic Variant::operator()(const TArgs&... args)
-   {
-       CheckFPtr();
-
-       return valObject->__run(args...);
-   }
-#else
+#if (HXCPP_API_LEVEL<500)
    HX_IMPLEMENT_INLINE_VARIANT_FUNCTIONS
 #endif
 
