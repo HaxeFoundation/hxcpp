@@ -129,7 +129,6 @@ class Log
       if (colorSupported == null)
       {
          var term = Sys.getEnv("TERM");
-         var colorTerm = Sys.getEnv("COLORTERM");
 
          if (term == "dumb")
          {
@@ -159,32 +158,21 @@ class Log
                   }
                }
 
-               if (colorSupported != true)
-               {
-                  if (Sys.getEnv("CI_NAME") == "codeship")
-                  {
-                     colorSupported = true;
-                  }
-               }
-            }
-
-            if (colorSupported != true)
-            {
-               if (Sys.getEnv("TEAMCITY_VERSION") != null)
-               {
-                  colorSupported = ~/^9\.(0*[1-9]\d*)\.|\d{2,}\./.match(Sys.getEnv("TEAMCITY_VERSION"));
-               }
-               else if (colorTerm == "truecolor")
+               if (colorSupported != true && Sys.getEnv("CI_NAME") == "codeship")
                {
                   colorSupported = true;
                }
             }
 
-            if (colorSupported != true)
+            if (colorSupported != true && Sys.getEnv("TEAMCITY_VERSION") != null)
+            {
+               colorSupported = ~/^9\.(0*[1-9]\d*)\.|\d{2,}\./.match(Sys.getEnv("TEAMCITY_VERSION"));
+            }
+
+            if (colorSupported != true && term != null)
             {
                colorSupported = ~/(?i)-256(color)?$/.match(term)
-                  || ~/(?i)^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/.match(term)
-                  || (colorTerm != null);
+                  || ~/(?i)^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/.match(term);
             }
 
             if (colorSupported != true)
