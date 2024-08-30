@@ -217,7 +217,7 @@ public:
    String toString()
    {
       char buf[100];
-      sprintf(buf,"Pointer(%p)", mValue);
+      snprintf(buf,sizeof(buf),"Pointer(%p)", mValue);
       return String(buf);
    }
    String __ToString() const { return String(mValue); }

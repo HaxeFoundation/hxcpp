@@ -25,6 +25,7 @@ class FileGroup
    public var mCacheProject:String;
    public var mTags:String;
    public var mNvcc:Bool;
+   public var mAssembler:String;
    public var mObjPrefix:String;
    
    public function new(inDir:String,inId:String,inSetImportDir = false)
@@ -72,6 +73,14 @@ class FileGroup
    public function hasFiles():Bool {
       return Lambda.exists(mFiles, function(file:File) { return true; } );
    }
+
+   public function getAsmExe(compilerAsm:String)
+   {
+      if (mAssembler==null || mAssembler=="")
+         return compilerAsm;
+      return mAssembler;
+   }
+
 
    public function filter(defines:Map<String,String>)
    {

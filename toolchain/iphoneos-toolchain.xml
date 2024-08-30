@@ -95,8 +95,10 @@
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} g++" if="HXCPP_GCC" />
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang++" />
   <flag value="-Wl,-cache_path_lto,/tmp" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug"/>
-  <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
-  <flag value="-stdlib=libc++" if="HXCPP_CPP11 || HXCPP_CPP17" />
+  <cppflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <cppflag value="-stdlib=libc++" if="HXCPP_CPP11 || HXCPP_CPP17" />
+  <mmflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <mmflag value="-stdlib=libc++" if="HXCPP_CPP11 || HXCPP_CPP17" />
   <flag value="-dynamiclib"/>
   <flag value="-arch"/>
   <flag value="armv6" if="HXCPP_ARMV6" />

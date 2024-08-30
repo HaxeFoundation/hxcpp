@@ -44,6 +44,10 @@ class File
 
    public function isNvcc() return mGroup.mNvcc;
 
+   public function isAsm() return mName.endsWith(".asm");
+
+   public function getAsmExe(compilerAsm:String) return mGroup.getAsmExe(compilerAsm);
+
    public function isResource() return mName.endsWith(".rc");
 
    public function keep(inDefines:Map<String,String>)
