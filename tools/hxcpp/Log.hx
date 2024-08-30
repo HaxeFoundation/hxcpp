@@ -158,6 +158,7 @@ class Log
                      break;
                   }
                }
+
                if (colorSupported != true)
                {
                   if (Sys.getEnv("CI_NAME") == "codeship")
