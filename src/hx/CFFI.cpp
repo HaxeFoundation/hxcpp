@@ -759,7 +759,7 @@ hx::Object * val_ocall1(hx::Object * arg1,int arg2,hx::Object * arg3) THROWS
 #if (HXCPP_API_LEVEL>=500)
    return hx::invoker::invoke(arg1->__IField(arg2), arg3).GetPtr();
 #else
-   return arg1->__IField(arg2, arg3)->__run().GetPtr();
+   return arg1->__IField(arg2)->__run(arg3).GetPtr();
 #endif
 }
 
@@ -770,7 +770,7 @@ hx::Object * val_ocall2(hx::Object * arg1,int arg2,hx::Object * arg3,hx::Object 
 #if (HXCPP_API_LEVEL>=500)
    return hx::invoker::invoke(arg1->__IField(arg2), arg3, arg4).GetPtr();
 #else
-   return arg1->__IField(arg2, arg3, arg4)->__run().GetPtr();
+   return arg1->__IField(arg2)->__run(arg3, arg4).GetPtr();
 #endif
 }
 
@@ -781,7 +781,7 @@ hx::Object * val_ocall3(hx::Object * arg1,int arg2,hx::Object * arg3,hx::Object 
 #if (HXCPP_API_LEVEL>=500)
    return hx::invoker::invoke(arg1->__IField(arg2), arg3, arg4, arg5).GetPtr();
 #else
-   return arg1->__IField(arg2, arg3, arg4, arg5)->__run().GetPtr();
+   return arg1->__IField(arg2)->__run(arg3, arg4, arg5).GetPtr();
 #endif
 }
 
