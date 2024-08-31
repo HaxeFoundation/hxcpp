@@ -30,6 +30,5 @@ runs:
       run: haxe compile.hxml
 
     - name: build hxcpp
-      working-directory: tools/hxcpp
       shell: pwsh
-      run: haxe compile.hxml
+      run: haxelib run hxcpp setup

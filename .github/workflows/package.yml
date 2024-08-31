@@ -29,8 +29,7 @@ jobs:
 
       - name: Build Tool
         run: |
-          cd tools/hxcpp
-          haxe compile.hxml
+          haxelib run hxcpp setup
 
         
       - name: Check XCode
