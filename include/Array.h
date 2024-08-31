@@ -62,7 +62,7 @@ class SafeSorter
 {
     typedef
 #if (HXCPP_API_LEVEL>=500)
-        hx::Callable<int(Dynamic, Dynamic)>
+        ::hx::Callable<int(Dynamic, Dynamic)>
 #else
         Dynamic
 #endif
@@ -223,7 +223,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayBase : public ArrayCommon
 public:
     typedef
 #if (HXCPP_API_LEVEL>=500)
-        hx::Callable<int(Dynamic, Dynamic)>
+        ::hx::Callable<int(Dynamic, Dynamic)>
 #else
         Dynamic
 #endif
@@ -231,7 +231,7 @@ public:
 
     typedef
 #if (HXCPP_API_LEVEL>=500)
-        hx::Callable<bool(Dynamic)>
+        ::hx::Callable<bool(Dynamic)>
 #else
         Dynamic
 #endif
@@ -239,7 +239,7 @@ public:
 
     typedef
 #if (HXCPP_API_LEVEL>=500)
-        hx::Callable<Dynamic(Dynamic)>
+        ::hx::Callable<Dynamic(Dynamic)>
 #else
         Dynamic
 #endif
@@ -567,7 +567,7 @@ class Array_obj : public hx::ArrayBase
 
    typedef
 #if (HXCPP_API_LEVEL>=500)
-       hx::Callable<int(Elem, Elem)>
+       ::hx::Callable<int(Elem, Elem)>
 #else
        Dynamic
 #endif
@@ -575,7 +575,7 @@ class Array_obj : public hx::ArrayBase
 
    typedef
 #if (HXCPP_API_LEVEL>=500)
-       hx::Callable<bool(Elem)>
+       ::hx::Callable<bool(Elem)>
 #else
        Dynamic
 #endif
@@ -583,7 +583,7 @@ class Array_obj : public hx::ArrayBase
 
 #if (HXCPP_API_LEVEL>=500)
    template<class TO>
-   using MappingFunc = hx::Callable<TO(Elem)>;
+   using MappingFunc = ::hx::Callable<TO(Elem)>;
 #else
    typedef Dynamic MappingFunc;
 #endif
@@ -1382,6 +1382,15 @@ cpp::VirtualArray Array_obj<ELEM_>::map(MappingFunc inFunc)
 
 #if (HXCPP_API_LEVEL>=500)
 
+// For some reason this forward declared template type is needed for clang,
+// MSVC and GCC have no problem finding it when it used in the closures below.
+// Don't know who's "right" or "wrong".
+namespace hx
+{
+    template<typename T1, typename T2>
+    bool IsPointerEq(const T1& v1, const T2& v2);
+}
+
 #define HX_ARRAY_ARG_LIST0
 #define HX_ARRAY_ARG_LIST1(arg0) arg0
 #define HX_ARRAY_ARG_LIST2(arg0, arg1) arg0, arg1
@@ -1445,16 +1454,16 @@ HX_ARRAY_FUNC(, void, unshift, HX_ARRAY_ARG_LIST1(ELEM_), HX_ARRAY_FUNC_LIST1(EL
 HX_ARRAY_FUNC(return, Array<ELEM_>, filter, HX_ARRAY_ARG_LIST1(hx::Callable<bool(ELEM_)>), HX_ARRAY_FUNC_LIST1(hx::Callable<bool(ELEM_)>), HX_ARG_LIST1);
 template<class ELEM_>
 template<class TO>
-::hx::Callable<Array<TO>(hx::Callable<TO(ELEM_)>)> Array_obj<ELEM_>::map_dyn()
+::hx::Callable<Array<TO>(::hx::Callable<TO(ELEM_)>)> Array_obj<ELEM_>::map_dyn()
 {
-    struct _hx_array_map : public ::hx::Callable_obj<Array<TO>(hx::Callable<TO(ELEM_)>)>
+    struct _hx_array_map : public ::hx::Callable_obj<Array<TO>(::hx::Callable<TO(ELEM_)>)>
     {
         Array<ELEM_> mThis;
         _hx_array_map(Array<ELEM_> inThis) : mThis(inThis)
         {
             HX_OBJ_WB_NEW_MARKED_OBJECT(this);
         }
-        Array<TO> _hx_run(hx::Callable<TO(ELEM_)> inArg0) override
+        Array<TO> _hx_run(::hx::Callable<TO(ELEM_)> inArg0) override
         {
             return mThis->map(inArg0);
         }
