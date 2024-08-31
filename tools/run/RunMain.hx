@@ -23,8 +23,7 @@ class RunMain
       log('This version of hxcpp ($dir) appears to be a source/developement version.');
       log("Before this can be used, you need to:");
       log(" 1. Rebuild the main command-line tool, this can be done with:");
-      log("     cd tools/hxcpp");
-      log("     haxe compile.hxml");
+      log("     haxelib run hxcpp setup");
       log(" 2. FOR HXCPP API < 330:");
       log("    Build the binaries appropriate to your system(s), this can be done with:");
       log("     cd project");

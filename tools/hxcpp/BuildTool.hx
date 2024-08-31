@@ -1847,6 +1847,8 @@ class BuildTool
       Log.println('    ${BOLD}resize${NORMAL} #megabytes -- Only keep #megabytes MB');
       Log.println('    ${BOLD}list${NORMAL} -- list cache usage');
       Log.println('    ${BOLD}details${NORMAL} -- list cache usage, per file');
+      Log.println(' ${BOLD}haxelib run hxcpp${NORMAL} ${ITALIC}${WHITE}setup${NORMAL}');
+      Log.println('   Rebuild the hxcpp build tool');
       Log.println('');
    }
 
@@ -2348,7 +2350,7 @@ class BuildTool
    {
       var ver = Std.parseInt(inVersion);
       if (ver>6)
-         Log.error("Your version of hxcpp.n is out-of-date.  Please update by compiling 'haxe compile.hxml' in hxcpp/tools/hxcpp.");
+         Log.error("Your version of hxcpp.n is out-of-date.  Please update by running 'haxelib run hxcpp setup'");
    }
 
    public function resolvePath(inPath:String)
