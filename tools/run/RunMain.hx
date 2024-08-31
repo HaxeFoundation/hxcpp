@@ -87,6 +87,12 @@ class RunMain
 
    public static function executeHxcpp()
    {
+      if (Sys.args()[0] == "setup")
+      {
+         setup();  
+         return true;
+      }
+
       if (!sys.FileSystem.exists("./hxcpp.n"))
          return false;
 
