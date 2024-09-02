@@ -136,9 +136,6 @@ class Log
          }
          else
          {
-            if (Sys.getEnv('HXCPP_COLOR') != null)
-                  colorSupported = true;
-
             if (colorSupported != true && term != null)
             {
                colorSupported = ~/(?i)-256(color)?$/.match(term)

@@ -1539,8 +1539,11 @@ class BuildTool
       }
 
 
-      if (defines.exists("HXCPP_NO_COLOUR") || defines.exists("HXCPP_NO_COLOR"))
+      if (Sys.getEnv("HXCPP_COLOUR") != null || Sys.getEnv("HXCPP_COLOR") != null)
+         Log.colorSupported = !(defines.exists("HXCPP_NO_COLOUR") || defines.exists("HXCPP_NO_COLOR"));
+      else if (defines.exists("HXCPP_NO_COLOUR") || defines.exists("HXCPP_NO_COLOR"))
          Log.colorSupported = false;
+
       Log.verbose = defines.exists("HXCPP_VERBOSE");
       exitOnThreadError = defines.exists("HXCPP_EXIT_ON_ERROR");
 
