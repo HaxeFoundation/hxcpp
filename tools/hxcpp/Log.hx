@@ -136,38 +136,8 @@ class Log
          }
          else
          {
-            if (Sys.getEnv('CI') != null)
-            {
-               var ciEnvNames = [
-                  "GITHUB_ACTIONS",
-                  "GITEA_ACTIONS",
-                  "TRAVIS",
-                  "CIRCLECI",
-                  "APPVEYOR",
-                  "GITLAB_CI",
-                  "BUILDKITE",
-                  "DRONE"
-               ];
-
-               for (ci in ciEnvNames)
-               {
-                  if (Sys.getEnv(ci) != null)
-                  {
-                     colorSupported = true;
-                     break;
-                  }
-               }
-
-               if (colorSupported != true && Sys.getEnv("CI_NAME") == "codeship")
-               {
+            if (Sys.getEnv('HXCPP_COLOR') != null)
                   colorSupported = true;
-               }
-            }
-
-            if (colorSupported != true && Sys.getEnv("TEAMCITY_VERSION") != null)
-            {
-               colorSupported = ~/^9\.(0*[1-9]\d*)\.|\d{2,}\./.match(Sys.getEnv("TEAMCITY_VERSION"));
-            }
 
             if (colorSupported != true && term != null)
             {
