@@ -9,7 +9,9 @@
 
 #ifdef __GNUC__
    // Mingw / gcc on windows
+   #ifndef _WIN32_WINNT
    #define _WIN32_WINNT 0x0501
+   #endif
    #include <winsock2.h>
    #include <ws2tcpip.h>
 #else
@@ -19,14 +21,9 @@
    #include <Ws2tcpip.h>
 #endif
 
-
 #define DYNAMIC_INET_FUNCS 1
-typedef WINSOCK_API_LINKAGE  INT (WSAAPI *inet_pton_func)( INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
-typedef WINSOCK_API_LINKAGE  PCSTR (WSAAPI *inet_ntop_func)(INT  Family, PVOID pAddr, PSTR pStringBuf, size_t StringBufSize);
-
-
-
-
+typedef INT (WSAAPI *inet_pton_func)( INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
+typedef PCSTR (WSAAPI *inet_ntop_func)(INT  Family, PVOID pAddr, PSTR pStringBuf, size_t StringBufSize);
 
 #   define FDSIZE(n)   (sizeof(u_int) + (n) * sizeof(SOCKET))
 #   define SHUT_WR      SD_SEND
