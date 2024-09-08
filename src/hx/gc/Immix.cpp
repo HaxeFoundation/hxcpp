@@ -6621,8 +6621,7 @@ void SetTopOfStack(int *inTop,bool inForce)
 
 void *InternalNew(int inSize,bool inIsObject)
 {
-   //HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", __LINE__, 0)
-   HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", inSize, 0)
+   HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", __LINE__, 0)
 
    #ifdef HXCPP_DEBUG
    if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
