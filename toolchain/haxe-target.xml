@@ -136,6 +136,7 @@
 <files id="tracy" dir="${HXCPP}" tags="haxe"  >
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
+  <compilerflag value="-DTRACY_ENABLE"/>
 
   <file name="project/thirdparty/tracy-0.11.1/TracyClient.cpp"/>
   <cache value="1" project="hxcpp-tracy" asLibrary="true" />
@@ -166,7 +167,12 @@
   <file name = "src/hx/StdLibs.cpp" tags="haxe,static" />
   <file name = "src/hx/Debug.cpp"/>
   <file name = "src/hx/Debugger.cpp" if="HXCPP_DEBUGGER" />
-  <file name = "src/hx/Telemetry.cpp" if="HXCPP_TELEMETRY" />
+
+  <section if="HXCPP_TELEMETRY">
+    <file name = "src/hx/TelemetryTracy.cpp" if="HXCPP_TRACY"/>
+    <file name = "src/hx/Telemetry.cpp" unless="HXCPP_TRACY"/>
+  </section>
+  
   <file name = "src/hx/Profiler.cpp" if="HXCPP_PROFILER" />
   <file name = "src/hx/Thread.cpp"/>
   <file name = "src/hx/RunLibs.cpp" if="static_link||dll_link"/>

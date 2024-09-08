@@ -2,9 +2,6 @@
 #define HX_STACK_CONTEXT_H
 
 #include "QuickVec.h"
-#ifdef HXCPP_TRACY
-  #include "../../project/thirdparty/tracy-0.11.1/tracy/TracyC.h"
-#endif
 
 #ifdef HXCPP_SINGLE_THREADED_APP
   #define HX_CTX_GET ::hx::gMainThreadContext
@@ -627,10 +624,6 @@ public:
    #ifdef HXCPP_STACK_TRACE // {
    const StackPosition *position;
 
-      #if defined(HXCPP_TRACY) && !defined(HXCPP_TRACY_DISABLE_STACKS)
-         TracyCZoneCtx tctx;
-      #endif
-
       #ifdef HXCPP_STACK_LINE
          // Current line number, changes during the lifetime of the stack frame.
          // Only updated if HXCPP_STACK_LINE is defined.
@@ -664,20 +657,6 @@ public:
 
           ctx =  HX_CTX_GET;
           ctx->pushFrame(this);
-
-         #if defined(HXCPP_TRACY) && !defined(HXCPP_TRACY_DISABLE_STACKS)
-            auto srcloc =
-               ___tracy_alloc_srcloc(
-                  lineNumber,
-                  position->fileName,
-                  strlen(position->fileName),
-                  position->fullName,
-                  strlen(position->fullName),
-                  0
-               );
-               
-            tctx = ___tracy_emit_zone_begin_alloc_callstack(srcloc, ctx->getDepth(), true);
-         #endif
        }
 
 
@@ -685,10 +664,6 @@ public:
        // stack frames for the current thread
        ~StackFrame()
        {
-         #if defined(HXCPP_TRACY) && !defined(HXCPP_TRACY_DISABLE_STACKS)
-            ___tracy_emit_zone_end(tctx);
-         #endif
-
           ctx->popFrame(this);
        }
 
