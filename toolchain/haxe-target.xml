@@ -173,6 +173,8 @@
   <file name = "src/Math.cpp"/>
   <file name = "src/String.cpp" tags="haxe,hxstring" />
 
+  <file name="src/hx/tracy/TracyClient.cpp" if="HXCPP_TRACY"/>
+
   <addTwice if="linux||android" />
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />
 </files>

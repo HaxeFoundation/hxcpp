@@ -74,6 +74,10 @@
    #define HXCPP_ALIGN_ALLOC
 #endif
 
+#if defined(HXCPP_TRACY)
+   #define TRACY_ENABLE
+   #include "../src/hx/tracy/tracy/Tracy.hpp"
+#endif
 
 
 // Some compilers are over-enthusiastic about what they #define ...

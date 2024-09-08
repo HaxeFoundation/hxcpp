@@ -37,6 +37,10 @@
  <flag value='-DHXCPP_OBJC' if="objc"  tag="haxe"/>
  <flag value='-DHXCPP_GC_DEBUG_LEVEL=${HXCPP_GC_DEBUG_LEVEL}' if="HXCPP_GC_DEBUG_LEVEL" tag="gc" />
  <flag value='-DHXCPP_WINXP_COMPAT' if="HXCPP_WINXP_COMPAT" tag="haxe"/>
+ 
+ <flag value='-DHXCPP_TRACY' if="HXCPP_TRACY" tag="haxe"/>
+ <flag value='-DHXCPP_TRACY_DISABLE_STACKS' if="HXCPP_TRACY_DISABLE_STACKS" tag="haxe"/>
+ 
  <mmflag value='-Wno-invalid-offsetof' />
  <mmflag value='-Wno-format-security' />
 </xml>
