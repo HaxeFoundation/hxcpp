@@ -92,8 +92,8 @@ void hx::tlmSampleEnter(hx::Telemetry* telemetry, hx::StackFrame* frame)
 			frame->lineNumber,
 			frame->position->fileName,
 			strlen(frame->position->fileName),
-			frame->position->fileName,
-			strlen(frame->position->fileName),
+			frame->position->fullName,
+			strlen(frame->position->fullName),
 			0);
 
 	// Hxcpp callstack depth starts at 0, but tracy expects it to start at 1.

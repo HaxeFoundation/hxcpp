@@ -781,6 +781,7 @@ public:
          ctx = inCtx;
          frame = (hx::StackFrame *)ctx->stackAlloc(sizeof(hx::StackFrame));
          frame->position = inPosition;
+         frame->ctx = ctx;
          #ifdef HXCPP_DEBUGGER
          frame->variables = 0;
          frame->catchables = 0;
