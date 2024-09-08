@@ -2,7 +2,9 @@
 #define HX_STACK_CONTEXT_H
 
 #include "QuickVec.h"
-#include "../../src/hx/tracy/tracy/TracyC.h"
+#ifdef HXCPP_TRACY
+  #include "../../src/hx/tracy/tracy/TracyC.h"
+#endif
 
 #ifdef HXCPP_SINGLE_THREADED_APP
   #define HX_CTX_GET ::hx::gMainThreadContext
