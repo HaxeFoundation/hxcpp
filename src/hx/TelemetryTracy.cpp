@@ -113,3 +113,28 @@ void hx::tlmSampleExit(hx::Telemetry* telemetry)
 
 	telemetry->tracyZones.pop_back();
 }
+
+void __hxcpp_tracy_framemark()
+{
+	::tracy::Profiler::SendFrameMark(0);
+}
+
+void __hxcpp_tracy_plot(String name, float val)
+{
+	::tracy::Profiler::PlotData(name.c_str(), val);
+}
+
+void __hxcpp_tracy_plot_config(String name, uint8_t format, bool step, bool fill, int color)
+{
+	::tracy::Profiler::ConfigurePlot(name.c_str(),::tracy::PlotFormatType(format), step, fill, color);
+}
+
+void __hxcpp_tracy_message(String msg, int color)
+{
+	::tracy::Profiler::MessageColor(msg.c_str(), msg.length, color, 0);
+}
+
+void __hxcpp_tracy_message_app_info(String info)
+{
+	::tracy::Profiler::MessageAppInfo(info.c_str(), info.length);
+}

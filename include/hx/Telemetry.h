@@ -32,4 +32,12 @@ void __hxcpp_hxt_ignore_allocs(int delta);
 int __hxcpp_gc_reserved_bytes();
 int __hxcpp_gc_used_bytes();
 
+#ifdef HXCPP_TRACY
+  void __hxcpp_tracy_framemark();
+  void __hxcpp_tracy_plot(String name, float val);
+  void __hxcpp_tracy_plot_config(String name, uint8_t format, bool step, bool fill, int color);
+  void __hxcpp_tracy_message(String msg, int color);
+  void __hxcpp_tracy_message_app_info(String info);
+#endif
+
 #endif
