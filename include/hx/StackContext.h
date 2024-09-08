@@ -3,7 +3,7 @@
 
 #include "QuickVec.h"
 #ifdef HXCPP_TRACY
-  #include "../../src/hx/tracy/tracy/TracyC.h"
+  #include "../../project/thirdparty/tracy-0.11.1/tracy/TracyC.h"
 #endif
 
 #ifdef HXCPP_SINGLE_THREADED_APP

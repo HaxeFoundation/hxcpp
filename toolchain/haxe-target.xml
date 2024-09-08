@@ -133,6 +133,13 @@
   <cache value="1" project="hxcpp-cppia" asLibrary="true" />
 </files>
 
+<files id="tracy" dir="${HXCPP}" tags="haxe"  >
+  <depend files="hxcpp-depends"/>
+  <options name="Options.txt"/>
+
+  <file name="project/thirdparty/tracy-0.11.1/TracyClient.cpp"/>
+  <cache value="1" project="hxcpp-tracy" asLibrary="true" />
+</files>
 
 <files id="runtime" dir="${HXCPP}" tags="haxe" >
   <depend files="hxcpp-depends"/>
@@ -172,8 +179,6 @@
   <file name = "src/Enum.cpp"/>
   <file name = "src/Math.cpp"/>
   <file name = "src/String.cpp" tags="haxe,hxstring" />
-
-  <file name="src/hx/tracy/TracyClient.cpp" if="HXCPP_TRACY"/>
 
   <addTwice if="linux||android" />
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />
@@ -235,6 +240,7 @@
   <files id="__externs__" />
   <files id="runtime" unless="dll_import" />
   <files id="cppia" if="scriptable" />
+  <files id="tracy" if="HXCPP_TRACY" />
   <files id="rc" unless="static_link" />
   <lib name="-lpthread" if="linux" unless="static_link" />
   <lib name="-ldl" if="linux" unless="static_link" />

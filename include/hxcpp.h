@@ -76,7 +76,7 @@
 
 #if defined(HXCPP_TRACY)
    #define TRACY_ENABLE
-   #include "../src/hx/tracy/tracy/Tracy.hpp"
+   #include "../project/thirdparty/tracy-0.11.1/tracy/Tracy.hpp"
 #endif
 
 
