@@ -55,12 +55,12 @@ void __hxt_gc_after_mark(int byteMarkId, int endianByteMarkId) { }
 
 void __hxt_gc_start()
 {
-	//gcZone = ___tracy_emit_zone_begin(&gcSourceLocation, true);
+	gcZone = ___tracy_emit_zone_begin(&gcSourceLocation, true);
 }
 
 void __hxt_gc_end()
 {
-	//___tracy_emit_zone_end(gcZone);
+	___tracy_emit_zone_end(gcZone);
 }
 
 hx::Telemetry* hx::tlmCreate(StackContext* stack)
@@ -96,8 +96,8 @@ void hx::tlmSampleEnter(hx::Telemetry* telemetry, hx::StackFrame* frame)
 			strlen(frame->position->fullName),
 			0);
 
-	// Hxcpp callstack depth starts at 0, but tracy expects it to start at 1.
-	auto depth = frame->ctx->getDepth() + 1;
+	// Determine depth from tracyZones vector: +1 since we are about to add one
+	auto depth = telemetry->tracyZones.size() + 1;
 
 	telemetry->tracyZones.push_back(___tracy_emit_zone_begin_alloc_callstack(srcloc, depth, true));
 }
