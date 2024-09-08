@@ -39,7 +39,7 @@ TelemetryFrame* __hxcpp_hxt_dump_telemetry(int)
 
 void __hxcpp_hxt_stash_telemetry() { }
 
-void __hxcpp_hxt_ignore_allocs() {}
+void __hxcpp_hxt_ignore_allocs(int) {}
 
 void __hxt_new_string(void* obj, int inSize) { }
 
