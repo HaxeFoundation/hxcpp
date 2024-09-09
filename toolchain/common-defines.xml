@@ -39,7 +39,8 @@
  <flag value='-DHXCPP_WINXP_COMPAT' if="HXCPP_WINXP_COMPAT" tag="haxe"/>
  
  <flag value='-DHXCPP_TRACY' if="HXCPP_TRACY" tag="haxe"/>
- <flag value='-DHXCPP_TRACY_DISABLE_STACKS' if="HXCPP_TRACY_DISABLE_STACKS" tag="haxe"/>
+ <flag value='-DHXCPP_TRACY_NO_EXIT' if="HXCPP_TRACY_NO_EXIT" tag="haxe"/>
+ <flag value='-DHXCPP_TRACY_ON_DEMAND' if="HXCPP_TRACY_ON_DEMAND" tag="haxe"/>
  
  <mmflag value='-Wno-invalid-offsetof' />
  <mmflag value='-Wno-format-security' />
