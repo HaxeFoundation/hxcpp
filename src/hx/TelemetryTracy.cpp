@@ -96,10 +96,13 @@ void hx::tlmSampleEnter(hx::Telemetry* telemetry, hx::StackFrame* frame)
 			strlen(frame->position->fullName),
 			0);
 
-	// Determine depth from tracyZones vector: +1 since we are about to add one
-	auto depth = telemetry->tracyZones.size() + 1;
-
-	telemetry->tracyZones.push_back(___tracy_emit_zone_begin_alloc_callstack(srcloc, depth, true));
+	#if HXCPP_TRACY_INCLUDE_CALLSTACKS
+		// Determine depth from tracyZones vector: +1 since we are about to add one
+		auto depth = telemetry->tracyZones.size();
+		telemetry->tracyZones.push_back(___tracy_emit_zone_begin_alloc_callstack(srcloc, depth, true));
+	#else
+		telemetry->tracyZones.push_back(___tracy_emit_zone_begin_alloc(srcloc, true));
+	#endif
 }
 
 void hx::tlmSampleExit(hx::Telemetry* telemetry)
