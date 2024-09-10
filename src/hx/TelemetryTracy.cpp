@@ -31,9 +31,10 @@ namespace hx
 	{
 	public:
 		std::vector<TracyCZoneCtx> tracyZones;
-		hx::QuickVec<void*> allocs;
+		hx::QuickVec<void*> smallAllocs;
+		hx::QuickVec<void*> largeAllocs;
 
-		Telemetry() : tracyZones(0), allocs() {}
+		Telemetry() : tracyZones(0), smallAllocs(), largeAllocs() {}
 	};
 }
 
@@ -65,16 +66,29 @@ void __hxt_gc_new(hx::StackContext* stack, void* obj, int inSize, const char* na
 
 void __hxt_gc_alloc(void* obj, int inSize)
 {
+	auto stack = hx::StackContext::getCurrent();
+
 	if (isLargeObject(obj))
 	{
+		// Skip multiple large object allocations since they can be recycled in-between GC collections.
+		for (auto i = 0; i < stack->mTelemetry->largeAllocs.size(); i++)
+		{
+			if (stack->mTelemetry->largeAllocs[i] == obj)
+			{
+				return;
+			}
+		}
+
+		stack->mTelemetry->largeAllocs.push(obj);
+
 		TracyAllocN(obj, inSize, lohName);
 	}
 	else
 	{
+		stack->mTelemetry->smallAllocs.push(obj);
+
 		TracyAllocN(obj, inSize, sohName);
 	}
-
-	hx::StackContext::getCurrent()->mTelemetry->allocs.push(obj);
 }
 
 void __hxt_gc_realloc(void* oldObj, void* newObj, int newSize) { }
@@ -83,32 +97,42 @@ void __hxt_gc_after_mark(int byteMarkId, int endianByteMarkId)
 {
 	for (auto&& telemetry : created)
 	{
-		hx::QuickVec<void*> retained;
+		hx::QuickVec<void*> smallRetained;
+		hx::QuickVec<void*> largeRetained;
 
-		retained.safeReserveExtra(telemetry->allocs.size());
+		smallRetained.safeReserveExtra(telemetry->smallAllocs.size());
+		largeRetained.safeReserveExtra(telemetry->largeAllocs.size());
 
-		for (auto i = 0; i < telemetry->allocs.size(); i++)
+		for (auto i = 0; i < telemetry->smallAllocs.size(); i++)
 		{
-			auto ptr      = telemetry->allocs[i];
+			auto ptr      = telemetry->smallAllocs[i];
 			auto markByte = reinterpret_cast<unsigned char*>(ptr)[endianByteMarkId];
 			if (markByte != byteMarkId)
 			{
-				if (isLargeObject(ptr))
-				{
-					TracyFreeN(ptr, lohName);
-				}
-				else
-				{
-					TracyFreeN(ptr, sohName);
-				}
+				TracyFreeN(ptr, sohName);
 			}
 			else
 			{
-				retained.push(ptr);
+				smallRetained.push(ptr);
 			}
 		}
 
-		telemetry->allocs.swap(retained);
+		for (auto i = 0; i < telemetry->largeAllocs.size(); i++)
+		{
+			auto ptr      = telemetry->largeAllocs[i];
+			auto markByte = reinterpret_cast<unsigned char*>(ptr)[endianByteMarkId];
+			if (markByte != byteMarkId)
+			{
+				TracyFreeN(ptr, lohName);
+			}
+			else
+			{
+				largeRetained.push(ptr);
+			}
+		}
+
+		telemetry->smallAllocs.swap(smallRetained);
+		telemetry->largeAllocs.swap(largeRetained);
 	}
 }
 
