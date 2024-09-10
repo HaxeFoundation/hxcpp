@@ -192,7 +192,7 @@ StackContext::StackContext()
    mIsUnwindingException = false;
    #endif
 
-   #ifdef HXCPP_TELEMETRY && HXCPP_TRACY
+   #if HXCPP_TELEMETRY
    mTelemetry = tlmCreate(this);
    #endif
 

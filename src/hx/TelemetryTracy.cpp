@@ -5,6 +5,15 @@
 #include "../../project/thirdparty/tracy-0.11.1/tracy/Tracy.hpp"
 #include <vector>
 
+#ifdef HXCPP_TRACY_MEMORY
+	#ifdef HXCPP_GC_MOVING
+		#error "Error: HXCPP_TRACY_MEMORY is not supported when HXCPP_GC_MOVING is active."
+	#endif
+	#ifdef HXCPP_GC_GENERATIONAL
+		#error "Error: HXCPP_TRACY_MEMORY is not supported when HXCPP_GC_GENERATIONAL is active."
+	#endif
+#endif
+
 namespace
 {
 	TracyCZoneCtx gcZone;
@@ -66,74 +75,78 @@ void __hxt_gc_new(hx::StackContext* stack, void* obj, int inSize, const char* na
 
 void __hxt_gc_alloc(void* obj, int inSize)
 {
-	auto stack = hx::StackContext::getCurrent();
+	#ifdef HXCPP_TRACY_MEMORY
+		auto stack = hx::StackContext::getCurrent();
 
-	if (isLargeObject(obj))
-	{
-		// Skip multiple large object allocations since they can be recycled in-between GC collections.
-		for (auto i = 0; i < stack->mTelemetry->largeAllocs.size(); i++)
+		if (isLargeObject(obj))
 		{
-			if (stack->mTelemetry->largeAllocs[i] == obj)
+			// Skip multiple large object allocations since they can be recycled in-between GC collections.
+			for (auto i = 0; i < stack->mTelemetry->largeAllocs.size(); i++)
 			{
-				return;
+				if (stack->mTelemetry->largeAllocs[i] == obj)
+				{
+					return;
+				}
 			}
+
+			stack->mTelemetry->largeAllocs.push(obj);
+
+			TracyAllocN(obj, inSize, lohName);
 		}
+		else
+		{
+			stack->mTelemetry->smallAllocs.push(obj);
 
-		stack->mTelemetry->largeAllocs.push(obj);
-
-		TracyAllocN(obj, inSize, lohName);
-	}
-	else
-	{
-		stack->mTelemetry->smallAllocs.push(obj);
-
-		TracyAllocN(obj, inSize, sohName);
-	}
+			TracyAllocN(obj, inSize, sohName);
+		}
+	#endif
 }
 
 void __hxt_gc_realloc(void* oldObj, void* newObj, int newSize) { }
 
 void __hxt_gc_after_mark(int byteMarkId, int endianByteMarkId)
 {
-	for (auto&& telemetry : created)
-	{
-		hx::QuickVec<void*> smallRetained;
-		hx::QuickVec<void*> largeRetained;
-
-		smallRetained.safeReserveExtra(telemetry->smallAllocs.size());
-		largeRetained.safeReserveExtra(telemetry->largeAllocs.size());
-
-		for (auto i = 0; i < telemetry->smallAllocs.size(); i++)
+	#ifdef HXCPP_TRACY_MEMORY
+		for (auto&& telemetry : created)
 		{
-			auto ptr      = telemetry->smallAllocs[i];
-			auto markByte = reinterpret_cast<unsigned char*>(ptr)[endianByteMarkId];
-			if (markByte != byteMarkId)
-			{
-				TracyFreeN(ptr, sohName);
-			}
-			else
-			{
-				smallRetained.push(ptr);
-			}
-		}
+			hx::QuickVec<void*> smallRetained;
+			hx::QuickVec<void*> largeRetained;
 
-		for (auto i = 0; i < telemetry->largeAllocs.size(); i++)
-		{
-			auto ptr      = telemetry->largeAllocs[i];
-			auto markByte = reinterpret_cast<unsigned char*>(ptr)[endianByteMarkId];
-			if (markByte != byteMarkId)
-			{
-				TracyFreeN(ptr, lohName);
-			}
-			else
-			{
-				largeRetained.push(ptr);
-			}
-		}
+			smallRetained.safeReserveExtra(telemetry->smallAllocs.size());
+			largeRetained.safeReserveExtra(telemetry->largeAllocs.size());
 
-		telemetry->smallAllocs.swap(smallRetained);
-		telemetry->largeAllocs.swap(largeRetained);
-	}
+			for (auto i = 0; i < telemetry->smallAllocs.size(); i++)
+			{
+				auto ptr      = telemetry->smallAllocs[i];
+				auto markByte = reinterpret_cast<unsigned char*>(ptr)[endianByteMarkId];
+				if (markByte != byteMarkId)
+				{
+					TracyFreeN(ptr, sohName);
+				}
+				else
+				{
+					smallRetained.push(ptr);
+				}
+			}
+
+			for (auto i = 0; i < telemetry->largeAllocs.size(); i++)
+			{
+				auto ptr      = telemetry->largeAllocs[i];
+				auto markByte = reinterpret_cast<unsigned char*>(ptr)[endianByteMarkId];
+				if (markByte != byteMarkId)
+				{
+					TracyFreeN(ptr, lohName);
+				}
+				else
+				{
+					largeRetained.push(ptr);
+				}
+			}
+
+			telemetry->smallAllocs.swap(smallRetained);
+			telemetry->largeAllocs.swap(largeRetained);
+		}
+	#endif
 }
 
 void __hxt_gc_start()
@@ -186,6 +199,8 @@ void hx::tlmSampleEnter(hx::Telemetry* telemetry, hx::StackFrame* frame)
 	#if HXCPP_TRACY_INCLUDE_CALLSTACKS
 		// Determine depth from tracyZones vector: +1 since we are about to add one
 		auto depth = telemetry->tracyZones.size();
+
+		// TODO: Tracy doesnt support Callstacks outside this scope: depth >= 1 && depth < 63
 		telemetry->tracyZones.push_back(___tracy_emit_zone_begin_alloc_callstack(srcloc, depth, true));
 	#else
 		telemetry->tracyZones.push_back(___tracy_emit_zone_begin_alloc(srcloc, true));
