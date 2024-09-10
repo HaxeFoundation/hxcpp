@@ -197,10 +197,10 @@ void hx::tlmSampleEnter(hx::Telemetry* telemetry, hx::StackFrame* frame)
 			0);
 
 	#if HXCPP_TRACY_INCLUDE_CALLSTACKS
+		// Note: Tracy doesnt support Callstacks outside this scope: depth >= 1 && depth < 63
 		// Determine depth from tracyZones vector: +1 since we are about to add one
-		auto depth = telemetry->tracyZones.size();
+		auto depth = telemetry->tracyZones.size() + 1;
 
-		// TODO: Tracy doesnt support Callstacks outside this scope: depth >= 1 && depth < 63
 		telemetry->tracyZones.push_back(___tracy_emit_zone_begin_alloc_callstack(srcloc, depth, true));
 	#else
 		telemetry->tracyZones.push_back(___tracy_emit_zone_begin_alloc(srcloc, true));
