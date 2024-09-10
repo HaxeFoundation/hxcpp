@@ -10,6 +10,19 @@ namespace
 	TracyCZoneCtx gcZone;
 
 	___tracy_source_location_data gcSourceLocation = { "GC", "__hxt_gc_start",  TracyFile, (uint32_t)TracyLine, 0 };
+
+	const char* sohName = "SOH";
+	const char* lohName = "LOH";
+
+	std::vector<hx::Telemetry*> created;
+
+	bool isLargeObject(void* ptr)
+	{
+		auto ptrHeader = reinterpret_cast<size_t>(ptr) - sizeof(int);
+		auto flags     = *reinterpret_cast<unsigned int*>(ptrHeader);
+
+		return (flags & 0xffff) == 0;
+	}
 }
 
 namespace hx
@@ -18,8 +31,9 @@ namespace hx
 	{
 	public:
 		std::vector<TracyCZoneCtx> tracyZones;
+		hx::QuickVec<void*> allocs;
 
-		Telemetry() : tracyZones(0) {}
+		Telemetry() : tracyZones(0), allocs() {}
 	};
 }
 
@@ -49,9 +63,54 @@ void __hxt_new_hash(void* obj, int inSize) { }
 
 void __hxt_gc_new(hx::StackContext* stack, void* obj, int inSize, const char* name) { }
 
+void __hxt_gc_alloc(void* obj, int inSize)
+{
+	if (isLargeObject(obj))
+	{
+		TracyAllocN(obj, inSize, lohName);
+	}
+	else
+	{
+		TracyAllocN(obj, inSize, sohName);
+	}
+
+	hx::StackContext::getCurrent()->mTelemetry->allocs.push(obj);
+}
+
 void __hxt_gc_realloc(void* oldObj, void* newObj, int newSize) { }
 
-void __hxt_gc_after_mark(int byteMarkId, int endianByteMarkId) { }
+void __hxt_gc_after_mark(int byteMarkId, int endianByteMarkId)
+{
+	for (auto&& telemetry : created)
+	{
+		hx::QuickVec<void*> retained;
+
+		retained.safeReserveExtra(telemetry->allocs.size());
+
+		for (auto i = 0; i < telemetry->allocs.size(); i++)
+		{
+			auto ptr      = telemetry->allocs[i];
+			auto markByte = reinterpret_cast<unsigned char*>(ptr)[endianByteMarkId];
+			if (markByte != byteMarkId)
+			{
+				if (isLargeObject(ptr))
+				{
+					TracyFreeN(ptr, lohName);
+				}
+				else
+				{
+					TracyFreeN(ptr, sohName);
+				}
+			}
+			else
+			{
+				retained.push(ptr);
+			}
+		}
+
+		telemetry->allocs.swap(retained);
+	}
+}
 
 void __hxt_gc_start()
 {
@@ -65,13 +124,17 @@ void __hxt_gc_end()
 
 hx::Telemetry* hx::tlmCreate(StackContext* stack)
 {
-	TracyNoop;
+	auto obj = new hx::Telemetry();
 
-	return new hx::Telemetry();
+	created.push_back(obj);
+
+	return obj;
 }
 
 void hx::tlmDestroy(hx::Telemetry* telemetry)
 {
+	created.erase(std::find(created.begin(), created.end(), telemetry));
+
 	delete telemetry;
 }
 

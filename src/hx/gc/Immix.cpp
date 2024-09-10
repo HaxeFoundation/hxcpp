@@ -3298,6 +3298,10 @@ public:
       if (do_lock)
          mLargeListLock.Unlock();
 
+#ifdef HXCPP_TELEMETRY
+      __hxt_gc_alloc(result + 2, inSize);
+#endif
+
       return result+2;
    }
 
@@ -6289,6 +6293,10 @@ public:
 
                #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
                hx::GCOnNewPointer(buffer);
+               #endif
+
+               #ifdef HXCPP_TELEMETRY
+               __hxt_gc_alloc(buffer, inSize);
                #endif
 
                return buffer;

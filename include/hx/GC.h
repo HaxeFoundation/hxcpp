@@ -23,6 +23,7 @@
 
 #ifdef HXCPP_TELEMETRY
 extern void __hxt_gc_new(hx::StackContext *inStack, void* obj, int inSize, const char *inName);
+extern void __hxt_gc_alloc(void* obj, int inSize);
 #endif
 
 
@@ -418,6 +419,7 @@ public:
                #endif
 
                #ifdef HXCPP_TELEMETRY
+               __hxt_gc_alloc(buffer, inSize);
                __hxt_gc_new((hx::StackContext *)alloc,buffer, inSize, inName);
                #endif
                return buffer;
