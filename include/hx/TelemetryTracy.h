@@ -22,7 +22,7 @@
 #define HXCPP_TRACY_ZONE(name) \
 	::hx::strbuf TracyConcat(_hx_tracy_str_buffer, TracyLine); \
 	int TracyConcat(_hx_tracy_str_length, TracyLine); \
-	::tracy::ScopedZone ___tracy_scoped_zone(_hx_stackframe.lineNumber, _hx_stackframe.position->fullName, strlen(_hx_stackframe.position->fullName), _hx_stackframe.position->functionName, strlen(_hx_stackframe.position->functionName), name.utf8_str(&TracyConcat(_hx_tracy_str_buffer, TracyLine), &TracyConcat(_hx_tracy_str_length, TracyLine)), TracyConcat(_hx_tracy_str_length, TracyLine));
+	::tracy::ScopedZone ___tracy_scoped_zone(_hx_stackframe.lineNumber, _hx_stackframe.position->fileName, strlen(_hx_stackframe.position->fileName), _hx_stackframe.position->fullName, strlen(_hx_stackframe.position->fullName), name.utf8_str(&TracyConcat(_hx_tracy_str_buffer, TracyLine), &TracyConcat(_hx_tracy_str_length, TracyLine)), TracyConcat(_hx_tracy_str_length, TracyLine));
 
 void __hxcpp_tracy_framemark();
 void __hxcpp_tracy_plot(::String name, ::Float val);
