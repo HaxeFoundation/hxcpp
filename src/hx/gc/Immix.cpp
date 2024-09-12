@@ -3179,6 +3179,10 @@ public:
 
    void FreeLarge(void *inLarge)
    {
+#ifdef HXCPP_TELEMETRY
+       __hxt_gc_free_large(inLarge);
+#endif
+
       ((unsigned char *)inLarge)[HX_ENDIAN_MARK_ID_BYTE] = 0;
       // AllocLarge will not lock this list unless it decides there is a suitable
       //  value, so we can't doa realloc without potentially crashing it.

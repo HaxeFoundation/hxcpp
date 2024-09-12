@@ -24,6 +24,7 @@
 #ifdef HXCPP_TELEMETRY
 extern void __hxt_gc_new(hx::StackContext *inStack, void* obj, int inSize, const char *inName);
 extern void __hxt_gc_alloc(void* obj, int inSize);
+extern void __hxt_gc_free_large(void* obj);
 #endif
 
 

@@ -650,6 +650,7 @@ void __hxt_new_hash(void* obj, int inSize)
   #endif
 }
 void __hxt_gc_alloc(void* obj, int inSize) { }
+void __hxt_gc_free_large(void*) {}
 void __hxt_gc_new(hx::StackContext *stack, void* obj, int inSize, const char* name)
 {
   #ifdef HXCPP_STACK_TRACE

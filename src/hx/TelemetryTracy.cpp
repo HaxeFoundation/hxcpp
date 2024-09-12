@@ -82,15 +82,6 @@ void __hxt_gc_alloc(void* obj, int inSize)
 		{
 			AutoLock lock(largeAllocsLock);
 
-			// Skip multiple large object allocations since they can be recycled in-between GC collections.
-			for (auto i = 0; i < largeAllocs.size(); i++)
-			{
-				if (largeAllocs[i] == obj)
-				{
-					return;
-				}
-			}
-
 			largeAllocs.push(obj);
 
 			TracyAllocN(obj, inSize, lohName);
@@ -102,6 +93,23 @@ void __hxt_gc_alloc(void* obj, int inSize)
 			TracyAllocN(obj, inSize, sohName);
 		}
 	#endif
+}
+
+void __hxt_gc_free_large(void* obj)
+{
+	AutoLock lock(largeAllocsLock);
+
+	for (auto i = 0; i < largeAllocs.size(); i++)
+	{
+		if (largeAllocs[i] == obj)
+		{
+			largeAllocs.erase(i);
+
+			TracyFreeN(obj, lohName);
+
+			return;
+		}
+	}
 }
 
 void __hxt_gc_realloc(void* oldObj, void* newObj, int newSize) { }
