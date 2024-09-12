@@ -226,7 +226,7 @@ void __hxcpp_tracy_framemark()
 	::tracy::Profiler::SendFrameMark(0);
 }
 
-void __hxcpp_tracy_plot(String name, float val)
+void __hxcpp_tracy_plot(String name, ::Float val)
 {
 	hx::strbuf buffer;
 	::tracy::Profiler::PlotData(name.utf8_str(&buffer), val);

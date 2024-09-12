@@ -25,7 +25,7 @@
 	::tracy::ScopedZone ___tracy_scoped_zone(_hx_stackframe.lineNumber, _hx_stackframe.position->fullName, strlen(_hx_stackframe.position->fullName), _hx_stackframe.position->functionName, strlen(_hx_stackframe.position->functionName), name.utf8_str(&TracyConcat(_hx_tracy_str_buffer, TracyLine), &TracyConcat(_hx_tracy_str_length, TracyLine)), TracyConcat(_hx_tracy_str_length, TracyLine));
 
 void __hxcpp_tracy_framemark();
-void __hxcpp_tracy_plot(::String name, float val);
+void __hxcpp_tracy_plot(::String name, ::Float val);
 void __hxcpp_tracy_plot_config(::String name, uint8_t format, bool step, bool fill, int color);
 void __hxcpp_tracy_message(::String msg, int color);
 void __hxcpp_tracy_message_app_info(::String info);
