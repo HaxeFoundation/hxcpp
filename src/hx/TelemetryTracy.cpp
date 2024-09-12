@@ -255,3 +255,8 @@ void __hxcpp_tracy_set_thread_name_and_group(String name, int groupHint)
 	hx::strbuf buffer;
 	::tracy::SetThreadNameWithHint(name.utf8_str(&buffer), groupHint);
 }
+
+int __hxcpp_tracy_get_zone_count()
+{
+	return static_cast<int>(hx::StackContext::getCurrent()->mTelemetry->tracyZones.size());
+}
