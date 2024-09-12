@@ -1,19 +1,8 @@
 #include <hxcpp.h>
+#include <hx/TelemetryTracy.h>
 #include <hx/Thread.h>
 
-#define TRACY_ENABLE
-#include "../../project/thirdparty/tracy-0.11.1/tracy/TracyC.h"
-#include "../../project/thirdparty/tracy-0.11.1/tracy/Tracy.hpp"
 #include <vector>
-
-#ifdef HXCPP_TRACY_MEMORY
-	#ifdef HXCPP_GC_MOVING
-		#error "Error: HXCPP_TRACY_MEMORY is not supported when HXCPP_GC_MOVING is active."
-	#endif
-	#ifdef HXCPP_GC_GENERATIONAL
-		#error "Error: HXCPP_TRACY_MEMORY is not supported when HXCPP_GC_GENERATIONAL is active."
-	#endif
-#endif
 
 namespace
 {
@@ -239,25 +228,38 @@ void __hxcpp_tracy_framemark()
 
 void __hxcpp_tracy_plot(String name, float val)
 {
-	::tracy::Profiler::PlotData(name.c_str(), val);
+	hx::strbuf buffer;
+	::tracy::Profiler::PlotData(name.utf8_str(&buffer), val);
 }
 
 void __hxcpp_tracy_plot_config(String name, uint8_t format, bool step, bool fill, int color)
 {
-	::tracy::Profiler::ConfigurePlot(name.c_str(),::tracy::PlotFormatType(format), step, fill, color);
+	hx::strbuf buffer;
+	::tracy::Profiler::ConfigurePlot(name.utf8_str(&buffer),::tracy::PlotFormatType(format), step, fill, color);
 }
 
 void __hxcpp_tracy_message(String msg, int color)
 {
-	::tracy::Profiler::MessageColor(msg.c_str(), msg.length, color, 0);
+	hx::strbuf buffer;
+	::tracy::Profiler::MessageColor(msg.utf8_str(&buffer), msg.length, color, 0);
 }
 
 void __hxcpp_tracy_message_app_info(String info)
 {
-	::tracy::Profiler::MessageAppInfo(info.c_str(), info.length);
+	hx::strbuf buffer;
+	::tracy::Profiler::MessageAppInfo(info.utf8_str(&buffer), info.length);
 }
 
 void __hxcpp_tracy_set_thread_name_and_group(String name, int groupHint)
 {
-	::tracy::SetThreadNameWithHint(name.c_str(), groupHint);
+	hx::strbuf buffer;
+	::tracy::SetThreadNameWithHint(name.utf8_str(&buffer), groupHint);
+}
+
+void __hxcpp_tracy_test_zone()
+{
+	::hx::StackFrame _hx_stackframe(nullptr);
+	::String name("test");
+
+	HXCPP_TRACY_ZONE(name);
 }
