@@ -19,10 +19,10 @@ namespace
 {
 	TracyCZoneCtx gcZone;
 
-	___tracy_source_location_data gcSourceLocation = { "GC", "__hxt_gc_start",  TracyFile, (uint32_t)TracyLine, 0 };
+	// ___tracy_source_location_data gcSourceLocation = { "GC", "__hxt_gc_start",  TracyFile, (uint32_t)TracyLine, 0 };
 
-	const char* sohName = "SOH";
-	const char* lohName = "LOH";
+	const char* sohName = "Small Object Heap";
+	const char* lohName = "Large Object Heap";
 
 	std::vector<hx::Telemetry*> created;
 	hx::QuickVec<void*> largeAllocs;
@@ -164,12 +164,12 @@ void __hxt_gc_after_mark(int byteMarkId, int endianByteMarkId)
 
 void __hxt_gc_start()
 {
-	gcZone = ___tracy_emit_zone_begin(&gcSourceLocation, true);
+	// gcZone = ___tracy_emit_zone_begin(&gcSourceLocation, true);
 }
 
 void __hxt_gc_end()
 {
-	___tracy_emit_zone_end(gcZone);
+	// ___tracy_emit_zone_end(gcZone);
 }
 
 hx::Telemetry* hx::tlmCreate(StackContext* stack)
@@ -255,4 +255,9 @@ void __hxcpp_tracy_message(String msg, int color)
 void __hxcpp_tracy_message_app_info(String info)
 {
 	::tracy::Profiler::MessageAppInfo(info.c_str(), info.length);
+}
+
+void __hxcpp_tracy_set_thread_name_and_group(String name, int groupHint)
+{
+	::tracy::SetThreadNameWithHint(name.c_str(), groupHint);
 }

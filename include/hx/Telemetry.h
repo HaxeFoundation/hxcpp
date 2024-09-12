@@ -38,6 +38,7 @@ int __hxcpp_gc_used_bytes();
   void __hxcpp_tracy_plot_config(String name, uint8_t format, bool step, bool fill, int color);
   void __hxcpp_tracy_message(String msg, int color);
   void __hxcpp_tracy_message_app_info(String info);
+  void __hxcpp_tracy_set_thread_name_and_group(String name, int groupHint);
 #endif
 
 #endif
