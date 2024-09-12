@@ -255,11 +255,3 @@ void __hxcpp_tracy_set_thread_name_and_group(String name, int groupHint)
 	hx::strbuf buffer;
 	::tracy::SetThreadNameWithHint(name.utf8_str(&buffer), groupHint);
 }
-
-void __hxcpp_tracy_test_zone()
-{
-	::hx::StackFrame _hx_stackframe(nullptr);
-	::String name("test");
-
-	HXCPP_TRACY_ZONE(name);
-}
