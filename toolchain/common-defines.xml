@@ -38,7 +38,7 @@
  <flag value='-DHXCPP_GC_DEBUG_LEVEL=${HXCPP_GC_DEBUG_LEVEL}' if="HXCPP_GC_DEBUG_LEVEL" tag="gc" />
  <flag value='-DHXCPP_WINXP_COMPAT' if="HXCPP_WINXP_COMPAT" tag="haxe"/>
  
- <!-- fwd these defines into haxe target so we check for it in telemetry -->
+ <!-- fwd these defines into haxe target so we can check for it in telemetry -->
  <flag value="-DHXCPP_GC_MOVING" if="HXCPP_GC_MOVING" tag="haxe" />
  <flag value="-DHXCPP_GC_GENERATIONAL" if="HXCPP_GC_GENERATIONAL" tag="haxe" />
 
