@@ -22,10 +22,15 @@ Then start either Tracy's UI-App or cmdline server listening on localhost and st
 ## Some notes about the integration
 
 ### Haxe-Code
-We integrate Tracy into hxcpp as a Telemetry option and offer a set of static functions to set zones and other tracy functionality.
+We integrate Tracy into hxcpp as a Telemetry option which utilizes `hx::StackPosition` and offer a set of static functions to set zones and other tracy functionality. Through this all your haxe-code will be captured in a profiler-session.
 
-There are however native parts of hxcpp that wont be visible by default in Tracy (bc there are no ZoneScopes). Note that these will be visible if you use the option to capture callstacks.
-> Note: There is a exception in the GC-Code, so it becomes visible for us.
+There are however native parts of hxcpp that wont be visible by default in Tracy (bc there are no ZoneScopes). 
+
+> Note: Exceptions are in a few spots in the GC-Code, so GC becomes visible for us.
+
+> Note: Hxcpp's native calls will become visible if you use the option to capture callstacks.
+
+> Note: We capture source-locations and their filepaths. By default these are relative to your project and thus the sourcecode preview / browsing in Tracy wont work since it expects absolute paths. To solve this you can use `-D absolute-path` in your builds.
 
 ### externs
 The same is true about externs you might be using in your project. If you want to make these visible, you need to `@:include('hx/TelemetryTracy.h')` and you gain access to Tracy's C-Macros that you can use in your extern's c/cpp-code. Please refer to the official Tracy documentation: https://github.com/wolfpld/tracy/releases/latest/download/tracy.pdf
