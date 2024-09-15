@@ -86,11 +86,11 @@ class CppiaHost
             Sys.exit(-1);
          }
 
+         #if (haxe >= version("5.0.0"))
          if (Common.clientRoot == null) {
             Sys.println("null client root class");
             Sys.exit(-1);
          }
-
          switch Common.clientRoot.values {
             case [ 0, 1, 2 ]:
                //
@@ -98,6 +98,7 @@ class CppiaHost
                Sys.println("Unexpected items in array");
                Sys.exit(-1);   
          }
+         #end
       }
    }
 }
