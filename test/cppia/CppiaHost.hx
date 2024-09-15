@@ -86,7 +86,7 @@ class CppiaHost
             Sys.exit(-1);
          }
 
-         #if (haxe >= version("5.0.0"))
+         #if (haxe >= version("4.3.6"))
          if (Common.clientRoot == null) {
             Sys.println("null client root class");
             Sys.exit(-1);
