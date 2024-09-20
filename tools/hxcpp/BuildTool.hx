@@ -2421,6 +2421,8 @@ class BuildTool
          path = path.split("\\").join("/");
          var filename = "";
          var parts = path.split("/");
+         if (!FileSystem.exists(path))
+            Log.error("File does not exist:" + path);
          if (!FileSystem.isDirectory(path))
             filename = parts.pop();
 
