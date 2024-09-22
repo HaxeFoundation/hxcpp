@@ -4,23 +4,38 @@
 
 hxcpp is the runtime support for the c++ backend of the [haxe](http://haxe.org/) compiler. This contains the headers, libraries and support code required to generate a fully compiled executable from haxe code.
 
+## Installing from haxelib
 
-# building the tools
-
-```
-REPO=$(pwd)
-cd ${REPO}/tools/run
-haxe compile.hxml
-cd ${REPO}/tools/hxcpp
-haxe compile.hxml
-cd $REPO
+```sh
+haxelib install hxcpp
 ```
 
-# cppia
+## Installing from git
+
+```sh
+haxelib git hxcpp https://github.com/HaxeFoundation/hxcpp
+```
+
+Alternatively, if you plan on modifying hxcpp for development, you can clone manually and use `haxelib dev`:
+
+```sh
+git clone https://github.com/HaxeFoundation/hxcpp
+haxelib dev hxcpp ./hxcpp
+```
+
+### Build the tools
+
+When installing from git, it is necessary to build the hxcpp build tool:
+
+```sh
+haxelib run hxcpp setup
+```
+
+### cppia
 
 You first need to build the cppia host.
 
-```
+```sh
 REPO=$(pwd)
 cd ${REPO}/project
 haxe compile-cppia.hxml
