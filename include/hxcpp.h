@@ -70,7 +70,7 @@
 
 // Must allign allocs to 8 bytes to match floating point requirement?
 // Ints must br read on 4-byte boundary
-#if defined(EMSCRIPTEN) || defined(GCW0)
+#if (!defined(HXCPP_ALIGN_FLOAT) && (defined(EMSCRIPTEN) || defined(GCW0)) )
    #define HXCPP_ALIGN_ALLOC
 #endif
 
