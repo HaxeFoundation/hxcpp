@@ -1,3 +1,4 @@
+resources.hxml
 -m Test
 -D HXCPP_M64
 -L hx4compat
