@@ -12,7 +12,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: Aidan63/setup-haxe@3d3101bcd0a2001699fc8295f4d9eddd0724d3e9
         with:
@@ -22,16 +24,20 @@ jobs:
         run: |
           haxe -version
           haxelib dev hxcpp .
+
+      - name: 'Get Previous tag'
+        id: previoustag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        with:
+          prefix: v
           
       - name: Set Version
-        run: haxe -cp tools/version --run Write ${{github.run_number}} > version.env
-
+        run: haxe -p tools/version --run Write ${{ steps.previoustag.outputs.tag }} > version.env
 
       - name: Build Tool
         run: |
           cd tools/hxcpp
           haxe compile.hxml
-
         
       - name: Check XCode
         if: startsWith(matrix.os,'macos')
@@ -49,7 +55,7 @@ jobs:
 
       - name: Archive Linux Results
         if: startsWith(matrix.os,'ubuntu')
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-64
           path: |
@@ -75,7 +81,7 @@ jobs:
 
       - name: Archive Windows Results
         if: startsWith(matrix.os,'windows')
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-64
           path: |
@@ -83,7 +89,7 @@ jobs:
 
       - name: Archive Mac Results
         if: startsWith(matrix.os,'macos')
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mac-64
           path: |
@@ -94,19 +100,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
         - name: Download Linux
-          uses: actions/download-artifact@v3
+          uses: actions/download-artifact@v4
           with:
              name: linux-64
              path: hxcpp
 
         - name: Download Mac
-          uses: actions/download-artifact@v3
+          uses: actions/download-artifact@v4
           with:
              name: mac-64
              path: hxcpp/bin/Mac64/
 
         - name: Download Windows
-          uses: actions/download-artifact@v3
+          uses: actions/download-artifact@v4
           with:
              name: windows-64
              path: hxcpp/bin/Windows64/
@@ -126,23 +132,11 @@ jobs:
              zip -r hxcpp-${{ env.hxcpp_release }}.zip hxcpp-${{ env.hxcpp_release }} 
       
         - name: Create Release
-          id: create_release
-          uses: actions/create-release@v1
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          uses: ncipollo/release-action@v1
           with:
-            tag_name: v${{ env.hxcpp_release }}
-            release_name: Release ${{ env.hxcpp_release }}
+            tag: v${{ env.hxcpp_release }}
+            commit: ${{ github.head_ref }}
+            name: Release ${{ env.hxcpp_release }}
             draft: false
             prerelease: false
-
-        - name: Upload Release Asset
-          id: upload-release-asset 
-          uses: actions/upload-release-asset@v1
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-            upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-            asset_path: ./hxcpp-${{ env.hxcpp_release }}.zip
-            asset_name: hxcpp-${{ env.hxcpp_release }}.zip
-            asset_content_type: application/zip
+            artifacts: ./hxcpp-${{ env.hxcpp_release }}.zip
