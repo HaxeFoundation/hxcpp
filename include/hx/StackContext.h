@@ -73,7 +73,7 @@
    // Newer code will use the HX_STACKFRAME macro
    #define HX_STACKFRAME(pos) ::hx::StackFrame _hx_stackframe(pos);
    #define HX_GC_STACKFRAME(pos) ::hx::StackFrame _hx_stackframe(pos);
-
+   
    // Must record the stack state at the catch
    #define HX_STACK_BEGIN_CATCH __hxcpp_stack_begin_catch();
    #define HX_JUST_GC_STACKFRAME ::hx::JustGcStackFrame _hx_stackframe;
