@@ -10,6 +10,7 @@
 <set name="NOCONSOLE" value="${NEEDS_NC}" if="no_console"/>
 <set name="RPI" value="-rpi" if="rpi"/>
 <set name="APIFP" value="-hfp" if="hardfp"/>
+<set name="CPPIA_NO_JIT" value="1" if="emscripten"/>
 
 <set name="STD_MODULE_LINK" value="dll"/>
 

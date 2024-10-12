@@ -3,7 +3,7 @@
 <!-- Set architecture -->
 <section if="HXCPP_X86">
   <set name="ARCH" value="-x86" />
-  <set name="PLATFORM_NUMBER" value="19" unless="PLATFORM_NUMBER" />
+  <set name="PLATFORM_NUMBER" value="21" unless="PLATFORM_NUMBER" />
   <set name="ABITRIPLE" value="i686-linux-android" />
 </section>
 
@@ -15,7 +15,7 @@
 
 <section if="HXCPP_ARMV7">
   <set name="ARCH" value="-v7" />
-  <set name="PLATFORM_NUMBER" value="19" unless="PLATFORM_NUMBER" />
+  <set name="PLATFORM_NUMBER" value="21" unless="PLATFORM_NUMBER" />
   <set name="ABITRIPLE" value="armv7a-linux-androideabi" />
   <set name="EXEPREFIX" value="arm-linux-androideabi" />
 </section>
@@ -91,6 +91,9 @@
   <exe name="clang++" />
   <flag value ="-shared" />
   <flag value="--target=${ABITRIPLE}${PLATFORM_NUMBER}" />
+
+  <!-- Build time error, not run time -->
+  <flag value="-Wl,--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
 
   <flag value ="-static-libstdc++" />
   <!-- This shows the android link line, which may be so long that it breaks the tool

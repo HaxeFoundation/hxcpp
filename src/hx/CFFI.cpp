@@ -106,7 +106,7 @@ public:
          return _hxcpp_toString( Dynamic(this) );
 
       char buffer[40];
-      sprintf(buffer,"0x%p", mHandle);
+      snprintf(buffer,sizeof(buffer),"0x%p", mHandle);
 
       return HX_CSTRING("Abstract(") +
              __hxcpp_get_kind(this) +
