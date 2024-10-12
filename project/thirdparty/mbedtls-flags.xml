@@ -2,7 +2,7 @@
 
   <depend name="${HXCPP}/project/thirdparty/mbedtls-flags.xml" dateOnly="true" />
 
-  <compilerflag value="-I${HXCPP}/project/thirdparty/mbedtls-3.6.0/include" />
+  <compilerflag value="-I${HXCPP}/project/thirdparty/mbedtls-3.6.1/include" />
   <compilerflag value="-I${HXCPP}/project/thirdparty/config/mbedtls/include" />
   <compilerflag value="-DMBEDTLS_USER_CONFIG_FILE=&lt;mbedtls_config.h&gt;" />
 

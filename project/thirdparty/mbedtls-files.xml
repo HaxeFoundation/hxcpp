@@ -1,5 +1,5 @@
 <xml>
-  <set name="MBEDTLS_DIR" value="${HXCPP}/project/thirdparty/mbedtls-3.6.0" />
+  <set name="MBEDTLS_DIR" value="${HXCPP}/project/thirdparty/mbedtls-3.6.1" />
 
   <files id="mbedtls" >
     <depend name="${this_dir}/mbedtls-files.xml" dateOnly="true" />
