@@ -894,12 +894,17 @@ class BuildTool
          if (valid(el,""))
             switch(el.name)
             {
-               case "flag" : c.addFlag(substitute(el.att.value), el.has.tag?substitute(el.att.tag):"");
+               case "flag" :
+                     var tag =  el.has.tag?substitute(el.att.tag):"";
+                     if (el.has.name)
+                        c.addFlag(substitute(el.att.name), tag);
+                     c.addFlag(substitute(el.att.value), tag);
                case "cflag" : c.mCFlags.push(substitute(el.att.value));
                case "cppflag" : c.mCPPFlags.push(substitute(el.att.value));
                case "objcflag" : c.mOBJCFlags.push(substitute(el.att.value));
                case "rcflag" : c.mRcFlags.push( substitute((el.att.value)) );
                case "mmflag" : c.mMMFlags.push(substitute(el.att.value));
+               case "asmflag" : c.mAsmFlags.push(substitute(el.att.value));
                case "pchflag" : c.mPCHFlags.push(substitute(el.att.value));
                case "objdir" : c.mObjDir = substitute((el.att.value));
                case "outflag" : c.mOutFlag = substitute((el.att.value));
@@ -907,6 +912,7 @@ class BuildTool
                case "rcexe" : c.mRcExe = substitute((el.att.name));
                case "rcext" : c.mRcExt = substitute((el.att.value));
                case "ext" : c.mExt = substitute((el.att.value));
+               case "asmExe" : c.mAsmExe = substitute((el.att.value));
                case "pch" : c.setPCH( substitute((el.att.value)) );
                case "getversion" : c.mGetCompilerVersion = substitute((el.att.value));
                case "section" : createCompiler(el,c);
@@ -1035,6 +1041,7 @@ class BuildTool
                   substitute(el.att.variable), substitute(el.att.target)  );
                case "options" : group.addOptions( substitute(el.att.name) );
                case "config" : group.mConfig = substitute(el.att.name);
+               case "assembler" : group.mAssembler = substitute(el.att.name);
                case "compilerflag" :
                   if (el.has.name)
                      group.addCompilerFlag( substitute(el.att.name) );
@@ -1087,7 +1094,10 @@ class BuildTool
          if (valid(el,""))
             switch(el.name)
             {
-               case "flag" : l.mFlags.push(substitute(el.att.value));
+               case "flag" :
+                   if (el.has.name)
+                      l.mFlags.push(substitute(el.att.name));
+                   l.mFlags.push(substitute(el.att.value));
                case "ext" : l.mExt = (substitute(el.att.value));
                case "outflag" : l.mOutFlag = (substitute(el.att.value));
                case "libdir" : l.mLibDir = (substitute(el.att.name));
@@ -1147,16 +1157,16 @@ class BuildTool
          if (valid(el,""))
             switch(el.name)
             {
-                case "flag" : s.mFlags.push(substitute(el.att.value));
-                case "outPre" : s.mOutPre = substitute(el.att.value);
-                case "outPost" : s.mOutPost = substitute(el.att.value);
+                case "flag" :
+                    if (el.has.name)
+                       s.mFlags.push(substitute(el.att.name));
+                    s.mFlags.push(substitute(el.att.value));
                 case "exe" : s.mExe = substitute((el.att.name));
             }
       }
 
       return s;
    }
-
 
    public function createStripper(inXML:XmlAccess,inBase:Stripper):Stripper
    {
@@ -1167,7 +1177,10 @@ class BuildTool
          if (valid(el,""))
             switch(el.name)
             {
-                case "flag" : s.mFlags.push(substitute(el.att.value));
+                case "flag" :
+                    if (el.has.name)
+                       s.mFlags.push(substitute(el.att.name));
+                    s.mFlags.push(substitute(el.att.value));
                 case "exe" : s.mExe = substitute((el.att.name));
             }
       }
@@ -1235,7 +1248,10 @@ class BuildTool
                          target.mLibs.push(lib);
                   }
 
-               case "flag" : target.mFlags.push( substitute(el.att.value) );
+               case "flag" :
+                   if (el.has.name)
+                      target.mFlags.push( substitute(el.att.name) );
+                   target.mFlags.push( substitute(el.att.value) );
                case "depend" : target.mDepends.push( substitute(el.att.name) );
                case "vflag" :
                   target.mFlags.push( substitute(el.att.name) );
@@ -1596,8 +1612,8 @@ class BuildTool
       {
          Setup.initHXCPPConfig(defines);
          Setup.setupEmscripten(defines);
-         var node = defines.get("EMSCRIPTEN_NODE_JS");
-         Log.v( node==null ? "EMSCRIPTEN_NODE_JS undefined, using 'node'" : 'Using $node from EMSCRIPTEN_NODE_JS');
+         var node = defines.get("EMSDK_NODE");
+         Log.v( node==null ? "EMSDK_NODE undefined, using 'node'" : 'Using $node from EMSDK_NODE');
          if (node=="" || node==null)
             node = "node";
 
@@ -2200,6 +2216,13 @@ class BuildTool
       }
    }
 
+   function dumpDefs()
+   {
+      Sys.println("Defines:");
+      for(k in mDefines.keys())
+         Sys.println('  $k=${mDefines.get(k)}');
+   }
+
    function parseXML(inXML:XmlAccess,inSection:String, forceRelative:Bool)
    {
       for(el in inXML.elements)
@@ -2209,9 +2232,14 @@ class BuildTool
             switch(el.name)
             {
                case "set" :
-                  var name = substitute(el.att.name);
-                  var value = substitute(el.att.value);
-                  mDefines.set(name,value);
+                  if (el.has.name)
+                  {
+                     var name = substitute(el.att.name);
+                     var value = substitute(el.att.value);
+                     mDefines.set(name,value);
+                  }
+                  else
+                     dumpDefs();
                case "unset" :
                   var name = substitute(el.att.name);
                   mDefines.remove(name);
@@ -2331,8 +2359,8 @@ class BuildTool
    public function checkToolVersion(inVersion:String)
    {
       var ver = Std.parseInt(inVersion);
-      if (ver>3)
-         Log.error("Your version of hxcpp.n is out-of-date.  Please update.");
+      if (ver>6)
+         Log.error("Your version of hxcpp.n is out-of-date.  Please update by compiling 'haxe compile.hxml' in hxcpp/tools/hxcpp.");
    }
 
    public function resolvePath(inPath:String)
@@ -2402,6 +2430,8 @@ class BuildTool
          path = path.split("\\").join("/");
          var filename = "";
          var parts = path.split("/");
+         if (!FileSystem.exists(path))
+            Log.error("File does not exist:" + path);
          if (!FileSystem.isDirectory(path))
             filename = parts.pop();
 

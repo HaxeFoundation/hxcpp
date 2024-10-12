@@ -92,6 +92,9 @@
   <flag value ="-shared" />
   <flag value="--target=${ABITRIPLE}${PLATFORM_NUMBER}" />
 
+  <!-- Build time error, not run time -->
+  <flag value="-Wl,--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
+
   <flag value ="-static-libstdc++" />
   <!-- This shows the android link line, which may be so long that it breaks the tool
      https://github.com/HaxeFoundation/hxcpp/pull/1091
