@@ -416,7 +416,11 @@ void  _hx_std_sys_rename( String path, String newname )
 }
 
 #define STATF32(f) o->Add(HX_CSTRING(#f),(int)(s.st_##f))
+#ifdef __APPLE__
+#define STATF64(f) o->Add(HX_CSTRING(#f),static_cast<int64_t>(s.st_##f))
+#else
 #define STATF64(f) o->Add(HX_CSTRING(#f),(long)(s.st_##f))
+#endif
 
 /**
    sys_stat : string -> {
