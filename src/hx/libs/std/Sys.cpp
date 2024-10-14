@@ -415,7 +415,8 @@ void  _hx_std_sys_rename( String path, String newname )
       hx::Throw(HX_CSTRING("Could not rename"));
 }
 
-#define STATF(f) o->Add(HX_CSTRING(#f),(int)(s.st_##f))
+#define STATF32(f) o->Add(HX_CSTRING(#f),(int)(s.st_##f))
+#define STATF64(f) o->Add(HX_CSTRING(#f),(long)(s.st_##f))
 
 /**
    sys_stat : string -> {
@@ -429,7 +430,7 @@ void  _hx_std_sys_rename( String path, String newname )
       nlink => int,
       rdev => int,
       mode => int,
-      size => int
+      size => long
    }
    <doc>Run the [stat] command on the given file or directory.</doc>
 **/
@@ -465,18 +466,17 @@ Dynamic _hx_std_sys_stat( String path )
       return null();
    hx::Anon o = hx::Anon_obj::Create();
 
-   STATF(gid);
-   STATF(uid);
-   STATF(atime);
-   STATF(mtime);
-   STATF(ctime);
-   STATF(dev);
-   STATF(ino);
-   STATF(mode);
-   STATF(nlink);
-   STATF(rdev);
-   STATF(size);
-   STATF(mode);
+   STATF32(gid);
+   STATF32(uid);
+   STATF32(atime);
+   STATF32(mtime);
+   STATF32(ctime);
+   STATF32(dev);
+   STATF32(ino);
+   STATF32(nlink);
+   STATF32(rdev);
+   STATF32(mode);
+   STATF64(size);
 
    return o;
    #endif
