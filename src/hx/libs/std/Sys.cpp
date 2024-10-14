@@ -416,10 +416,10 @@ void  _hx_std_sys_rename( String path, String newname )
 }
 
 #define STATF32(f) o->Add(HX_CSTRING(#f),(int)(s.st_##f))
-#ifdef __APPLE__
-#define STATF64(f) o->Add(HX_CSTRING(#f),static_cast<int64_t>(s.st_##f))
+#if defined(HXCPP_M64) || defined(HXCPP_ARM64)
+#define STATF64(f) o->Add(HX_CSTRING(#f), static_cast<int64_t>(s.st_##f))
 #else
-#define STATF64(f) o->Add(HX_CSTRING(#f),(long)(s.st_##f))
+#define STATF64 STATF32
 #endif
 
 /**
