@@ -1,58 +1,63 @@
+import haxe.Exception;
+import haxe.Json;
 import sys.io.File;
+
+using StringTools;
+
+typedef Haxelib = {
+   var version: String;
+}
 
 class Write
 {
    public static function main()
    {
-      var args = Sys.args();
-      // AL NOTE: this "30 +" is a bodge around some CI stuff.
-      // Usually the ever incrementing CI run number is provided as the argument, but this ID is per github workflow.
-      // So when the release ci yml moved file the number reset to zero and we started overwriting previous releases.
-      // For now just append 30 since the previous release was 25 or something.
-      //
-      // This will need to be revisited when anything other than the last number increases as you would end up with
-      // something like 5.0.42 instead of 5.0.0.
-      var buildNumber = 30 + Std.parseInt(args[0]);
-      if (buildNumber<1 || buildNumber==null)
-         throw "Usage: Write buildNumber";
-
-
-      var jsonFile = "haxelib.json";
-      var lines = File.getContent(jsonFile).split("\n");
-      var idx = 0;
-      var versionMatch = ~/(.*"version"\s*:\s*")(.*)(".*)/;
-      var found = false;
-      var newVersion = "";
-      while(idx<lines.length)
+      switch Sys.args()
       {
-         if (versionMatch.match(lines[idx]))
-         {
-            var parts = versionMatch.matched(2).split(".");
-            if (parts.length==3)
-               parts[2] = buildNumber+"";
-            else
-               parts.push(buildNumber+"");
-            newVersion = parts.join(".");
-            lines[idx]=versionMatch.matched(1) + newVersion + versionMatch.matched(3);
-            found = true;
-            break;
-         }
-         idx++;
+         case [ version ] if (version.startsWith('v')):
+            switch version.substr(1).split('.')
+            {
+               case [ previousMajor, previousMinor, previousPatch ]:
+                  final jsonFile = "haxelib.json";
+                  final json     = (cast Json.parse(File.getContent(jsonFile)) : Haxelib);
+
+                  switch json.version.split('.')
+                  {
+                     case [ newMajor, newMinor, _ ]:
+                        if (newMajor < previousMajor || (newMajor == previousMajor && newMinor < previousMinor))
+                        {
+                           throw new Exception('Version in haxelib.json is older than the last tag');
+                        }
+
+                        if (newMajor > previousMajor || newMinor > previousMinor)
+                        {
+                           json.version = '$newMajor.$newMinor.0';
+                        }
+                        else
+                        {
+                           json.version = '$newMajor.$newMinor.${ Std.parseInt(previousPatch) + 1 }';
+                        }
+                     case _:
+                        throw new Exception('Invalid version in haxelib.json');
+                  }
+
+                  File.saveContent(jsonFile, Json.stringify(json, '\t'));
+
+                  final define = "HXCPP_VERSION";
+                  final lines  = [
+                     '#ifndef $define',
+                     '#define $define "${ json.version }"',
+                     '#endif'
+                  ];
+
+                  File.saveContent("include/HxcppVersion.h", lines.join("\n"));
+
+                  Sys.println("hxcpp_release=" + json.version );
+               case _:
+                  throw new Exception('Invalid version in tag');
+            }
+         case other:
+            throw new Exception('Invalid version $other');
       }
-      if (!found)
-         throw "Could not find version in " + jsonFile;
-
-      File.saveContent(jsonFile, lines.join("\n") );
-
-      var writeVersionFilename = "include/HxcppVersion.h";
-      var define = "HXCPP_VERSION";
-      var lines = [
-         '#ifndef $define',
-         '#define $define "$newVersion"',
-         '#endif'
-      ];
-      File.saveContent( writeVersionFilename, lines.join("\n") );
-
-      Sys.println("hxcpp_release=" + newVersion );
    }
 }
