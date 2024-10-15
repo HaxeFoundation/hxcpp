@@ -133,6 +133,16 @@
   <cache value="1" project="hxcpp-cppia" asLibrary="true" />
 </files>
 
+<files id="tracy" dir="${HXCPP}" tags="haxe"  >
+  <depend files="hxcpp-depends"/>
+  <options name="Options.txt"/>
+  <compilerflag value="-DTRACY_ENABLE"/>
+  <compilerflag value="-DTRACY_NO_EXIT" if="HXCPP_TRACY_NO_EXIT"/>
+  <compilerflag value="-DTRACY_ON_DEMAND" if="HXCPP_TRACY_ON_DEMAND"/>
+
+  <file name="project/thirdparty/tracy-0.11.1/TracyClient.cpp"/>
+  <cache value="1" project="hxcpp-tracy" asLibrary="true" />
+</files>
 
 <files id="runtime" dir="${HXCPP}" tags="haxe" >
   <depend files="hxcpp-depends"/>
@@ -159,7 +169,12 @@
   <file name = "src/hx/StdLibs.cpp" tags="haxe,static" />
   <file name = "src/hx/Debug.cpp"/>
   <file name = "src/hx/Debugger.cpp" if="HXCPP_DEBUGGER" />
-  <file name = "src/hx/Telemetry.cpp" if="HXCPP_TELEMETRY" />
+
+  <section if="HXCPP_TELEMETRY">
+    <file name = "src/hx/TelemetryTracy.cpp" if="HXCPP_TRACY"/>
+    <file name = "src/hx/Telemetry.cpp" unless="HXCPP_TRACY"/>
+  </section>
+  
   <file name = "src/hx/Profiler.cpp" if="HXCPP_PROFILER" />
   <file name = "src/hx/Thread.cpp"/>
   <file name = "src/hx/RunLibs.cpp" if="static_link||dll_link"/>
@@ -233,6 +248,7 @@
   <files id="__externs__" />
   <files id="runtime" unless="dll_import" />
   <files id="cppia" if="scriptable" />
+  <files id="tracy" if="HXCPP_TRACY" />
   <files id="rc" unless="static_link" />
   <lib name="-lpthread" if="linux" unless="static_link" />
   <lib name="-ldl" if="linux" unless="static_link" />
