@@ -3207,6 +3207,10 @@ public:
 
    void FreeLarge(void *inLarge)
    {
+#ifdef HXCPP_TELEMETRY
+       __hxt_gc_free_large(inLarge);
+#endif
+
       ((unsigned char *)inLarge)[HX_ENDIAN_MARK_ID_BYTE] = 0;
       // AllocLarge will not lock this list unless it decides there is a suitable
       //  value, so we can't doa realloc without potentially crashing it.
@@ -3325,6 +3329,10 @@ public:
 
       if (do_lock)
          mLargeListLock.Unlock();
+
+#ifdef HXCPP_TELEMETRY
+      __hxt_gc_alloc(result + 2, inSize);
+#endif
 
       return result+2;
    }
@@ -6323,6 +6331,10 @@ public:
                hx::GCOnNewPointer(buffer);
                #endif
 
+               #ifdef HXCPP_TELEMETRY
+               __hxt_gc_alloc(buffer, inSize);
+               #endif
+
                return buffer;
             }
             if (mFraggedRows)
@@ -6653,8 +6665,7 @@ void SetTopOfStack(int *inTop,bool inForce)
 
 void *InternalNew(int inSize,bool inIsObject)
 {
-   //HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", __LINE__, 0)
-   HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", inSize, 0)
+   // HX_STACK_FRAME("GC", "new", 0, "GC::new", __FILE__, __LINE__, 0)
 
    #ifdef HXCPP_DEBUG
    if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
@@ -6765,7 +6776,7 @@ void *InternalRealloc(int inFromSize, void *inData,int inSize, bool inExpand)
       return hx::InternalNew(inSize,false);
    }
 
-   HX_STACK_FRAME("GC", "realloc", 0, "GC::relloc", __FILE__ , __LINE__, 0)
+   // HX_STACK_FRAME("GC", "realloc", 0, "GC::relloc", __FILE__ , __LINE__, 0)
 
    #ifdef HXCPP_DEBUG
    if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
