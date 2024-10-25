@@ -66,6 +66,7 @@ class BuildTool
    var mNvccLinkFlags:Array<String>;
    var mDirtyList:Array<String>;
    var arm64:Bool;
+   var armv7:Bool;
    var m64:Bool;
    var m32:Bool;
 
@@ -134,8 +135,9 @@ class BuildTool
       m64 = mDefines.exists("HXCPP_M64");
       m32 = mDefines.exists("HXCPP_M32");
       arm64 = mDefines.exists("HXCPP_ARM64");
-      var otherArmArchitecture = mDefines.exists("HXCPP_ARMV6") || mDefines.exists("HXCPP_ARMV7") || mDefines.exists("HXCPP_ARMV7S");
-      if (m64==m32 && !arm64 && !otherArmArchitecture)
+      armv7 = mDefines.exists("HXCPP_ARMV7");
+      var otherArmArchitecture = mDefines.exists("HXCPP_ARMV6") || mDefines.exists("HXCPP_ARMV7S");
+      if (m64==m32 && !arm64 && !armv7 && !otherArmArchitecture)
       {
          var arch = mDefines.get("HXCPP_ARCH");
          if (arch!=null)
@@ -143,6 +145,7 @@ class BuildTool
             m64 = arch=="x86_64";
             m32 = arch=="x86";
             arm64 = arch=="arm64";
+            armv7 = arch=="armv7";
          }
          else
          {
@@ -152,6 +155,7 @@ class BuildTool
             m64 = hostArch=="m64";
             m32 = hostArch=="m32";
             arm64 = hostArch=="arm64";
+            armv7 = hostArch=="armv7";
          }
 
          mDefines.remove(m32 ? "HXCPP_M64" : "HXCPP_M32");
@@ -2060,21 +2064,21 @@ class BuildTool
             defines.set("toolchain","linux");
             defines.set("linux","linux");
 
-            if (defines.exists("HXCPP_LINUX_ARMV7"))
+            if (armv7)
             {
                defines.set("noM32","1");
                defines.set("noM64","1");
                defines.set("HXCPP_ARMV7","1");
                m64 = false;
             }
-            else if (arm64 || defines.exists("HXCPP_LINUX_ARM64"))
+            else if (arm64)
             {
                defines.set("noM32","1");
                defines.set("noM64","1");
                defines.set("HXCPP_ARM64","1");
                m64 = true;
             }
-            defines.set("BINDIR", arm64 ? "LinuxArm64" : m64 ? "Linux64" : "Linux");
+            defines.set("BINDIR", arm64 ? "LinuxArm64" : armv7 ? "LinuxArm" : m64 ? "Linux64" : "Linux");
          }
       }
       else if ( (new EReg("mac","i")).match(os) )
