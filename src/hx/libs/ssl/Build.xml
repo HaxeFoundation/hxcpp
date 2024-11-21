@@ -41,13 +41,14 @@
       </section>
 
       <files id="hxcpp_ssl_windows" unless="HXCPP_USE_MBEDTLS"/>
-    </section>
 
-    <lib name="advapi32.lib" if="windows" unless="static_link" />
-    <lib name="crypt32.lib" if="windows" unless="static_link" />
-		<lib name="bcrypt.lib" if="windows" unless="static_link" />
-    <lib name="ncrypt.lib" if="windows" unless="static_link" />
-		<lib name="ws2_32.lib" if="windows" unless="static_link" />
+      <lib name="advapi32.lib" unless="static_link" />
+      <lib name="crypt32.lib" unless="static_link" />
+      <lib name="bcrypt.lib" unless="static_link" />
+      <lib name="ncrypt.lib" unless="static_link" />
+      <lib name="ws2_32.lib" unless="static_link" />
+      <lib name='secur32.lib' unless="static_link"/>
+    </section>
 
 		<flag value="-framework" if="macos"/>
 		<flag value="Security" if="macos"/>
