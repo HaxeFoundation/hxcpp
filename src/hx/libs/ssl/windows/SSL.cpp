@@ -61,7 +61,7 @@ namespace
 		SChannelContext(::String inHost)
 			: host(inHost)
 			, socket(null())
-			, input(TLS_MAX_PACKET_SIZE, TLS_MAX_PACKET_SIZE)
+			, input(10000, 10000)
 			, decrypted(0, 0)
 			, received(0)
 			, credHandle()
@@ -149,6 +149,8 @@ void _hx_ssl_init()
 
 Dynamic _hx_ssl_new(Dynamic hconf)
 {
+	printf("creating new schannel context\n");
+
 	return new SChannelContext(HX_CSTRING(""));
 }
 
@@ -169,8 +171,9 @@ void _hx_ssl_handshake(Dynamic handle)
 	auto result  = SECURITY_STATUS{ SEC_E_OK };
 
 	// SCH_CRED_MANUAL_CRED_VALIDATION
+	// SCH_CRED_AUTO_CRED_VALIDATION
 	auto credentials = SCHANNEL_CRED();
-	credentials.dwFlags   = SCH_CRED_AUTO_CRED_VALIDATION | SCH_CRED_NO_DEFAULT_CREDS | SCH_USE_STRONG_CRYPTO;
+	credentials.dwFlags   = SCH_CRED_MANUAL_CRED_VALIDATION | SCH_CRED_NO_DEFAULT_CREDS | SCH_USE_STRONG_CRYPTO;
 	credentials.dwVersion = SCHANNEL_CRED_VERSION;
 	credentials.grbitEnabledProtocols = SP_PROT_TLS1_2;
 
@@ -228,11 +231,15 @@ void _hx_ssl_handshake(Dynamic handle)
 		{
 		case SEC_E_OK:
 		{
+			printf("handshake complete\n");
+
 			if (SECBUFFER_EXTRA == inputBuffers[1].BufferType)
 			{
 				std::memmove(ctx->input->getBase(), ctx->input->getBase() + ctx->received - inputBuffers[1].cbBuffer, inputBuffers[1].cbBuffer);
 
 				ctx->received = inputBuffers[1].cbBuffer;
+
+				printf("%i bytes of extra data found\n", inputBuffers[1].cbBuffer);
 			}
 			else
 			{
@@ -240,6 +247,8 @@ void _hx_ssl_handshake(Dynamic handle)
 			}
 
 			QueryContextAttributes(&ctx->ctxtHandle, SECPKG_ATTR_STREAM_SIZES, &ctx->sizes);
+
+			ctx->input->EnsureSize(ctx->sizes.cbMaximumMessage * 2);
 
 			return;
 		}
@@ -381,6 +390,8 @@ int _hx_ssl_send(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 			hx::Throw(String::create(_com_error(result).ErrorMessage()));
 		}
 
+		printf("encrypted %zi bytes\n", usage);
+
 		auto sent  = 0;
 		auto total = ctx->sizes.cbHeader + usage + ctx->sizes.cbTrailer;
 		while (sent < total)
@@ -397,6 +408,8 @@ int _hx_ssl_send(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 		remaining -= sent;
 	}
 
+	printf("sent %i bytes\n", l);
+
 	return l;
 }
 
@@ -407,7 +420,7 @@ void _hx_ssl_write(Dynamic hssl, Array<unsigned char> buf)
 
 int _hx_ssl_recv_char(Dynamic hssl)
 {
-	return 0;
+	return hx::Throw(HX_CSTRING("Not Implemented"));
 }
 
 int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
@@ -418,24 +431,26 @@ int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 	auto buffers = std::array<SecBuffer, 4>();
 	auto bufferDescription = SecBufferDesc();
 
-	if (ctx->decrypted->length > 0)
-	{
-		auto taking = std::min(l, ctx->decrypted->length);
-
-		buf->memcpy(p, &ctx->decrypted[0], taking);
-
-		ctx->decrypted->removeRange(0, taking);
-
-		return taking;
-	}
-
 	while (true)
 	{
+		if (ctx->decrypted->length > 0)
+		{
+			auto taking = std::min(l, ctx->decrypted->length);
+
+			printf("taking %i cached bytes\n", taking);
+
+			buf->memcpy(p, &ctx->decrypted[0], taking);
+
+			ctx->decrypted->removeRange(0, taking);
+
+			return taking;
+		}
+
 		if (ctx->received > 0)
 		{
 			auto result = SECURITY_STATUS{ SEC_E_OK };
 
-			init_sec_buffer(&buffers[0], SECBUFFER_DATA, ctx->input->getBase(), ctx->input->length);
+			init_sec_buffer(&buffers[0], SECBUFFER_DATA, ctx->input->getBase(), ctx->received);
 			init_sec_buffer(&buffers[1], SECBUFFER_EMPTY, nullptr, 0);
 			init_sec_buffer(&buffers[2], SECBUFFER_EMPTY, nullptr, 0);
 			init_sec_buffer(&buffers[3], SECBUFFER_EMPTY, nullptr, 0);
@@ -447,24 +462,42 @@ int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 			{
 				auto read = 0;
 
+				printf("decrypting successful!\n");
+				printf("header size : %i\n", buffers[0].cbBuffer);
+				printf("message size : %i\n", buffers[1].cbBuffer);
+				printf("trailer size : %i\n", buffers[2].cbBuffer);
+
+				printf("provided a buffer of size : %i\n", ctx->received);
+
 				if (buffers[1].cbBuffer >= l)
 				{
 					// We have more decrypted bytes than space in the haxe buffer.
 					// Fill the haxe buffer and put the remaining in the decrypted buffer for later access.
+
+					printf("taking %i bytes\n", l);
 
 					buf->memcpy(p, reinterpret_cast<uint8_t*>(buffers[1].pvBuffer), l);
 
 					auto leftover = buffers[1].cbBuffer - l;
 					if (leftover > 0)
 					{
-						ctx->decrypted->EnsureSize(ctx->decrypted->length + leftover);
-						ctx->decrypted->memcpy(ctx->decrypted->length - leftover, static_cast<uint8_t*>(buffers[1].pvBuffer) + l, leftover);;
+						printf("adding %i to decrypted buffer\n", leftover);
+
+						for (auto i = 0; i < leftover; i++)
+						{
+							ctx->decrypted->push(static_cast<uint8_t*>(buffers[1].pvBuffer)[l + i]);
+						}
+
+						//ctx->decrypted->EnsureSize(ctx->decrypted->length + leftover);
+						//ctx->decrypted->memcpy(ctx->decrypted->length - leftover, static_cast<uint8_t*>(buffers[1].pvBuffer) + l, leftover);
 					}
 
 					read = l;
 				}
 				else
 				{
+					printf("taking less than buffer max\n", l);
+
 					buf->memcpy(p, static_cast<uint8_t*>(buffers[1].pvBuffer), buffers[1].cbBuffer);
 
 					read = buffers[1].cbBuffer;
@@ -472,12 +505,16 @@ int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 
 				if (SECBUFFER_EXTRA == buffers[3].BufferType)
 				{
+					printf("moving %i to extra buffer\n", buffers[3].cbBuffer);
+
 					std::memmove(ctx->input->getBase(), ctx->input->getBase() + ctx->received - buffers[3].cbBuffer, buffers[3].cbBuffer);
 
 					ctx->received = buffers[3].cbBuffer;
 				}
 				else
 				{
+					printf("no extra buffer, resetting recieved");
+
 					ctx->received = 0;
 				}
 
@@ -487,16 +524,22 @@ int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 			{
 				auto needing = ctx->received + (buffers[0].BufferType == SECBUFFER_MISSING ? buffers[0].cbBuffer : 1);
 
+				printf("incomplete message, reading more\n");
+
 				while (ctx->received < needing)
 				{
 					auto count = recv(wrapper->socket, ctx->input->getBase() + ctx->received, ctx->input->length - ctx->received, 0);
 					if (count <= 0)
 					{
+						printf("about to throw leaving behind %i encrypted and %i decrypted bytes\n", ctx->received, ctx->decrypted->length);
+
 						hx::Throw(HX_CSTRING("Failed to read from socket"));
 					}
 
 					ctx->received += count;
 				}
+
+				break;
 			}
 			default:
 				// Could we error and have potentially decoded data?
@@ -505,11 +548,15 @@ int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 		}
 		else
 		{
+			printf("no buffered input, reading from socket\n", buffers[3].cbBuffer);
+
 			auto count = recv(wrapper->socket, ctx->input->getBase() + ctx->received, ctx->input->length - ctx->received, 0);
 			if (count <= 0)
 			{
 				hx::Throw(HX_CSTRING("Failed to read from socket"));
 			}
+
+			printf("adding %i to received buffer (total %i)\n", count, buffers[3].cbBuffer);
 
 			ctx->received += count;
 		}
@@ -520,7 +567,7 @@ int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 
 Array<unsigned char> _hx_ssl_read(Dynamic hssl)
 {
-	return null();
+	return hx::Throw(HX_CSTRING("Not Implemented"));
 }
 
 Dynamic _hx_ssl_conf_new(bool server)
