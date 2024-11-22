@@ -32,9 +32,21 @@ namespace
 	{
 		::String host;
 		::Dynamic socket;
+
+		/**
+		 * Buffer for handshake or encrypted data.
+		 * This buffer is a fixed sized.
+		 */
 		::Array<uint8_t> input;
-		::Array<uint8_t> decrypted;
+		/**
+		 * Number of bytes in the input array.
+		 */
 		int received;
+		/**
+		 * buffered message data.
+		 * Array is expanded and shrunk as data is added and read.
+		 */
+		::Array<uint8_t> decrypted;
 
 		CredHandle credHandle;
 		TimeStamp credTimestamp;
@@ -50,7 +62,7 @@ namespace
 			: host(inHost)
 			, socket(null())
 			, input(TLS_MAX_PACKET_SIZE, TLS_MAX_PACKET_SIZE)
-			, decrypted()
+			, decrypted(0, 0)
 			, received(0)
 			, credHandle()
 			, credTimestamp()
@@ -406,14 +418,24 @@ int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 	auto buffers = std::array<SecBuffer, 4>();
 	auto bufferDescription = SecBufferDesc();
 
+	if (ctx->decrypted->length > 0)
+	{
+		auto taking = std::min(l, ctx->decrypted->length);
+
+		buf->memcpy(p, &ctx->decrypted[0], taking);
+
+		ctx->decrypted->removeRange(0, taking);
+
+		return taking;
+	}
+
 	while (true)
 	{
 		if (ctx->received > 0)
 		{
-			auto taking = std::min(ctx->received, l);
 			auto result = SECURITY_STATUS{ SEC_E_OK };
 
-			init_sec_buffer(&buffers[0], SECBUFFER_DATA, ctx->input->getBase(), taking);
+			init_sec_buffer(&buffers[0], SECBUFFER_DATA, ctx->input->getBase(), ctx->input->length);
 			init_sec_buffer(&buffers[1], SECBUFFER_EMPTY, nullptr, 0);
 			init_sec_buffer(&buffers[2], SECBUFFER_EMPTY, nullptr, 0);
 			init_sec_buffer(&buffers[3], SECBUFFER_EMPTY, nullptr, 0);
@@ -423,7 +445,30 @@ int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 			{
 			case SEC_E_OK:
 			{
-				memcpy(buf->getBase() + p, buffers[1].pvBuffer, buffers[1].cbBuffer);
+				auto read = 0;
+
+				if (buffers[1].cbBuffer >= l)
+				{
+					// We have more decrypted bytes than space in the haxe buffer.
+					// Fill the haxe buffer and put the remaining in the decrypted buffer for later access.
+
+					buf->memcpy(p, reinterpret_cast<uint8_t*>(buffers[1].pvBuffer), l);
+
+					auto leftover = buffers[1].cbBuffer - l;
+					if (leftover > 0)
+					{
+						ctx->decrypted->EnsureSize(ctx->decrypted->length + leftover);
+						ctx->decrypted->memcpy(ctx->decrypted->length - leftover, static_cast<uint8_t*>(buffers[1].pvBuffer) + l, leftover);;
+					}
+
+					read = l;
+				}
+				else
+				{
+					buf->memcpy(p, static_cast<uint8_t*>(buffers[1].pvBuffer), buffers[1].cbBuffer);
+
+					read = buffers[1].cbBuffer;
+				}
 
 				if (SECBUFFER_EXTRA == buffers[3].BufferType)
 				{
@@ -436,39 +481,23 @@ int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 					ctx->received = 0;
 				}
 
-				return buffers[1].cbBuffer;
+				return read;
 			}
-			// We can get this if the buffer is too small.
-			//case SEC_E_INCOMPLETE_MESSAGE:
-			//{
-			//	// TODO : Look for the SECBUFFER_MISSING to see how much it would ideally like.
+			case SEC_E_INCOMPLETE_MESSAGE:
+			{
+				auto needing = ctx->received + (buffers[0].BufferType == SECBUFFER_MISSING ? buffers[0].cbBuffer : 1);
 
-			//	for (auto i = 0; i < buffers.size(); i++)
-			//	{
-			//		if (buffers[i].BufferType == SECBUFFER_DATA)
-			//		{
-			//			printf("buffer %i is data\n", i);
-			//		}
-			//		if (buffers[i].BufferType == SECBUFFER_MISSING)
-			//		{
-			//			printf("buffer %i is missing (%i, %p, %p)\n", i, buffers[i].cbBuffer, buffers[i].pvBuffer, ctx->input->getBase());
-			//		}
-			//		if (buffers[i].BufferType == SECBUFFER_EXTRA)
-			//		{
-			//			printf("buffer %i is extra\n", i);
-			//		}
-			//	}
+				while (ctx->received < needing)
+				{
+					auto count = recv(wrapper->socket, ctx->input->getBase() + ctx->received, ctx->input->length - ctx->received, 0);
+					if (count <= 0)
+					{
+						hx::Throw(HX_CSTRING("Failed to read from socket"));
+					}
 
-			//	auto count = recv(wrapper->socket, ctx->input->getBase() + ctx->received, ctx->input->length - ctx->received, 0);
-			//	if (count <= 0)
-			//	{
-			//		hx::Throw(HX_CSTRING("Failed to read from socket"));
-			//	}
-
-			//	ctx->received += count;
-
-			//	return 0;
-			//}
+					ctx->received += count;
+				}
+			}
 			default:
 				// Could we error and have potentially decoded data?
 				hx::Throw(String::create(_com_error(result).ErrorMessage()));
@@ -486,7 +515,7 @@ int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 		}
 	}
 
-	return l;
+	return 0;
 }
 
 Array<unsigned char> _hx_ssl_read(Dynamic hssl)
