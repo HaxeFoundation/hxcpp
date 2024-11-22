@@ -3,6 +3,8 @@
 
 #include "SSL.h"
 
+#define NOMINMAX
+
 #include <Windows.h>
 #include <SubAuth.h>
 
@@ -30,6 +32,9 @@ namespace
 	{
 		::String host;
 		::Dynamic socket;
+		::Array<uint8_t> input;
+		::Array<uint8_t> decrypted;
+		int received;
 
 		CredHandle credHandle;
 		TimeStamp credTimestamp;
@@ -44,6 +49,9 @@ namespace
 		SChannelContext(::String inHost)
 			: host(inHost)
 			, socket(null())
+			, input(TLS_MAX_PACKET_SIZE, TLS_MAX_PACKET_SIZE)
+			, decrypted()
+			, received(0)
 			, credHandle()
 			, credTimestamp()
 			, ctxtHandle()
@@ -148,7 +156,7 @@ void _hx_ssl_handshake(Dynamic handle)
 	auto wrapper = (SocketWrapper*)ctx->socket.mPtr;
 	auto result  = SECURITY_STATUS{ SEC_E_OK };
 
-	//auto credentials = SCH_CREDENTIALS();
+	// SCH_CRED_MANUAL_CRED_VALIDATION
 	auto credentials = SCHANNEL_CRED();
 	credentials.dwFlags   = SCH_CRED_AUTO_CRED_VALIDATION | SCH_CRED_NO_DEFAULT_CREDS | SCH_USE_STRONG_CRYPTO;
 	credentials.dwVersion = SCHANNEL_CRED_VERSION;
@@ -162,12 +170,10 @@ void _hx_ssl_handshake(Dynamic handle)
 	hx::strbuf hostBuffer;
 
 	auto hostString    = const_cast<SEC_CHAR*>(ctx->host.utf8_str(&hostBuffer));
-	auto inputBuffer   = std::vector<char>(TLS_MAX_PACKET_SIZE);
 	auto outputBuffer0 = std::vector<char>(TLS_MAX_PACKET_SIZE);
 	auto outputBuffer1 = std::vector<char>(1024);
 	auto outputBuffer2 = std::vector<char>(1024);
 
-	auto received = 0;
 	auto initial  = true;
 
 	auto outputBuffers = std::array<SecBuffer, 3>();
@@ -179,7 +185,7 @@ void _hx_ssl_handshake(Dynamic handle)
 	while (true)
 	{
 		// Input Buffers
-		init_sec_buffer(&inputBuffers[0], SECBUFFER_TOKEN, inputBuffer.data(), received);
+		init_sec_buffer(&inputBuffers[0], SECBUFFER_TOKEN, ctx->input->getBase(), ctx->received);
 		init_sec_buffer(&inputBuffers[1], SECBUFFER_EMPTY, nullptr, 0);
 		init_sec_buffer_desc(&inputBufferDescription, inputBuffers.data(), inputBuffers.size());
 
@@ -210,6 +216,17 @@ void _hx_ssl_handshake(Dynamic handle)
 		{
 		case SEC_E_OK:
 		{
+			if (SECBUFFER_EXTRA == inputBuffers[1].BufferType)
+			{
+				std::memmove(ctx->input->getBase(), ctx->input->getBase() + ctx->received - inputBuffers[1].cbBuffer, inputBuffers[1].cbBuffer);
+
+				ctx->received = inputBuffers[1].cbBuffer;
+			}
+			else
+			{
+				ctx->received = 0;
+			}
+
 			QueryContextAttributes(&ctx->ctxtHandle, SECPKG_ATTR_STREAM_SIZES, &ctx->sizes);
 
 			return;
@@ -222,18 +239,18 @@ void _hx_ssl_handshake(Dynamic handle)
 			// https://learn.microsoft.com/en-us/windows/win32/secauthn/acceptsecuritycontext--schannel
 			if (SECBUFFER_MISSING != inputBuffers[1].BufferType)
 			{
-				auto targetReceived = received + inputBuffers[1].cbBuffer;
+				auto targetReceived = ctx->received + inputBuffers[1].cbBuffer;
 				
 				// Loop until we've read at least the required amount to avoid excessive calls to InitializeSecurityContextA
-				while (received < targetReceived)
+				while (ctx->received < targetReceived)
 				{
-					auto read = recv(wrapper->socket, inputBuffer.data() + received, inputBuffer.size() - received, 0);
+					auto read = recv(wrapper->socket, ctx->input->getBase() + ctx->received, ctx->input->length - ctx->received, 0);
 					if (read <= 0)
 					{
 						hx::Throw(HX_CSTRING("Failed to read handshake message"));
 					}
 
-					received += read;
+					ctx->received += read;
 				}
 			}
 			break;
@@ -246,14 +263,13 @@ void _hx_ssl_handshake(Dynamic handle)
 			// Otherwise we can just set received to zero as we've consumed all data in the buffer.
 			if (SECBUFFER_EXTRA == inputBuffers[1].BufferType)
 			{
-				inputBuffer.erase(inputBuffer.begin(), inputBuffer.begin() + received - inputBuffers[1].cbBuffer);
-				inputBuffer.resize(TLS_MAX_PACKET_SIZE);
+				std::memmove(ctx->input->getBase(), ctx->input->getBase() + ctx->received - inputBuffers[1].cbBuffer, inputBuffers[1].cbBuffer);
 
-				received = inputBuffers[1].cbBuffer;
+				ctx->received = inputBuffers[1].cbBuffer;
 			}
 			else
 			{
-				received = 0;
+				ctx->received = 0;
 			}
 
 			// Send all data in the output token buffer to the remote end.
@@ -274,13 +290,13 @@ void _hx_ssl_handshake(Dynamic handle)
 			}
 
 			// Read more data from the remote end and loop.
-			auto read = recv(wrapper->socket, inputBuffer.data() + received, inputBuffer.size() - received, 0);
+			auto read = recv(wrapper->socket, ctx->input->getBase() + ctx->received, ctx->input->length - ctx->received, 0);
 			if (read <= 0)
 			{
 				hx::Throw(HX_CSTRING("Failed to read handshake message"));
 			}
 
-			received += read;
+			ctx->received += read;
 
 			break;
 		}
@@ -317,17 +333,64 @@ bool _hx_ssl_get_verify_result(Dynamic hssl)
 
 void _hx_ssl_send_char(Dynamic hssl, int v)
 {
-	//
+	// Lazy...
+
+	auto buffer = Array<unsigned char>(1, 1);
+	buffer[0] = static_cast<unsigned char>(v);
+
+	_hx_ssl_write(hssl, buffer);
 }
 
 int _hx_ssl_send(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 {
-	return 0;
+	auto ctx       = (SChannelContext*)hssl.mPtr;
+	auto wrapper   = (SocketWrapper*)ctx->socket.mPtr;
+	auto remaining = buf->length;
+
+	auto stagingBuffer = std::vector<unsigned char>(ctx->sizes.cbHeader + ctx->sizes.cbMaximumMessage + ctx->sizes.cbTrailer);
+	auto outputBuffers = std::array<SecBuffer, 3>();
+	auto outputBufferDescription = SecBufferDesc();
+
+	while (remaining > 0)
+	{
+		auto usage  = std::min(static_cast<size_t>(remaining), static_cast<size_t>(ctx->sizes.cbMaximumMessage));
+		auto cursor = buf->length - remaining;
+
+		init_sec_buffer(&outputBuffers[0], SECBUFFER_STREAM_HEADER, stagingBuffer.data(), ctx->sizes.cbHeader);
+		init_sec_buffer(&outputBuffers[1], SECBUFFER_DATA, stagingBuffer.data() + ctx->sizes.cbHeader, usage);
+		init_sec_buffer(&outputBuffers[2], SECBUFFER_STREAM_TRAILER, stagingBuffer.data() + ctx->sizes.cbHeader + usage, ctx->sizes.cbTrailer);
+		init_sec_buffer_desc(&outputBufferDescription, outputBuffers.data(), outputBuffers.size());
+
+		std::memcpy(outputBuffers[1].pvBuffer, buf->getBase() + cursor, usage);
+
+		auto result = SECURITY_STATUS{ SEC_E_OK };
+		if (SEC_E_OK != (result = EncryptMessage(&ctx->ctxtHandle, 0, &outputBufferDescription, 0)))
+		{
+			hx::Throw(String::create(_com_error(result).ErrorMessage()));
+		}
+
+		auto sent  = 0;
+		auto total = ctx->sizes.cbHeader + usage + ctx->sizes.cbTrailer;
+		while (sent < total)
+		{
+			auto count = send(wrapper->socket, reinterpret_cast<char*>(stagingBuffer.data()) + sent, total - sent, 0);
+			if (count <= 0)
+			{
+				hx::Throw(HX_CSTRING("Socket send error"));
+			}
+
+			sent += count;
+		}
+
+		remaining -= sent;
+	}
+
+	return l;
 }
 
 void _hx_ssl_write(Dynamic hssl, Array<unsigned char> buf)
 {
-	//
+	auto _ = _hx_ssl_send(hssl, buf, 0, buf->length);
 }
 
 int _hx_ssl_recv_char(Dynamic hssl)
@@ -337,7 +400,93 @@ int _hx_ssl_recv_char(Dynamic hssl)
 
 int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 {
-	return 0;
+	auto ctx     = (SChannelContext*)hssl.mPtr;
+	auto wrapper = (SocketWrapper*)ctx->socket.mPtr;
+
+	auto buffers = std::array<SecBuffer, 4>();
+	auto bufferDescription = SecBufferDesc();
+
+	while (true)
+	{
+		if (ctx->received > 0)
+		{
+			auto taking = std::min(ctx->received, l);
+			auto result = SECURITY_STATUS{ SEC_E_OK };
+
+			init_sec_buffer(&buffers[0], SECBUFFER_DATA, ctx->input->getBase(), taking);
+			init_sec_buffer(&buffers[1], SECBUFFER_EMPTY, nullptr, 0);
+			init_sec_buffer(&buffers[2], SECBUFFER_EMPTY, nullptr, 0);
+			init_sec_buffer(&buffers[3], SECBUFFER_EMPTY, nullptr, 0);
+			init_sec_buffer_desc(&bufferDescription, buffers.data(), buffers.size());
+
+			switch (result = DecryptMessage(&ctx->ctxtHandle, &bufferDescription, 0, nullptr))
+			{
+			case SEC_E_OK:
+			{
+				memcpy(buf->getBase() + p, buffers[1].pvBuffer, buffers[1].cbBuffer);
+
+				if (SECBUFFER_EXTRA == buffers[3].BufferType)
+				{
+					std::memmove(ctx->input->getBase(), ctx->input->getBase() + ctx->received - buffers[3].cbBuffer, buffers[3].cbBuffer);
+
+					ctx->received = buffers[3].cbBuffer;
+				}
+				else
+				{
+					ctx->received = 0;
+				}
+
+				return buffers[1].cbBuffer;
+			}
+			// We can get this if the buffer is too small.
+			//case SEC_E_INCOMPLETE_MESSAGE:
+			//{
+			//	// TODO : Look for the SECBUFFER_MISSING to see how much it would ideally like.
+
+			//	for (auto i = 0; i < buffers.size(); i++)
+			//	{
+			//		if (buffers[i].BufferType == SECBUFFER_DATA)
+			//		{
+			//			printf("buffer %i is data\n", i);
+			//		}
+			//		if (buffers[i].BufferType == SECBUFFER_MISSING)
+			//		{
+			//			printf("buffer %i is missing (%i, %p, %p)\n", i, buffers[i].cbBuffer, buffers[i].pvBuffer, ctx->input->getBase());
+			//		}
+			//		if (buffers[i].BufferType == SECBUFFER_EXTRA)
+			//		{
+			//			printf("buffer %i is extra\n", i);
+			//		}
+			//	}
+
+			//	auto count = recv(wrapper->socket, ctx->input->getBase() + ctx->received, ctx->input->length - ctx->received, 0);
+			//	if (count <= 0)
+			//	{
+			//		hx::Throw(HX_CSTRING("Failed to read from socket"));
+			//	}
+
+			//	ctx->received += count;
+
+			//	return 0;
+			//}
+			default:
+				// Could we error and have potentially decoded data?
+				hx::Throw(String::create(_com_error(result).ErrorMessage()));
+			}
+		}
+		else
+		{
+			auto count = recv(wrapper->socket, ctx->input->getBase() + ctx->received, ctx->input->length - ctx->received, 0);
+			if (count <= 0)
+			{
+				hx::Throw(HX_CSTRING("Failed to read from socket"));
+			}
+
+			ctx->received += count;
+		}
+	}
+
+	return l;
 }
 
 Array<unsigned char> _hx_ssl_read(Dynamic hssl)
