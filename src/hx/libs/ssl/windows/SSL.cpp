@@ -452,26 +452,21 @@ int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 	auto buffers = std::array<SecBuffer, 4>();
 	auto bufferDescription = SecBufferDesc();
 
-	if (ctx->decrypted->length > 0)
-	{
-		auto taking = std::min(l, ctx->decrypted->length);
-
-		printf("taking %i cached bytes\n", taking);
-
-		for (auto i = 0; i < taking; i++)
-		{
-			auto src = ctx->decrypted[i];
-
-			buf[p + i] = src;
-		}
-
-		ctx->decrypted->removeRange(0, taking);
-
-		return taking;
-	}
-
 	while (true)
 	{
+		if (ctx->decrypted->length > 0)
+		{
+			auto taking = std::min(l, ctx->decrypted->length);
+
+			printf("taking %i cached bytes\n", taking);
+
+			buf->memcpy(p, &ctx->decrypted[0], taking);
+
+			ctx->decrypted->removeRange(0, taking);
+
+			return taking;
+		}
+
 		if (ctx->received > 0)
 		{
 			auto result = SECURITY_STATUS{ SEC_E_OK };
@@ -524,22 +519,6 @@ int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 			}
 			case SEC_E_INCOMPLETE_MESSAGE:
 			{
-				if (ctx->decrypted->length > 0)
-				{
-					auto taking = std::min(l, ctx->decrypted->length);
-
-					printf("taking %i cached bytes\n", taking);
-
-					for (auto i = 0; i < taking; i++)
-					{
-						buf[p + i] = ctx->decrypted[i];
-					}
-
-					ctx->decrypted->removeRange(0, taking);
-
-					return taking;
-				}
-
 				assert(buffers[0].BufferType == SECBUFFER_MISSING);
 				assert(buffers[0].cbBuffer > 0);
 
