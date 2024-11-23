@@ -23,8 +23,6 @@
 
 namespace
 {
-	const int TLS_MAX_PACKET_SIZE = std::numeric_limits<uint16_t>::max() + 512;
-
 	struct SocketWrapper : public hx::Object
 	{
 		HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSocket };
@@ -262,10 +260,9 @@ void _hx_ssl_handshake(Dynamic handle)
 
 	hx::strbuf hostBuffer;
 
-	auto hostString    = const_cast<SEC_CHAR*>(ctx->host.utf8_str(&hostBuffer));
-	auto outputBuffer0 = std::vector<char>(TLS_MAX_PACKET_SIZE);
-	auto outputBuffer1 = std::vector<char>(1024);
-	auto outputBuffer2 = std::vector<char>(1024);
+	auto hostString  = const_cast<SEC_CHAR*>(ctx->host.utf8_str(&hostBuffer));
+	auto tokenBuffer = std::array<char, std::numeric_limits<uint16_t>::max()>();
+	auto alertBuffer = std::array<char, 1024>();
 
 	auto initial = true;
 	auto staging = std::array<char, std::numeric_limits<uint16_t>::max()>();
@@ -285,8 +282,8 @@ void _hx_ssl_handshake(Dynamic handle)
 		init_sec_buffer_desc(&inputBufferDescription, inputBuffers.data(), inputBuffers.size());
 
 		// Output Buffers
-		init_sec_buffer(&outputBuffers[0], SECBUFFER_TOKEN, outputBuffer0.data(), outputBuffer0.size());
-		init_sec_buffer(&outputBuffers[1], SECBUFFER_ALERT, outputBuffer1.data(), outputBuffer1.size());
+		init_sec_buffer(&outputBuffers[0], SECBUFFER_TOKEN, tokenBuffer.data(), tokenBuffer.size());
+		init_sec_buffer(&outputBuffers[1], SECBUFFER_ALERT, alertBuffer.data(), alertBuffer.size());
 		init_sec_buffer(&outputBuffers[2], SECBUFFER_EMPTY, nullptr, 0);
 		init_sec_buffer_desc(&outputBufferDescription, outputBuffers.data(), outputBuffers.size());
 
