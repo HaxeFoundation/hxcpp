@@ -191,10 +191,8 @@ void _hx_ssl_handshake(Dynamic handle)
 	auto wrapper = (SocketWrapper*)ctx->socket.mPtr;
 	auto result  = SECURITY_STATUS{ SEC_E_OK };
 
-	// SCH_CRED_MANUAL_CRED_VALIDATION
-	// SCH_CRED_AUTO_CRED_VALIDATION
 	auto credentials = SCHANNEL_CRED();
-	credentials.dwFlags   = SCH_CRED_MANUAL_CRED_VALIDATION | SCH_CRED_NO_DEFAULT_CREDS | SCH_USE_STRONG_CRYPTO;
+	credentials.dwFlags   = SCH_CRED_AUTO_CRED_VALIDATION | SCH_CRED_NO_DEFAULT_CREDS | SCH_USE_STRONG_CRYPTO;
 	credentials.dwVersion = SCHANNEL_CRED_VERSION;
 	credentials.grbitEnabledProtocols = SP_PROT_TLS1_2;
 
@@ -556,7 +554,7 @@ int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l)
 		{
 			printf("no buffered input, reading block from socket (%i)\n", ctx->sizes.cbBlockSize);
 
-			auto count = recv(wrapper->socket, ctx->input->getBase(), ctx->sizes.cbBlockSize, 0);
+			auto count = recv(wrapper->socket, ctx->input->getBase(), ctx->input->length, 0);
 			if (count <= 0)
 			{
 				block_error();
