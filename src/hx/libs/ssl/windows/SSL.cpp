@@ -19,8 +19,6 @@
 #include <algorithm>
 #include <assert.h>
 
-//#define printf(...)
-
 namespace
 {
 	static void init_sec_buffer(SecBuffer* buffer, unsigned long type, void* data, unsigned long size)
@@ -45,8 +43,9 @@ namespace
 
 	struct SChannelContext : public ::hx::Object
 	{
-		::String host;
 		::Dynamic socket;
+
+		const wchar_t* host;
 
 		/**
 		 * Buffer for encrypted message data.
@@ -83,7 +82,7 @@ namespace
 		bool connected;
 
 		SChannelContext(::String inHost)
-			: host(inHost)
+			: host(inHost.wchar_str())
 			, socket(null())
 			, encryptedBuffer(0, 0)
 			, decryptedBuffer(0, 0)
@@ -163,8 +162,6 @@ namespace
 
 			connected = false;
 
-			hx::strbuf hostBuffer;
-
 			auto inputBuffer  = SecBuffer();
 			auto inputBufferDescription  = SecBufferDesc();
 			
@@ -187,10 +184,10 @@ namespace
 			init_sec_buffer_desc(&outputBufferDescription, &outputBuffer, 1);
 
 			result =
-				InitializeSecurityContextA(
+				InitializeSecurityContextW(
 					&credHandle,
 					&ctxtHandle,
-					const_cast<SEC_CHAR*>(host.utf8_str(&hostBuffer)),
+					const_cast<SEC_WCHAR*>(host),
 					requestFlags,
 					0,
 					0,
@@ -222,7 +219,7 @@ namespace
 
 		void __Mark(HX_MARK_PARAMS) override
 		{
-			HX_MARK_MEMBER(host);
+			HX_MARK_STRING(host);
 			HX_MARK_MEMBER(socket);
 			HX_MARK_MEMBER(encryptedBuffer);
 			HX_MARK_MEMBER(decryptedBuffer);
@@ -231,7 +228,7 @@ namespace
 #ifdef  HXCPP_VISIT_ALLOCS
 		void __Visit(HX_VISIT_PARAMS) override
 		{
-			HX_VISIT_MEMBER(host);
+			HX_VISIT_STRING(host);
 			HX_VISIT_MEMBER(socket);
 			HX_VISIT_MEMBER(encryptedBuffer);
 			HX_VISIT_MEMBER(decryptedBuffer);
@@ -322,14 +319,11 @@ void _hx_ssl_handshake(Dynamic handle)
 	credentials.dwVersion = SCHANNEL_CRED_VERSION;
 	credentials.grbitEnabledProtocols = SP_PROT_TLS1_2;
 
-	if (SEC_E_OK != (result = AcquireCredentialsHandleA(nullptr, LPSTR(UNISP_NAME), SECPKG_CRED_OUTBOUND, nullptr, &credentials, nullptr, nullptr, &ctx->credHandle, &ctx->credTimestamp)))
+	if (SEC_E_OK != (result = AcquireCredentialsHandleW(nullptr, LPWSTR(UNISP_NAME_W), SECPKG_CRED_OUTBOUND, nullptr, &credentials, nullptr, nullptr, &ctx->credHandle, &ctx->credTimestamp)))
 	{
 		hx::Throw(HX_CSTRING("Failed to acquire credentials handle"));
 	}
 
-	hx::strbuf hostBuffer;
-
-	auto hostString  = const_cast<SEC_CHAR*>(ctx->host.utf8_str(&hostBuffer));
 	auto tokenBuffer = std::array<char, std::numeric_limits<uint16_t>::max()>();
 	auto alertBuffer = std::array<char, 1024>();
 
@@ -357,10 +351,10 @@ void _hx_ssl_handshake(Dynamic handle)
 		init_sec_buffer_desc(&outputBufferDescription, outputBuffers.data(), outputBuffers.size());
 
 		result =
-			InitializeSecurityContextA(
+			InitializeSecurityContextW(
 				&ctx->credHandle,
 				initial ? nullptr : &ctx->ctxtHandle,
-				hostString,
+				const_cast<SEC_WCHAR*>(ctx->host),
 				ctx->requestFlags,
 				0,
 				0,
@@ -478,7 +472,7 @@ void _hx_ssl_set_hostname(Dynamic hssl, String hostname)
 {
 	auto ctx = (SChannelContext*)hssl.mPtr;
 
-	ctx->host = hostname;
+	ctx->host = hostname.wchar_str();
 }
 
 Dynamic _hx_ssl_get_peer_certificate(Dynamic hssl)
