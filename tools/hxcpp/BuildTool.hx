@@ -1530,7 +1530,7 @@ class BuildTool
          if (isRootDir || (FileSystem.exists(last) && FileSystem.isDirectory(last)))
          {
             // When called from haxelib, the last arg is the original directory, and
-            //  the current direcory is the library directory.
+            //  the current directory is the library directory.
             HXCPP = PathManager.standardize(Sys.getCwd());
             defines.set("HXCPP",HXCPP);
             args.pop();
@@ -1690,7 +1690,7 @@ class BuildTool
          }
          else if (arg=="-v" || arg=="-verbose")
             Log.verbose = true;
-         else if (arg=="-nocolor")
+         else if (arg=="-nocolor" || arg=="-nocolour")
             Log.colorSupported = false;
          else if (arg.substr(0,2)=="-I")
             include_path.push(PathManager.standardize(arg.substr(2)));

@@ -814,7 +814,7 @@ struct CallFunExpr : public CppiaExpr
       CPPIALOG("callScriptable %p(%p) -> %p\n", inCtx, CppiaCtx::getCurrent(), inScriptable );
       CPPIALOG(" name = %s\n", inScriptable->getName());
       inScriptable->runFunction(inCtx);
-      CPPIALOG(" Done scipt callable\n");
+      CPPIALOG(" Done script callable\n");
    }
 
 
@@ -1678,7 +1678,7 @@ inline void SetVal(String &out, const T &value) { out = String(value); }
 template<typename T>
 inline void SetVal(Dynamic &out, const T &value) { out = value; }
 
-//template<typname RETURN>
+//template<typename RETURN>
 struct CallHaxe : public CppiaExpr
 {
    Expressions args;
@@ -1711,7 +1711,7 @@ struct CallHaxe : public CppiaExpr
             case sigVoid: 
                if (i==0) // return void ok
                   break;
-               // fallthough
+               // fallthrough
             default:
                throw "Bad haxe signature";
          }
@@ -3318,7 +3318,7 @@ struct CallMember : public CppiaExpr
          if (func.signature)
          {
             if (callSuperField && !func.superExecute)
-               CPPIALOG("Warning - calling super host '%s' from cppia can lead to infinte recursion\n", field.utf8_str());
+               CPPIALOG("Warning - calling super host '%s' from cppia can lead to infinite recursion\n", field.utf8_str());
 
             //CPPIALOG(" found function %s\n", func.signature );
             replace = new CallHaxe( this, func, thisExpr, args, false, callSuperField && func.superExecute);
@@ -4665,7 +4665,7 @@ struct GetFieldByLinkage : public CppiaExpr
       }
 
       // It is ok for interfaces to look up members by name - and variables that turn
-      //  out to actaully be Dynamic (eg template types)
+      //  out to actually be Dynamic (eg template types)
       if (!type->isInterface && !type->isDynamic && !forceNamedAccess)
       {
          CPPIALOG("   GetFieldByLinkage %s (%p %p %p) '%s' fallback\n", type->name.out_str(), object, type->haxeClass.mPtr, type->cppiaClass, field.out_str());

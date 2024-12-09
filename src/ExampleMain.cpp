@@ -28,7 +28,7 @@
    init call.  The inclusion of the extra static library will require the library
    in the link line, and may requires additional dependencies to be linked.
    Also note, that there may be licensing implications with static linking
-   thirdparty libraries.
+   third party libraries.
 
 */
 
@@ -46,7 +46,7 @@ extern "C" int main(int argc, char *argv[])
 	// Do this first
 	hxcpp_set_top_of_stack();
 
-   // Register additional ndll libaries ...
+   // Register additional ndll libraries ...
    // nme_register_prims();
 
 	//printf("Begin!\n");

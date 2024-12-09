@@ -11,7 +11,7 @@ static HxMutex g_threadInfoMutex;
 static int g_nextThreadNumber = 1;
 
 
-// How to manage hxThreadInfo references for non haxe threads (main, extenal)?
+// How to manage hxThreadInfo references for non haxe threads (main, external)?
 // HXCPP_THREAD_INFO_PTHREAD - use pthread api
 // HXCPP_THREAD_INFO_LOCAL - use thread_local storage
 // HXCPP_THREAD_INFO_SINGLETON - use one structure for all threads. Not ideal.
@@ -258,7 +258,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 	// Release the creation function
 	info[0]->mSemaphore->Set();
 
-    // Call the debugger function to annouce that a thread has been created
+    // Call the debugger function to announce that a thread has been created
     //__hxcpp_dbg_threadCreatedOrTerminated(info[0]->GetThreadNumber(), true);
 
 	if ( info[0]->mFunction.GetPtr() )
@@ -267,7 +267,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 		info[0]->mFunction->__run();
 	}
 
-    // Call the debugger function to annouce that a thread has terminated
+    // Call the debugger function to announce that a thread has terminated
     //__hxcpp_dbg_threadCreatedOrTerminated(info[0]->GetThreadNumber(), false);
 
 	hx::UnregisterCurrentThread();

@@ -95,7 +95,7 @@ static bool sgInternalEnable = true;
 static void *sgObject_root = 0;
 // With virtual inheritance, stack pointers can point to the middle of an object
 #ifdef _MSC_VER
-// MSVC optimizes by taking the address of an initernal data member
+// MSVC optimizes by taking the address of an internal data member
 static int sgCheckInternalOffset = sizeof(void *)*2;
 static int sgCheckInternalOffsetRows = 1;
 #else
@@ -109,7 +109,7 @@ int gInAlloc = false;
 static size_t sWorkingMemorySize          = 10*1024*1024;
 
 #ifdef HXCPP_GC_MOVING
-// Just not sure what this shold be
+// Just not sure what this should be
 static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 #else
 static size_t sgMaximumFreeSpace  = 1024*1024*1024;
@@ -2088,7 +2088,7 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
       }
       else
       {
-         // Large nursury object
+         // Large nursery object
          ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE] = gByteMarkID;
       }
    }
@@ -3159,7 +3159,7 @@ public:
          gSpecialObjectLock = new HxMutex();
       }
       // Until we add ourselves, the collector will not wait
-      //  on us - ie, we are assumed ot be in a GC free zone.
+      //  on us - ie, we are assumed to be in a GC free zone.
       AutoLock lock(*gThreadStateChangeLock);
       mLocalAllocs.push(inAlloc);
       // TODO Attach debugger
@@ -3167,8 +3167,8 @@ public:
 
    bool ReturnToPoolLocked(LocalAllocator *inAlloc)
    {
-      // Until we add ourselves, the colled will not wait
-      //  on us - ie, we are assumed ot be in a GC free zone.
+      // Until we add ourselves, the collector will not wait
+      //  on us - ie, we are assumed to be in a GC free zone.
       for(int p=0;p<LOCAL_POOL_SIZE;p++)
       {
          if (!mLocalPool[p])
@@ -3240,7 +3240,7 @@ public:
          __hxcpp_gc_safe_point();
 
       //Should we force a collect ? - the 'large' data are not considered when allocating objects
-      // from the blocks, and can 'pile up' between smalll object allocations
+      // from the blocks, and can 'pile up' between small object allocations
       if ((inSize+mLargeAllocated > mLargeAllocForceRefresh) && sgInternalEnable)
       {
          #ifdef SHOW_MEM_EVENTS
@@ -3345,7 +3345,7 @@ public:
       if (inDelta>0)
       {
          //Should we force a collect ? - the 'large' data are not considered when allocating objects
-         // from the blocks, and can 'pile up' between smalll object allocations
+         // from the blocks, and can 'pile up' between small object allocations
          if (inDelta>0 && (inDelta+mLargeAllocated > mLargeAllocForceRefresh) && sgInternalEnable)
          {
             //GCLOG("onMemoryChange alloc causing collection");
@@ -3379,7 +3379,7 @@ public:
    // This contains some "lock free" code that triggers the thread sanitizer.
    //  * mOwned can only be changed with the mZeroLock
    //  * mFreeBlocks may increase size, but it is not critical whether the mNextFreeBlockOfSize
-   //     is increased since skipping only leads to a bit of extra searhing for the
+   //     is increased since skipping only leads to a bit of extra searching for the
    //     next allocation
    #if defined(__has_feature)
      #if __has_feature(thread_sanitizer)
@@ -3867,7 +3867,7 @@ public:
          }
          else
          {
-            // Partialy cleared, then ran out of to blocks - remove from allocation this round
+            // Partially cleared, then ran out of to blocks - remove from allocation this round
             if (from)
             {
                // Could maybe be a bit smarter here
@@ -3992,7 +3992,7 @@ public:
                            int size = ((header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT);
                            int allocSize = size + sizeof(int);
 
-                           // Find dest reqion ...
+                           // Find dest region ...
                            while(destHole==0 || destLen < ALIGN_PADDING(destPos) + allocSize)
                            {
                               if (destHole==0)
@@ -4074,7 +4074,7 @@ public:
             }
             else
             {
-               // Partialy cleared, then ran out of to blocks - remove from allocation this round
+               // Partially cleared, then ran out of to blocks - remove from allocation this round
                if (from && moveObjs)
                {
                   // Could maybe be a bit smarter here
@@ -4469,7 +4469,7 @@ public:
       }
       else
       {
-         printf("Finishe non-runnning thread?\n");
+         printf("Finished non-runnning thread?\n");
          DebuggerTrap();
       }
    }
@@ -4936,7 +4936,7 @@ public:
       bool generational = false; 
 
       #ifdef HXCPP_GC_GENERATIONAL
-      bool compactSurviors = false;
+      bool compactSurvivors = false;
 
       if (sGcMode==gcmGenerational)
       {
@@ -5043,7 +5043,7 @@ public:
 
 
       #ifdef HXCPP_GC_GENERATIONAL
-      if (compactSurviors)
+      if (compactSurvivors)
       {
          MoveSurvivors(&rememberedSet);
       }
@@ -5193,7 +5193,7 @@ public:
                sgTimeToNextTableUpdate = 3;
             calcMoveOrder( );
 
-            // Borrow some blocks to ensuure space to defrag into
+            // Borrow some blocks to ensure space to defrag into
             int workingBlocks = mAllBlocks.size()*3/2 - stats.emptyBlocks;
             int borrowed = 0;
             while( mAllBlocks.size()<workingBlocks )
@@ -5464,7 +5464,7 @@ public:
    }
 
 
-   // buils mFreeBlocks and maybe starts the async-zero process on mZeroList
+   // builds mFreeBlocks and maybe starts the async-zero process on mZeroList
    void createFreeList()
    {
       mFreeBlocks.clear();
@@ -5516,7 +5516,7 @@ public:
          mZeroList.setSize(mFreeBlocks.size());
          memcpy( &mZeroList[0], &mFreeBlocks[0], mFreeBlocks.size()*sizeof(void *));
 
-         // Only use one thread for parallel zeroing.  Try to get though the work wihout
+         // Only use one thread for parallel zeroing.  Try to get though the work without
          //  slowing down the main thread
          StartThreadJobs(inJit ? tpjAsyncZeroJit : tpjAsyncZero, mZeroList.size(), false, 1);
       }
@@ -6157,8 +6157,8 @@ public:
    //   will not be waited on. mReadyForCollect will be cleared when the zone is left.
    //
    //  The mMoreHoles/spaceOversize/spaceEnd get zeroed without a lock.  The timing should
-   //   not be critical since the allocation code shold expect that these are volatile.
-   //   If the allocation works, all is good.  If it fails then the collection will happed soon.
+   //   not be critical since the allocation code should expect that these are volatile.
+   //   If the allocation works, all is good.  If it fails then the collection will happen soon.
    #if defined(__has_feature)
      #if __has_feature(thread_sanitizer)
       __attribute__((no_sanitize("thread")))
@@ -6361,7 +6361,7 @@ public:
          }
          else
          {
-            // For opmtimized windows 64 builds, this dummy var technique does not
+            // For optimized windows 64 builds, this dummy var technique does not
             //  quite work, since the compiler might recycle one of the earlier stack
             //  slots, and place dummy behind the stack values we are actually trying to
             //  capture.  Moving the dummy into the GetFreeBlock seems to have fixed this.
@@ -6389,7 +6389,7 @@ public:
          }
 
          // Other thread may have started collect, in which case we may just
-         //  overwritted the 'mMoreHoles' and 'spaceEnd' termination attempt
+         //  overwrite the 'mMoreHoles' and 'spaceEnd' termination attempt
          if (hx::gPauseForCollect)
          {
             mMoreHoles = 0;

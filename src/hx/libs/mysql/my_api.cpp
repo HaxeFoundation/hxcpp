@@ -218,7 +218,7 @@ send_cnx_packet:
 			save_error(m,p);
 			return NULL;
 		case 0xFE: // EOF
-			// we are asked to send old password authentification
+			// we are asked to send old password authentication
 			if( p->size == 1 ) {
 				char hpass[SEED_LENGTH_323 + 1];
 				myp_encrypt_pass_323(pass,scramble_buf,hpass);

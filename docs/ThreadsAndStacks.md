@@ -98,7 +98,7 @@ Enter/exit use similar technique, where the registers are captured and the botto
       * any changes here will not affect GC
 ```
 
-Now, when another thread does a collection, the gc-free thread can be scanned from 8088 to 9976, regardless of any stuff happening lower dowsn the stack.
+Now, when another thread does a collection, the gc-free thread can be scanned from 8088 to 9976, regardless of any stuff happening lower down the stack.
 
 
 ### Not Called From Main 
@@ -119,7 +119,7 @@ Top of stack can be tricky to get right when a gui framework does not really hav
  7976  int     t0
        SetTopOfStack(&t0,false) -> 7966
        __hxcpp_main();
-          setOnFrameCallack(haxeOnFrame)
+          setOnFrameCallback(haxeOnFrame)
           return;
 ```
 

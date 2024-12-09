@@ -153,9 +153,9 @@ public:
 
 
 
-hx::Object *createEnumClosure(CppiaEnumConstructor &inContructor)
+hx::Object *createEnumClosure(CppiaEnumConstructor &inConstructor)
 {
-   return new EnumConstructorClosure(inContructor);
+   return new EnumConstructorClosure(inConstructor);
 }
 
 

@@ -46,7 +46,7 @@ class TestRectangle extends Test
       // Take address ...
       var rectPtr:RectanglePtr = rectangle;
 
-      // Pointer-like sysntax
+      // Pointer-like syntax
       rectPtr.width = 3;
       rectPtr.height = 5;
       var dynamicPtr:Dynamic  = rectPtr;
