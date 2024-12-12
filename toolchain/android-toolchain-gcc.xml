@@ -4,7 +4,7 @@
 <!--
   Configure build via variables, otherwise defaults will be used:
      Set the path to the exact ndk to use with ANDROID_NDK_ROOT,
-        or set where all your ndks are installed with ANDROID_NDK_DIR and hxcpp will guess.
+        or set where all your NDKs are installed with ANDROID_NDK_DIR and hxcpp will guess.
         Set the version number by setting the variable:
            NDKV?? - base version of ndk to use, hxcpp will find the letter, like "NDKV10" -> may end up with "10c"
      TOOLCHAIN_VERSION - the compiler number, like "4.8" or "4.4.3"

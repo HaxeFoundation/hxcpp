@@ -5766,7 +5766,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
                {
                   #ifdef HX_WATCH
                   if (isWatch)
-                     GCLOG(" pin alloced %p (%p)\n", vptr,ptr);
+                     GCLOG(" pin allocated %p (%p)\n", vptr,ptr);
                   #endif
                   lastPin = vptr;
                   info->pin();

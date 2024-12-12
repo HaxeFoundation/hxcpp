@@ -68,7 +68,7 @@
 * Updated version of zlib
 * Updated version of sljit
 * Updated version of pcre
-* Updated version of sqlit3
+* Updated version of sqlite3
 * Updated version of mbedtls
 * Some work on supporting utf16 strings (hx_smart_strings)
 * Added process_kill
@@ -631,7 +631,7 @@ Haxe 3.2.0
 * Added comprehensive list of reserved member names.
 * Put if/else statements in blocks.
 * Added assert, NULL, LITTLE_ENDIAN, BIG_ENDIAN as keywords.
-* Added control over how fast-cffi routines are created by requiring cpp.rtti.FastIntergerLookup to be "implemented".
+* Added control over how fast-cffi routines are created by requiring cpp.rtti.FastIntegerLookup to be "implemented".
 * Construct anonymous object fields in deterministic (as declared) order.
 * Fix code generation for some complex inline cases.
 * Added cpp.zip.Compress

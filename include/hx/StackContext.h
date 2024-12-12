@@ -408,7 +408,7 @@ struct StackContext : public hx::ImmixAllocator
       bool mIsUnwindingException;
 
       #ifdef HXCPP_STACK_SCRIPTABLE
-         // TODO - combine CppaCtx and StackContext
+         // TODO - combine CppiaCtx and StackContext
       #endif
 
       #ifdef HXCPP_DEBUGGER

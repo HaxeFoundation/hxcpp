@@ -387,7 +387,7 @@ namespace cpp
 
 // --- Array_obj ------------------------------------------------------------------
 //
-// The Array_obj specializes the ArrayBase, adding typing where required
+// The Array_obj specialises the ArrayBase, adding typing where required
 
 
 namespace hx

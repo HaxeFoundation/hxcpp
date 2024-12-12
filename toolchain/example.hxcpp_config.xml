@@ -61,7 +61,7 @@
      <!-- Add this if your compiler does not support precompiled headers -->
      <!-- <set name="NO_PRECOMPILED_HEADERS" value="1"/> -->
 
-     <!-- Older versions of gcc do not suport the @file syntax for an obj file list
+     <!-- Older versions of gcc do not support the @file syntax for an obj file list
           and precompiled headers.  Set this if you have these issues -->
      <!-- <set name="GCC_OLD" value="1" /> -->
 
