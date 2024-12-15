@@ -131,11 +131,14 @@ public:
    // This allows 'StaticCast' to be used from arrays
    typedef Dynamic Ptr;
 
-   inline Struct( ) {  }
+   inline Struct( ) : value() {  }
    inline Struct( const T &inRHS ) : value(inRHS) {  }
    inline Struct( const null &) { value = T(); }
    inline Struct( const Reference<T> &);
    inline Struct( const Dynamic &inRHS) { fromDynamic(inRHS.mPtr); }
+
+   template<class... TArgs>
+   Struct(TArgs... args) : value(std::forward<TArgs>(args)...) {}
 
    inline Struct<T,HANDLER> &operator=( const T &inRHS ) { value = inRHS; return *this; }
    inline Struct<T,HANDLER> &operator=( const null & ) { value = T(); return *this; }

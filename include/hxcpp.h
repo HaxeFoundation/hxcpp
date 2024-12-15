@@ -349,6 +349,7 @@ typedef PropertyAccessMode PropertyAccess;
 #endif
 #include <hx/StdLibs.h>
 #include <cpp/Pointer.h>
+#include <cpp/Marshal.h>
 #include <hx/Native.h>
 #include <hx/Operators.h>
 #include <hx/Functions.h>
