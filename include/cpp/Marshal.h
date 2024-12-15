@@ -1,5 +1,7 @@
 #pragma once
 
+#include <type_traits>
+
 namespace cpp
 {
 	namespace marshal
@@ -7,14 +9,34 @@ namespace cpp
 		// Boxed class is used to promote a value type to the GC heap.
 
 		template<class T>
-		struct Boxed_obj final : public ::hx::Object
+		class Boxed_obj final : public ::hx::Object
 		{
+            static void finalise(::hx::Object* obj)
+            {
+                auto ptr = reinterpret_cast<Boxed_obj<T>*>(obj);
+
+                ptr->value.~T();
+            }
+
+        public:
 			T value;
 
-            Boxed_obj(T* ptr) : value(*ptr) {}
+            Boxed_obj(T* ptr) : value(*ptr)
+            {
+                if constexpr (std::is_destructible<T>::value)
+                {
+                    ::hx::GCSetFinalizer(this, finalise);
+                }
+            }
 
-            template<class... TArgs> 
-            Boxed_obj(TArgs... args) : value(std::forward<TArgs>(args)...) {}
+            template<class... TArgs>
+            Boxed_obj(TArgs... args) : value(std::forward<TArgs>(args)...)
+            {
+                if constexpr (std::is_destructible<T>::value)
+                {
+                    ::hx::GCSetFinalizer(this, finalise);
+                }
+            }
 		};
 
 		template<class T>
