@@ -21,6 +21,14 @@ namespace cpp
         public:
 			T value;
 
+            Boxed_obj() : value()
+            {
+                if constexpr (std::is_destructible<T>::value)
+                {
+                    ::hx::GCSetFinalizer(this, finalise);
+                }
+            }
+
             Boxed_obj(T* ptr) : value(*ptr)
             {
                 if constexpr (std::is_destructible<T>::value)
@@ -105,16 +113,30 @@ namespace cpp
 
             static T* FromDynamic(const Dynamic& inRHS)
             {
-                auto boxed = inRHS.Cast<Boxed<T>>(); // Boxed<T>(reinterpret_cast<Boxed_obj<T>*>());
-                auto ptr   = &boxed->value;
+                return FromBoxed(inRHS.Cast<Boxed<T>>());
+                //auto boxed = inRHS.Cast<Boxed<T>>(); // Boxed<T>(reinterpret_cast<Boxed_obj<T>*>());
+                //auto ptr   = &boxed->value;
 
-                return ptr;
+                //return ptr;
+            }
+
+            static T* FromBoxed(const Boxed<T>& inRHS)
+            {
+                if (nullptr == inRHS.mPtr)
+                {
+                    return nullptr;
+                }
+
+                return const_cast<T*>(&inRHS->value);
             }
 
         public:
+            // This allows 'StaticCast' to be used from arrays
+            using Ptr = Dynamic;
+
             Reference(const T* inRHS) : Super(inRHS) {}
             Reference(const ValueType<T>& inRHS) : Super(inRHS) { }
-            Reference(const Boxed<T>& inRHS) : Super(&inRHS->value) {}
+            Reference(const Boxed<T>& inRHS) : Super(FromBoxed(inRHS)) {}
             Reference(const Variant& inRHS) : Super(FromDynamic(inRHS.asDynamic())) {}
             Reference(const Dynamic& inRHS) : Super(FromDynamic(inRHS)) {}
 
@@ -126,6 +148,16 @@ namespace cpp
             operator Variant() const
             {
                 return Boxed<T>(new Boxed_obj<T>(Super::ptr));
+            }
+
+            T* operator->() const
+            {
+                if (nullptr == Super::ptr)
+                {
+                    ::hx::NullReference("ValueType", true);
+                }
+
+                return Super::ptr;
             }
         };
 
@@ -142,6 +174,9 @@ namespace cpp
 
         public:
             using ::cpp::Struct<T>::value;
+
+            // This allows 'StaticCast' to be used from arrays
+            using Ptr = Dynamic;
 
             ValueType() : Struct<T>() {}
             ValueType(const Reference<T>& inRHS) : Struct<T>(inRHS) {}
