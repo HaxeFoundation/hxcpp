@@ -114,10 +114,6 @@ namespace cpp
             static T* FromDynamic(const Dynamic& inRHS)
             {
                 return FromBoxed(inRHS.Cast<Boxed<T>>());
-                //auto boxed = inRHS.Cast<Boxed<T>>(); // Boxed<T>(reinterpret_cast<Boxed_obj<T>*>());
-                //auto ptr   = &boxed->value;
-
-                //return ptr;
             }
 
             static T* FromBoxed(const Boxed<T>& inRHS)
@@ -140,12 +136,17 @@ namespace cpp
             Reference(const Variant& inRHS) : Super(FromDynamic(inRHS.asDynamic())) {}
             Reference(const Dynamic& inRHS) : Super(FromDynamic(inRHS)) {}
 
-            operator Dynamic () const
+            operator Dynamic() const
             {
                 return Boxed<T>(new Boxed_obj<T>(Super::ptr));
             }
 
             operator Variant() const
+            {
+                return Boxed<T>(new Boxed_obj<T>(Super::ptr));
+            }
+
+            operator Boxed<T>() const
             {
                 return Boxed<T>(new Boxed_obj<T>(Super::ptr));
             }
@@ -178,8 +179,11 @@ namespace cpp
             // This allows 'StaticCast' to be used from arrays
             using Ptr = Dynamic;
 
+            ValueType(const null& inRHS) = delete;
+
             ValueType() : Struct<T>() {}
             ValueType(const Reference<T>& inRHS) : Struct<T>(inRHS) {}
+            ValueType(const ValueType<T>& inRHS) : Struct<T>(inRHS->value->value) {}
             ValueType(const Boxed<T>& inRHS) : Struct<T>(inRHS->value) {}
             ValueType(const Variant& inRHS) : Struct<T>(::cpp::Reference<T>(FromDynamic(inRHS.asDynamic()))) {}
             ValueType(const Dynamic& inRHS) : Struct<T>(::cpp::Reference<T>(FromDynamic(inRHS))) {}
@@ -194,15 +198,7 @@ namespace cpp
                 return *this;
             }
 
-            operator Dynamic () const
-            {
-                return Boxed<T>(new Boxed_obj<T>(&value));
-            }
-
-            operator Variant() const
-            {
-                return Boxed<T>(new Boxed_obj<T>(&value));
-            }
+            ValueType<T>& operator=(const null& inRHS) = delete;
         };
 	}
 }
