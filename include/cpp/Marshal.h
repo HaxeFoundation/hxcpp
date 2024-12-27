@@ -78,6 +78,7 @@ namespace cpp
             ValueType();
             ValueType(const Reference<T>& inRHS);
             ValueType(const Boxed<T>& inRHS);
+            ValueType(Boxed_obj<T>* inRHS);
             ValueType(const Variant& inRHS);
             ValueType(const Dynamic& inRHS);
 
@@ -214,6 +215,9 @@ namespace cpp
 
         template<class T>
         ValueType<T>::ValueType(const Boxed<T>& inRHS) : Struct<T>(inRHS->value) {}
+
+        template<class T>
+        ValueType<T>::ValueType(Boxed_obj<T>* inRHS) : Struct<T>(inRHS->value) {}
 
         template<class T>
         ValueType<T>::ValueType(const Variant& inRHS) : Struct<T>(::cpp::Reference<T>(FromDynamic(inRHS.asDynamic()))) {}
