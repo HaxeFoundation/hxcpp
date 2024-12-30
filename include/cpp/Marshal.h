@@ -50,6 +50,7 @@ namespace cpp
             using Ptr = Dynamic;
 
             Reference(const T* inRHS);
+            //Reference(const T& inRHS);
             Reference(const ValueType<T>& inRHS);
             Reference(const Boxed<T>& inRHS);
             Reference(const Variant& inRHS);
@@ -63,12 +64,12 @@ namespace cpp
         };
 
         template<class T>
-        class ValueType final : public Struct<T>
+        class ValueType final
         {
             static T* FromDynamic(const Dynamic& inRHS);
 
         public:
-            using ::cpp::Struct<T>::value;
+            T value;
 
             // This allows 'StaticCast' to be used from arrays
             using Ptr = Dynamic;
@@ -156,7 +157,7 @@ namespace cpp
         Reference<T>::Reference(const T* inRHS) : Super(inRHS) {}
 
         template<class T>
-        Reference<T>::Reference(const ValueType<T>& inRHS) : Super(inRHS) {}
+        Reference<T>::Reference(const ValueType<T>& inRHS) : Super(inRHS.value) {}
 
         template<class T>
         Reference<T>::Reference(const Boxed<T>& inRHS) : Super(FromBoxed(inRHS)) {}
@@ -208,26 +209,26 @@ namespace cpp
         }
 
         template<class T>
-        ValueType<T>::ValueType() : Struct<T>() {}
+        ValueType<T>::ValueType() : value() {}
 
         template<class T>
-        ValueType<T>::ValueType(const Reference<T>& inRHS) : Struct<T>(inRHS) {}
+        ValueType<T>::ValueType(const Reference<T>& inRHS) : value(*inRHS.ptr) {}
 
         template<class T>
-        ValueType<T>::ValueType(const Boxed<T>& inRHS) : Struct<T>(inRHS->value) {}
+        ValueType<T>::ValueType(const Boxed<T>& inRHS) : value(inRHS->value) {}
 
         template<class T>
-        ValueType<T>::ValueType(Boxed_obj<T>* inRHS) : Struct<T>(inRHS->value) {}
+        ValueType<T>::ValueType(Boxed_obj<T>* inRHS) : value(inRHS->value) {}
 
         template<class T>
-        ValueType<T>::ValueType(const Variant& inRHS) : Struct<T>(::cpp::Reference<T>(FromDynamic(inRHS.asDynamic()))) {}
+        ValueType<T>::ValueType(const Variant& inRHS) : ValueType<T>(::cpp::marshal::Reference<T>(FromDynamic(inRHS.asDynamic()))) {}
 
         template<class T>
-        ValueType<T>::ValueType(const Dynamic& inRHS) : Struct<T>(::cpp::Reference<T>(FromDynamic(inRHS))) {}
+        ValueType<T>::ValueType(const Dynamic& inRHS) : ValueType<T>(::cpp::marshal::Reference<T>(FromDynamic(inRHS))) {}
 
         template<class T>
         template<class ...TArgs>
-        ValueType<T>::ValueType(TArgs ...args) : Struct<T>(std::forward<TArgs>(args)...) {}
+        ValueType<T>::ValueType(TArgs ...args) : value(std::forward<TArgs>(args)...) {}
 
         template<class T>
         ValueType<T>& ValueType<T>::operator=(const Reference<T>& inRHS)
@@ -236,55 +237,5 @@ namespace cpp
 
             return *this;
         }
-
-        // Value type struct handler
-
-        template<class T>
-        struct ValueTypeStructHandler
-        {
-            static const char* getName() { return "cpp.ValueType"; }
-            static ::String toString(const void* inValue) { return HX_CSTRING("cpp.ValueType"); }
-            static void handler(DynamicHandlerOp op, void* inValue, int inSize, void* outResult)
-            {
-                switch (op)
-                {
-                case dhoToString:
-                {
-                    *static_cast<::String*>(outResult) = toString(inValue);
-                    break;
-                }
-
-                case dhoGetClassName:
-                {
-                    *static_cast<const char**>(outResult) = getName();
-                    break;
-                }
-
-                case dhoToDynamic:
-                {
-                    auto ptr = static_cast<T*>(inValue);
-                    auto boxed = new Boxed_obj<T>(ptr);
-
-                    outResult = boxed;
-                    break;
-                }
-
-                case dhoFromDynamic:
-                {
-                    auto params = static_cast<StructHandlerDynamicParams*>(outResult);
-                    auto ptr = static_cast<T*>(inValue);
-                    auto wrapped = Boxed<T>(reinterpret_cast<Boxed_obj<T>*>(params->inData));
-
-                    params->outProcessed = true;
-
-                    *ptr = wrapped->value;
-                    break;
-                }
-
-                case dhoIs:
-                    break;
-                }
-            }
-        };
 	}
 }
