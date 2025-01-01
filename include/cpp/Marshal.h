@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CPP_MARSHAL_H
+#define CPP_MARSHAL_H
 
 #include <type_traits>
 
@@ -6,18 +7,6 @@ namespace cpp
 {
 	namespace marshal
 	{
-        template<class T>
-        class Reference;
-
-        template<class T>
-        class ValueType;
-
-        template<class T>
-        class Boxed_obj;
-
-        template<class T>
-        using Boxed = ::hx::ObjectPtr<Boxed_obj<T>>;
-
         template<class T>
         class Boxed_obj final : public ::hx::Object
         {
@@ -49,8 +38,10 @@ namespace cpp
             // This allows 'StaticCast' to be used from arrays
             using Ptr = Dynamic;
 
+            Reference(const T& inRHS);
+            Reference(T& inRHS);
+
             Reference(const T* inRHS);
-            //Reference(const T& inRHS);
             Reference(const ValueType<T>& inRHS);
             Reference(const Boxed<T>& inRHS);
             Reference(const Variant& inRHS);
@@ -61,6 +52,9 @@ namespace cpp
             operator Boxed<T>() const;
 
             T* operator->() const;
+
+            bool operator==(const Reference<T>& inRHS) const;
+            bool operator!=(const Reference<T>& inRHS) const;
         };
 
         template<class T>
@@ -154,6 +148,12 @@ namespace cpp
         }
 
         template<class T>
+        Reference<T>::Reference(const T& inRHS) : Super(inRHS) {}
+
+        template<class T>
+        Reference<T>::Reference(T& inRHS) : Super(inRHS) {}
+
+        template<class T>
         Reference<T>::Reference(const T* inRHS) : Super(inRHS) {}
 
         template<class T>
@@ -197,13 +197,25 @@ namespace cpp
             return Super::ptr;
         }
 
+        template<class T>
+        inline bool Reference<T>::operator==(const Reference<T>& inRHS) const
+        {
+            return (*Super::ptr) == (*inRHS->ptr);
+        }
+
+        template<class T>
+        inline bool Reference<T>::operator!=(const Reference<T>& inRHS) const
+        {
+            return (*Super::ptr) != (*inRHS->ptr);
+        }
+
         // ValueType implementation
 
         template<class T>
         T* ValueType<T>::FromDynamic(const Dynamic& inRHS)
         {
             auto boxed = inRHS.Cast<Boxed<T>>();
-            auto ptr   = &boxed.mPtr->value;
+            auto ptr   = &boxed->value;
 
             return ptr;
         }
@@ -238,4 +250,14 @@ namespace cpp
             return *this;
         }
 	}
+
+    // Implement some pointer helpers here
+
+    template<typename T>
+    inline Pointer<T> cpp::Pointer_obj::addressOf(const ::cpp::marshal::Reference<T>& ref)
+    {
+        return Pointer<T>(ref.ptr);
+    }
 }
+
+#endif

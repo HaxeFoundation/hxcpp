@@ -260,6 +260,10 @@ namespace hx { template<typename O> class ObjectPtr; }
 namespace cpp { template<typename S,typename H> class Struct; }
 namespace cpp { template<typename T> class Pointer; }
 namespace cpp { template<typename T> class Function; }
+namespace cpp { namespace marshal { template<class T> class ValueType; } }
+namespace cpp { namespace marshal { template<class T> class Boxed_obj; } }
+namespace cpp { namespace marshal { template<class T> using Boxed =::hx::ObjectPtr<Boxed_obj<T>>; } }
+namespace cpp { namespace marshal { template<class T> class Reference; } }
 template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
 namespace hx {
