@@ -85,23 +85,6 @@ namespace cpp
     }
 }
 
-//namespace hx
-//{
-//    template <typename T> 
-//    struct CompareTraits< cpp::marshal::Reference<T> >
-//    {
-//        enum { type = (int)CompareAsDynamic };
-//
-//        inline static int toInt(Dynamic inValue) { return inValue; }
-//        inline static double toDouble(Dynamic inValue) { return inValue; }
-//        inline static cpp::Int64 toInt64(Dynamic inValue) { return inValue; }
-//        inline static String toString(Dynamic inValue) { return inValue; }
-//        inline static hx::Object* toObject(Dynamic inValue) { return inValue.mPtr; }
-//        inline static int getDynamicCompareType(const ::Dynamic&) { return type; }
-//        inline static bool isNull(const ::cpp::marshal::Reference<T>& ref) { return nullptr == ref.ptr; }
-//    };
-//}
-
 // Boxed implementation
 
 template<class T>
