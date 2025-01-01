@@ -52,6 +52,7 @@ namespace cpp
 
             T* operator->() const;
 
+
             bool operator==(const Reference<T>& inRHS) const;
             bool operator!=(const Reference<T>& inRHS) const;
         };
@@ -59,7 +60,9 @@ namespace cpp
         template<class T>
         class ValueType final
         {
+            static T* FromReference(const Reference<T>& inRHS);
             static T* FromDynamic(const Dynamic& inRHS);
+            static T* FromBoxed(const Boxed<T>& inRHS);
 
         public:
             T value;
@@ -222,23 +225,42 @@ inline bool cpp::marshal::Reference<T>::operator!=(const Reference<T>& inRHS) co
 template<class T>
 T* cpp::marshal::ValueType<T>::FromDynamic(const Dynamic& inRHS)
 {
-    auto boxed = inRHS.Cast<Boxed<T>>();
-    auto ptr   = &boxed->value;
+    return FromBoxed(inRHS.StaticCast<Boxed<T>>());
+}
 
-    return ptr;
+template<class T>
+T* cpp::marshal::ValueType<T>::FromBoxed(const Boxed<T>& inRHS)
+{
+    if (nullptr == inRHS.mPtr)
+    {
+        ::hx::NullReference("ValueType", true);
+    }
+
+    return const_cast<T*>(&inRHS->value);
+}
+
+template<class T>
+T* cpp::marshal::ValueType<T>::FromReference(const Reference<T>& inRHS)
+{
+    if (nullptr == inRHS.ptr)
+    {
+        ::hx::NullReference("ValueType", true);
+    }
+
+    return inRHS.ptr;
 }
 
 template<class T>
 cpp::marshal::ValueType<T>::ValueType() : value() {}
 
 template<class T>
-cpp::marshal::ValueType<T>::ValueType(const Reference<T>& inRHS) : value(*inRHS.ptr) {}
+cpp::marshal::ValueType<T>::ValueType(const Reference<T>& inRHS) : value(*FromReference(inRHS.ptr)) {}
 
 template<class T>
-cpp::marshal::ValueType<T>::ValueType(const Boxed<T>& inRHS) : value(inRHS->value) {}
+cpp::marshal::ValueType<T>::ValueType(const Boxed<T>& inRHS) : ValueType<T>(::cpp::marshal::Reference<T>(FromBoxed(inRHS))) {}
 
 template<class T>
-cpp::marshal::ValueType<T>::ValueType(Boxed_obj<T>* inRHS) : value(inRHS->value) {}
+cpp::marshal::ValueType<T>::ValueType(Boxed_obj<T>* inRHS) : ValueType<T>(::cpp::marshal::Reference<T>(FromBoxed(inRHS))) {}
 
 template<class T>
 cpp::marshal::ValueType<T>::ValueType(const Variant& inRHS) : ValueType<T>(::cpp::marshal::Reference<T>(FromDynamic(inRHS.asDynamic()))) {}
