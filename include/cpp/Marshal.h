@@ -70,10 +70,9 @@ namespace cpp
             // This allows 'StaticCast' to be used from arrays
             using Ptr = Dynamic;
 
-            ValueType(const null& inRHS) = delete;
-
             ValueType();
             ValueType(const Reference<T>& inRHS);
+            ValueType(const null& inRHS);
             ValueType(const Boxed<T>& inRHS);
             ValueType(Boxed_obj<T>* inRHS);
             ValueType(const Variant& inRHS);
@@ -83,7 +82,7 @@ namespace cpp
             ValueType(TArgs... args);
 
             ValueType<T>& operator=(const Reference<T>& inRHS);
-            ValueType<T>& operator=(const null& inRHS) = delete;
+            [[noreturn]] ValueType<T>& operator=(const null& inRHS);
         };
     }
 }
@@ -257,6 +256,9 @@ template<class T>
 cpp::marshal::ValueType<T>::ValueType(const Reference<T>& inRHS) : value(*FromReference(inRHS.ptr)) {}
 
 template<class T>
+inline cpp::marshal::ValueType<T>::ValueType(const null&) : ValueType<T>(::cpp::marshal::Reference<T>(nullptr)) {}
+
+template<class T>
 cpp::marshal::ValueType<T>::ValueType(const Boxed<T>& inRHS) : ValueType<T>(::cpp::marshal::Reference<T>(FromBoxed(inRHS))) {}
 
 template<class T>
@@ -278,6 +280,12 @@ cpp::marshal::ValueType<T>& cpp::marshal::ValueType<T>::operator=(const Referenc
     value = *inRHS.ptr;
 
     return *this;
+}
+
+template<class T>
+cpp::marshal::ValueType<T>& cpp::marshal::ValueType<T>::operator=(const null& inRHS)
+{
+    ::hx::NullReference("ValueType", true);
 }
 
 // Implement some pointer helpers here
