@@ -503,6 +503,25 @@ extern "C" void *hx_cffi(const char *inName);
 
 void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bool inQuietFail)
 {
+   if (inLib.length==0)
+   {
+      if (sgRegisteredPrims)
+      {
+         void *registered = (*sgRegisteredPrims)[full_name.__CStr()];
+         if (registered)
+            return registered;
+      }
+      if (!inQuietFail)
+      {
+         #ifdef ANDROID
+         __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not find primitive %s in static link", full_name.__CStr());
+         #else
+         fprintf(stderr,"Could not find primitive %s in static link.\n", full_name.__CStr());
+         #endif
+      }
+      return nullptr;
+   }
+
    String bin = __hxcpp_get_bin_dir();
    String deviceExt = __hxcpp_get_dll_extension();
 
