@@ -48,7 +48,7 @@ namespace cpp
             ValueType(TArgs... args);
 
             ValueType<T>& operator=(const Reference<T>& inRHS);
-            [[noreturn]] ValueType<T>& operator=(const null& inRHS);
+            ValueType<T>& operator=(const null& inRHS);
         };
 
         template<class T>
@@ -297,6 +297,8 @@ template<class T>
 cpp::marshal::ValueType<T>& cpp::marshal::ValueType<T>::operator=(const null& inRHS)
 {
     ::hx::NullReference("ValueType", true);
+
+    return *this;
 }
 
 // Implement some pointer helpers here
