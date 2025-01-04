@@ -424,7 +424,13 @@ template<typename T1, typename T2>
 bool IsEq(const T1 &v1, const T2 &v2) { return TestLessEq<false,true,T1,T2>(v1,v2); }
 
 template<typename T1, typename T2>
+bool IsEq(const ::cpp::marshal::Reference<T1>& v1, const ::cpp::marshal::Reference<T2>& v2) { return v1 == v2; }
+
+template<typename T1, typename T2>
 bool IsNotEq(const T1 &v1, const T2 &v2) { return TestLessEq<false,false,T1,T2>(v1,v2); }
+
+template<typename T1, typename T2>
+bool IsNotEq(const ::cpp::marshal::Reference<T1>& v1, const ::cpp::marshal::Reference<T2>& v2) { return v1 != v2; }
 
 template<typename T1, typename T2>
 bool IsLess(const T1 &v1, const T2 &v2) { return TestLessEq<true,false,T1,T2>(v1,v2); }

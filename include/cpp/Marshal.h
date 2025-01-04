@@ -24,6 +24,34 @@ namespace cpp
         };
 
         template<class T>
+        class ValueType final
+        {
+            static T* FromReference(const Reference<T>& inRHS);
+            static T* FromDynamic(const Dynamic& inRHS);
+            static T* FromBoxed(const Boxed<T>& inRHS);
+
+        public:
+            T value;
+
+            // This allows 'StaticCast' to be used from arrays
+            using Ptr = Dynamic;
+
+            ValueType();
+            ValueType(const Reference<T>& inRHS);
+            ValueType(const null& inRHS);
+            ValueType(const Boxed<T>& inRHS);
+            ValueType(Boxed_obj<T>* inRHS);
+            ValueType(const Variant& inRHS);
+            ValueType(const Dynamic& inRHS);
+
+            template<class... TArgs>
+            ValueType(TArgs... args);
+
+            ValueType<T>& operator=(const Reference<T>& inRHS);
+            [[noreturn]] ValueType<T>& operator=(const null& inRHS);
+        };
+
+        template<class T>
         class Reference final : public ::cpp::Reference<T>
         {
             using Super = ::cpp::Reference<T>;
@@ -51,38 +79,10 @@ namespace cpp
             operator Boxed<T>() const;
 
             T* operator->() const;
-
+            T operator*() const;
 
             bool operator==(const Reference<T>& inRHS) const;
             bool operator!=(const Reference<T>& inRHS) const;
-        };
-
-        template<class T>
-        class ValueType final
-        {
-            static T* FromReference(const Reference<T>& inRHS);
-            static T* FromDynamic(const Dynamic& inRHS);
-            static T* FromBoxed(const Boxed<T>& inRHS);
-
-        public:
-            T value;
-
-            // This allows 'StaticCast' to be used from arrays
-            using Ptr = Dynamic;
-
-            ValueType();
-            ValueType(const Reference<T>& inRHS);
-            ValueType(const null& inRHS);
-            ValueType(const Boxed<T>& inRHS);
-            ValueType(Boxed_obj<T>* inRHS);
-            ValueType(const Variant& inRHS);
-            ValueType(const Dynamic& inRHS);
-
-            template<class... TArgs>
-            ValueType(TArgs... args);
-
-            ValueType<T>& operator=(const Reference<T>& inRHS);
-            [[noreturn]] ValueType<T>& operator=(const null& inRHS);
         };
     }
 }
@@ -117,7 +117,7 @@ cpp::marshal::Boxed_obj<T>::Boxed_obj(T* ptr) : value(*ptr)
 
 template<class T>
 template<class ...TArgs>
-cpp::marshal::Boxed_obj<T>::Boxed_obj(TArgs... args) : value(std::forward<TArgs>(args)...)
+cpp::marshal::Boxed_obj<T>::Boxed_obj(TArgs... args) : value( std::forward<TArgs>(args)... )
 {
     if constexpr (std::is_destructible<T>::value)
     {
@@ -210,13 +210,24 @@ T* cpp::marshal::Reference<T>::operator ->() const
 template<class T>
 inline bool cpp::marshal::Reference<T>::operator==(const Reference<T>& inRHS) const
 {
-    return (*Super::ptr) == (*inRHS->ptr);
+    return (*Super::ptr) == (*inRHS.ptr);
 }
 
 template<class T>
 inline bool cpp::marshal::Reference<T>::operator!=(const Reference<T>& inRHS) const
 {
-    return (*Super::ptr) != (*inRHS->ptr);
+    return (*Super::ptr) != (*inRHS.ptr);
+}
+
+template<class T>
+inline T cpp::marshal::Reference<T>::operator*() const
+{
+    if (nullptr == Super::ptr)
+    {
+        ::hx::NullReference("ValueType", true);
+    }
+
+    return *Super::ptr;
 }
 
 // ValueType implementation
@@ -272,7 +283,7 @@ cpp::marshal::ValueType<T>::ValueType(const Dynamic& inRHS) : ValueType<T>(::cpp
 
 template<class T>
 template<class ...TArgs>
-cpp::marshal::ValueType<T>::ValueType(TArgs ...args) : value(std::forward<TArgs>(args)...) {}
+cpp::marshal::ValueType<T>::ValueType(TArgs... args) : value( std::forward<TArgs>(args)... ) {}
 
 template<class T>
 cpp::marshal::ValueType<T>& cpp::marshal::ValueType<T>::operator=(const Reference<T>& inRHS)
