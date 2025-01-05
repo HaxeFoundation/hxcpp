@@ -40,7 +40,6 @@ namespace cpp
             ValueType(const Reference<T>& inRHS);
             ValueType(const null& inRHS);
             ValueType(const Boxed<T>& inRHS);
-            ValueType(Boxed_obj<T>* inRHS);
             ValueType(const Variant& inRHS);
             ValueType(const Dynamic& inRHS);
 
@@ -57,9 +56,7 @@ namespace cpp
             using Super = ::cpp::Reference<T>;
 
             static T* FromDynamic(const Dynamic& inRHS);
-
             static T* FromBoxed(const Boxed<T>& inRHS);
-
             Boxed<T> ToBoxed() const;
 
         public:
@@ -271,9 +268,6 @@ inline cpp::marshal::ValueType<T>::ValueType(const null&) : ValueType<T>(::cpp::
 
 template<class T>
 cpp::marshal::ValueType<T>::ValueType(const Boxed<T>& inRHS) : ValueType<T>(::cpp::marshal::Reference<T>(FromBoxed(inRHS))) {}
-
-template<class T>
-cpp::marshal::ValueType<T>::ValueType(Boxed_obj<T>* inRHS) : ValueType<T>(::cpp::marshal::Reference<T>(FromBoxed(inRHS))) {}
 
 template<class T>
 cpp::marshal::ValueType<T>::ValueType(const Variant& inRHS) : ValueType<T>(::cpp::marshal::Reference<T>(FromDynamic(inRHS.asDynamic()))) {}
