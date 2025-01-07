@@ -12,6 +12,9 @@ namespace cpp
         {
             static void finalise(::hx::Object* obj);
 
+            void setFinaliser(std::true_type);
+            void setFinaliser(std::false_type);
+
         public:
             T value;
 
@@ -103,31 +106,31 @@ void cpp::marshal::Boxed_obj<T>::finalise(::hx::Object* obj)
 }
 
 template<class T>
+void cpp::marshal::Boxed_obj<T>::setFinaliser(std::true_type)
+{
+    ::hx::GCSetFinalizer(this, finalise);
+}
+
+template<class T>
+void cpp::marshal::Boxed_obj<T>::setFinaliser(std::false_type) {}
+
+template<class T>
 cpp::marshal::Boxed_obj<T>::Boxed_obj() : value()
 {
-    if constexpr (std::is_destructible<T>::value)
-    {
-        ::hx::GCSetFinalizer(this, finalise);
-    }
+    setFinaliser(std::is_destructible<T>{});
 }
 
 template<class T>
 cpp::marshal::Boxed_obj<T>::Boxed_obj(T* ptr) : value(*ptr)
 {
-    if constexpr (std::is_destructible<T>::value)
-    {
-        ::hx::GCSetFinalizer(this, finalise);
-    }
+    setFinaliser(std::is_destructible<T>{});
 }
 
 template<class T>
 template<class ...TArgs>
 cpp::marshal::Boxed_obj<T>::Boxed_obj(TArgs... args) : value( std::forward<TArgs>(args)... )
 {
-    if constexpr (std::is_destructible<T>::value)
-    {
-        ::hx::GCSetFinalizer(this, finalise);
-    }
+    setFinaliser(std::is_destructible<T>{});
 }
 
 // Reference implementation
