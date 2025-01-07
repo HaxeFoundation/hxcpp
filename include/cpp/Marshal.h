@@ -55,8 +55,10 @@ namespace cpp
         {
             using Super = ::cpp::Reference<T>;
 
-            static T* FromDynamic(const Dynamic& inRHS);
-            static T* FromBoxed(const Boxed<T>& inRHS);
+            template<class O>
+            static O* FromDynamic(const Dynamic& inRHS);
+            template<class O>
+            static O* FromBoxed(const Boxed<O>& inRHS);
             Boxed<T> ToBoxed() const;
 
         public:
@@ -65,11 +67,17 @@ namespace cpp
 
             Reference(const ValueType<T>& inRHS);
             Reference(const Boxed<T>& inRHS);
-            Reference(const Variant& inRHS);
-            Reference(const Dynamic& inRHS);
             Reference(const T& inRHS);
             Reference(T& inRHS);
             Reference(const T* inRHS);
+
+            template<class O>
+            Reference(const ValueType<O>& inRHS);
+            template<class O>
+            Reference(const Boxed<O>& inRHS);
+
+            Reference(const Variant& inRHS);
+            Reference(const Dynamic& inRHS);
 
             operator Dynamic() const;
             operator Variant() const;
@@ -125,21 +133,29 @@ cpp::marshal::Boxed_obj<T>::Boxed_obj(TArgs... args) : value( std::forward<TArgs
 // Reference implementation
 
 template<class T>
-T* cpp::marshal::Reference<T>::FromDynamic(const Dynamic& inRHS)
+template<class O>
+O* cpp::marshal::Reference<T>::FromDynamic(const Dynamic& inRHS)
 {
-    return FromBoxed(inRHS.StaticCast<Boxed<T>>());
+    return FromBoxed(inRHS.StaticCast<Boxed<O>>());
 }
 
 template<class T>
-T* cpp::marshal::Reference<T>::FromBoxed(const Boxed<T>& inRHS)
+template<class O>
+O* cpp::marshal::Reference<T>::FromBoxed(const Boxed<O>& inRHS)
 {
     if (nullptr == inRHS.mPtr)
     {
         return nullptr;
     }
 
-    return const_cast<T*>(&inRHS->value);
+    return const_cast<O*>(&inRHS->value);
 }
+
+template<class T>
+cpp::marshal::Reference<T>::Reference(const ValueType<T>& inRHS) : Super(inRHS.value) {}
+
+template<class T>
+cpp::marshal::Reference<T>::Reference(const Boxed<T>& inRHS) : Super(FromBoxed<T>(inRHS)) {}
 
 template<class T>
 cpp::marshal::Reference<T>::Reference(const T& inRHS) : Super(inRHS) {}
@@ -151,16 +167,18 @@ template<class T>
 cpp::marshal::Reference<T>::Reference(const T* inRHS) : Super(inRHS) {}
 
 template<class T>
-cpp::marshal::Reference<T>::Reference(const ValueType<T>& inRHS) : Super(inRHS.value) {}
+template<class O>
+cpp::marshal::Reference<T>::Reference(const ValueType<O>& inRHS) : Super(reinterpret_cast<T*>(const_cast<O*>(&inRHS.value))) {}
 
 template<class T>
-cpp::marshal::Reference<T>::Reference(const Boxed<T>& inRHS) : Super(FromBoxed(inRHS)) {}
+template<class O>
+cpp::marshal::Reference<T>::Reference(const Boxed<O>& inRHS) : Super(reinterpret_cast<T*>(FromBoxed<O>(inRHS))) {}
 
 template<class T>
-cpp::marshal::Reference<T>::Reference(const Variant& inRHS) : Super(FromDynamic(inRHS)) {}
+cpp::marshal::Reference<T>::Reference(const Variant& inRHS) : Super(FromDynamic<T>(inRHS)) {}
 
 template<class T>
-cpp::marshal::Reference<T>::Reference(const Dynamic& inRHS) : Super(FromDynamic(inRHS)) {}
+cpp::marshal::Reference<T>::Reference(const Dynamic& inRHS) : Super(FromDynamic<T>(inRHS)) {}
 
 template<class T>
 cpp::marshal::Boxed<T> cpp::marshal::Reference<T>::ToBoxed() const
