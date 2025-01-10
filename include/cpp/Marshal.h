@@ -29,9 +29,17 @@ namespace cpp
         template<class T>
         class ValueType final
         {
-            static T* FromReference(const Reference<T>& inRHS);
-            static T* FromDynamic(const Dynamic& inRHS);
-            static T* FromBoxed(const Boxed<T>& inRHS);
+            // These true and false variants are called based on if T is a pointer
+            // If T is not a pointer trying to assign a value type to null results in a null pointer exception being thrown.
+            // But if T is a pointer then the value type holds a null pointer value.
+
+            static T FromReference(const Reference<T>& inRHS, std::true_type);
+            static T FromReference(const Reference<T>& inRHS, std::false_type);
+
+            static T FromBoxed(const Boxed<T>& inRHS, std::true_type);
+            static T FromBoxed(const Boxed<T>& inRHS, std::false_type);
+
+            static T FromDynamic(const Dynamic& inRHS);
 
         public:
             T value;
@@ -68,6 +76,7 @@ namespace cpp
             // This allows 'StaticCast' to be used from arrays
             using Ptr = Dynamic;
 
+            Reference(const null& inRHS);
             Reference(const ValueType<T>& inRHS);
             Reference(const Boxed<T>& inRHS);
             Reference(const T& inRHS);
@@ -153,6 +162,9 @@ O* cpp::marshal::Reference<T>::FromBoxed(const Boxed<O>& inRHS)
 
     return const_cast<O*>(&inRHS->value);
 }
+
+template<class T>
+cpp::marshal::Reference<T>::Reference(const null& inRHS) : Super(inRHS) {}
 
 template<class T>
 cpp::marshal::Reference<T>::Reference(const ValueType<T>& inRHS) : Super(inRHS.value) {}
@@ -251,44 +263,70 @@ inline T cpp::marshal::Reference<T>::operator*() const
 // ValueType implementation
 
 template<class T>
-T* cpp::marshal::ValueType<T>::FromDynamic(const Dynamic& inRHS)
+T cpp::marshal::ValueType<T>::FromDynamic(const Dynamic& inRHS)
 {
-    return FromBoxed(inRHS.StaticCast<Boxed<T>>());
+    return FromBoxed(inRHS.StaticCast<Boxed<T>>(), std::is_pointer<T>{});
 }
 
 template<class T>
-T* cpp::marshal::ValueType<T>::FromBoxed(const Boxed<T>& inRHS)
+T cpp::marshal::ValueType<T>::FromBoxed(const Boxed<T>& inRHS, std::true_type)
+{
+    if (nullptr == inRHS.mPtr)
+    {
+        return nullptr;
+    }
+    else
+    {
+        return inRHS->value;
+    }
+}
+
+template<class T>
+T cpp::marshal::ValueType<T>::FromBoxed(const Boxed<T>& inRHS, std::false_type)
 {
     if (nullptr == inRHS.mPtr)
     {
         ::hx::NullReference("ValueType", true);
     }
 
-    return const_cast<T*>(&inRHS->value);
+    return inRHS->value;
 }
 
 template<class T>
-T* cpp::marshal::ValueType<T>::FromReference(const Reference<T>& inRHS)
+T cpp::marshal::ValueType<T>::FromReference(const Reference<T>& inRHS, std::true_type)
+{
+    if (nullptr == inRHS.ptr)
+    {
+        return nullptr;
+    }
+    else
+    {
+        return *inRHS.ptr;
+    }
+}
+
+template<class T>
+T cpp::marshal::ValueType<T>::FromReference(const Reference<T>& inRHS, std::false_type)
 {
     if (nullptr == inRHS.ptr)
     {
         ::hx::NullReference("ValueType", true);
     }
 
-    return inRHS.ptr;
+    return *inRHS.ptr;
 }
 
 template<class T>
 cpp::marshal::ValueType<T>::ValueType() : value() {}
 
 template<class T>
-cpp::marshal::ValueType<T>::ValueType(const Reference<T>& inRHS) : value(*FromReference(inRHS.ptr)) {}
+cpp::marshal::ValueType<T>::ValueType(const Reference<T>& inRHS) : value(FromReference(inRHS.ptr, std::is_pointer<T>{})) {}
 
 template<class T>
-inline cpp::marshal::ValueType<T>::ValueType(const null&) : ValueType<T>(::cpp::marshal::Reference<T>(nullptr)) {}
+inline cpp::marshal::ValueType<T>::ValueType(const null& inRHS) : ValueType<T>(::cpp::marshal::Reference<T>(inRHS)) {}
 
 template<class T>
-cpp::marshal::ValueType<T>::ValueType(const Boxed<T>& inRHS) : ValueType<T>(::cpp::marshal::Reference<T>(FromBoxed(inRHS))) {}
+cpp::marshal::ValueType<T>::ValueType(const Boxed<T>& inRHS) : ValueType<T>(::cpp::marshal::Reference<T>(FromBoxed(inRHS), std::is_pointer<T>{})) {}
 
 template<class T>
 cpp::marshal::ValueType<T>::ValueType(const Variant& inRHS) : ValueType<T>(::cpp::marshal::Reference<T>(FromDynamic(inRHS.asDynamic()))) {}
