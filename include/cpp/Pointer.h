@@ -513,7 +513,7 @@ public:
 
 
     template<typename T>
-    inline static Pointer<T> addressOf(const ::cpp::marshal::Reference<T>&);
+    inline static Pointer<T> addressOf(const ::cpp::marshal::ValueReference<T>&);
 
    template<typename T>
 	inline static Pointer<T> addressOf(T &value)  { return Pointer<T>(&value); }
