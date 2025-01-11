@@ -101,6 +101,29 @@ namespace cpp
             bool operator==(const Reference<T>& inRHS) const;
             bool operator!=(const Reference<T>& inRHS) const;
         };
+
+        template<class T>
+        class Pointer final : public ::cpp::Pointer<T>
+        {
+            using Super = ::cpp::Pointer<T>;
+
+            static T* FromDynamic(const Dynamic& inRHS);
+            static T* FromBoxed(const Boxed<T>& inRHS);
+
+            Boxed<T> ToBoxed() const;
+
+        public:
+            Pointer(const Boxed<T>& inRHS);
+
+            operator Dynamic() const;
+            operator Variant() const;
+            operator Boxed<T>() const;
+
+            operator void* ();
+            operator void** ();
+
+            T operator->() const;
+        };
     }
 }
 
@@ -257,6 +280,72 @@ inline T cpp::marshal::Reference<T>::operator*() const
         ::hx::NullReference("ValueType", true);
     }
 
+    return *Super::ptr;
+}
+
+// Pointer implementation
+
+template<class T>
+cpp::marshal::Boxed<T> cpp::marshal::Pointer<T>::ToBoxed() const
+{
+    return new Boxed_obj<T>(ptr);
+}
+
+template<class T>
+T* cpp::marshal::Pointer<T>::FromBoxed(const Boxed<T>& inRHS)
+{
+    if (nullptr == inRHS.mPtr)
+    {
+        return nullptr;
+    }
+
+    return const_cast<T*>(&inRHS->value);
+}
+
+template<class T>
+T* cpp::marshal::Pointer<T>::FromDynamic(const Dynamic& inRHS)
+{
+    return FromBoxed(inRHS.StaticCast<Boxed<T>>());
+}
+
+template<class T>
+cpp::marshal::Pointer<T>::Pointer(const Boxed<T>& inRHS) : Super(FromBoxed(inRHS))
+{
+}
+
+template<class T>
+cpp::marshal::Pointer<T>::operator ::Dynamic() const
+{
+    return ToBoxed();
+}
+
+template<class T>
+cpp::marshal::Pointer<T>::operator ::cpp::Variant() const
+{
+    return ToBoxed();
+}
+
+template<class T>
+cpp::marshal::Pointer<T>::operator ::cpp::marshal::Boxed<T>() const
+{
+    return ToBoxed();
+}
+
+template<class T>
+inline cpp::marshal::Pointer<T>::operator void* ()
+{
+    return reinterpret_cast<void*>(*Super::ptr);
+}
+
+template<class T>
+inline cpp::marshal::Pointer<T>::operator void** ()
+{
+    return reinterpret_cast<void**>(Super::ptr);
+}
+
+template<class T>
+inline T cpp::marshal::Pointer<T>::operator->() const
+{
     return *Super::ptr;
 }
 
