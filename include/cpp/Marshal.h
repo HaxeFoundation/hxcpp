@@ -98,6 +98,8 @@ namespace cpp
             ValueReference(const T* inRHS);
 
             template<class O>
+            ValueReference(const ValueReference<O>& inRHS);
+            template<class O>
             ValueReference(const ValueType<O>& inRHS);
             template<class O>
             ValueReference(const Boxed<O>& inRHS);
@@ -133,6 +135,7 @@ namespace cpp
             operator Dynamic() const;
             operator Variant() const;
             operator Boxed<T>() const;
+            operator PointerType<T>();
 
             operator void* ();
             operator void** ();
@@ -218,6 +221,10 @@ cpp::marshal::ValueReference<T>::ValueReference(T& inRHS) : Super(inRHS) {}
 
 template<class T>
 cpp::marshal::ValueReference<T>::ValueReference(const T* inRHS) : Super(inRHS) {}
+
+template<class T>
+template<class O>
+inline cpp::marshal::ValueReference<T>::ValueReference(const ValueReference<O>& inRHS) : Super(reinterpret_cast<T*>(const_cast<O*>(inRHS.ptr))) {}
 
 template<class T>
 template<class O>
@@ -349,6 +356,19 @@ template<class T>
 cpp::marshal::PointerReference<T>::operator ::cpp::marshal::Boxed<T>() const
 {
     return ToBoxed();
+}
+
+template<class T>
+cpp::marshal::PointerReference<T>::operator ::cpp::marshal::PointerType<T>()
+{
+    if (Super::ptr)
+    {
+        return ::cpp::marshal::PointerType<T>(*Super::ptr);
+    }
+    else
+    {
+        return ::cpp::marshal::PointerType<T>(nullptr);
+    }
 }
 
 template<class T>
