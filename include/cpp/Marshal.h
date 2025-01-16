@@ -64,15 +64,26 @@ namespace cpp
         template<class T>
         class PointerType final
         {
+            static T FromReference(const PointerReference<T>& inRHS);
+            static T FromBoxed(const Boxed<T>& inRHS);
+            static T FromDynamic(const Dynamic& inRHS);
+
         public:
+            // This allows 'StaticCast' to be used from arrays
+            using Ptr = Dynamic;
+
             T value;
 
             PointerType();
-            PointerType(const null&);
             PointerType(T inRHS);
-            // PointerType(const Boxed<T>& inRHS);
-            // PointerType(const Variant& inRHS);
-            // PointerType(const Dynamic& inRHS);
+            PointerType(const PointerReference<T>& inRHS);
+            PointerType(const null& inRHS);
+            PointerType(const Boxed<T>& inRHS);
+            PointerType(const Variant& inRHS);
+            PointerType(const Dynamic& inRHS);
+
+            PointerType<T>& operator=(const PointerReference<T>& inRHS);
+            PointerType<T>& operator=(const null& inRHS);
         };
 
         template<class T>
@@ -119,23 +130,31 @@ namespace cpp
         };
 
         template<class T>
-        class PointerReference final : public ::cpp::Pointer<T>
+        class PointerReference final : public ::cpp::Reference<T>
         {
-            using Super = ::cpp::Pointer<T>;
+            using Super = ::cpp::Reference<T>;
 
-            static T* FromDynamic(const Dynamic& inRHS);
-            static T* FromBoxed(const Boxed<T>& inRHS);
+            template<class O>
+            static O* FromDynamic(const Dynamic& inRHS);
+
+            template<class O>
+            static O* FromBoxed(const Boxed<O>& inRHS);
 
             Boxed<T> ToBoxed() const;
 
         public:
-            PointerReference(const Boxed<T>& inRHS);
+            PointerReference(const null& inRHS);
             PointerReference(const PointerType<T>& inRHS);
+            PointerReference(const Boxed<T>& inRHS);
+            PointerReference(const T& inRHS);
+            PointerReference(T& inRHS);
+            PointerReference(const T* inRHS);
+            PointerReference(const Variant& inRHS);
+            PointerReference(const Dynamic& inRHS);
 
             operator Dynamic() const;
             operator Variant() const;
             operator Boxed<T>() const;
-            operator PointerType<T>();
 
             operator void* ();
             operator void** ();
@@ -314,31 +333,47 @@ cpp::marshal::Boxed<T> cpp::marshal::PointerReference<T>::ToBoxed() const
 }
 
 template<class T>
-T* cpp::marshal::PointerReference<T>::FromBoxed(const Boxed<T>& inRHS)
+template<class O>
+O* cpp::marshal::PointerReference<T>::FromBoxed(const Boxed<O>& inRHS)
 {
     if (nullptr == inRHS.mPtr)
     {
         return nullptr;
     }
 
-    return const_cast<T*>(&inRHS->value);
+    return const_cast<O*>(&inRHS->value);
 }
 
 template<class T>
-T* cpp::marshal::PointerReference<T>::FromDynamic(const Dynamic& inRHS)
+template<class O>
+O* cpp::marshal::PointerReference<T>::FromDynamic(const Dynamic& inRHS)
 {
-    return FromBoxed(inRHS.StaticCast<Boxed<T>>());
+    return FromBoxed(inRHS.StaticCast<Boxed<O>>());
 }
 
 template<class T>
-cpp::marshal::PointerReference<T>::PointerReference(const Boxed<T>& inRHS) : Super(FromBoxed(inRHS))
-{
-}
+cpp::marshal::PointerReference<T>::PointerReference(const null& inRHS) : Super(inRHS) {}
 
 template<class T>
-inline cpp::marshal::PointerReference<T>::PointerReference(const PointerType<T>& inRHS) : Super(&inRHS.value)
-{
-}
+cpp::marshal::PointerReference<T>::PointerReference(const PointerType<T>& inRHS) : Super(inRHS.value) {}
+
+template<class T>
+cpp::marshal::PointerReference<T>::PointerReference(const Boxed<T>& inRHS) : Super(FromBoxed<T>(inRHS)) {}
+
+template<class T>
+cpp::marshal::PointerReference<T>::PointerReference(const T& inRHS) : Super(inRHS) {}
+
+template<class T>
+cpp::marshal::PointerReference<T>::PointerReference(T& inRHS) : Super(inRHS) {}
+
+template<class T>
+cpp::marshal::PointerReference<T>::PointerReference(const T* inRHS) : Super(inRHS) {}
+
+template<class T>
+cpp::marshal::PointerReference<T>::PointerReference(const Variant& inRHS) : Super(FromDynamic<T>(inRHS)) {}
+
+template<class T>
+cpp::marshal::PointerReference<T>::PointerReference(const Dynamic& inRHS) : Super(FromDynamic<T>(inRHS)) {}
 
 template<class T>
 cpp::marshal::PointerReference<T>::operator ::Dynamic() const
@@ -356,19 +391,6 @@ template<class T>
 cpp::marshal::PointerReference<T>::operator ::cpp::marshal::Boxed<T>() const
 {
     return ToBoxed();
-}
-
-template<class T>
-cpp::marshal::PointerReference<T>::operator ::cpp::marshal::PointerType<T>()
-{
-    if (Super::ptr)
-    {
-        return ::cpp::marshal::PointerType<T>(*Super::ptr);
-    }
-    else
-    {
-        return ::cpp::marshal::PointerType<T>(nullptr);
-    }
 }
 
 template<class T>
@@ -392,18 +414,68 @@ inline T cpp::marshal::PointerReference<T>::operator->() const
 //
 
 template<class T>
-inline cpp::marshal::PointerType<T>::PointerType() : value(nullptr)
+T cpp::marshal::PointerType<T>::FromDynamic(const Dynamic& inRHS)
 {
+    return FromBoxed(inRHS.StaticCast<Boxed<T>>());
 }
 
 template<class T>
-inline cpp::marshal::PointerType<T>::PointerType(const null&) : value(nullptr)
+T cpp::marshal::PointerType<T>::FromBoxed(const Boxed<T>& inRHS)
 {
+    if (nullptr == inRHS.mPtr)
+    {
+        return nullptr;
+    }
+
+    return inRHS->value;
 }
 
 template<class T>
-inline cpp::marshal::PointerType<T>::PointerType(T inRHS) : value(inRHS)
+T cpp::marshal::PointerType<T>::FromReference(const PointerReference<T>& inRHS)
 {
+    if (nullptr == inRHS.ptr)
+    {
+        return nullptr;
+    }
+
+    return *inRHS.ptr;
+}
+
+template<class T>
+inline cpp::marshal::PointerType<T>::PointerType() : value(nullptr) {}
+
+template<class T>
+inline cpp::marshal::PointerType<T>::PointerType(T inRHS) : value(inRHS) {}
+
+template<class T>
+inline cpp::marshal::PointerType<T>::PointerType(const PointerReference<T>& inRHS) : value(FromReference(inRHS.ptr)) {}
+
+template<class T>
+inline cpp::marshal::PointerType<T>::PointerType(const null&) : value(nullptr) {}
+
+template<class T>
+inline cpp::marshal::PointerType<T>::PointerType(const Boxed<T>& inRHS) : value(FromBoxed(inRHS)) {}
+
+template<class T>
+inline cpp::marshal::PointerType<T>::PointerType(const Variant& inRHS) : value(FromDynamic(inRHS)) {}
+
+template<class T>
+inline cpp::marshal::PointerType<T>::PointerType(const Dynamic& inRHS) : value(FromDynamic(inRHS)) {}
+
+template<class T>
+inline cpp::marshal::PointerType<T>& cpp::marshal::PointerType<T>::operator=(const PointerReference<T>& inRHS)
+{
+    value = *inRHS.ptr;
+
+    return *this;
+}
+
+template<class T>
+inline cpp::marshal::PointerType<T>& cpp::marshal::PointerType<T>::operator=(const null& inRHS)
+{
+    value = nullptr;
+
+    return *this;
 }
 
 // ValueType implementation
