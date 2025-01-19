@@ -271,7 +271,7 @@ struct CompareTraits< cpp::marshal::PointerReference<T> >
     inline static String toString(Dynamic inValue) { return inValue; }
     inline static hx::Object* toObject(Dynamic inValue) { return inValue.mPtr; }
     inline static int getDynamicCompareType(const ::Dynamic&) { return type; }
-    inline static bool isNull(const ::cpp::marshal::PointerReference<T>& ref) { return nullptr == *ref.ptr; }
+    inline static bool isNull(const ::cpp::marshal::PointerReference<T>& ref) { return nullptr == ref.ptr || nullptr == *ref.ptr; }
 };
 
 template<typename T1>
@@ -441,7 +441,23 @@ template<typename T1, typename T2>
 bool IsEq(const ::cpp::marshal::ValueReference<T1>& v1, const ::cpp::marshal::ValueReference<T2>& v2) { return v1 == v2; }
 
 template<typename T1, typename T2>
-bool IsEq(const ::cpp::marshal::PointerReference<T1>& v1, const ::cpp::marshal::PointerReference<T2>& v2) { return *v1.ptr == *v2.ptr; }
+bool IsEq(const ::cpp::marshal::PointerReference<T1>& v1, const ::cpp::marshal::PointerReference<T2>& v2)
+{
+    if (nullptr == v1.ptr && nullptr == v2.ptr)
+    {
+        return true;
+    }
+    if (nullptr == v1.ptr && nullptr != v2.ptr)
+    {
+        return nullptr == *v2.ptr;
+    }
+    if (nullptr == v2.ptr && nullptr != v1.ptr)
+    {
+        return nullptr == *v1.ptr;
+    }
+
+    return *v1.ptr == *v2.ptr;
+}
 
 template<typename T1, typename T2>
 bool IsNotEq(const T1 &v1, const T2 &v2) { return TestLessEq<false,false,T1,T2>(v1,v2); }
@@ -450,7 +466,7 @@ template<typename T1, typename T2>
 bool IsNotEq(const ::cpp::marshal::ValueReference<T1>& v1, const ::cpp::marshal::ValueReference<T2>& v2) { return v1 != v2; }
 
 template<typename T1, typename T2>
-bool IsNotEq(const ::cpp::marshal::PointerReference<T1>& v1, const ::cpp::marshal::PointerReference<T2>& v2) { return *v1.ptr != *v2.ptr; }
+bool IsNotEq(const ::cpp::marshal::PointerReference<T1>& v1, const ::cpp::marshal::PointerReference<T2>& v2) { return IsEq(v1, v2) == false; }
 
 template<typename T1, typename T2>
 bool IsLess(const T1 &v1, const T2 &v2) { return TestLessEq<true,false,T1,T2>(v1,v2); }

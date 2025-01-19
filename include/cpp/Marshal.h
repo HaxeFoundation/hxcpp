@@ -146,6 +146,14 @@ namespace cpp
             PointerReference(const null& inRHS);
             PointerReference(const PointerType<T>& inRHS);
             PointerReference(const Boxed<T>& inRHS);
+
+            template<class O>
+            PointerReference(const PointerReference<O>& inRHS);
+            template<class O>
+            PointerReference(const PointerType<O>& inRHS);
+            template<class O>
+            PointerReference(const Boxed<O>& inRHS);
+
             PointerReference(const T& inRHS);
             PointerReference(T& inRHS);
             PointerReference(const T* inRHS);
@@ -329,7 +337,14 @@ inline T cpp::marshal::ValueReference<T>::operator*() const
 template<class T>
 cpp::marshal::Boxed<T> cpp::marshal::PointerReference<T>::ToBoxed() const
 {
-    return new Boxed_obj<T>(Super::ptr);
+    if (nullptr == Super::ptr)
+    {
+        return new Boxed_obj<T>();
+    }
+    else
+    {
+        return new Boxed_obj<T>(Super::ptr);
+    }
 }
 
 template<class T>
@@ -361,10 +376,28 @@ template<class T>
 cpp::marshal::PointerReference<T>::PointerReference(const Boxed<T>& inRHS) : Super(FromBoxed<T>(inRHS)) {}
 
 template<class T>
+template<class O>
+cpp::marshal::PointerReference<T>::PointerReference(const PointerReference<O>& inRHS) : Super(reinterpret_cast<T*>(const_cast<O*>(inRHS.ptr))) {}
+
+template<class T>
+template<class O>
+cpp::marshal::PointerReference<T>::PointerReference(const PointerType<O>& inRHS) : Super(reinterpret_cast<T*>(const_cast<O*>(&inRHS.value))) {}
+
+template<class T>
+template<class O>
+cpp::marshal::PointerReference<T>::PointerReference(const Boxed<O>& inRHS) : Super(reinterpret_cast<T*>(FromBoxed<O>(inRHS))) {}
+
+template<class T>
 cpp::marshal::PointerReference<T>::PointerReference(const T& inRHS) : Super(inRHS) {}
 
 template<class T>
-cpp::marshal::PointerReference<T>::PointerReference(T& inRHS) : Super(inRHS) {}
+cpp::marshal::PointerReference<T>::PointerReference(T& inRHS)
+{
+    if (nullptr != inRHS)
+    {
+        Super::ptr = &inRHS;
+    }
+}
 
 template<class T>
 cpp::marshal::PointerReference<T>::PointerReference(const T* inRHS) : Super(inRHS) {}
@@ -408,6 +441,16 @@ inline cpp::marshal::PointerReference<T>::operator void** ()
 template<class T>
 inline T cpp::marshal::PointerReference<T>::operator->() const
 {
+    if (nullptr == Super::ptr)
+    {
+        ::hx::NullReference("ValueType", true);
+    }
+
+    if (nullptr == *Super::ptr)
+    {
+        ::hx::NullReference("ValueType", true);
+    }
+
     return *Super::ptr;
 }
 
