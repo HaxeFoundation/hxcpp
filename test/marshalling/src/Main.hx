@@ -18,7 +18,8 @@ class Main {
             new pointers.TestInterfacePointers(),
             new pointers.TestInheritancePointers(),
             new pointers.TestEnumPointers(),
-            new pointers.TestPointerFields()
+            new pointers.TestPointerFields(),
+            new pointers.TestPointerCollections()
         ]);
     }
 }

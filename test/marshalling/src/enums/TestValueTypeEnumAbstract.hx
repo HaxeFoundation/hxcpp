@@ -4,6 +4,7 @@ import utest.Assert;
 import utest.Test;
 
 @:semantics(reference)
+@:include('colour.hpp')
 @:cpp.ValueType({ type : 'colour', namespace : [] })
 private extern enum abstract Colour(Int) {
     @:native('red')
@@ -16,13 +17,7 @@ private extern enum abstract Colour(Int) {
     var Blue;
 }
 
-@:cppFileCode('
-enum colour {
-    red,
-    green,
-    blue
-};
-')
+@:headerInclude('colour.hpp')
 class TestValueTypeEnumAbstract extends Test {
     function test_switching_on_uncaptured_enum() {
         final e = Colour.Green;

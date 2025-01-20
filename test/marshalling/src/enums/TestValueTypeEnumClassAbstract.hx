@@ -4,6 +4,7 @@ import utest.Assert;
 import utest.Test;
 
 @:semantics(reference)
+@:include('Numbers.hpp')
 @:cpp.ValueType({ namespace : [ 'foo' ] })
 private extern enum abstract Numbers(Int) {
     var One;
@@ -11,16 +12,7 @@ private extern enum abstract Numbers(Int) {
     var Three;
 }
 
-@:cppFileCode('
-namespace foo
-{
-    enum class Numbers : char {
-        One,
-        Two = 5,
-        Three
-    };
-}
-')
+@:headerInclude('Numbers.hpp')
 class TestValueTypeEnumClassAbstract extends Test {
     function test_switching_on_uncaptured_enum() {
         final e = Numbers.Two;
