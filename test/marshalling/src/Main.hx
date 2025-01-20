@@ -19,7 +19,8 @@ class Main {
             new pointers.TestInheritancePointers(),
             new pointers.TestEnumPointers(),
             new pointers.TestPointerFields(),
-            new pointers.TestPointerCollections()
+            new pointers.TestPointerCollections(),
+            new pointers.TestAbstractPointer()
         ]);
     }
 }
