@@ -32,7 +32,7 @@
 <set name="noM32" value="1" if="HXCPP_NO_M32" />
 <set name="noM32" value="1" if="HXCPP_M64" />
 <set name="noM32" value="1" if="rpi" />
-<set name="noM32" value="1" if="HXCPP_ARM64" />
+<set name="noM32" value="1" if="HXCPP_ARM64 || HXCPP_ARMV7" />
 <set name="noM64" value="1" if="HXCPP_ARM64" />
 
 <compiler id="linux" exe="g++" if="linux">
