@@ -213,6 +213,23 @@ class TestLocalPointers extends Test {
         Assert.equals(7, ptr.number);
     }
 
+    function test_null_access_exception() {
+        final ptr : Context = null;
+
+        Assert.raises(() -> ptr.number = 7);
+    }
+
+    function test_promoted_null_access_exception() {
+        final ptr : Context = null;
+        final f = () -> {
+            return ptr;
+        }
+
+        f();
+
+        Assert.raises(() -> ptr.number = 7);
+    }
+
     //
 
     function by_anon(a : { v : Context }) {
