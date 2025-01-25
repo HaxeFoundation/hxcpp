@@ -172,10 +172,11 @@ namespace cpp
             operator Variant() const;
             operator Boxed<TPtr>() const;
             operator Pointer<T>() const;
-            operator TPtr() const;
 
-            operator void* ();
-            operator void** ();
+            operator TPtr&();
+            operator TPtr*();
+            operator void*();
+            operator void**();
 
             TPtr operator->() const;
         };
@@ -448,20 +449,31 @@ inline cpp::marshal::PointerReference<T>::operator ::cpp::Pointer<T>() const
 }
 
 template<class T>
-inline cpp::marshal::PointerReference<T>::operator TPtr() const
+inline cpp::marshal::PointerReference<T>::operator TPtr&()
 {
     if (nullptr == Super::ptr)
     {
         ::hx::NullReference("ValueType", true);
     }
 
-    *Super::ptr;
+    return *Super::ptr;
+}
+
+template<class T>
+inline cpp::marshal::PointerReference<T>::operator TPtr* ()
+{
+    return Super::ptr;
 }
 
 template<class T>
 inline cpp::marshal::PointerReference<T>::operator void* ()
 {
-    return reinterpret_cast<void*>(*Super::ptr);
+    if (nullptr == Super::ptr)
+    {
+        ::hx::NullReference("ValueType", true);
+    }
+
+    return *Super::ptr;
 }
 
 template<class T>

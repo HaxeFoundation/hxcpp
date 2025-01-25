@@ -20,7 +20,8 @@ class Main {
             new pointers.TestEnumPointers(),
             new pointers.TestPointerFields(),
             new pointers.TestPointerCollections(),
-            new pointers.TestAbstractPointer()
+            new pointers.TestAbstractPointer(),
+            new pointers.TestPointerInterop()
         ]);
     }
 }
