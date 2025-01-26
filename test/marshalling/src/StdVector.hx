@@ -1,3 +1,5 @@
+import cpp.Reference;
+
 @:include('vector')
 @:semantics(reference)
 @:cpp.ValueType({ type : 'vector', namespace : [ 'std' ] })
@@ -8,4 +10,8 @@ extern class StdVector<T> implements ArrayAccess<T> {
     function size():Int;
 
     function resize(s:Int):Void;
+
+    function at(s:Int):Reference<T>;
+
+    function push_back(v:T):Void;
 }

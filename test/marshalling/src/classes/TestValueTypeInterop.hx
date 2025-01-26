@@ -8,6 +8,17 @@ import cpp.RawPointer;
 import utest.Assert;
 import utest.Test;
 
+@:semantics(reference)
+@:include('point.hpp')
+@:cpp.ValueType({ type : 'point', namespace : [ 'hx', 'maths' ] })
+private extern class Point {
+    var x : Float;
+    var y : Float;
+
+    @:overload(function(_x : Float, _y : Float) : Void {})
+    function new();
+}
+
 private extern class NativeFunctions {
     @:native('vec_by_val')
     static function vec_by_val(v:StdVector<Int>):Void;
@@ -17,6 +28,9 @@ private extern class NativeFunctions {
 
     @:native('vec_by_ptr')
     static function vec_by_ptr(v:StdVector<Int>):Void;
+
+    @:native('point_vec')
+    static function point_vec(v:StdVector<Point>):Void;
 }
 
 private class HaxeFunctions {
@@ -215,5 +229,13 @@ class TestValueTypeInterop extends Test {
         ref.resize(10);
 
         Assert.equals(10, v.size());
+    }
+
+    function test_vec_of_points() {
+        final v = new StdVector<Point>(5);
+
+        NativeFunctions.point_vec(v);
+
+        Assert.equals(300f64, v.at(0).x);
     }
 }

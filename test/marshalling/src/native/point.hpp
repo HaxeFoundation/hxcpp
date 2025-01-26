@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 namespace hx {
     namespace maths {
@@ -11,3 +12,5 @@ namespace hx {
         };
     }
 }
+
+void point_vec(std::vector<::hx::maths::point>& v);
