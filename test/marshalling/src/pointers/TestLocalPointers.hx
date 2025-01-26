@@ -230,6 +230,33 @@ class TestLocalPointers extends Test {
         Assert.raises(() -> ptr.number = 7);
     }
 
+    // function test_weird_nullness() {
+    //     function isAnyNull(a:Any) {
+    //         return a == null;
+    //     }
+
+    //     final ptr = Context.createNull();
+
+    //     Assert.isTrue(ptr == null);
+    //     Assert.isTrue(isAnyNull(ptr));
+    // }
+
+    // function test_weird_promoted_nullness() {
+    //     function isAnyNull(a:Any) {
+    //         return a == null;
+    //     }
+
+    //     final ptr = Context.createNull();
+    //     final f   = () -> {
+    //         return ptr;
+    //     }
+
+    //     f();
+
+    //     Assert.isTrue(ptr == null);
+    //     Assert.isTrue(isAnyNull(ptr));
+    // }
+
     //
 
     function by_anon(a : { v : Context }) {

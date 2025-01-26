@@ -5,7 +5,7 @@ import utest.Test;
 
 @:semantics(reference)
 @:include('colour.hpp')
-@:cpp.ValueType({ type : 'colour', namespace : [] })
+@:cpp.ValueType({ type : 'colour' })
 private extern enum abstract Colour(Int) {
     @:native('red')
     var Red;
