@@ -192,10 +192,8 @@ StackContext::StackContext()
    mIsUnwindingException = false;
    #endif
 
-   #ifdef HXCPP_TELEMETRY
-   //mTelemetry = tlmCreate(this);
-   // Do not automatically start
-   mTelemetry = 0;
+   #if HXCPP_TELEMETRY
+   mTelemetry = tlmCreate(this);
    #endif
 
    #ifdef HXCPP_DEBUGGER

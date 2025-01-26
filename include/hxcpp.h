@@ -75,7 +75,6 @@
 #endif
 
 
-
 // Some compilers are over-enthusiastic about what they #define ...
 //#ifdef NULL
 //#undef NULL
