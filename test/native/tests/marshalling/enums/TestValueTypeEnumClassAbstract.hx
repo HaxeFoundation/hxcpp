@@ -1,4 +1,4 @@
-package enums;
+package tests.marshalling.enums;
 
 import utest.Assert;
 import utest.Test;

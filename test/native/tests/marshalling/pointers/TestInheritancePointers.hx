@@ -1,26 +1,26 @@
-package classes;
+package tests.marshalling.pointers;
 
 import utest.Assert;
 import utest.Test;
 
 @:semantics(reference)
 @:include('Base.hpp')
-@:cpp.ValueType
+@:cpp.PointerType
 private extern class Base {
     function foo():Int;
 }
 
 @:semantics(reference)
 @:include('Child.hpp')
-@:cpp.ValueType
+@:cpp.PointerType
 private extern class Child extends Base {
     function new():Void;
 
     function bar():Int;
 }
 
-class TestInheritance extends Test {
-    function test_copying_to_a_more_specific_type() {
+class TestInheritancePointers extends Test {
+    function test_assigning_to_a_more_specific_type() {
         final o = create_child();
         final c : Child = cast o;
 
@@ -28,7 +28,7 @@ class TestInheritance extends Test {
         Assert.equals(20, c.bar());
     }
 
-    function test_copying_to_a_more_specific_type_promoted() {
+    function test_assigning_to_a_more_specific_promoted() {
         final o = create_child();
         final c : Child = cast o;
         final f = () -> {
@@ -49,31 +49,35 @@ class TestInheritance extends Test {
     }
 
     function test_passing_child_to_child_function() {
-        final o = new Child();
-        final v = pass_child(o);
+        final o = create_child();
+        final v = pass_child(cast o);
 
         Assert.equals(10, v);
     }
 
     function test_passing_child_to_base_function() {
-        final o = new Child();
+        final o = create_child();
         final v = pass_base(o);
 
-        Assert.equals(7, v);
+        Assert.equals(10, v);
     }
 
     function test_reassigning() {
-        var o : Base = new Child();
+        var o : Base = create_child();
 
-        Assert.equals(7, o.foo());
+        Assert.equals(10, o.foo());
 
-        o = new Child();
+        o = create_child_as_child();
 
-        Assert.equals(7, o.foo());
+        Assert.equals(10, o.foo());
     }
 
     function create_child() : Base {
-        return new Child();
+        return untyped __cpp__('new Child()');
+    }
+
+    function create_child_as_child() : Child {
+        return untyped __cpp__('new Child()');
     }
 
     function pass_child(c : Child) {

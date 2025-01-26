@@ -1,4 +1,4 @@
-package classes;
+package tests.marshalling.classes;
 
 import utest.Assert;
 import utest.Test;

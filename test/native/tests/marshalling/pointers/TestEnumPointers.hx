@@ -1,4 +1,4 @@
-package pointers;
+package tests.marshalling.pointers;
 
 import haxe.EnumTools;
 import utest.Assert;

@@ -1,6 +1,6 @@
-package classes;
+package tests.marshalling.classes;
 
-import StdVector;
+import tests.marshalling.StdVector;
 import utest.Assert;
 import utest.Test;
 

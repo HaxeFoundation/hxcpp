@@ -1,4 +1,4 @@
-package classes;
+package tests.marshalling.classes;
 
 import cpp.Native;
 import cpp.Star;

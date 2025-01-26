@@ -1,3 +1,5 @@
+package tests.marshalling;
+
 import cpp.Reference;
 
 @:include('vector')

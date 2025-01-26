@@ -1,3 +1,5 @@
+package tests.marshalling;
+
 @:semantics(reference)
 @:include('ctx.hpp')
 @:cpp.PointerType({ type : 'ctx' })

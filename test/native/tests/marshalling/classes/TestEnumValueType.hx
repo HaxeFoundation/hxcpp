@@ -1,4 +1,4 @@
-package classes;
+package tests.marshalling.classes;
 
 import haxe.EnumTools;
 import utest.Assert;

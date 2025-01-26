@@ -1,4 +1,4 @@
-package pointers;
+package tests.marshalling.pointers;
 
 import utest.Assert;
 import utest.Test;
