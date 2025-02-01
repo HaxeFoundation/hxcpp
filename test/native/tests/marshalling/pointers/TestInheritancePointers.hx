@@ -14,8 +14,6 @@ private extern class Base {
 @:include('Child.hpp')
 @:cpp.PointerType
 private extern class Child extends Base {
-    function new():Void;
-
     function bar():Int;
 }
 

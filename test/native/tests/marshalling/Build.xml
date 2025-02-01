@@ -1,5 +1,7 @@
 <xml>
     <files id="test-source">
+        <depend files="hxcpp-depends"/>
+
         <compilerflag value="-I${this_dir}/native"/>
 
         <file name="${this_dir}/native/ctx.cpp">
@@ -22,6 +24,10 @@
         <file name="${this_dir}/native/holder.cpp">
             <depend name="${this_dir}/native/holder.hpp"/>
             <depend name="${this_dir}/native/point.hpp"/>
+        </file>
+
+        <file name="${this_dir}/native/Managed.cpp">
+            <depend name="${this_dir}/native/Managed.hpp"/>
         </file>
     </files>
 
