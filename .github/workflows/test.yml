@@ -152,8 +152,8 @@ jobs:
           run: |
             set -ex
             sudo rm -R /var/lib/mysql/
-            curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup > mariadb_repo_setup
-            curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup.sha256 > mariadb_repo_setup.sha256
+            curl -sSL https://downloads.mariadb.com/MariaDB/mariadb_repo_setup > mariadb_repo_setup
+            curl -sSL https://downloads.mariadb.com/MariaDB/mariadb_repo_setup.sha256 > mariadb_repo_setup.sha256
             sha256sum --check mariadb_repo_setup.sha256
             sudo bash mariadb_repo_setup
             sudo apt-get update -qqy
