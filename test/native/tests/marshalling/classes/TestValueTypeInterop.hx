@@ -17,6 +17,8 @@ private extern class Point {
 
     @:overload(function(_x : Float, _y : Float) : Void {})
     function new();
+
+    static function point_vec(v:StdVector<Point>):Void;
 }
 
 private extern class NativeFunctions {
@@ -28,9 +30,6 @@ private extern class NativeFunctions {
 
     @:native('vec_by_ptr')
     static function vec_by_ptr(v:StdVector<Int>):Void;
-
-    @:native('point_vec')
-    static function point_vec(v:StdVector<Point>):Void;
 }
 
 private class HaxeFunctions {
@@ -234,7 +233,7 @@ class TestValueTypeInterop extends Test {
     function test_vec_of_points() {
         final v = new StdVector<Point>(5);
 
-        NativeFunctions.point_vec(v);
+        Point.point_vec(v);
 
         Assert.equals(300f64, v.at(0).x);
     }

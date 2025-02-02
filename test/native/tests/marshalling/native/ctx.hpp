@@ -6,10 +6,10 @@ struct ctx {
     ctx();
 
     int Double();
-};
 
-ctx* create();
-ctx* create_null();
+    static ctx* create();
+    static ctx* create_null();
+};
 
 void ctx_ptr(ctx* pCtx);
 void ctx_ptr_ptr(ctx** ppCtx);
