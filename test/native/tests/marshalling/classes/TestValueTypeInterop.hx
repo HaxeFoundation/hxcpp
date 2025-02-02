@@ -8,19 +8,6 @@ import cpp.RawPointer;
 import utest.Assert;
 import utest.Test;
 
-@:semantics(reference)
-@:include('point.hpp')
-@:cpp.ValueType({ type : 'point', namespace : [ 'hx', 'maths' ] })
-private extern class Point {
-    var x : Float;
-    var y : Float;
-
-    @:overload(function(_x : Float, _y : Float) : Void {})
-    function new();
-
-    static function point_vec(v:StdVector<Point>):Void;
-}
-
 private extern class NativeFunctions {
     @:native('vec_by_val')
     static function vec_by_val(v:StdVector<Int>):Void;
