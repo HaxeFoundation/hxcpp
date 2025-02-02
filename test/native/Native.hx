@@ -38,7 +38,8 @@ class Native
             new tests.marshalling.pointers.TestPointerCollections(),
             new tests.marshalling.pointers.TestAbstractPointer(),
             new tests.marshalling.pointers.TestPointerInterop(),
-            new tests.marshalling.managed.TestLocalManagedClass(),
+            new tests.marshalling.managed.TestLocalNonStandardManagedClass(),
+            new tests.marshalling.managed.TestLocalStandardManagedClass()
 			#end
 		]);
 	}

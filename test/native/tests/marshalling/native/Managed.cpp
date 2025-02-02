@@ -1,45 +1,22 @@
 #include <hxcpp.h>
 #include <Managed.hpp>
 
-int hx::fooextern::constNumber = 300;
+int foo::bar::standard_naming_obj::constNumber = 300;
 
-hx::fooextern::fooextern() {}
+foo::bar::standard_naming_obj::standard_naming_obj() : number(0) {}
+foo::bar::standard_naming_obj::standard_naming_obj(int inNumber) : number(inNumber) {}
 
-int hx::fooextern::doubleNumber()
+int foo::bar::standard_naming_obj::multiply(int input)
 {
-    return number * 2;
+    return number * input;
 }
 
-::String hx::fooextern::toString()
+::String foo::bar::standard_naming_obj::toString()
 {
-    return ::String::create("fooextern");
+    return ::String::create("My Custom Managed Type");
 }
 
-hx::fooextern* hx::fooextern::create(int number)
+foo::bar::standard_naming_obj* foo::bar::standard_naming_obj::create(int inNumber)
 {
-    auto ptr = new hx::fooextern();
-
-    ptr->number = number;
-
-    return ptr;
-}
-
-int hx::WithClosure::ReturnSeven()
-{
-    return 7;
-}
-
-int foo::bar::StandardLayoutExtern_obj::doubleNumber(int input)
-{
-    return input * 2;
-}
-
-foo::bar::StandardLayoutExtern foo::bar::StandardLayoutExtern_obj::create()
-{
-    return foo::bar::StandardLayoutExtern(new StandardLayoutExtern_obj());
-}
-
-namespace hx
-{
-    HX_DEFINE_DYNAMIC_FUNC0(WithClosure, ReturnSeven, return)
+    return new foo::bar::standard_naming_obj(inNumber);
 }

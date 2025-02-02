@@ -1,34 +1,26 @@
 #pragma once
 
-HX_DECLARE_CLASS2(foo,bar,StandardLayoutExtern)
+HX_DECLARE_CLASS2(foo,bar,standard_naming)
 
 namespace foo
 {
     namespace bar
     {
-        struct StandardLayoutExtern_obj : public ::hx::Object {
-            virtual int doubleNumber(int input);
+        struct standard_naming_obj : public ::hx::Object {
+            static int constNumber;
 
-            static StandardLayoutExtern create();
+            int number;
+
+            standard_naming_obj();
+            standard_naming_obj(int inNumber);
+
+            int multiply(int input);
+
+            ::String toString() override;
+
+            static standard_naming_obj* create(int inNumber);
         };
     }
-}
-
-namespace hx
-{
-    struct fooextern : public ::hx::Object {
-        static int constNumber;
-
-        int number;
-
-        fooextern();
-
-        int doubleNumber();
-
-        ::String toString() override;
-
-        static fooextern* create(int number);
-    };
 
     struct WithClosure : public ::hx::Object {
         int ReturnSeven();
