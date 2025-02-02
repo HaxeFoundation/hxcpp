@@ -11,7 +11,6 @@ private typedef TestType = {
 }
 
 @:generic class TestLocalHarness<T : Constructible<()->Void> & TestType> extends Test {
-
     function test_null_object() {
         final o : T = null;
 
@@ -81,6 +80,16 @@ private typedef TestType = {
         final o = (cast a : T);
 
         Assert.notNull(o);
+    }
+
+    function test_anon() {
+        function create_anon() {
+            return { o : new T() };
+        }
+
+        final a = create_anon();
+
+        Assert.notNull(a.o);
     }
 
     // function test_type_check() {
