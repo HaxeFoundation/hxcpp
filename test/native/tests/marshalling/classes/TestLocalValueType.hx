@@ -74,7 +74,6 @@ class TestLocalValueType extends Test {
         Assert.notNull(v2);
     }
 
-    @:analyzer(no_local_dce)
     function test_nullable_var_null_to_non_null() {
         final v1 : Null<StdVector<Int>> = null;
 
@@ -91,14 +90,12 @@ class TestLocalValueType extends Test {
         });
     }
 
-    @:analyzer(no_local_dce)
     function test_initialising_non_null_var_to_null() {
         Assert.raises(() -> {
             var _ : StdVector<Int> = null;
         });
     }
 
-    @:analyzer(no_local_dce)
     function test_initialising_non_null_var_to_dynamic_null() {
         function get_null() : Any {
             return null;
