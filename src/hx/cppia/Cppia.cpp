@@ -6346,30 +6346,38 @@ struct TryExpr : public CppiaVoidExpr
       }
       return this;
    }
+
+   void handleException(CppiaCtx* ctx, Dynamic caught) {
+      //Class cls = caught.mPtr ? caught->__GetClass() : 0;
+      for(int i=0;i<catchCount;i++)
+      {
+         Catch &c = catches[i];
+         if ( c.type->isClassOf(caught) )
+         {
+            ctx->exception = nullptr;
+            HX_STACK_BEGIN_CATCH
+            c.var.set(ctx,caught);
+            c.body->runVoid(ctx);
+            return;
+         }
+      }
+      HX_STACK_DO_THROW(caught);
+   }
+
    // TODO - return types...
    void runVoid(CppiaCtx *ctx)
    {
       try
       {
          body->runVoid(ctx);
-         BCR_VCHECK;
       }
       catch(Dynamic caught)
       {
-         //Class cls = caught.mPtr ? caught->__GetClass() : 0;
-         for(int i=0;i<catchCount;i++)
-         {
-            Catch &c = catches[i];
-            if ( c.type->isClassOf(caught) )
-            {
-               HX_STACK_BEGIN_CATCH
-               c.var.set(ctx,caught);
-               c.body->runVoid(ctx);
-               return;
-            }
-         }
-         HX_STACK_DO_THROW(caught);
+         handleException(ctx,caught);
+         return;
       }
+      if (ctx->exception)
+         handleException(ctx,ctx->exception);
    }
 
    #ifdef CPPIA_JIT
