@@ -17,7 +17,6 @@ private extern enum abstract Colour(Int) {
     var Blue;
 }
 
-@:headerInclude('colour.hpp')
 class TestValueTypeEnumAbstract extends Test {
     function test_switching_on_uncaptured_enum() {
         final e = Colour.Green;

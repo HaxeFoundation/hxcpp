@@ -12,7 +12,6 @@ private extern enum abstract Numbers(Int) {
     var Three;
 }
 
-@:headerInclude('Numbers.hpp')
 class TestValueTypeEnumClassAbstract extends Test {
     function test_switching_on_uncaptured_enum() {
         final e = Numbers.Two;
