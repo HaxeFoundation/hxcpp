@@ -771,6 +771,8 @@ class BuildTool
                }
             }
             Profile.pop();
+         case _ if (inDestination != null):
+            Log.warn('Target \'${inTarget}\' does not output a file, so \'destination\' has been ignored');
       }
 
       if (mCopyFiles.length>0)
@@ -2216,6 +2218,13 @@ class BuildTool
       }
    }
 
+   function dumpDefs()
+   {
+      Sys.println("Defines:");
+      for(k in mDefines.keys())
+         Sys.println('  $k=${mDefines.get(k)}');
+   }
+
    function parseXML(inXML:XmlAccess,inSection:String, forceRelative:Bool)
    {
       for(el in inXML.elements)
@@ -2225,9 +2234,14 @@ class BuildTool
             switch(el.name)
             {
                case "set" :
-                  var name = substitute(el.att.name);
-                  var value = substitute(el.att.value);
-                  mDefines.set(name,value);
+                  if (el.has.name)
+                  {
+                     var name = substitute(el.att.name);
+                     var value = substitute(el.att.value);
+                     mDefines.set(name,value);
+                  }
+                  else
+                     dumpDefs();
                case "unset" :
                   var name = substitute(el.att.name);
                   mDefines.remove(name);
@@ -2418,6 +2432,8 @@ class BuildTool
          path = path.split("\\").join("/");
          var filename = "";
          var parts = path.split("/");
+         if (!FileSystem.exists(path))
+            Log.error("File does not exist:" + path);
          if (!FileSystem.isDirectory(path))
             filename = parts.pop();
 

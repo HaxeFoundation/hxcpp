@@ -24,6 +24,7 @@
  <flag value="-DHXCPP_GC_CHECK_POINTER" if="HXCPP_GC_CHECK_POINTER" tag="haxe" />
  <flag value="-DHXCPP_GC_DEBUG_ALWAYS_MOVE" if="HXCPP_GC_DEBUG_ALWAYS_MOVE" tag="haxe" />
  <flag value="-DHXCPP_GC_GENERATIONAL" if="HXCPP_GC_GENERATIONAL" tag="haxe" />
+ <flag value="-DHXCPP_ALIGN_ALLOC" if="HXCPP_ALIGN_ALLOC" tag="haxe" />
  <flag value="-DHXCPP_GC_NURSERY" if="HXCPP_GC_NURSERY" tag="haxe" />
  <flag value="-DHXCPP_DLL_IMPORT" if="dll_import" tag="haxe" />
  <flag value="-I${dll_import_include}" if="dll_import_include" tag="haxe" />
@@ -36,7 +37,20 @@
  <flag value='-DHXCPP_API_LEVEL=0' unless="hxcpp_api_level"  tag="haxe"/>
  <flag value='-DHXCPP_OBJC' if="objc"  tag="haxe"/>
  <flag value='-DHXCPP_GC_DEBUG_LEVEL=${HXCPP_GC_DEBUG_LEVEL}' if="HXCPP_GC_DEBUG_LEVEL" tag="gc" />
+ <flag value='-DHXCPP_GC_VERIFY' if="HXCPP_GC_VERIFY" tag="gc" />
  <flag value='-DHXCPP_WINXP_COMPAT' if="HXCPP_WINXP_COMPAT" tag="haxe"/>
+ 
+ <!-- fwd these defines into haxe target so we can check for it in telemetry -->
+ <flag value="-DHXCPP_GC_MOVING" if="HXCPP_GC_MOVING" tag="haxe" />
+ <flag value="-DHXCPP_GC_GENERATIONAL" if="HXCPP_GC_GENERATIONAL" tag="haxe" />
+
+ <!-- tracy features  -->
+ <flag value='-DHXCPP_TRACY' if="HXCPP_TRACY" tag="haxe"/>
+ <flag value='-DHXCPP_TRACY_MEMORY' if="HXCPP_TRACY_MEMORY" tag="haxe"/>
+ <flag value='-DHXCPP_TRACY_NO_EXIT' if="HXCPP_TRACY_NO_EXIT" tag="haxe"/>
+ <flag value='-DHXCPP_TRACY_ON_DEMAND' if="HXCPP_TRACY_ON_DEMAND" tag="haxe"/>
+ <flag value='-DHXCPP_TRACY_INCLUDE_CALLSTACKS' if="HXCPP_TRACY_INCLUDE_CALLSTACKS" tag="haxe"/>
+
  <mmflag value='-Wno-invalid-offsetof' />
  <mmflag value='-Wno-format-security' />
 </xml>
