@@ -22,7 +22,9 @@ runs:
     - name: install native libraries
       if: runner.os == 'Linux'
       shell: pwsh
-      run: sudo apt-get install -qqy gcc-multilib g++-multilib
+      run: |
+        sudo apt-get update -qqy
+        sudo apt-get install -qqy gcc-multilib g++-multilib
 
     - name: build run.n
       working-directory: tools/run
