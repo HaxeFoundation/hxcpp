@@ -40,6 +40,9 @@ namespace hx
         template< class T >
         using remove_pointer_t = typename std::remove_pointer<T>::type;
 
+        template< class T >
+        using remove_const_t = typename std::remove_const<T>::type;
+
         namespace unwrap
         {
             template<typename T>
@@ -106,9 +109,21 @@ namespace hx
             }
 
             template<typename T>
-            Dynamic __hx_object_pointer(T value, std::false_type)
+            Dynamic __hx_object_pointer_strip_const(T value, std::false_type)
             {
                 return Dynamic(cpp::Pointer<remove_pointer_t<T>>(value));
+            }
+
+            template<typename T>
+            Dynamic __hx_object_pointer_strip_const(T value, std::true_type)
+            {
+                return Dynamic(cpp::Pointer<remove_const_t<remove_pointer_t<T>>>(value));
+            }
+
+            template<typename T>
+            Dynamic __hx_object_pointer(T value, std::false_type)
+            {
+                return __hx_object_pointer_strip_const(value, std::is_const<remove_pointer_t<T>>{});
             }
 
             template<typename T>
