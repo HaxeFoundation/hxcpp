@@ -354,6 +354,9 @@ public:
    // This is used by the string-wrapped-as-dynamic class
    hx::Val __Field(const ::String &inString, hx::PropertyAccess inCallProp);
 
+   // Allows for reflection to be able to get the static functions
+   static bool __GetStatic(const String&, Dynamic&, hx::PropertyAccess);
+
    // The actual implementation.
    // Note that "__s" is const - if you want to change it, you should create a new string.
    //  this allows for multiple strings to point to the same data.
