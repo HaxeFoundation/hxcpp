@@ -1,30 +1,57 @@
 <xml>
 
-<pragma once="true" />
+  <pragma once="true" />
 
-<include name="${HXCPP}/project/thirdparty/mbedtls-files.xml" />
+  <include name="${HXCPP}/project/thirdparty/mbedtls-files.xml" />
 
-<files id="hxcpp_ssl" >
-	<depend files="hxcpp-depends"/>
-	<depend name="${this_dir}/Build.xml" dateOnly="true" />
-	<cache value="true" asLibrary="true" />
+  <files id="hxcpp_ssl_windows">
+    <depend files="hxcpp-depends"/>
+    <depend name="${this_dir}/Build.xml" dateOnly="true" />
+    <cache value="true" asLibrary="true" />
+    
+    <compilerflag value="-I${this_dir}/windows"/>
 
-	<include name="${HXCPP}/project/thirdparty/mbedtls-flags.xml" />
+    <file name="${this_dir}/windows/Digest.cpp"/>
+    <file name="${this_dir}/windows/Cert.cpp"/>
+    <file name="${this_dir}/windows/Key.cpp"/>
+    <file name="${this_dir}/windows/SSL.cpp"/>
+    <file name="${this_dir}/windows/Utils.cpp"/>
+  </files>
 
-	<file name="${this_dir}/SSL.cpp"/>
-</files>
+  <files id="hxcpp_ssl" >
+	  <depend files="hxcpp-depends"/>
+	  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+	  <cache value="true" asLibrary="true" />
 
-<target id="haxe">
-	<!-- the order is important, mbedtls needs to come after hxcpp_ssl -->
-	<files id="hxcpp_ssl" />
-	<files id="mbedtls" />
+    <include name="${HXCPP}/project/thirdparty/mbedtls-flags.xml" />
 
-	<lib name="advapi32.lib" if="windows" unless="static_link" />
-	<lib name="crypt32.lib" if="windows" unless="static_link" />
-	<lib name="ws2_32.lib" if="windows" unless="static_link" />
+    <file name="${this_dir}/SSL.cpp"/>
+	</files>
 
-	<flag value="-framework" if="macos"/>
-	<flag value="Security" if="macos"/>
-</target>
+	<target id="haxe">
+    <section unless="windows">
+  		<files id="hxcpp_ssl" />
+      <files id="mbedtls" />
+    </section>
+
+    <section if="windows">
+      <section if="HXCPP_USE_MBEDTLS">
+        <files id="hxcpp_ssl" />
+        <files id="mbedtls" />
+      </section>
+
+      <files id="hxcpp_ssl_windows" unless="HXCPP_USE_MBEDTLS"/>
+
+      <lib name="advapi32.lib" unless="static_link" />
+      <lib name="crypt32.lib" unless="static_link" />
+      <lib name="bcrypt.lib" unless="static_link" />
+      <lib name="ncrypt.lib" unless="static_link" />
+      <lib name="ws2_32.lib" unless="static_link" />
+      <lib name='secur32.lib' unless="static_link"/>
+    </section>
+
+		<flag value="-framework" if="macos"/>
+		<flag value="Security" if="macos"/>
+	</target>
 
 </xml>
