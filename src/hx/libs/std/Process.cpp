@@ -339,7 +339,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
    process_stdout_read : 'process -> buf:string -> pos:int -> len:int -> int
    <doc>
    Read up to [len] bytes in [buf] starting at [pos] from the process stdout.
-   Returns the number of bytes readed this way. Raise an exception if this
+   Returns the number of bytes read this way. Raise an exception if this
    process stdout is closed and no more data is available for reading.
 
         For hxcpp, the input buffer is in bytes, not characters
@@ -372,7 +372,7 @@ int _hx_std_process_stdout_read( Dynamic handle, Array<unsigned char> buf, int p
    process_stderr_read : 'process -> buf:string -> pos:int -> len:int -> int
    <doc>
    Read up to [len] bytes in [buf] starting at [pos] from the process stderr.
-   Returns the number of bytes readed this way. Raise an exception if this
+   Returns the number of bytes read this way. Raise an exception if this
    process stderr is closed and no more data is available for reading.
    </doc>
 **/
@@ -402,7 +402,7 @@ int _hx_std_process_stderr_read( Dynamic handle, Array<unsigned char> buf, int p
    process_stdin_write : 'process -> buf:string -> pos:int -> len:int -> int
    <doc>
    Write up to [len] bytes from [buf] starting at [pos] to the process stdin.
-   Returns the number of bytes writen this way. Raise an exception if this
+   Returns the number of bytes written this way. Raise an exception if this
    process stdin is closed.
    </doc>
 **/

@@ -10,7 +10,7 @@ static int sTypeSize[] = { 0, 0, sizeof(hx::Object *), sizeof(String), sizeof(Fl
 
 // --- ScriptCallable ----------------------------------------------------
 
-String sInvalidArgCount = HX_CSTRING("Invalid arguement count");
+String sInvalidArgCount = HX_CSTRING("Invalid argument count");
 
 
 #ifdef CPPIA_JIT

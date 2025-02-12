@@ -782,7 +782,7 @@ void __string_hash_set_int64(HX_MAP_THIS_ARG, String inKey, cpp::Int64 inValue)
                   return false;
             return true;
          }
-         // fallthough...
+         // fallthrough...
          #endif
          return !memcmp(inKey.__s, bigString.__s+offset, len);
       }

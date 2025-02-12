@@ -2,7 +2,7 @@
 #define HX_CFFI_LOADER_H
 
 /*
-  This file will only be incuded in one cpp file in the ndll library -
+  This file will only be included in one cpp file in the ndll library -
     the one with IMPLEMENT_API #defined.
 
   The other files will refer to the val_ functions via the "extern" in CFFI.h
@@ -12,12 +12,12 @@
   The pointers starts off as function pointers to bootstrap code, so when they are first called
    the bootstrap uses the "ResolveProc" to find the correct version of the function for the particular
    platform, and replaces the function pointer with this value. Subsequent calls then go directly
-   to the correct fucntion.
+   to the correct function.
 
   The ResolveProc can come from:
    Explicitly setting - the proc is set when a dll is loaded into the hxcpp exe
    Via 'GetProcAddress' on the exe - if symbols are needed and the proc has not been set
-   Internal implementation (CFFINekoLoader) - when linking agaist a neko process.
+   Internal implementation (CFFINekoLoader) - when linking against a neko process.
     - Old code used to find this in NekoApi.dll, but the glue code is now built into each ndll directly.
 
   For static linking, the functions are resolved at link time.

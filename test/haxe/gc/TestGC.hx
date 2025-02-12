@@ -48,7 +48,7 @@ class TestGC extends Test {
 	}
 
    // Null<int> for numbers < 256 are special cases
-   // Infact, there are no guarantees that Null<Int> will be actual objects in the future
+   // In fact, there are no guarantees that Null<Int> will be actual objects in the future
    /*
 	function create1234():Void {
 		var object:Null<Int> = 1234;

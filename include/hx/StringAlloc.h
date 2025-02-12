@@ -20,11 +20,11 @@ template<int STACK>
 class StringAlloc : public IStringAlloc
 {
    char buffer[STACK];
-   size_t alloced;
+   size_t allocated;
    char   *heap;
 
    public:
-      inline StringAlloc() : alloced(0), heap(0) { }
+      inline StringAlloc() : allocated(0), heap(0) { }
       ~StringAlloc()
       {
          if (heap)
@@ -34,10 +34,10 @@ class StringAlloc : public IStringAlloc
       {
          if (inBytes<=STACK)
             return buffer;
-         if (inBytes>alloced)
+         if (inBytes>allocated)
          {
-            alloced = inBytes;
-            heap = (char *)realloc(heap, alloced);
+            allocated = inBytes;
+            heap = (char *)realloc(heap, allocated);
          }
          return heap;
       }

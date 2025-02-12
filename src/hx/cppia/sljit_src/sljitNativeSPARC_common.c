@@ -100,7 +100,7 @@ static const sljit_u8 reg_map[SLJIT_NUMBER_OF_REGISTERS + 6] = {
 };
 
 /* --------------------------------------------------------------------- */
-/*  Instrucion forms                                                     */
+/*  Instruction forms                                                    */
 /* --------------------------------------------------------------------- */
 
 #define D(d)		(reg_map[d] << 25)
@@ -528,7 +528,7 @@ static sljit_s32 getput_arg_fast(struct sljit_compiler *compiler, sljit_s32 flag
 	if (!(flags & WRITE_BACK) || !(arg & REG_MASK)) {
 		if ((!(arg & OFFS_REG_MASK) && argw <= SIMM_MAX && argw >= SIMM_MIN)
 				|| ((arg & OFFS_REG_MASK) && (argw & 0x3) == 0)) {
-			/* Works for both absoulte and relative addresses (immediate case). */
+			/* Works for both absolute and relative addresses (immediate case). */
 			if (SLJIT_UNLIKELY(flags & ARG_TEST))
 				return 1;
 			FAIL_IF(push_inst(compiler, data_transfer_insts[flags & MEM_MASK]

@@ -1,7 +1,7 @@
 <xml>
 
 <!--
-  The Emscipten hxcpp compiler can be invoked from haxe with the 'emscripten' define.
+  The Emscripten hxcpp compiler can be invoked from haxe with the 'emscripten' define.
     haxe -main Main -cpp cpp -D emscripten
 
   Setup:
@@ -14,7 +14,7 @@
     If -D HXCPP_LINK_EMSCRIPTEN_EXT=".html" is passed or specified, then an additional html output,
     eg, Test.html, will be generated.
 
-      Specifying HXCPP_LINK_EMRUN adds code ro redirect output secially for the emrun server.
+      Specifying HXCPP_LINK_EMRUN adds code to redirect output specially for the emrun server.
 
       The resulting can be used for running the code in a browser from a local server.
         eg: $EMSDK/upstream/emscripten/emrun(.bat) cpp/Test.html

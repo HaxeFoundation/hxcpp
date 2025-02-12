@@ -404,7 +404,7 @@ inline bool resizeByteData(value inValue, int inNewLen)
 #define copy_string(str,len) alloc_string_len(str,len)
 
 
-// The "Check" macros throw an error if assumtion is false
+// The "Check" macros throw an error if assumption is false
 #define val_check_kind(v,t)	if( !val_is_kind(v,t) ) hx_failure("invalid kind");
 #define val_check_function(f,n) if( !val_is_function(f) || (val_fun_nargs(f) != (n) && val_fun_nargs(f) != faVarArgs) ) hx_failure("Bad function");
 #define val_check(v,t)		if( !val_is_##t(v) ) hx_failure("type not " #t);

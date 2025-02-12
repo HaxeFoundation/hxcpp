@@ -35,7 +35,7 @@ class CppiaHost
       /*
       if (new HostExtends().getYou().extendOnly != 1)
       {
-         Sys.println("extend-overide type failed");
+         Sys.println("extend-override type failed");
          Sys.exit(-1);
       }
       */
@@ -96,7 +96,7 @@ class CppiaHost
                //
             case _:
                Sys.println("Unexpected items in array");
-               Sys.exit(-1);   
+               Sys.exit(-1);
          }
          #end
       }

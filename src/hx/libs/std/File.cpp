@@ -167,7 +167,7 @@ int _hx_std_file_write( Dynamic handle, Array<unsigned char> s, int p, int n )
    file_read : 'file -> s:string -> p:int -> l:int -> int
    <doc>
    Read up to [l] chars into the string [s] starting at position [p].
-   Returns the number of chars readed which is > 0 (or 0 if l == 0).
+   Returns the number of chars read which is > 0 (or 0 if l == 0).
    </doc>
 **/
 int _hx_std_file_read( Dynamic handle, Array<unsigned char> buf, int p, int n )

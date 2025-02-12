@@ -1,7 +1,7 @@
 class Build extends hxcpp.Builder
 {
    // Create a build in 'bin' directory, with the "stdlibc++" flags for compatibility
-   //  This flasg should not make a difference because hxcpp does not use stdlibc++
+   //  This flags should not make a difference because hxcpp does not use stdlibc++
    override public function wantLegacyIosBuild() { return true; }
 
    override public function wantWindows64() { return true; }
