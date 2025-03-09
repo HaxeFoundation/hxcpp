@@ -345,12 +345,16 @@ template<> struct DynamicConvertType< Array_obj< ::String> * > { enum { Convert 
 template<typename T> struct DynamicConvertType< Array_obj<T> * > { enum { Convert = sizeof(T) }; };
 template<> struct DynamicConvertType< cpp::VirtualArray_obj * > { enum { Convert = aciVirtualArray }; };
 
+#ifdef HXCPP_SCRIPTABLE
+
 // We need to specify callables getting a formal conversion due to an unfortunate edge case involving cppia.
 // Generics are type erased with Dynamic so the parameter is lost at runtime, this means that if a cppia script were
 // to push a closure into a array of Void->Void functions in the host it would not be pushing a callable since cppia
 // does not use them internally.
 // Later when the host perform a static cast on those elements to get a callable it will cause a memory error.
 template<typename T> struct DynamicConvertType< ::hx::Callable_obj<T>* > { enum { Convert = aciAlwaysConvert }; };
+
+#endif
 
 }
 
