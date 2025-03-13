@@ -259,6 +259,12 @@ namespace hx { template<typename O> class ObjectPtr; }
 namespace cpp { template<typename S,typename H> class Struct; }
 namespace cpp { template<typename T> class Pointer; }
 namespace cpp { template<typename T> class Function; }
+namespace cpp { namespace marshal { template<class T> class Boxed_obj; } }
+namespace cpp { namespace marshal { template<class T> using Boxed =::hx::ObjectPtr<Boxed_obj<T>>; } }
+namespace cpp { namespace marshal { template<class T> class ValueType; } }
+namespace cpp { namespace marshal { template<class T> class ValueReference; } }
+namespace cpp { namespace marshal { template<class T> class PointerType; } }
+namespace cpp { namespace marshal { template<class T> class PointerReference; } }
 template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
 namespace hx {
@@ -348,6 +354,7 @@ typedef PropertyAccessMode PropertyAccess;
 #endif
 #include <hx/StdLibs.h>
 #include <cpp/Pointer.h>
+#include <cpp/Marshal.h>
 #include <hx/Native.h>
 #include <hx/Operators.h>
 #include <hx/Functions.h>
