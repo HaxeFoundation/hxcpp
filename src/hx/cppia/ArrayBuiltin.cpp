@@ -1151,12 +1151,12 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    }
 
 
-   static hx::Object *SLJIT_CALL runGetIteratator( Array_obj<ELEM> *inArray )
+   static hx::Object *SLJIT_CALL runGetIterator( Array_obj<ELEM> *inArray )
    {
       return inArray->iterator().mPtr;
    }
 
-   static hx::Object *SLJIT_CALL runGetKeyValueIteratator( Array_obj<ELEM> *inArray )
+   static hx::Object *SLJIT_CALL runGetKeyValueIterator( Array_obj<ELEM> *inArray )
    {
       return inArray->keyValueIterator().mPtr;
    }
@@ -1729,14 +1729,14 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          case afIterator:
             {
                thisExpr->genCode(compiler, sJitTemp0, etObject);
-               compiler->callNative( (void *)runGetIteratator, sJitTemp0.as(jtPointer) );
+               compiler->callNative( (void *)runGetIterator, sJitTemp0.as(jtPointer) );
                compiler->convertReturnReg(etObject, inDest, destType);
                break;
             }
          case afKeyValueIterator:
             {
                thisExpr->genCode(compiler, sJitTemp0, etObject);
-               compiler->callNative( (void *)runGetKeyValueIteratator, sJitTemp0.as(jtPointer) );
+               compiler->callNative( (void *)runGetKeyValueIterator, sJitTemp0.as(jtPointer) );
                compiler->convertReturnReg(etObject, inDest, destType);
                break;
             }

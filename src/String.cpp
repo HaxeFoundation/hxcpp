@@ -983,7 +983,7 @@ unsigned int String::calcHash() const
 
 
 
-// InternalCreateConstBuffer is not uft16 aware whenit come to hashes
+// InternalCreateConstBuffer is not uft16 aware when it comes to hashes
 static void fixHashPerm16(const String &str)
 {
    unsigned int hash = str.calcHash();

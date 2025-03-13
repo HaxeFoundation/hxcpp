@@ -110,10 +110,10 @@
    <set name="HX_TARGET_SUFFIX" value="-19" if="MSVC19 static_link" />
 
    <section if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug || MSVC19">
-      <echo value="Warning: INCREMENTAL requies Visual Studio 2015+"/>
+      <echo value="Warning: INCREMENTAL requires Visual Studio 2015+"/>
       <!-- without INCREMENTAL -->
       <unset name="HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
-      <set name="HXCPP_OPTIMIZE_LINK" value="1"/> 
+      <set name="HXCPP_OPTIMIZE_LINK" value="1"/>
       <set name="OBJOPT" value="-opt" if="HXCPP_OPTIMIZE_LINK || HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug" />
       <set name="OBJEXT" value="${M64}${F32}${STAT}${OBJDBG}${OBJOPT}${NOCONSOLE}${RPI}${APIFP}${PRIME}" />
    </section>

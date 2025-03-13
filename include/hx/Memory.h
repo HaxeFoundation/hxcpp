@@ -1,6 +1,6 @@
 #ifdef HX_MEMORY_H_OVERRIDE
 // Users can define their own header to use here, but there is no API
-// compatibility gaurantee for future changes.
+// compatibility guarantee for future changes.
 #include HX_MEMORY_H_OVERRIDE
 
 // Todo - special version?

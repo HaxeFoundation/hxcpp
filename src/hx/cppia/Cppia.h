@@ -335,7 +335,7 @@ CppiaExpr *createStaticAccess(CppiaExpr *inSrc, ExprType inType, void *inPtr);
 CppiaExpr *createStaticAccess(CppiaExpr *inSrc, FieldStorage inType, void *inPtr);
 hx::Object * CPPIA_CALL createClosure(CppiaCtx *ctx, ScriptCallable *inFunction);
 hx::Object *createMemberClosure(hx::Object *, ScriptCallable *inFunction);
-hx::Object *createEnumClosure(struct CppiaEnumConstructor &inContructor);
+hx::Object *createEnumClosure(struct CppiaEnumConstructor &inConstructor);
 
 hx::Object *DynamicToArrayType(hx::Object *obj, ArrayType arrayType);
 

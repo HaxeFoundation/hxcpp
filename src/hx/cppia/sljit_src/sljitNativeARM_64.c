@@ -59,7 +59,7 @@ static const sljit_u8 reg_map[SLJIT_NUMBER_OF_REGISTERS + 8] = {
 #define VM(vm) ((vm) << 16)
 
 /* --------------------------------------------------------------------- */
-/*  Instrucion forms                                                     */
+/*  Instruction forms                                                    */
 /* --------------------------------------------------------------------- */
 
 #define ADC 0x9a000000

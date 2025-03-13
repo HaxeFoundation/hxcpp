@@ -191,7 +191,7 @@ class Compiler
       if (ext!=null)
          ext = ext.toLowerCase();
       else
-         Log.error("Unkown extension for " + inFile.mName);
+         Log.error("Unknown extension for " + inFile.mName);
 
 
       addIdentity(ext,args);
@@ -494,7 +494,7 @@ class Compiler
          return CompileCache.getCacheName(inFile.getCacheProject(),md5,mExt);
       }
       else
-         throw "Unkown source contents " + sourceName;
+         throw "Unknown source contents " + sourceName;
       return "";
    }
 

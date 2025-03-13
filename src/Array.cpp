@@ -47,8 +47,8 @@ void ArrayBase::reserve(int inSize) const
 
       if (mBase)
       {
-         bool wasUnamanaged = mAlloc<0;
-         if (wasUnamanaged)
+         bool wasUnmanaged = mAlloc<0;
+         if (wasUnmanaged)
          {
             char *base=(char *)hx::InternalNew(bytes,false);
             memcpy(base,mBase,length*elemSize);
@@ -98,8 +98,8 @@ void ArrayBase::Realloc(int inSize) const
 
       if (mBase)
       {
-         bool wasUnamanaged = mAlloc<0;
-         if (wasUnamanaged)
+         bool wasUnmanaged = mAlloc<0;
+         if (wasUnmanaged)
          {
             char *base=(char *)hx::InternalNew(bytes,false);
             memcpy(base,mBase,length*elemSize);
@@ -222,9 +222,9 @@ void ArrayBase::__SetSizeExact(int inSize)
       int bytes = inSize * elemSize;
       if (mBase)
       {
-         bool wasUnamanaged = mAlloc<0;
+         bool wasUnmanaged = mAlloc<0;
 
-         if (wasUnamanaged)
+         if (wasUnmanaged)
          {
             char *base=(char *)(AllocAtomic() ? hx::NewGCPrivate(0,bytes) : hx::NewGCBytes(0,bytes));
             memcpy(base,mBase,std::min(length,inSize)*elemSize);

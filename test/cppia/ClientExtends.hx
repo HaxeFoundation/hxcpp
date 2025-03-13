@@ -41,7 +41,7 @@ class ClientExtends extends HostBase implements IClientInterface implements ICli
 
    override public function whoStartedYou() : String  return super.whoStartedYou();
 
-   // override IHostInteface 
+   // override IHostInterface
    override public function whoOverridesYou() return "ClientExtends";
 
    // new IClientInterface

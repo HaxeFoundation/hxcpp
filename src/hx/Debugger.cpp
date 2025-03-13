@@ -46,8 +46,8 @@ static Dynamic g_newParameterFunction;
 //            StackFrame : Dynamic
 static Dynamic g_newStackFrameFunction;
 // This is the function to call to create a new ThreadInfo
-// Signature: number : Int -> statu s: Int -> breakpoint : Int ->
-//                     ThreadInfo :  Dynamic
+// Signature: number : Int -> status : Int -> breakpoint : Int ->
+//                     ThreadInfo : Dynamic
 static Dynamic g_newThreadInfoFunction;
 // This is the function to call to add a Parameter to a StackFrame.
 // Signature: inStackFrame : Dynamic -> inParameter : Dynamic -> Void
@@ -677,7 +677,7 @@ public:
         stack->mDebugger->Break(breakStatus, breakpointNumber, 0);
       }
 
-      static bool shoudBreakOnLine()
+      static bool shouldBreakOnLine()
       {
          return gBreakpoints->IsEmpty() || gStepType != hx::STEP_NONE;
       }
@@ -1506,7 +1506,7 @@ void __hxcpp_execution_trace(int inLevel)
 {
     hx::sExecutionTrace = (hx::ExecutionTrace)inLevel;
     hx::gShouldCallHandleBreakpoints =
-          hx::Breakpoints::shoudBreakOnLine() || (hx::sExecutionTrace==hx::exeTraceLines);
+          hx::Breakpoints::shouldBreakOnLine() || (hx::sExecutionTrace==hx::exeTraceLines);
 }
 
 

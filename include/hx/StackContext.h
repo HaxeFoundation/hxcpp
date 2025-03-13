@@ -19,7 +19,7 @@
 #define HXCPP_STACK_LINE
 #endif
 
-// Do we need to keep a stack trace - for basic exception handelling, also needed for the debugger
+// Do we need to keep a stack trace - for basic exception handling, also needed for the debugger
 // At a minimum, you can track the functions calls and nothing else
 #if (defined(HXCPP_STACK_LINE) || defined(HXCPP_TELEMETRY) || defined(HXCPP_PROFILER) || defined(HXCPP_DEBUG)) && !defined(HXCPP_STACK_TRACE)
    #define HXCPP_STACK_TRACE
@@ -408,7 +408,7 @@ struct StackContext : public hx::ImmixAllocator
       bool mIsUnwindingException;
 
       #ifdef HXCPP_STACK_SCRIPTABLE
-         // TODO - combine CppaCtx and StackContext
+         // TODO - combine CppiaCtx and StackContext
       #endif
 
       #ifdef HXCPP_DEBUGGER
