@@ -111,6 +111,10 @@ void CppiaModule::registerDebugger()
    for(hx::UnorderedSet<int>::const_iterator i = allFileIds.begin(); i!=allFileIds.end(); ++i)
       addScriptableFile(strings[*i]);
 
+   if (hx::g_onScriptLoadedFunction != null{}) {
+      hx::g_onScriptLoadedFunction();
+   }
+
    #endif
 }
 
