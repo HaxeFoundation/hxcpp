@@ -56,7 +56,7 @@ static Dynamic g_addParameterToStackFrameFunction;
 // Signature: inThreadInfo : Dynamic -> inStackFrame : Dynamic -> Void
 static Dynamic g_addStackFrameToThreadInfoFunction;
 
-#ifdef HXCPP_SCRIPTABLE
+#if defined(HXCPP_SCRIPTABLE) && (HXCPP_API_LEVEL >= 500)
 Dynamic g_onScriptLoadedFunction{};
 #endif
 
@@ -1457,7 +1457,7 @@ void __hxcpp_dbg_setAddStackFrameToThreadInfoFunction(Dynamic function)
 }
 
 
-#ifdef HXCPP_SCRIPTABLE
+#if defined(HXCPP_SCRIPTABLE) && (HXCPP_API_LEVEL >= 500)
 void __hxcpp_dbg_setOnScriptLoadedFunction(Dynamic function)
 {
     hx::g_onScriptLoadedFunction = function;
