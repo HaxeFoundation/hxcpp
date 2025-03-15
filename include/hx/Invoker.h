@@ -208,7 +208,7 @@ template<class ...TArgs>
 }
 
 template<class TReturn, class... TArgs>
-::Dynamic hx::Callable_obj<TReturn(TArgs...)>::__Run(const Array<Dynamic>& inArgs)
+::Dynamic hx::AutoCallable_obj<TReturn(TArgs...)>::__Run(const Array<Dynamic>& inArgs)
 {
     return invoker::Invoker<std::is_void<TReturn>::value, TReturn, TArgs...>::call(this, inArgs, invoker::index::Helper::index_sequence_for<TArgs...>());
 }

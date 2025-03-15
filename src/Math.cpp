@@ -57,7 +57,7 @@ double Math_obj::POSITIVE_INFINITY = std::numeric_limits<double>::infinity();
 	#define HX_MATHS_FUNC(value, name, args_list, func_list, args_call) \
 		::hx::Callable<value(args_list)> Math_obj::name##_dyn() \
 		{ \
-			struct _hx_maths_##name : public ::hx::Callable_obj<value(args_list)> \
+			struct _hx_maths_##name : public ::hx::AutoCallable_obj<value(args_list)> \
 			{ \
 				value HX_LOCAL_RUN(func_list) override \
 				{ \

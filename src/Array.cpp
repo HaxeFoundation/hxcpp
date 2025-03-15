@@ -690,7 +690,7 @@ namespace cpp
 #if (HXCPP_API_LEVEL>=500)
     ::hx::Callable<bool()> IteratorBase::hasNext_dyn()
     {
-        struct _hx_iterator_hasNext : public ::hx::Callable_obj<bool()>
+        struct _hx_iterator_hasNext : public ::hx::AutoCallable_obj<bool()>
         {
             ::hx::ObjectPtr<IteratorBase> __this;
 
@@ -722,7 +722,7 @@ namespace cpp
 
     ::hx::Callable<::Dynamic()> IteratorBase::next_dyn()
     {
-        struct _hx_iterator_next : public ::hx::Callable_obj<::Dynamic()>
+        struct _hx_iterator_next : public ::hx::AutoCallable_obj<::Dynamic()>
         {
             ::hx::ObjectPtr<IteratorBase> __this;
 
@@ -800,7 +800,7 @@ namespace cpp
 #define HX_VARRAY_FUNC(ret, value, name, args_list, func_list, args_call) \
     ::hx::Callable<value(args_list)> VirtualArray_obj::name##_dyn() \
     { \
-        struct _hx_virtualarray_##name : public ::hx::Callable_obj<value(args_list)> \
+        struct _hx_virtualarray_##name : public ::hx::AutoCallable_obj<value(args_list)> \
         { \
             VirtualArray mThis; \
             _hx_virtualarray_##name(::cpp::VirtualArray inThis) : mThis(inThis) \

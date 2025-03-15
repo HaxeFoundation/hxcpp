@@ -47,10 +47,21 @@ namespace hx
             return sizeof...(TArgs);
         }
 
-        Dynamic __Run(const Array<Dynamic>& inArgs) override final;
+        Dynamic __Run(const Array<Dynamic>& inArgs) = 0;
 
         virtual TReturn _hx_run(TArgs... args) = 0;
     };
+
+    template<class TReturn, class... TArgs>
+    class HXCPP_EXTERN_CLASS_ATTRIBUTES AutoCallable_obj;
+
+    template<class TReturn, class... TArgs>
+    class HXCPP_EXTERN_CLASS_ATTRIBUTES AutoCallable_obj<TReturn(TArgs...)> : public ::hx::Callable_obj<TReturn(TArgs...)>
+    {
+        Dynamic __Run(const Array<Dynamic>& inArgs) override final;
+    };
+
+    // ::hx::ObjectPtr overloads
 
     template<class TReturn, class... TArgs>
     class HXCPP_EXTERN_CLASS_ATTRIBUTES Callable;
@@ -83,7 +94,7 @@ namespace hx
         Callable(::cpp::Function<TReturn(TArgs...)> inFunction)
             : super(nullptr)
         {
-            struct FunctionCallable final : public Callable_obj<TReturn(TArgs...)>
+            struct FunctionCallable final : public AutoCallable_obj<TReturn(TArgs...)>
             {
                 ::cpp::Function<TReturn(TArgs...)> func;
 
@@ -105,7 +116,7 @@ namespace hx
         Callable(const Callable<TOtherReturn(TOtherArgs...)>& inCallable)
             : super(nullptr)
         {
-            struct AdapterCallable final : public Callable_obj<TReturn(TArgs...)>
+            struct AdapterCallable final : public AutoCallable_obj<TReturn(TArgs...)>
             {
                 Callable<TOtherReturn(TOtherArgs...)> wrapped;
 
@@ -138,7 +149,7 @@ namespace hx
         Callable(const Callable<void(TOtherArgs...)>& inCallable)
             : super(nullptr)
         {
-            struct AdapterCallable final : public Callable_obj<TReturn(TArgs...)>
+            struct AdapterCallable final : public AutoCallable_obj<TReturn(TArgs...)>
             {
                 Callable<void(TOtherArgs...)> wrapped;
 
@@ -181,7 +192,7 @@ namespace hx
             {
                 if (::hx::IsNotNull(inDynamic) && inDynamic->__GetType() == vtFunction)
                 {
-                    struct DynamicCallable final : public Callable_obj<TReturn(TArgs...)>
+                    struct DynamicCallable final : public AutoCallable_obj<TReturn(TArgs...)>
                     {
                         Dynamic wrapped;
 
@@ -223,8 +234,6 @@ namespace hx
         }
     };
 
-    //
-
     template<class... TArgs>
     class Callable<void(TArgs...)> : public ObjectPtr<Callable_obj<void(TArgs...)>>
     {
@@ -253,7 +262,7 @@ namespace hx
         Callable(::cpp::Function<void(TArgs...)> inFunction)
             : super(nullptr)
         {
-            struct FunctionCallable final : public Callable_obj<void(TArgs... )>
+            struct FunctionCallable final : public AutoCallable_obj<void(TArgs... )>
             {
                 ::cpp::Function<void(TArgs...)> func;
 
@@ -272,7 +281,7 @@ namespace hx
         Callable(const Callable<TOtherReturn(TOtherArgs...)>& inCallable)
             : super(nullptr)
         {
-            struct AdapterCallable final : public Callable_obj<void(TArgs...)>
+            struct AdapterCallable final : public AutoCallable_obj<void(TArgs...)>
             {
                 Callable<TOtherReturn(TOtherArgs...)> wrapped;
 
@@ -313,7 +322,7 @@ namespace hx
             {
                 if (::hx::IsNotNull(inDynamic) && inDynamic->__GetType() == vtFunction)
                 {
-                    struct DynamicCallable final : public Callable_obj<void(TArgs...)>
+                    struct DynamicCallable final : public AutoCallable_obj<void(TArgs...)>
                     {
                         Dynamic wrapped;
 

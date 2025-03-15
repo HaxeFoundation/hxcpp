@@ -574,7 +574,7 @@ public:
    template<typename T>
    ::hx::Callable<int(T)> push_dyn()
    {
-       struct _hx_virtualarray_push : public ::hx::Callable_obj<int(T)>
+       struct _hx_virtualarray_push : public ::hx::AutoCallable_obj<int(T)>
        {
            ::cpp::VirtualArray mThis;
 

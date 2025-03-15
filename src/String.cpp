@@ -2126,7 +2126,7 @@ String &String::operator+=(const String &inRHS)
     #define HX_STRING_FUNC(value, name, args_list, func_list, args_call) \
         ::hx::Callable<value(args_list)> String::name##_dyn() \
         { \
-            struct _hx_string_##name : public ::hx::Callable_obj<value(args_list)> \
+            struct _hx_string_##name : public ::hx::AutoCallable_obj<value(args_list)> \
             { \
                 ::String mThis; \
                 _hx_string_##name(const ::String& inThis) : mThis(inThis) \
@@ -2167,7 +2167,7 @@ String &String::operator+=(const String &inRHS)
 
     ::hx::Callable<::String(int)> String::fromCharCode_dyn()
     {
-        struct _hx_string_fromCharCode : public ::hx::Callable_obj<::String(HX_STRING_ARG_LIST1(int))>
+        struct _hx_string_fromCharCode : public ::hx::AutoCallable_obj<::String(HX_STRING_ARG_LIST1(int))>
         {
             ::String HX_LOCAL_RUN(HX_STRING_FUNC_LIST1(int)) override
             {
