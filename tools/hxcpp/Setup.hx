@@ -581,7 +581,7 @@ class Setup
          defines.set("PLATFORM", "android-" + best);
          androidPlatform = best;
       }
-      defines.set("ANDROID_PLATFORM_DEFINE", "HXCPP_ANDROID_PLATFORM=" + androidPlatform);
+      defines.set("HXCPP_ANDROID_PLATFORM", Std.string(androidPlatform));
       if (Log.verbose) Log.println("");
    }
 
