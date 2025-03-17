@@ -27,7 +27,8 @@
 
 <section unless="HXCPP_X86">
   <set name="ARCH" value="-v7" if="HXCPP_ARMV7" />
-  <set name="ABI" value="armeabi" />
+  <set name="ABI" value="armeabi" unless="HXCPP_ARMV7" />
+  <set name="ABI" value="armeabi-v7a" if="HXCPP_ARMV7"/>
   <set name="PLATFORM_ARCH" value="arch-arm" />
   <set name="TOOLCHAIN" value="arm-linux-androideabi-${TOOLCHAIN_VERSION}" />
   <set name="EXEPREFIX" value="arm-linux-androideabi" />
