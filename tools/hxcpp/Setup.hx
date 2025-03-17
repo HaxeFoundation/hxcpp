@@ -125,10 +125,13 @@ class Setup
    }
 
    static var gotNdkVersion = 0.0;
+   static var cachedNdkPath:Null<String> = null;
    static public function getNdkVersion(inDirName:String, newStyle=false):Float
    {
-      if (gotNdkVersion!=0)
+      if (gotNdkVersion!=0 && cachedNdkPath==inDirName)
          return gotNdkVersion;
+
+      cachedNdkPath = inDirName;
 
       Log.v("Try to get version from source.properties");
       var src = toPath(inDirName+"/source.properties");
