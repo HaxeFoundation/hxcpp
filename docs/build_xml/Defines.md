@@ -67,7 +67,7 @@ Defines affecting target architecture.
 | *HXCPP_LINUX_ARM64*     | Run on a linux ARM64 device |
 | *winrt*                 | Compile for windowsRt/windows UWP |
 | *android*               | Compile for android |
-| *PLATFORM*              | Specify the android platform for NDK compilation |
+| *HXCPP_ANDROID_PLATFORM* | Specify the android platform for NDK compilation |
 | *ANDROID_NDK_ROOT*      | Specify the location of the android NDK toolchain |
 | *ANDROID_NDK_DIR*       | Specify the search location for finding the android NDK toolchain |
 | *HXCPP_X86*             | Compile android for x86 architecture |
