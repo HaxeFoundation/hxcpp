@@ -372,13 +372,13 @@ void StackContext::beginCatch(bool inAll)
    if (inAll)
    {
       mExceptionStack.clear();
-      // Copy remaineder of stack frames to exception stack...
+      // Copy remainder of stack frames to exception stack...
       // This will use the default operator=, which will copy the pointers.
       // This is what we want, since the pointers are pointers to constant data
       for(int i=mStackFrames.size()-1;i>=0;--i)
          mExceptionStack.push( *mStackFrames[i] );
    }
-   // Lock-in the excpetion stack
+   // Lock-in the exception stack
    mIsUnwindingException = false;
 }
 
@@ -484,7 +484,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void NullReference(const char *type, bool allowFix
 }
 
 
-} // end namspace hx
+} // end namespace hx
 
 #ifndef HXCPP_DEBUGGER
 void __hxcpp_execution_trace(int inLevel) { }

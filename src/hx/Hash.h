@@ -185,7 +185,7 @@ public:
 
 
 
-// An Dyanamic element must use the GC code to get a hash
+// An Dynamic element must use the GC code to get a hash
 template<typename VALUE,bool WEAK>
 struct TDynamicElement
 {

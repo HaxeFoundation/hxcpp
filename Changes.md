@@ -17,7 +17,7 @@
 
 4.1.15
 ------------------------------------------------------------
-* Added Arm64 suport on windows
+* Added Arm64 support on windows
 * Fixed crash with zero-sized alloc and generational GC
 * Fixed crash with generational GC when old objects come back to life
 * Fixed compile error with @:fixed Anons and arrays (socket select)
@@ -68,7 +68,7 @@
 * Updated version of zlib
 * Updated version of sljit
 * Updated version of pcre
-* Updated version of sqlit3
+* Updated version of sqlite3
 * Updated version of mbedtls
 * Some work on supporting utf16 strings (hx_smart_strings)
 * Added process_kill
@@ -197,7 +197,7 @@
 * Support HXCPP_DEBUG_LINK on more targets
 * Support for cross compiling to windows from linux
 * Added array removeAt
-* Some telemety fixes (thanks Jeff)
+* Some telemetry fixes (thanks Jeff)
 * Check contents when comparing Dynamics with same pointer (Math.Nan!=Math.Nan)
 * Numerous WinRT fixes (thanks madrazo)
 * Fixed bug causing GC to crash marking constant strings (eg, resources)
@@ -241,7 +241,7 @@
 * Make it easier to change the generated output filename
 * Allow targets from one build.xml file to be merged into another
 * Some more work on HXCPP_COMPILE_CACHE
-* Allow automatic grouping of obj files into librarys to avoid linking all the symbols in all obj files
+* Allow automatic grouping of obj files into libraries to avoid linking all the symbols in all obj files
 * Add implicit conversion to referenced type from cpp.Reference
 * Allow build.xml files to be imported relative to importing file
 * Allow '-' in command-line defines
@@ -265,11 +265,11 @@ Haxe 3.2.0
 ------------------------------------------------------------
 
 * Improve testing
-* Allow dll_load path to be set programatically and simplified the dll search sequence.
+* Allow dll_load path to be set programmatically and simplified the dll search sequence.
 * Improved cffi_prime, and added String class
 * Fixed static linking of mysql5
 * Moved static link code in general to cpp.link package, not hxcpp package
-* URL decode now does not need to performe reallocs
+* URL decode now does not need to perform reallocs
 * Ensure HXCPP_API_LEVEL is always defined
 * Added __hxcpp_unload_all_libraries to cleanly unload dlls
 * Added some utc date functions
@@ -307,13 +307,13 @@ Haxe 3.2.0
 * Remove NekoApi binaries
 * Add Cppia binaries
 * Add Windows64 binaries
-* Make compares between Dynamic and numeric types false, unless the Dynamic is actaully numeric
+* Make compares between Dynamic and numeric types false, unless the Dynamic is actually numeric
 
 ------------------------------------------------------------
 * Even more optimizations for hashes
 * Some more optimizations for small hashes
 * Fix for google changing inlining in platform21 headers (atof, rand, srand)
-* Re-tuned Hash for small objects too (improves Anon object perforamce)
+* Re-tuned Hash for small objects too (improves Anon object performance)
 * Reverted change that automatically threw 'BadCast'.  Now required HXCPP_STRICT_CASTS
 
 ------------------------------------------------------------
@@ -322,10 +322,10 @@ Haxe 3.2.0
 * Use internal hash structure for maps - now faster.  New version of haxe makes it faster still.
 * Changed the way development versions are bootstrapped to avoid committing binaries
 * Improved mingw support
-* Dont append -debug to dll name
+* Don't append -debug to dll name
 * Reorder xml includes to allow early parts to correctly influence older parts
 * Fix busy wait in semaphore lock
-* Fixed GC issue when constructing exrernal primitive objects
+* Fixed GC issue when constructing external primitive objects
 * Added armv7s and arm64 targets for ios
 * Some fixes for neko cffi - wstring and warning for neko_init
 * Fix file read (and copy) from thread
@@ -390,7 +390,7 @@ Haxe 3.2.0
 * Use sys.io.Process instead of Sys.command to avoid threading slowdown writing to console
 * Add hxcpp.Builder to help with building multiple binaries
 * Add android x86 support
-* Drop pre-compiled support for everything excepth windows,mac,linux,ios and android
+* Drop pre-compiled support for everything except windows,mac,linux,ios and android
 * Allow libraries and files to accumulated in the build.xml
 * Supply pre-build lib files for static linking on supported platforms
 * Support for static linking of all modules
@@ -399,7 +399,7 @@ Haxe 3.2.0
 * Use build.n script to build all appropriate binaries
 * Some initial support for mysql and sqlite databases
 * Add free_abstract for safe releasing of data references
-* Change process lauching to get better thread usage on mac
+* Change process launching to get better thread usage on mac
 * Fix GC error in string resources
 * Give obj files in libraries unique names
 
@@ -419,9 +419,9 @@ Haxe 3.2.0
 * Fixed android build
 * Expanded native memory access methods
 * Fix exception dump
-* Added initial Emscriptm support
+* Added initial Emscripten support
 * Allow specification of ANDROID_HOST
-* Inital work on auto-setup of win64
+* Initial work on auto-setup of win64
 * Support call-site casting of Arrays
 
 
@@ -583,7 +583,7 @@ Haxe 3.2.0
 * Fix interface operator ==
 * Initial work on msvc10 batch file
 * Add bounds check on String.cca
-* Build static libraries, if requrested
+* Build static libraries, if requested
 * Added exe stripping
 * Added val_field_name, val_iter_fields
 * Fixed nekoapi string length
@@ -596,7 +596,7 @@ Haxe 3.2.0
 * Fixed String UTF8 Encode
 * Nekoapi is now a "ndll", not a "dso".
 * Fix array compile issue on linux
-* Fix stack setting on firced collect
+* Fix stack setting on forced collect
 
 2.06.0
 ------------------------------------------------------------
@@ -621,7 +621,7 @@ Haxe 3.2.0
 ------------------------------------------------------------
 
 * Default to IMMIX based internal garbage collection.
-* Reorginised files - split big ones, and moved common ones out of "runtime".
+* Reorganised files - split big ones, and moved common ones out of "runtime".
 * Put internal classes in "hx" namespace, or HX_ prefix for macros.
 * Remove multiple-inheritance, and use delegation instead.
 * Write "Options.txt" from compiler so dependency can be determined.
@@ -631,7 +631,7 @@ Haxe 3.2.0
 * Added comprehensive list of reserved member names.
 * Put if/else statements in blocks.
 * Added assert, NULL, LITTLE_ENDIAN, BIG_ENDIAN as keywords.
-* Added control over how fast-cffi routines are created by requiring cpp.rtti.FastIntergerLookup to be "implemented".
+* Added control over how fast-cffi routines are created by requiring cpp.rtti.FastIntegerLookup to be "implemented".
 * Construct anonymous object fields in deterministic (as declared) order.
 * Fix code generation for some complex inline cases.
 * Added cpp.zip.Compress

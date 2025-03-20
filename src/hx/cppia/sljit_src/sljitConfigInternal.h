@@ -35,7 +35,7 @@
      sljit_s16, sljit_u16 : signed and unsigned 16 bit integer type
      sljit_s32, sljit_u32 : signed and unsigned 32 bit integer type
      sljit_sw, sljit_uw   : signed and unsigned machine word, enough to store a pointer
-     sljit_p              : unsgined pointer value (usually the same as sljit_uw, but
+     sljit_p              : unsigned pointer value (usually the same as sljit_uw, but
                             some 64 bit ABIs may use 32 bit pointers)
      sljit_f32            : 32 bit single precision floating point value
      sljit_f64            : 64 bit double precision floating point value
@@ -522,7 +522,7 @@ typedef double sljit_f64;
 #endif
 #endif /* SLJIT_INDIRECT_CALL */
 
-/* The offset which needs to be substracted from the return address to
+/* The offset which needs to be subtracted from the return address to
 determine the next executed instruction after return. */
 #ifndef SLJIT_RETURN_ADDRESS_OFFSET
 #if (defined SLJIT_CONFIG_SPARC_32 && SLJIT_CONFIG_SPARC_32)

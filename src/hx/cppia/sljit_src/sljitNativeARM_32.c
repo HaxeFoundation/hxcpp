@@ -63,7 +63,7 @@ static const sljit_u8 reg_map[SLJIT_NUMBER_OF_REGISTERS + 5] = {
 #define RN(rn) (reg_map[rn] << 16)
 
 /* --------------------------------------------------------------------- */
-/*  Instrucion forms                                                     */
+/*  Instruction forms                                                    */
 /* --------------------------------------------------------------------- */
 
 /* The instruction includes the AL condition.
@@ -307,7 +307,7 @@ static sljit_uw patch_pc_relative_loads(sljit_uw *last_pc_patch, sljit_uw *code_
 	return counter;
 }
 
-/* In some rare ocasions we may need future patches. The probability is close to 0 in practice. */
+/* In some rare occasions we may need future patches. The probability is close to 0 in practice. */
 struct future_patch {
 	struct future_patch* next;
 	sljit_s32 index;
@@ -1166,7 +1166,7 @@ static sljit_s32 generate_int(struct sljit_compiler *compiler, sljit_s32 reg, sl
 	sljit_uw imm2;
 	sljit_s32 rol;
 
-	/* Step1: Search a zero byte (8 continous zero bit). */
+	/* Step1: Search a zero byte (8 continuous zero bit). */
 	mask = 0xff000000;
 	rol = 8;
 	while(1) {

@@ -105,7 +105,7 @@ class TestCffi extends Test
 
       #if !neko
       Assert.isTrue( valIsBuffer(bytes) );
-      // Can't acess neko buffer from haxe code
+      // Can't access neko buffer from haxe code
       bytes = appendString(bytes,"World");
       var result = bufferToString(bytes);
       Assert.equals("Hello World", result);

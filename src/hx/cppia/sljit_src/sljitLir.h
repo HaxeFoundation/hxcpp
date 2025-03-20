@@ -88,7 +88,7 @@ of sljitConfigInternal.h */
 #define SLJIT_SUCCESS			0
 /* After the call of sljit_generate_code(), the error code of the compiler
    is set to this value to avoid future sljit calls (in debug mode at least).
-   The complier should be freed after sljit_generate_code(). */
+   The compiler should be freed after sljit_generate_code(). */
 #define SLJIT_ERR_COMPILED		1
 /* Cannot allocate non executable memory. */
 #define SLJIT_ERR_ALLOC_FAILED		2
@@ -545,7 +545,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_enter(struct sljit_compiler *compi
 
 /* The machine code has a context (which contains the local stack space size,
    number of used registers, etc.) which initialized by sljit_emit_enter. Several
-   functions (like sljit_emit_return) requres this context to be able to generate
+   functions (like sljit_emit_return) requires this context to be able to generate
    the appropriate code. However, some code fragments (like inline cache) may have
    no normal entry point so their context is unknown for the compiler. Their context
    can be provided to the compiler by the sljit_set_context function.
@@ -571,8 +571,8 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_return(struct sljit_compiler *comp
    dst/dstw by sljit_emit_fast_enter (the type of the value stored by this function
    is sljit_p), and sljit_emit_fast_return can use this as a return value later. */
 
-/* Note: only for sljit specific, non ABI compilant calls. Fast, since only a few machine
-   instructions are needed. Excellent for small uility functions, where saving registers
+/* Note: only for sljit specific, non ABI compliant calls. Fast, since only a few machine
+   instructions are needed. Excellent for small utility functions, where saving registers
    and setting up a new stack frame would cost too much performance. However, it is still
    possible to return to the address of the caller (or anywhere else). */
 
@@ -596,7 +596,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_fast_return(struct sljit_compiler 
 */
 
 /*
-   IMPORATNT NOTE: memory access MUST be naturally aligned except
+   IMPORTANT NOTE: memory access MUST be naturally aligned except
                    SLJIT_UNALIGNED macro is defined and its value is 1.
 
      length | alignment
@@ -611,7 +611,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_fast_return(struct sljit_compiler 
 
    Note:   Different architectures have different addressing limitations.
            A single instruction is enough for the following addressing
-           modes. Other adrressing modes are emulated by instruction
+           modes. Other addressing modes are emulated by instruction
            sequences. This information could help to improve those code
            generators which focuses only a few architectures.
 
@@ -1200,7 +1200,7 @@ SLJIT_API_FUNC_ATTRIBUTE struct sljit_const* sljit_emit_const(struct sljit_compi
 
 /* After the code generation the address for label, jump and const instructions
    are computed. Since these structures are freed by sljit_free_compiler, the
-   addresses must be preserved by the user program elsewere. */
+   addresses must be preserved by the user program elsewhere. */
 static SLJIT_INLINE sljit_uw sljit_get_label_addr(struct sljit_label *label) { return label->addr; }
 static SLJIT_INLINE sljit_uw sljit_get_jump_addr(struct sljit_jump *jump) { return jump->addr; }
 static SLJIT_INLINE sljit_uw sljit_get_const_addr(struct sljit_const *const_) { return const_->addr; }

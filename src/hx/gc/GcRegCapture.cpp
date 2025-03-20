@@ -131,7 +131,7 @@ void CaptureArm64(RegisterCaptureBuffer &outBuffer)
 
 namespace hx {
 
-// Put this function here so we can be reasonablly sure that "this" register and
+// Put this function here so we can be reasonably sure that "this" register and
 // the 4 registers that may be used to pass args are on the stack.
 int RegisterCapture::Capture(int *inTopOfStack,int **inBuf,int &outSize,int inMaxSize, int *inBottom)
 {

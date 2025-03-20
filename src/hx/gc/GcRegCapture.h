@@ -20,7 +20,7 @@
 
    #if defined(HXCPP_ARM64)
       //#define HXCPP_CAPTURE_ARM64
-      // Awlays use setjmp on arm64
+      // Always use setjmp on arm64
       #include <setjmp.h>
       #define HXCPP_CAPTURE_SETJMP
    #endif

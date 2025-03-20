@@ -68,7 +68,7 @@ static const sljit_u8 reg_map[SLJIT_NUMBER_OF_REGISTERS + 5] = {
 };
 
 /* --------------------------------------------------------------------- */
-/*  Instrucion forms                                                     */
+/*  Instruction forms                                                    */
 /* --------------------------------------------------------------------- */
 
 #define S(s)		(reg_map[s] << 21)
@@ -301,7 +301,7 @@ static SLJIT_INLINE sljit_ins* detect_jump_type(struct sljit_jump *jump, sljit_i
 		}
 	}
 	else {
-		/* J instuctions. */
+		/* J instructions. */
 		if ((jump->flags & IS_MOVABLE) && (target_addr & ~0xfffffff) == (jump->addr & ~0xfffffff)) {
 			jump->flags |= PATCH_J;
 			inst[0] = inst[-1];
@@ -695,7 +695,7 @@ static const sljit_ins data_transfer_insts[16 + 4] = {
 
 #undef ARCH_32_64
 
-/* reg_ar is an absoulute register! */
+/* reg_ar is an absolute register! */
 
 /* Can perform an operation using at most 1 instruction. */
 static sljit_s32 getput_arg_fast(struct sljit_compiler *compiler, sljit_s32 flags, sljit_s32 reg_ar, sljit_s32 arg, sljit_sw argw)
@@ -703,7 +703,7 @@ static sljit_s32 getput_arg_fast(struct sljit_compiler *compiler, sljit_s32 flag
 	SLJIT_ASSERT(arg & SLJIT_MEM);
 
 	if ((!(flags & WRITE_BACK) || !(arg & REG_MASK)) && !(arg & OFFS_REG_MASK) && argw <= SIMM_MAX && argw >= SIMM_MIN) {
-		/* Works for both absoulte and relative addresses. */
+		/* Works for both absolute and relative addresses. */
 		if (SLJIT_UNLIKELY(flags & ARG_TEST))
 			return 1;
 		FAIL_IF(push_inst(compiler, data_transfer_insts[flags & MEM_MASK] | S(arg & REG_MASK)
