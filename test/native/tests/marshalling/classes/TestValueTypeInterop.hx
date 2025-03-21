@@ -190,7 +190,7 @@ class TestValueTypeInterop extends Test {
     function test_copying_from_pointer() {
         final src  = new StdVector<Int>(10);
         final ptr  = Pointer.addressOf(src);
-        final copy = ptr.value;
+        final copy : StdVector<Int> = ptr.value;
 
         copy.resize(100);
 
