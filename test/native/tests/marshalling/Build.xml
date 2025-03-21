@@ -1,0 +1,41 @@
+<xml>
+    <files id="test-source">
+        <depend files="hxcpp-depends"/>
+
+        <compilerflag value="-I${this_dir}/native"/>
+
+        <file name="${this_dir}/native/ctx.cpp">
+            <depend name="${this_dir}/native/ctx.hpp"/>
+        </file>
+
+        <file name="${this_dir}/native/Base.cpp">
+            <depend name="${this_dir}/native/Base.hpp"/>
+        </file>
+
+        <file name="${this_dir}/native/Child.cpp">
+            <depend name="${this_dir}/native/Base.hpp"/>
+            <depend name="${this_dir}/native/Child.hpp"/>
+        </file>
+
+        <file name="${this_dir}/native/point.cpp">
+            <depend name="${this_dir}/native/point.hpp"/>
+        </file>
+
+        <file name="${this_dir}/native/holder.cpp">
+            <depend name="${this_dir}/native/holder.hpp"/>
+            <depend name="${this_dir}/native/point.hpp"/>
+        </file>
+
+        <file name="${this_dir}/native/Managed.cpp">
+            <depend name="${this_dir}/native/Managed.hpp"/>
+        </file>
+    </files>
+
+    <files id="haxe">
+        <compilerflag value="-I${this_dir}/native"/>
+    </files>
+
+    <target id="haxe">
+        <files id="test-source"/>
+    </target>
+</xml>
