@@ -1,5 +1,5 @@
-#ifndef HX_STD_STRING_INCLUDEDED
-#define HX_STD_STRING_INCLUDEDED
+#ifndef HX_STD_STRING_INCLUDED
+#define HX_STD_STRING_INCLUDED
 
 #include <string>
 

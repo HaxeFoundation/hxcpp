@@ -20,7 +20,7 @@ class RunMain
          Sys.exit(-1);
       }
 
-      log('This version of hxcpp ($dir) appears to be a source/developement version.');
+      log('This version of hxcpp ($dir) appears to be a source/development version.');
       log("Before this can be used, you need to:");
       log(" 1. Rebuild the main command-line tool, this can be done with:");
       log("     cd tools/hxcpp");

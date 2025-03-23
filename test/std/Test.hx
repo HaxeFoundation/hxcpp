@@ -130,7 +130,7 @@ class Test extends utest.Test
       v(Std.string(later));
 
       var diff:Float = untyped __global__.__hxcpp_timezone_offset(now.mSeconds);
-      v("timezone offet:" + diff);
+      v("timezone offset:" + diff);
    }
 
    function testCompress()

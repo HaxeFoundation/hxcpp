@@ -6,7 +6,7 @@ namespace hx
 
 // --- FieldRef ----------------------------------------------------------
 //
-//  This is used to provide syntaxe for setting fields by name.  This is because
+//  This is used to provide syntax for setting fields by name.  This is because
 //   the field can't be returned by reference, because it may not exist as a dynamic.
 //
 //  eg, consider class 'A' with variable 'x':

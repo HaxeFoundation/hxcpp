@@ -8,7 +8,7 @@ class TestRgb extends Test
 {
    public function testCreate()
    {
-      // Pointer-like sysntax
+      // Pointer-like syntax
       var rgbPtr = RGB.create(255,0,128);
       Assert.equals( rgbPtr.ptr.toInt(), 0xff0080 );
       rgbPtr.ptr.deleteMe();

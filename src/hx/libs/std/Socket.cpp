@@ -265,7 +265,7 @@ int _hx_std_socket_send( Dynamic o, Array<unsigned char> buf, int p, int l )
 /**
    socket_recv : 'socket -> buf:string -> pos:int -> len:int -> int
    <doc>Read up to [len] bytes from [buf] starting at [pos] from a connected socket.
-   Return the number of bytes readed.</doc>
+   Return the number of bytes read.</doc>
 **/
 int _hx_std_socket_recv( Dynamic o, Array<unsigned char> buf, int p, int l )
 {
@@ -929,7 +929,7 @@ Array<int> _hx_std_socket_host( Dynamic o )
 }
 
 /**
-   socket_set_timeout : 'socket -> timout:number? -> void
+   socket_set_timeout : 'socket -> timeout:number? -> void
    <doc>Set the socket send and recv timeout in seconds to the given value (or null for blocking)</doc>
 **/
 void _hx_std_socket_set_timeout( Dynamic o, Dynamic t )

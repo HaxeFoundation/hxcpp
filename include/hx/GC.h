@@ -360,7 +360,7 @@ public:
 
 
 
-   // These allocate the function using the garbage-colleced malloc
+   // These allocate the function using the garbage-collected malloc
    inline static void *alloc(ImmixAllocator *alloc, size_t inSize, bool inContainer, const char *inName )
    {
       #ifdef HXCPP_GC_NURSERY

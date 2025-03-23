@@ -52,7 +52,7 @@ class HostBase implements IHostInterface
 
    public function update() return "HostBase update";
 
-   // IHostInteface 
+   // IHostInterface 
    public function hostImplOnly(i:Int, s:String, f:Float) : String return i+s+f;
    public function whoStartedYou() return "HostBase";
    public function whoOverridesYou() return "No one";

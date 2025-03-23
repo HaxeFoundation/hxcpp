@@ -1,6 +1,6 @@
 Linker
 ------
-Generally one linker is run per target to build a static library, dynamic library or exe.  The 'id' attribute of the linker specifies whch type of linking is performed.
+Generally one linker is run per target to build a static library, dynamic library or exe.  The 'id' attribute of the linker specifies which type of linking is performed.
 
 
 - *exe* - Overwrite the exe command for this linker.
@@ -43,7 +43,7 @@ Generally one linker is run per target to build a static library, dynamic librar
    ```
      + name = the complete name is specified
      + base = the name without compiler-specific extension (.a/.lib) is specified
-     + hxbase = the name without extension and architecture (-v7/.iphoinesim) is specified
+     + hxbase = the name without extension and architecture (-v7/.iphonesim) is specified
 
 - *prefix* - Prefix for generated files.
    ```xml

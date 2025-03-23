@@ -5,7 +5,7 @@
 
 // --- null value  ---------------------------------------------------------
 //
-// This is used by external operatator and return statments - Most will
+// This is used by external operator and return statements - Most will
 //  use operator overloading to convert to the null pointer
 
 
@@ -199,7 +199,7 @@ struct Null
    T    value;
 };
 
-} // end namesapce hx
+} // end namespace hx
 
 typedef null Void;
 

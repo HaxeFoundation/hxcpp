@@ -158,7 +158,7 @@ struct database : public hx::Object
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(last); }
    #endif
 
-   String toString() { return HX_CSTRING("Sqlite Databse"); }
+   String toString() { return HX_CSTRING("Sqlite Database"); }
 };
 
 static void sqlite_error( sqlite3 *db ) {

@@ -1532,7 +1532,7 @@ class BuildTool
          if (isRootDir || (FileSystem.exists(last) && FileSystem.isDirectory(last)))
          {
             // When called from haxelib, the last arg is the original directory, and
-            //  the current direcory is the library directory.
+            //  the current directory is the library directory.
             HXCPP = PathManager.standardize(Sys.getCwd());
             defines.set("HXCPP",HXCPP);
             args.pop();
@@ -1692,7 +1692,7 @@ class BuildTool
          }
          else if (arg=="-v" || arg=="-verbose")
             Log.verbose = true;
-         else if (arg=="-nocolor")
+         else if (arg=="-nocolor" || arg=="-nocolour")
             Log.colorSupported = false;
          else if (arg.substr(0,2)=="-I")
             include_path.push(PathManager.standardize(arg.substr(2)));
@@ -1837,11 +1837,11 @@ class BuildTool
       Log.println('   Build project from "file.xml".  options:');
       Log.println('    ${BOLD}-D${NORMAL}${ITALIC}value${NORMAL} -- Specify a define to use when processing other commands');
       Log.println('    ${BOLD}-verbose${NORMAL} -- Print additional information (when available)');
-      Log.println('    ${BOLD}-dirty [groudId|all]${NORMAL} -- always rebuild files in given group');
+      Log.println('    ${BOLD}-dirty [groupId|all]${NORMAL} -- always rebuild files in given group');
       Log.println(' ${BOLD}haxelib run hxcpp${NORMAL} ${ITALIC}${WHITE}file.cppia${NORMAL}');
       Log.println('   Run cppia script using default Cppia host');
       Log.println(' ${BOLD}haxelib run hxcpp${NORMAL} ${ITALIC}${WHITE}file.js${NORMAL}');
-      Log.println('    Run emscripten compiled scipt "file.js"');
+      Log.println('    Run emscripten compiled script "file.js"');
       Log.println(' ${BOLD}haxelib run hxcpp${NORMAL} ${ITALIC}${WHITE}cache [command] [project]${NORMAL}');
       Log.println('   Perform command on cache, either on specific project or all. commands:');
       Log.println('    ${BOLD}clear${NORMAL} -- remove all files from cache');

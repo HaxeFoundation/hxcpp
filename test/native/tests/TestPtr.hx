@@ -114,7 +114,7 @@ class TestPtr extends Test
       Stdlib.free(a);
    }
    
-    public function testExtened() {
+    public function testExtended() {
       var test = NativeGc.allocateExtended( TestPtr, Stdlib.sizeof(Int) * 5 );
       var a : Pointer<Int> = cast Pointer.endOf(test);
       for(i in 0...5)

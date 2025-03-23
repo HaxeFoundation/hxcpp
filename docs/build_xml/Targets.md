@@ -35,7 +35,7 @@ Targets can contain the following nodes:
    ```
      + name = the complete name is specified
      + base = the name without compiler-specific extension (.a/.lib) is specified
-     + hxbase = the name without extension and architecture (-v7/.iphoinesim) is specified
+     + hxbase = the name without extension and architecture (-v7/.iphonesim) is specified
 
 - *flag* - Add a single link flag.
    ```xml

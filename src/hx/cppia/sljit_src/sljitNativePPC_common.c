@@ -110,7 +110,7 @@ static const sljit_u8 reg_map[SLJIT_NUMBER_OF_REGISTERS + 7] = {
 };
 
 /* --------------------------------------------------------------------- */
-/*  Instrucion forms                                                     */
+/*  Instruction forms                                                    */
 /* --------------------------------------------------------------------- */
 #define D(d)		(reg_map[d] << 21)
 #define S(s)		(reg_map[s] << 21)
@@ -548,7 +548,7 @@ SLJIT_API_FUNC_ATTRIBUTE void* sljit_generate_code(struct sljit_compiler *compil
 /* Other inp_flags. */
 
 #define ARG_TEST	0x000100
-/* Integer opertion and set flags -> requires exts on 64 bit systems. */
+/* Integer operation and set flags -> requires exts on 64 bit systems. */
 #define ALT_SIGN_EXT	0x000200
 /* This flag affects the RC() and OERC() macros. */
 #define ALT_SET_FLAGS	0x000400
@@ -724,7 +724,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_return(struct sljit_compiler *comp
    s/l - store/load (1 bit)
    u/s - signed/unsigned (1 bit)
    w/b/h/i - word/byte/half/int allowed (2 bit)
-   It contans 32 items, but not all are different. */
+   It contains 32 items, but not all are different. */
 
 /* 64 bit only: [reg+imm] must be aligned to 4 bytes. */
 #define INT_ALIGNED	0x10000

@@ -68,7 +68,7 @@
    #define HXCPP_ALIGN_FLOAT
 #endif
 
-// Must allign allocs to 8 bytes to match floating point requirement?
+// Must align allocs to 8 bytes to match floating point requirement?
 // Ints must br read on 4-byte boundary
 #if (!defined(HXCPP_ALIGN_FLOAT) && (defined(EMSCRIPTEN) || defined(GCW0)) )
    #define HXCPP_ALIGN_ALLOC
@@ -189,7 +189,7 @@ typedef char HX_CHAR;
 
 #ifdef HX_SMART_STRINGS
   #define HX_FIELD_EQ(name,field) (name.isAsciiEncoded() && !::memcmp(name.raw_ptr(), field, sizeof(field)/sizeof(char)))
-  // No null check is performedd...
+  // No null check is performed...
   #define HX_QSTR_EQ(name,field) (name.length==field.length && field.isAsciiEncodedQ() && !::memcmp(name.raw_ptr(), field.raw_ptr() , field.length) )
   // field is known to be isAsciiEncodedQ
   #define HX_QSTR_EQ_AE(name,field) (name.length==field.length && !::memcmp(name.raw_ptr(), field.raw_ptr() , field.length) )
@@ -246,7 +246,7 @@ namespace cpp
 // Extended mapping - old way
 namespace haxe { namespace io { typedef unsigned char Unsigned_char__; } }
 
-// --- Forward decalarations --------------------------------------------
+// --- Forward declarations --------------------------------------------
 
 class null;
 namespace hx { class Object; }

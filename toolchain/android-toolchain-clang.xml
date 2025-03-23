@@ -78,7 +78,7 @@
   <flag value="-fpic"/>
   <flag value="-O2" unless="debug"/>
   
-  <!-- Warning Supression -->
+  <!-- Warning Suppression -->
   <flag value="-Wno-invalid-offsetof" />
   <flag value="-Wno-return-type-c-linkage" />
   <flag value="-Wno-parentheses" />

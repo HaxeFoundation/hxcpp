@@ -59,7 +59,7 @@ static const sljit_u8 reg_map[SLJIT_NUMBER_OF_REGISTERS + 6] = {
 #define TMP_REG3_mapped 6
 #define ADDR_TMP_mapped 7
 
-/* Flags are keept in volatile registers. */
+/* Flags are kept in volatile registers. */
 #define EQUAL_FLAG 8
 /* And carry flag as well. */
 #define ULESS_FLAG 9
@@ -813,7 +813,7 @@ static sljit_s32 push_3_buffer(struct sljit_compiler *compiler, tilegx_mnemonic 
 		inst_buf[inst_buf_index].output_registers = 1L << op0;
 		break;
 	default:
-		printf("unrecoginzed opc: %s\n", opcode->name);
+		printf("unrecognized opc: %s\n", opcode->name);
 		SLJIT_UNREACHABLE();
 	}
 
@@ -858,7 +858,7 @@ static sljit_s32 push_2_buffer(struct sljit_compiler *compiler, tilegx_mnemonic 
 		inst_buf[inst_buf_index].output_registers = 1L << op0;
 		break;
 	default:
-		printf("unrecoginzed opc: %s\n", opcode->name);
+		printf("unrecognized opc: %s\n", opcode->name);
 		SLJIT_UNREACHABLE();
 	}
 
@@ -1282,7 +1282,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_return(struct sljit_compiler *comp
 	return JR(RA);
 }
 
-/* reg_ar is an absoulute register! */
+/* reg_ar is an absolute register! */
 
 /* Can perform an operation using at most 1 instruction. */
 static sljit_s32 getput_arg_fast(struct sljit_compiler *compiler, sljit_s32 flags, sljit_s32 reg_ar, sljit_s32 arg, sljit_sw argw)
@@ -1291,7 +1291,7 @@ static sljit_s32 getput_arg_fast(struct sljit_compiler *compiler, sljit_s32 flag
 
 	if ((!(flags & WRITE_BACK) || !(arg & REG_MASK))
 			&& !(arg & OFFS_REG_MASK) && argw <= SIMM_16BIT_MAX && argw >= SIMM_16BIT_MIN) {
-		/* Works for both absoulte and relative addresses. */
+		/* Works for both absolute and relative addresses. */
 		if (SLJIT_UNLIKELY(flags & ARG_TEST))
 			return 1;
 
@@ -1697,7 +1697,7 @@ static SLJIT_INLINE sljit_s32 emit_single_op(struct sljit_compiler *compiler, sl
 				else if (src2 != dst)
 					overflow_ra = reg_map[src2];
 				else {
-					/* Rare ocasion. */
+					/* Rare occasion. */
 					FAIL_IF(ADD(TMP_EREG2, reg_map[src1], ZERO));
 					overflow_ra = TMP_EREG2;
 				}
@@ -1780,7 +1780,7 @@ static SLJIT_INLINE sljit_s32 emit_single_op(struct sljit_compiler *compiler, sl
 				if (src1 != dst)
 					overflow_ra = reg_map[src1];
 				else {
-					/* Rare ocasion. */
+					/* Rare occasion. */
 					FAIL_IF(ADD(TMP_EREG2, reg_map[src1], ZERO));
 					overflow_ra = TMP_EREG2;
 				}
@@ -1807,7 +1807,7 @@ static SLJIT_INLINE sljit_s32 emit_single_op(struct sljit_compiler *compiler, sl
 				if (src1 != dst)
 					overflow_ra = reg_map[src1];
 				else {
-					/* Rare ocasion. */
+					/* Rare occasion. */
 					FAIL_IF(ADD(TMP_EREG2, reg_map[src1], ZERO));
 					overflow_ra = TMP_EREG2;
 				}

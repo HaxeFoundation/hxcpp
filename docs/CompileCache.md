@@ -2,7 +2,7 @@ The Hxcpp Cache
 ---------------
 The hxcpp compile cache is used to share object files between projects. This can alleviate the need to ship static libraries with external projects, since developers who use the library can compile the library just once, and then reuse it between projects.
 
-The cache uses a hashing mechanism to tell if the contents of a file or its dependencies has changed, and combines this with the compiler version and flags to make specific object files for each change and each compiler congiguration.  This also allows some common haxe runtime and haxe generated files to share their object files between projects, even if in different directories.
+The cache uses a hashing mechanism to tell if the contents of a file or its dependencies has changed, and combines this with the compiler version and flags to make specific object files for each change and each compiler configuration.  This also allows some common haxe runtime and haxe generated files to share their object files between projects, even if in different directories.
 
 Additional benefits include keeping some files outside the source tree, and being able to remove these temp files easily.
 
@@ -17,7 +17,7 @@ Keeping the path short can help in some border-line cases with some compilers wh
 The cache size defaults to 1 Gig.  For many cases, this is big enough.  However, on large projects, with several architectures and lots of debug information, this default can lead to "cache churn" where some files are evicted from the cache, even though they are likely to be used again.  Increasing the number of mega-bytes allocated to the cache can help here.
 
 ### Using The Cache
-To use the cashe with your own libraries, the files group should have 'cache' entry to tell hxcpp that you have considered dependency issues when designing the group.
+To use the cache with your own libraries, the files group should have 'cache' entry to tell hxcpp that you have considered dependency issues when designing the group.
 
   ```xml
   <cache value="true" project="name" asLibrary="true" />

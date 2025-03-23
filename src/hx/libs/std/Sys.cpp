@@ -271,7 +271,7 @@ String _hx_std_sys_string()
 #elif defined(EPPC)
    return HX_CSTRING("EPPC");
 #else
-#error Unknow system string
+#error Unknown system string
 #endif
 }
 

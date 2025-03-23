@@ -1,7 +1,7 @@
 #ifndef HX_ERROR_CODES
 #define HX_ERROR_CODES
 
-// --- Exteral constants, used inline
+// --- External constants, used inline
 #define HX_INVALID_CAST          Dynamic(HX_CSTRING("Invalid Cast"))
 #define HX_INVALID_INTERFACE     Dynamic(HX_CSTRING("Object does not implement interface"))
 #define HX_INDEX_OUT_OF_BOUNDS   Dynamic(HX_CSTRING("Index Out of Bounds"))

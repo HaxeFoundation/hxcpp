@@ -75,7 +75,7 @@ id _hx_value_to_objc(Dynamic d)
          {
             return _hx_value_to_objc( d->__Field( HX_CSTRING("b"), hx::paccDynamic ) );
          }
-         // else fallthough...
+         // else fallthrough...
         
       case vtFunction:
       case vtEnum:
