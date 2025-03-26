@@ -1,12 +1,5 @@
 <xml>
 
-<section unless="HXCPP_ANDROID_PLATFORM" >
-  <set name="HXCPP_ANDROID_PLATFORM" value="16" />
-  <set name="HXCPP_ANDROID_PLATFORM" value="19" if="NDKV24+" />
-  <!-- 64 bit builds fail unless using platform 21 -->
-  <set name="HXCPP_ANDROID_PLATFORM" value="21" if="NDKV26+||HXCPP_X86_64||HXCPP_ARM64" />
-</section>
-
 <!-- Set architecture -->
 <section if="HXCPP_X86">
   <set name="ARCH" value="-x86" />

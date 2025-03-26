@@ -523,6 +523,28 @@ class Setup
          if (defines.exists("PLATFORM_NUMBER")) {
             Log.warn("The PLATFORM_NUMBER define is deprecated. Please use the HXCPP_ANDROID_PLATFORM define instead.");
             defines.set("HXCPP_ANDROID_PLATFORM", Std.string(defines.get("PLATFORM_NUMBER")));
+         } else {
+            var platformsJson = root + "/meta/platforms.json";
+
+            var minPlatform:Null<Int> = try {
+               haxe.Json.parse(sys.io.File.getContent(platformsJson)).min;
+            } catch (e) {
+               Log.warn("Unable to determine minimum supported Android platform: " + e.toString());
+               null;
+            };
+
+            if (minPlatform == null) {
+               Log.warn("Defaulting to Android platform 21");
+               minPlatform = 21;
+            }
+
+            // only platform version 21 and above support 64 bit
+            // https://developer.android.com/about/versions/lollipop#Perf
+            if (minPlatform < 21 && (defines.exists('HXCPP_ARM64') || defines.exists('HXCPP_X86_64'))) {
+               minPlatform = 21;
+            }
+
+            defines.set("HXCPP_ANDROID_PLATFORM", Std.string(minPlatform));
          }
       }
       else {
