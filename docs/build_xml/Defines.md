@@ -38,6 +38,7 @@ Defines affecting how the code is compiled.  These can be on the command line wh
 | *HXCPP_PROFILER*        | Add profiler support |
 | *HXCPP_TELEMETRY*       | Add telemetry support |
 | *HXCPP_CPP11*           | Use c++11 features and link libraries |
+| *HXCPP_CPP17*           | Use c++17 features and link libraries |
 | *exe_link*              | Generate executable file (rather than dynamic library on android) |
 | *static_link*           | Generate static library |
 | *dll_link*              | Generate dynamic library |
