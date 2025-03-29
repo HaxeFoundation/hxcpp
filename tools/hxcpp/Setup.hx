@@ -125,10 +125,13 @@ class Setup
    }
 
    static var gotNdkVersion = 0.0;
+   static var cachedNdkPath:Null<String> = null;
    static public function getNdkVersion(inDirName:String, newStyle=false):Float
    {
-      if (gotNdkVersion!=0)
+      if (gotNdkVersion!=0 && cachedNdkPath==inDirName)
          return gotNdkVersion;
+
+      cachedNdkPath = inDirName;
 
       Log.v("Try to get version from source.properties");
       var src = toPath(inDirName+"/source.properties");
@@ -513,14 +516,36 @@ class Setup
       }
       catch(e:Dynamic) { }
 
-      if(defines.exists('NDKV20+')) {
-         Log.v([
-            "x86 Platform: 16",
-            "arm Platform: 16",
-            "x86_64 Platform: 21",
-            "arm_64 Platform: 21",
-            "Frameworks should set the minSdkVersion for each APK to these values."
-         ].join('\n'));
+      if (defines.exists('HXCPP_ANDROID_PLATFORM')) {
+         Log.info("", "\x1b[33;1mUsing Android NDK platform: " + defines.get("HXCPP_ANDROID_PLATFORM") + "\x1b[0m");
+      }
+      else if (defines.exists('NDKV20+')) {
+         if (defines.exists("PLATFORM_NUMBER")) {
+            Log.warn("The PLATFORM_NUMBER define is deprecated. Please use the HXCPP_ANDROID_PLATFORM define instead.");
+            defines.set("HXCPP_ANDROID_PLATFORM", Std.string(defines.get("PLATFORM_NUMBER")));
+         } else {
+            var platformsJson = root + "/meta/platforms.json";
+
+            var minPlatform:Null<Int> = try {
+               haxe.Json.parse(sys.io.File.getContent(platformsJson)).min;
+            } catch (e) {
+               Log.warn("Unable to determine minimum supported Android platform: " + e.toString());
+               null;
+            };
+
+            if (minPlatform == null) {
+               Log.warn("Defaulting to Android platform 21");
+               minPlatform = 21;
+            }
+
+            // only platform version 21 and above support 64 bit
+            // https://developer.android.com/about/versions/lollipop#Perf
+            if (minPlatform < 21 && (defines.exists('HXCPP_ARM64') || defines.exists('HXCPP_X86_64'))) {
+               minPlatform = 21;
+            }
+
+            defines.set("HXCPP_ANDROID_PLATFORM", Std.string(minPlatform));
+         }
       }
       else {
          globallySetThePlatform(root, defines);
@@ -578,7 +603,7 @@ class Setup
          defines.set("PLATFORM", "android-" + best);
          androidPlatform = best;
       }
-      defines.set("ANDROID_PLATFORM_DEFINE", "HXCPP_ANDROID_PLATFORM=" + androidPlatform);
+      defines.set("HXCPP_ANDROID_PLATFORM", Std.string(androidPlatform));
       if (Log.verbose) Log.println("");
    }
 
