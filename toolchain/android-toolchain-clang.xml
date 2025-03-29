@@ -41,7 +41,8 @@
 
   <exe name="clang++" />
   <flag value="--target=${ABITRIPLE}${HXCPP_ANDROID_PLATFORM}" />
-  
+  <cppflag value="-stdlib=libc++" unless="NDKV20+" />
+
   <!-- File Related -->
   <include name="toolchain/common-defines.xml" />
   <flag value="-I${HXCPP}/include"/>
@@ -88,6 +89,7 @@
   <!-- Build time error, not run time -->
   <flag value="-Wl,--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
 
+  <flag value="-stdlib=libc++" unless="NDKV20+" />
   <flag value ="-static-libstdc++" />
   <!-- This shows the android link line, which may be so long that it breaks the tool
      https://github.com/HaxeFoundation/hxcpp/pull/1091

@@ -519,7 +519,7 @@ class Setup
       if (defines.exists('HXCPP_ANDROID_PLATFORM')) {
          Log.info("", "\x1b[33;1mUsing Android NDK platform: " + defines.get("HXCPP_ANDROID_PLATFORM") + "\x1b[0m");
       }
-      else if (defines.exists('NDKV20+')) {
+      else if (defines.exists('NDKV19+')) {
          if (defines.exists("PLATFORM_NUMBER")) {
             Log.warn("The PLATFORM_NUMBER define is deprecated. Please use the HXCPP_ANDROID_PLATFORM define instead.");
             defines.set("HXCPP_ANDROID_PLATFORM", Std.string(defines.get("PLATFORM_NUMBER")));
