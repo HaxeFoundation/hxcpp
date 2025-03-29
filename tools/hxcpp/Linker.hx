@@ -251,7 +251,8 @@ class Linker
          }
 
          // Place list of obj files in a file called "all_objs"
-         if (mFromFile!="")
+         // In some situations with the compile cache, we might have an empty list
+         if (mFromFile!="" && objs.length!=0)
          {
             PathManager.mkdir(tmpDir);
             var fname = tmpDir + "/all_objs";
