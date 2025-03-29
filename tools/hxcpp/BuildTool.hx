@@ -2054,6 +2054,7 @@ class BuildTool
          if(defines.exists("windows"))
          {
             defines.set("toolchain","mingw");
+            defines.set("mingw", "mingw");
             defines.set("xcompile","1");
             defines.set("BINDIR", arm64 ? "WindowsArm64" : m64 ? "Windows64":"Windows");
          }
