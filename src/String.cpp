@@ -2376,6 +2376,7 @@ void String::__boot()
    {
       #ifdef HX_SMART_STRINGS
       if (c>127)
+      #endif
       {
          char16_t buf[20];
          buf[0] = c;
@@ -2386,8 +2387,8 @@ void String::__boot()
          sConstStrings[c].__w = w;
          fixHashPerm16(sConstStrings[c]);
       }
+      #ifdef HX_SMART_STRINGS
       else
-      #endif
       {
          char buf[20];
          int  utf8Len = UTF8Bytes(c);
@@ -2397,6 +2398,7 @@ void String::__boot()
          sConstStrings[c].__s = (char *)InternalCreateConstBuffer(buf,utf8Len+1,true);
          sConstStrings[c].length = utf8Len;
       }
+      #endif
    }
 
    sConstEmptyString.mPtr = new (hx::NewObjConst)StringData(emptyString);
@@ -2405,8 +2407,3 @@ void String::__boot()
            &CreateEmptyString, &CreateString, 0, 0, 0
     );
 }
-
-
-
-
-

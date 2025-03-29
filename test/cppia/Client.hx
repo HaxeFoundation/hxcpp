@@ -5,6 +5,15 @@ class ClientOne implements pack.HostInterface
    public function getOneString() : String return "1";
 }
 
+class ClientFoo implements IFoo {
+
+   public function new() {}
+
+   public function baz():String {
+       return 'foo';
+   }
+}
+
 class Client
 {
    public static var clientBool0 = true;
