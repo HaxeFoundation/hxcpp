@@ -282,7 +282,7 @@ void __hxcpp_stdlibs_boot()
    //  It does not cause fread to return immediately - as perhaps desired.
    //  But it does cause some new-line characters to be lost.
    //setbuf(stdin, 0);
-   setbuf(stdout, 0);
+   setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
    setbuf(stderr, 0);
 }
 
@@ -307,7 +307,7 @@ void __trace(Dynamic inObj, Dynamic info)
       //PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
       PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
    }
-
+   fflush(stdout);
 }
 
 void __hxcpp_exit(int inExitCode)
@@ -589,6 +589,7 @@ void __hxcpp_println_string(const String &inV)
 {
    hx::strbuf convertBuf;
    PRINTF("%s\n", inV.out_str(&convertBuf));
+   fflush(stdout);
 }
 
 
