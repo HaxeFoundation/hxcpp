@@ -216,6 +216,11 @@ private:
     bool (*mTestFunction)(Dynamic e);
 };
 
+#if defined(HXCPP_SCRIPTABLE) && (HXCPP_API_LEVEL >= 500)
+// This is the function to call when a new script has been loaded.
+// Signature: Void -> Void
+extern Dynamic g_onScriptLoadedFunction;
+#endif
 
 
 #endif // HXCPP_DEBUGGER
@@ -298,6 +303,9 @@ void __hxcpp_dbg_setNewStackFrameFunction(Dynamic function);
 void __hxcpp_dbg_setNewThreadInfoFunction(Dynamic function);
 void __hxcpp_dbg_setAddParameterToStackFrameFunction(Dynamic function);
 void __hxcpp_dbg_setAddStackFrameToThreadInfoFunction(Dynamic function);
+#if defined(HXCPP_SCRIPTABLE) && (HXCPP_API_LEVEL >= 500)
+void __hxcpp_dbg_setOnScriptLoadedFunction(Dynamic function);
+#endif
 
 bool __hxcpp_dbg_fix_critical_error(String inErr);
 
@@ -351,6 +359,9 @@ inline void __hxcpp_dbg_setNewStackFrameFunction(Dynamic) { }
 inline void __hxcpp_dbg_setNewThreadInfoFunction(Dynamic) { }
 inline void __hxcpp_dbg_setAddParameterToStackFrameFunction(Dynamic) { }
 inline void __hxcpp_dbg_setAddStackFrameToThreadInfoFunction(Dynamic) { }
+#if defined(HXCPP_SCRIPTABLE) && (HXCPP_API_LEVEL >= 500)
+inline void __hxcpp_dbg_setOnScriptLoadedFunction(Dynamic) { }
+#endif
 
 // The following functions are called by Thread.cpp to notify of thread
 // created and terminated
