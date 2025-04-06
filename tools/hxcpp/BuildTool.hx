@@ -772,7 +772,7 @@ class BuildTool
             }
             Profile.pop();
          case _ if (inDestination != null):
-            Log.v('Target \'${inTarget}\' does not output a file, so \'destination\' has been ignored');
+            Log.warn('Target \'${inTarget}\' does not output a file, so \'destination\' has been ignored');
       }
 
       if (mCopyFiles.length>0)
