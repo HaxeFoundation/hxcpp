@@ -128,22 +128,29 @@ class Log
    {
       if (colorSupported == null)
       {
-         if (!BuildTool.isWindows)
-         {
-            var result = -1;
-            try
-            {
-               var process = new Process ("tput", [ "colors" ]);
-               result = process.exitCode ();
-               process.close ();
-            }
-            catch (e:Dynamic) {};
+         var term = Sys.getEnv("TERM");
 
-            colorSupported = (result == 0);
+         if (term == "dumb")
+         {
+            colorSupported = false;
          }
          else
          {
-            colorSupported = (Sys.getEnv("TERM") == "xterm" || Sys.getEnv("ANSICON") != null);
+            if (colorSupported != true && term != null)
+            {
+               colorSupported = ~/(?i)-256(color)?$/.match(term)
+                  || ~/(?i)^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/.match(term);
+            }
+
+            if (colorSupported != true)
+            {
+               colorSupported = Sys.getEnv("TERM_PROGRAM") == "iTerm.app"
+                  || Sys.getEnv("TERM_PROGRAM") == "Apple_Terminal"
+                  || Sys.getEnv("COLORTERM") != null
+                  || Sys.getEnv("ANSICON") != null
+                  || Sys.getEnv("ConEmuANSI") != null
+                  || Sys.getEnv("WT_SESSION") != null;
+            }
          }
       }
 
@@ -153,8 +160,7 @@ class Log
       }
       else
       {
-         var colorCodes:EReg = ~/\x1b\[[^m]+m/g;
-         return colorCodes.replace(output, "");
+         return ~/\x1b\[[0-9;]*m/g.replace(output, "");
       }
    }
 
