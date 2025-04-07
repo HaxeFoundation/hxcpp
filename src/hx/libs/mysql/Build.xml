@@ -8,7 +8,7 @@
   <cache value="true" asLibrary="true" />
 
   <file name="Mysql.cpp"/>
-  <file name="my_api.cpp"/>
+  <file name="my_api.cpp" tags="" />
   <file name="my_proto.cpp"/>
   <file name="socket.cpp"/>
   <file name="sha1.cpp"/>

@@ -21,21 +21,21 @@
 
   <!-- HXCPP_LINK_NO_ZLIB may be set too late, so use filterout as well. -->
   <section unless="HXCPP_LINK_NO_ZLIB" >
-     <file name="${ZLIB_DIR}/adler32.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/compress.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/crc32.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/deflate.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/gzclose.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/gzlib.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/gzread.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/gzwrite.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/infback.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/inffast.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/inflate.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/inftrees.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/trees.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/uncompr.c" filterout="HXCPP_LINK_NO_ZLIB" />
-     <file name="${ZLIB_DIR}/zutil.c" filterout="HXCPP_LINK_NO_ZLIB" />
+     <file name="${ZLIB_DIR}/adler32.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/compress.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/crc32.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/deflate.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/gzclose.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/gzlib.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/gzread.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/gzwrite.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/infback.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/inffast.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/inflate.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/inftrees.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/trees.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/uncompr.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+     <file name="${ZLIB_DIR}/zutil.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
   </section>
 </files>
 
