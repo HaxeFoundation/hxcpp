@@ -33,7 +33,7 @@
 <include name="toolchain/gcc-toolchain.xml"/>
 
 
-<!-- TIZEN TOOLS -------------------------------------------------->
+<!-- TIZEN TOOLS -->
 	
 <compiler id="tizen" exe="${EXEPREFIX}-g++" if="tizen">
 	<flag value="-c"/>
