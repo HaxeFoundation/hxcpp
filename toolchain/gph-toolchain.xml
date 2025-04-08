@@ -1,6 +1,6 @@
 <xml>
 
-<!-- GPH (Caanoo) TOOLS -------------------------------------------------->
+<!-- GPH (Caanoo) TOOLS -->
 	
 <error value="Please define GPH_ROOT" unless="GPH_ROOT"/>
 

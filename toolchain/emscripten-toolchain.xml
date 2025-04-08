@@ -131,7 +131,6 @@
   <flag value="-fpic" if="HXCPP_EMSCRIPTEN_FPIC" />
   <flag value="-fPIC" if="HXCPP_EMSCRIPTEN_FPIC" />
   <flag value="--bind" if="HXCPP_JS_PRIME" />
-  <!-- <flag value="-Wl,--unresolved-symbols=report-all"/> -->
   <flag value="-Xlinker"/>
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
   <flag value="${HXCPP_LINK_OPTIM_LEVEL}"/>
@@ -184,14 +183,6 @@
      <flag value="-s" />
      <flag value="TOTAL_MEMORY=${HXCPP_LINK_TOTAL_MEMORY}" />
   </section>
-
-
-  <!-- Only for asmjs
-  <section if="HXCPP_LINK_MEM_FILE" >
-    <flag value="--memory-init-file"/>
-    <flag value="${HXCPP_LINK_MEM_FILE}"/>
-  </section>
-  -->
 
   <section if="HXCPP_LINK_EMRUN" >
      <flag value="--emrun" />
