@@ -544,6 +544,7 @@ public:
 #endif
 
   void Acquire() {
+	hx::EnterGCFreeZone();
 #if HX_WINDOWS
 	WaitForSingleObject(sem, INFINITE);
 #elif defined(POSIX_SEMAPHORE)
@@ -551,9 +552,11 @@ public:
 #elif defined(APPLE_SEMAPHORE)
     dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
 #endif
+	hx::ExitGCFreeZone();
   }
 
   bool TryAcquire(double timeout) {
+	hx::AutoGCFreeZone blocking;
 #ifdef HX_WINDOWS
     return WaitForSingleObject(sem, (DWORD)((FLOAT)timeout * 1000.0)) == 0;
 #elif defined(POSIX_SEMAPHORE)
@@ -689,6 +692,7 @@ public:
   }
 
   void Acquire() {
+	hx::EnterGCFreeZone();
 #ifdef HX_WINDOWS
 #ifndef HXCPP_WINXP_COMPAT
 	  EnterCriticalSection(&cs);
@@ -696,6 +700,7 @@ public:
 #else
 	  pthread_mutex_lock(mutex);
 #endif
+	hx::ExitGCFreeZone();
   }
 
   bool TryAcquire() {
@@ -721,6 +726,7 @@ public:
   }
 
   void Wait() {
+	hx::EnterGCFreeZone();
 #ifdef HX_WINDOWS
 #ifndef HXCPP_WINXP_COMPAT
 	  SleepConditionVariableCS(&cond,&cs,INFINITE);
@@ -728,9 +734,11 @@ public:
 #else
 	  pthread_cond_wait(cond, mutex);
 #endif
+	hx::ExitGCFreeZone();
   }
 
   bool TimedWait(double timeout) {
+    hx::AutoGCFreeZone blocking;
 #ifdef HX_WINDOWS
 #ifndef HXCPP_WINXP_COMPAT
 	  return (bool)SleepConditionVariableCS(&cond, &cs, (DWORD)((FLOAT)timeout * 1000.0));
