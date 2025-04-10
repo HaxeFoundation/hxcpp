@@ -189,6 +189,20 @@ class Client
          default:
       }
 
+      switch LocalFunctionExceptions.testObjMethodOnReturn() {
+         case Error(message):
+            Common.status = 'Failed test for running object method on returned value: ' + message;
+            return;
+         default:
+      }
+
+      switch LocalFunctionExceptions.testClassMethodOnReturn() {
+         case Error(message):
+            Common.status = 'Failed test for running class method on returned value: ' + message;
+            return;
+         default:
+      }
+
       final extending = new ClientExtendedExtendedRoot();
 
       extending.addValue();
