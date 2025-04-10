@@ -77,7 +77,7 @@ class LocalFunctionExceptions {
 
 		try {
 			localFunction();
-		} catch (e:String) {
+		} catch (e:Dynamic) {
 			if (e == 'Thrown from static') {
 				return Ok;
 			} else {
@@ -95,7 +95,7 @@ class LocalFunctionExceptions {
 
 		try {
 			localFunction();
-		} catch (e:String) {
+		} catch (e:Dynamic) {
 			if (e == 'Thrown from static') {
 				return Ok;
 			} else {
@@ -113,7 +113,7 @@ class LocalFunctionExceptions {
 
 		try {
 			localFunction();
-		} catch (e:String) {
+		} catch (e:Dynamic) {
 			if (e == 'Thrown from static') {
 				return Ok;
 			} else {
