@@ -203,6 +203,13 @@ class Client
          default:
       }
 
+      switch LocalFunctionExceptions.testHostClassMethodOnHostReturn() {
+         case Error(message):
+            Common.status = 'Failed test for running host class method on returned value: ' + message;
+            return;
+         default:
+      }
+
       // regression test for #926
       var x:Dynamic = 3;
       x *= 5;
