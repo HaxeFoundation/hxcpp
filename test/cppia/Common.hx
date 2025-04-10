@@ -8,4 +8,5 @@ class Common
    public static var callbackSet:Int = 0;
    public static var callback: Void->Void;
 
+   public function dummyMethod() {}
 }

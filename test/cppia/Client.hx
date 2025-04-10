@@ -203,6 +203,13 @@ class Client
          default:
       }
 
+      switch LocalFunctionExceptions.testHostClassMethodOnHostReturn() {
+         case Error(message):
+            Common.status = 'Failed test for running host class method on returned value: ' + message;
+            return;
+         default:
+      }
+
       final extending = new ClientExtendedExtendedRoot();
 
       extending.addValue();

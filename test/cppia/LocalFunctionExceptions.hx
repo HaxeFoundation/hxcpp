@@ -105,4 +105,22 @@ class LocalFunctionExceptions {
 
 		return Error("No exception caught");
 	}
+
+	public static function testHostClassMethodOnHostReturn():Status {
+		function localFunction() {
+			(staticFunction() : Common).dummyMethod();
+		}
+
+		try {
+			localFunction();
+		} catch (e:String) {
+			if (e == 'Thrown from static') {
+				return Ok;
+			} else {
+				return Error("Incorrect exception caught from local function call: " + e);
+			}
+		}
+
+		return Error("No exception caught");
+	}
 }
