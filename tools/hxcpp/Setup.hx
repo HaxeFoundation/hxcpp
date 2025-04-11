@@ -434,7 +434,7 @@ class Setup
       else
       {
          root = defines.get("ANDROID_NDK_ROOT");
-         Log.info("", "\x1b[33;1mUsing Android NDK root: " + root + "\x1b[0m");
+         Log.setup("\x1b[33;1mUsing Android NDK root: " + root + "\x1b[0m");
       }
 
       if (ndkVersion==0)
@@ -442,7 +442,7 @@ class Setup
          var version = Setup.getNdkVersion( root );
          if (version > 0)
          {
-            Log.info("", "\x1b[33;1mDetected Android NDK " + version + "\x1b[0m");
+            Log.setup("\x1b[33;1mDetected Android NDK " + version + "\x1b[0m");
             defines.set("NDKV" + Std.int(version), "1" );
             ndkVersion = Std.int(version);
          }
@@ -482,7 +482,7 @@ class Setup
             if (bestVer!="")
             {
                defines.set("TOOLCHAIN_VERSION",bestVer);
-               Log.info("", "\x1b[33;1mDetected Android toolchain: "+arm_type+"-" + bestVer + "\x1b[0m");
+               Log.setup("\x1b[33;1mDetected Android toolchain: "+arm_type+"-" + bestVer + "\x1b[0m");
             }
          }
          catch(e:Dynamic) { }
@@ -517,7 +517,7 @@ class Setup
       catch(e:Dynamic) { }
 
       if (defines.exists('HXCPP_ANDROID_PLATFORM')) {
-         Log.info("", "\x1b[33;1mUsing Android NDK platform: " + defines.get("HXCPP_ANDROID_PLATFORM") + "\x1b[0m");
+         Log.setup("\x1b[33;1mUsing Android NDK platform: " + defines.get("HXCPP_ANDROID_PLATFORM") + "\x1b[0m");
       }
       else if (defines.exists('NDKV19+')) {
          if (defines.exists("PLATFORM_NUMBER")) {
@@ -715,11 +715,11 @@ class Setup
                }
                ioDefines.set("HXCPP_MSVC", where );
                Sys.putEnv("HXCPP_MSVC", where);
-               Log.info("", 'Using MSVC Ver $ival in $where ($varName)');
+               Log.setup('Using MSVC Ver $ival in $where ($varName)');
             }
             else
             {
-               Log.info("", 'Using specified MSVC Ver $val');
+               Log.setup('Using specified MSVC Ver $val');
                ioDefines.set("HXCPP_MSVC", val );
                Sys.putEnv("HXCPP_MSVC", val);
             }
@@ -818,7 +818,7 @@ class Setup
             if (reg.match(str))
             {
                var cl_version = Std.parseInt(reg.matched(1));
-               Log.info("", "Using MSVC version: " + cl_version);
+               Log.setup("Using MSVC version: " + cl_version);
                ioDefines.set("MSVC_VER", cl_version+"");
                if (cl_version>=17)
                   ioDefines.set("MSVC17+","1");
