@@ -5,6 +5,7 @@
 #error "Please include hxcpp.h, not hx/Object.h"
 #endif
 
+#include <hx/OS.h>
 #include <hx/StringAlloc.h>
 
 #ifdef __OBJC__
@@ -98,6 +99,9 @@ public:
    String(const float &inRHS);
    String(const cpp::Int64 &inRHS);
    String(const cpp::UInt64 &inRHS);
+   #if defined(NEKO_MAC) || defined(NEKO_BSD)
+   String(const unsigned long &inRHS);
+   #endif
    explicit String(const bool &inRHS);
    inline String(const null &inRHS) : __s(0), length(0) { }
    String(hx::Null< ::String > inRHS) : __s(inRHS.value.__s), length(inRHS.value.length) { }
