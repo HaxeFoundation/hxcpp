@@ -70,6 +70,7 @@ namespace cpp
 
       inline Variant(cpp::Int64 inValue) : type(typeInt64), valInt64(inValue) { }
       inline Variant(cpp::UInt64 inValue) : type(typeInt64), valInt64(inValue) { }
+      inline Variant(unsigned long inValue) : type(typeInt64), valInt64(inValue) { }
       inline Variant(int inValue) : type(typeInt), valInt(inValue) { }
       inline Variant(cpp::UInt32 inValue) : type(typeInt), valInt(inValue) { }
       inline Variant(cpp::Int16 inValue) : type(typeInt), valInt(inValue) { }
@@ -111,6 +112,7 @@ namespace cpp
       inline operator signed char () const { return asInt(); }
       inline operator cpp::Int64 () const { return asInt64(); }
       inline operator cpp::UInt64 () const { return asInt64(); }
+      inline operator unsigned long () const { return asInt64(); }
       inline bool operator !() const { return !asInt(); }
 
       inline int Compare(hx::Object *inRHS) const;

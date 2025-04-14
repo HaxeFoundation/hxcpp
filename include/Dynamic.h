@@ -30,6 +30,7 @@ public:
    Dynamic(float inVal);
    Dynamic(cpp::Int64 inVal);
    Dynamic(cpp::UInt64 inVal);
+   Dynamic(unsigned long inVal);
    Dynamic(hx::Object *inObj) : super(inObj) { }
    Dynamic(const String &inString);
    Dynamic(const null &inNull) : super(0) { }
@@ -40,7 +41,6 @@ public:
    Dynamic(const hx::Native<T *> &inInterface):super(inInterface.ptr ? inInterface->__GetRealObject() : (hx::Object *)0 ) { }
    #if !defined(__GNUC__) || defined(__MINGW32__) || (defined(__WORDSIZE) && (__WORDSIZE != 64))
    Dynamic(long inVal);
-   Dynamic(unsigned long inVal);
    #endif
 #ifdef __OBJC__
 #ifdef HXCPP_OBJC
@@ -74,6 +74,7 @@ public:
    inline operator bool() const { return mPtr && mPtr->__ToInt(); }
    inline operator cpp::Int64() const { return mPtr ? mPtr->__ToInt64() : 0; }
    inline operator cpp::UInt64() const { return mPtr ? mPtr->__ToInt64() : 0; }
+   inline operator unsigned long() const { return mPtr ? mPtr->__ToInt64() : 0; }
 
    // Conversion to generic pointer requires you to tag the class with a typedef
    template<typename T>

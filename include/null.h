@@ -92,6 +92,7 @@ class null
      operator signed char () { return 0; }
      operator short () { return 0; }
      operator unsigned short () { return 0; }
+     operator unsigned long () { return 0; }
      operator cpp::UInt64 () { return 0; }
      operator cpp::Int64 () { return 0; }
      template<typename T>

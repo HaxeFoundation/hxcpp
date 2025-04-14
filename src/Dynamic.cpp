@@ -367,10 +367,6 @@ Dynamic::Dynamic(short inVal)
 }
 
 #if !defined(__GNUC__) || defined(__MINGW32__) || (defined(__WORDSIZE) && (__WORDSIZE != 64))
-Dynamic::Dynamic(unsigned long inVal)
-{
-   mPtr = fromInt(inVal);
-}
 Dynamic::Dynamic(long inVal)
 {
    mPtr = fromInt(inVal);
@@ -428,6 +424,19 @@ Dynamic::Dynamic(cpp::Int64 inVal)
 
 
 Dynamic::Dynamic(cpp::UInt64 inVal)
+{
+   if ( (int)inVal==inVal && inVal<256 )
+   {
+      int idx = inVal+1;
+      mPtr = sConstDynamicInts[idx].mPtr;
+      if (!mPtr)
+         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
+   }
+   else
+      mPtr = (hx::Object *)new Int64Data(inVal);
+}
+
+Dynamic::Dynamic(unsigned long inVal)
 {
    if ( (int)inVal==inVal && inVal<256 )
    {
