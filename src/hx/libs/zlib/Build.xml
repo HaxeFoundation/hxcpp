@@ -2,7 +2,7 @@
 
 <pragma once="true" />
 
-<set name="ZLIB_DIR" value="${HXCPP}/project/thirdparty/zlib-1.2.13"/>
+<set name="ZLIB_DIR" value="${HXCPP}/project/thirdparty/zlib-1.3.1"/>
 
 <files id="hxcpp_zlib" dir="${this_dir}" >
   <depend files="hxcpp-depends"/>
