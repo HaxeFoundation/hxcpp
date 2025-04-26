@@ -94,13 +94,22 @@
       }
       catch (Dynamic e)
       {
-         __hx_dump_stack();
-         #ifdef HX_WIN_MAIN
-         MessageBoxA(0,  e==null() ? "null" : e->toString().__CStr(), "Error", 0);
-         #else
-         printf("Error : %s\n",e==null() ? "null" : e->toString().__CStr());
-         #endif
-         return -1;
+          auto customStack = e->__Field(HX_CSTRING("_hx_customStack"), HX_PROP_DYNAMIC).asString();
+          if (::hx::IsNotNull(customStack))
+          {
+              printf("%s\n", customStack.utf8_str());
+          }
+          else
+          {
+              __hx_dump_stack();
+          }
+
+#ifdef HX_WIN_MAIN
+          MessageBoxA(0, e == null() ? "null" : e->toString().__CStr(), "Error", 0);
+#else
+          printf("Error : %s\n", e == null() ? "null" : e->toString().__CStr());
+#endif
+          return -1;
       }
       return 0;
    }
