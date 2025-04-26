@@ -97,7 +97,7 @@
           auto customStack = e->__Field(HX_CSTRING("__customStack"), HX_PROP_DYNAMIC).asString();
           if (::hx::IsNotNull(customStack))
           {
-              printf("%s\n", customStack.c_str());
+              printf("%s\n", customStack.utf8_str());
           }
           else
           {
