@@ -71,7 +71,8 @@ Defines affecting target architecture.
 | *HXCPP_ANDROID_PLATFORM* | Specify the android platform for NDK compilation |
 | *ANDROID_NDK_ROOT*      | Specify the location of the android NDK toolchain |
 | *ANDROID_NDK_DIR*       | Specify the search location for finding the android NDK toolchain |
-| *HXCPP_X86*             | Compile android for x86 architecture |
+| *HXCPP_X86*             | Compile android for x86 architecture (32-bit) |
+| *HXCPP_X86_64*          | Compile android for x86 architecture (64-bit) |
 | *iphoneos*              | Compile for iphone iOS |
 | *iphonesim*             | Compile for iphone simulator |
 | *appletvos*             | Compile for apple tvOS |
