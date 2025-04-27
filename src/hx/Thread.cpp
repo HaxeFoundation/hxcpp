@@ -176,9 +176,17 @@ Dynamic __hxcpp_deque_pop(Dynamic q,bool block)
 class hxThreadInfo : public hx::Object
 {
 public:
+	typedef
+#if (HXCPP_API_LEVEL>=500)
+		hx::Callable<void()>
+#else
+		Dynamic
+#endif
+		ThreadFuncType;
+
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdThreadInfo };
 
-	hxThreadInfo(Dynamic inFunction, int inThreadNumber)
+	hxThreadInfo(ThreadFuncType inFunction, int inThreadNumber)
         : mFunction(inFunction), mThreadNumber(inThreadNumber), mTLS(0,0)
 	{
 		mSemaphore = new HxSemaphore;
@@ -237,8 +245,8 @@ public:
 
 	Array<Dynamic> mTLS;
 	HxSemaphore *mSemaphore;
-	Dynamic mFunction;
-    int mThreadNumber;
+	ThreadFuncType mFunction;
+   int mThreadNumber;
 	Deque   *mDeque;
 };
 
@@ -264,7 +272,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 	if ( info[0]->mFunction.GetPtr() )
 	{
 		// Try ... catch
-		info[0]->mFunction->__run();
+		info[0]->mFunction();
 	}
 
     // Call the debugger function to annouce that a thread has terminated
@@ -278,8 +286,11 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 }
 
 
-
+#if (HXCPP_API_LEVEL>=500)
+Dynamic __hxcpp_thread_create(hx::Callable<void()> inStart)
+#else
 Dynamic __hxcpp_thread_create(Dynamic inStart)
+#endif
 {
     #ifdef EMSCRIPTEN
     return hx::Throw( HX_CSTRING("Threads are not supported on Emscripten") );
