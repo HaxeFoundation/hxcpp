@@ -1744,6 +1744,7 @@ struct CallHaxe : public CppiaExpr
    {
       unsigned char *pointer = ctx->pointer;
       ctx->pushObject(isStatic ? 0: thisExpr ? thisExpr->runObject(ctx) : ctx->getThis(false));
+      BCR_VCHECK;
 
       const char *s = function.signature+1;
       for(int a=0;a<args.size();a++)
@@ -1759,6 +1760,7 @@ struct CallHaxe : public CppiaExpr
             case sigObject: ctx->pushObject( arg->runObject(ctx) ); break;
             default: ;// huh?
          }
+         BCR_VCHECK;
       }
 
       AutoStack a(ctx,pointer);
@@ -2148,8 +2150,9 @@ struct CallMemberVTable : public CppiaExpr
    ExprType getType() { return returnType; }
    // ScriptCallable **vtable = (ScriptCallable **)thisVal->__GetScriptVTable();
 
-   #define CALL_VTABLE_SETUP \
+   #define CALL_VTABLE_SETUP(errorValue) \
       hx::Object *thisVal = thisExpr ? thisExpr->runObject(ctx) : ctx->getThis(); \
+      BCR_CHECK_RET(errorValue); \
       CPPIA_CHECK(thisVal); \
       ScriptCallable **vtable = (!isInterfaceCall ? (*(ScriptCallable ***)((char *)thisVal +scriptVTableOffset)) : (ScriptCallable **) thisVal->__GetScriptVTable()); \
       unsigned char *pointer = ctx->pointer; \
@@ -2160,29 +2163,29 @@ struct CallMemberVTable : public CppiaExpr
 
    void runVoid(CppiaCtx *ctx)
    {
-      CALL_VTABLE_SETUP
+      CALL_VTABLE_SETUP()
       ctx->runVoid(func);
    }
    int runInt(CppiaCtx *ctx)
    {
-      CALL_VTABLE_SETUP
-      return runContextConvertInt(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func); 
+      CALL_VTABLE_SETUP(BCRReturn())
+      return runContextConvertInt(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func);
    }
- 
+
    Float runFloat(CppiaCtx *ctx)
    {
-      CALL_VTABLE_SETUP
-      return runContextConvertFloat(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func); 
+      CALL_VTABLE_SETUP(BCRReturn())
+      return runContextConvertFloat(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func);
    }
    String runString(CppiaCtx *ctx)
    {
-      CALL_VTABLE_SETUP
-      return runContextConvertString(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func); 
+      CALL_VTABLE_SETUP(BCRReturn())
+      return runContextConvertString(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func);
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
-      CALL_VTABLE_SETUP
-      return runContextConvertObject(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func); 
+      CALL_VTABLE_SETUP(BCRReturn())
+      return runContextConvertObject(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func);
    }
 
    bool isBoolInt() { return boolResult; }
@@ -3088,6 +3091,8 @@ struct Call : public CppiaDynamicExpr
    hx::Object *runObject(CppiaCtx *ctx)
    {
       hx::Object *funcVal = func->runObject(ctx);
+      BCR_CHECK;
+
       CPPIA_CHECK_FUNC(funcVal);
       int size = args.size();
       switch(size)
