@@ -14,7 +14,7 @@
   <file name="Sqlite.cpp"/>
 
   <depend name="${SQLITE_DIR}/sqlite3.h" />
-  <file name="${SQLITE_DIR}/sqlite3.c"/>
+  <file name="${SQLITE_DIR}/sqlite3.c" tags="" />
 </files>
 
 <target id="haxe">

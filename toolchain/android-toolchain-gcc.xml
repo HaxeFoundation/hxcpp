@@ -1,6 +1,6 @@
 <xml>
 
-<!-- Android TOOLS -------------------------------------->
+<!-- Android TOOLS -->
 <!--
   Configure build via variables, otherwise defaults will be used:
      Set the path to the exact ndk to use with ANDROID_NDK_ROOT,

@@ -1,7 +1,7 @@
 <xml>
 
 
-<!-- WINDOWS TOOLS -------------------------------------->
+<!-- WINDOWS TOOLS -->
 
 
 
@@ -130,6 +130,8 @@
   <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
   <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
   <flag value="-map:${HXCPP_MAP_FILE}" if="HXCPP_MAP_FILE" />
+  <flag value="-NOIMPLIB" if="HXCPP_NO_IMPLIB" />
+  <flag value="-NOEXP" if="HXCPP_NO_IMPLIB" />
   <lib name="${dll_import_link}" if="dll_import_link" />
   <ext value=".dll"/>
   <libdir name="obj/lib"/>
@@ -154,6 +156,8 @@
   <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
   <flag value="-subsystem:windows${SUBSYSTEM_VER}" if="SUBSYSTEMWINDOWS" />
   <flag value="-subsystem:console${SUBSYSTEM_VER}" if="SUBSYSTEMCONSOLE" />
+  <flag value="-NOIMPLIB" if="HXCPP_NO_IMPLIB" />
+  <flag value="-NOEXP" if="HXCPP_NO_IMPLIB" />
   <libpathflag value="-libpath:"/>
   <flag value="-libpath:lib"/>
   <flag value="user32.lib"/>

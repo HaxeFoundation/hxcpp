@@ -2,7 +2,7 @@
 
 <set name="MBEDTLS_DIR" value="${HXCPP}/project/thirdparty/mbedtls-2.28.2" />
 
-<files id="mbedtls">
+<files id="mbedtls" tags="" >
 	<depend name="${this_dir}/mbedtls-files.xml" dateOnly="true" />
 	<cache value="true" asLibrary="true" />
 
