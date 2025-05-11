@@ -161,7 +161,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_utf8_string_to_char_bytes(String &i
 
 // --- HashRoot ---------------------------------------------------------------------
 
-HXCPP_EXTERN_CLASS_ATTRIBUTES int           __root_hash_size(Dynamic *rtHash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __root_hash_size(Dynamic &rtHash);
 
 // --- IntHash ----------------------------------------------------------------------
 

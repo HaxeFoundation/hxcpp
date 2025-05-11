@@ -1,4 +1,40 @@
 
+4.3.xx
+------------------------------------------------------------
+
+* Added support for killing processes on OS' other than Windows, Apple TV, and Apple Watch
+* Added register capturing on Linux
+* Added HXCPP_CPP17 define
+* Added ASM and NASM support to build xml
+* Added support for name and value entries to build xml
+* Added tracy profiler
+* Added support for Android NDKs higher than 21
+* Added x86_64 support to older Android NDKs
+* Added optional detaching of main thread
+
+* Updated mbedtls to 2.28.2
+* Updated sqlite to 3.40.1
+* Updated zlib to 1.2.13
+
+* Fixed SSL socket non blocking handshake throwing an exception on 64bit Windows
+* Fixed Windows 64bit architecture detection
+* Fixed critial error handler returning the wrong callstack
+* Fixed ARM64 library names on Mac
+* Fixed generational GC when used with HXCPP_ALIGN_ALLOC
+* Fixed pthread structured being unaligned
+* Fixed cppia crash on functions with empty bodies
+* Fixed regression parsing integers which wrap around
+* Fixed compilation with HXCPP_GC_DEBUG_LEVEL define
+* Fixed compilation with MinGW
+* Fixed enum parameters potentially returning null
+* Fixed HXCPP_CLANG not being set when using clang
+* Fixed pcre2 and mbedtls not being compiled with the c99 standard
+* Fixed behaviour of indexOf and lastIndexOf on empty strings not aligning with other targets
+* Fixed behaviour of directory reading function not aligning with other targets
+* Fixed haxelib not being invoked with the current working directory
+
+* Removed Haxe 3 support
+
 4.3
 ------------------------------------------------------------
 

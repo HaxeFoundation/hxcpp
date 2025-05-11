@@ -997,7 +997,10 @@ const char16_t * hxs_utf16(const String &string,hx::IStringAlloc *alloc)
 }
 
 
-EXPORT void * hx_cffi(const char *inName)
+#ifndef HXCPP_STATIC_CFFI
+EXPORT
+#endif
+void * hx_cffi(const char *inName)
 {
    #define HXCPP_PRIME
    #define DEFFUNC(name,r,b,c) if ( !strcmp(inName,#name) ) return (void *)name;
