@@ -36,7 +36,33 @@ ArrayBase::ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic)
                inElementSize==sizeof(String) ? aciStringArray : aciObjectArray;
 }
 
+#if (HXCPP_API_LEVEL>=500)
+ArrayPin::ArrayPin(char* inPtr) : ptr(inPtr)
+{
+   hx::GCPinPtr(ptr);
+}
 
+ArrayPin::~ArrayPin()
+{
+   hx::GCUnpinPtr(ptr);
+}
+
+char* ArrayPin::GetBase()
+{
+   return ptr;
+}
+
+ArrayPin* ArrayBase::Pin()
+{
+   if (!mBase)
+   {
+      return nullptr;
+   }
+
+   // If the array holds unmanaged data is it safe to put this in the ArrayPin if we don't know the lifetime of that pointer?
+   return new ArrayPin(mBase);
+}
+#endif
 
 void ArrayBase::reserve(int inSize) const
 {
