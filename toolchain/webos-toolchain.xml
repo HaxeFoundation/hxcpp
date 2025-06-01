@@ -12,7 +12,7 @@
 <include name="toolchain/gcc-toolchain.xml"/>
 
 
-<!-- WEBOS TOOLS -------------------------------------------------->
+<!-- WEBOS TOOLS -->
 	
 <compiler id="webos" exe="arm-none-linux-gnueabi-g++" if="webos">
 	<flag value="-c"/>

@@ -1,6 +1,6 @@
 <xml>
 
-<!-- Android TOOLS -------------------------------------->
+<!-- Android TOOLS -->
 <!--
   Configure build via variables, otherwise defaults will be used:
      Set the path to the exact ndk to use with ANDROID_NDK_ROOT,
@@ -27,7 +27,8 @@
 
 <section unless="HXCPP_X86">
   <set name="ARCH" value="-v7" if="HXCPP_ARMV7" />
-  <set name="ABI" value="armeabi" />
+  <set name="ABI" value="armeabi" unless="HXCPP_ARMV7" />
+  <set name="ABI" value="armeabi-v7a" if="HXCPP_ARMV7"/>
   <set name="PLATFORM_ARCH" value="arch-arm" />
   <set name="TOOLCHAIN" value="arm-linux-androideabi-${TOOLCHAIN_VERSION}" />
   <set name="EXEPREFIX" value="arm-linux-androideabi" />
@@ -65,7 +66,12 @@
   <exe name="${EXEPREFIX}-g++" />
 
   <!-- These must appear in this order! -->
-  <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}"/>
+  <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}" unless="NDKV14+" />
+  <section if="NDKV14+">
+      <flag value="--sysroot=${ANDROID_NDK_ROOT}/sysroot" />
+      <flag name="-isystem" value="${ANDROID_NDK_ROOT}/sysroot/usr/include/${EXEPREFIX}" />
+      <flag value="-D__ANDROID_API__=${HXCPP_ANDROID_PLATFORM}" />
+  </section>
   <section if="NDKV8+">
     <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/include" />
     <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/${ABI}/include" />
@@ -129,7 +135,7 @@
   <flag value="-finline-limit=10000"/>
   <flag value="-DANDROID=ANDROID"/>
   <flag value="-DHX_ANDROID"/>
-  <flag value="-D${ANDROID_PLATFORM_DEFINE}"/>
+  <flag value="-DHXCPP_ANDROID_PLATFORM=${HXCPP_ANDROID_PLATFORM}"/>
   <!-- todo <flag value="-Werror"/> -->
   <flag value="-Wa,--noexecstack"/>
   <flag value="-O2" unless="debug || HXCPP_OPTIMIZE_FOR_SIZE || HXCPP_OPTIMIZE_FOR_FAST"/>

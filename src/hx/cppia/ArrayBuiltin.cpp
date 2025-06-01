@@ -1305,7 +1305,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          case af__set:
             {
                JitTemp thisVal(compiler, jtPointer);
-               JitTemp index(compiler, jtPointer);
+               JitTemp index(compiler, jtInt);
                ExprType elemType = (ExprType)ExprTypeOf<ELEM>::value;
                JitTemp tempVal(compiler, elemType);
 

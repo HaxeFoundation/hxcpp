@@ -125,10 +125,13 @@ class Setup
    }
 
    static var gotNdkVersion = 0.0;
+   static var cachedNdkPath:Null<String> = null;
    static public function getNdkVersion(inDirName:String, newStyle=false):Float
    {
-      if (gotNdkVersion!=0)
+      if (gotNdkVersion!=0 && cachedNdkPath==inDirName)
          return gotNdkVersion;
+
+      cachedNdkPath = inDirName;
 
       Log.v("Try to get version from source.properties");
       var src = toPath(inDirName+"/source.properties");
@@ -431,7 +434,7 @@ class Setup
       else
       {
          root = defines.get("ANDROID_NDK_ROOT");
-         Log.info("", "\x1b[33;1mUsing Android NDK root: " + root + "\x1b[0m");
+         Log.setup("\x1b[33;1mUsing Android NDK root: " + root + "\x1b[0m");
       }
 
       if (ndkVersion==0)
@@ -439,7 +442,7 @@ class Setup
          var version = Setup.getNdkVersion( root );
          if (version > 0)
          {
-            Log.info("", "\x1b[33;1mDetected Android NDK " + version + "\x1b[0m");
+            Log.setup("\x1b[33;1mDetected Android NDK " + version + "\x1b[0m");
             defines.set("NDKV" + Std.int(version), "1" );
             ndkVersion = Std.int(version);
          }
@@ -479,7 +482,7 @@ class Setup
             if (bestVer!="")
             {
                defines.set("TOOLCHAIN_VERSION",bestVer);
-               Log.info("", "\x1b[33;1mDetected Android toolchain: "+arm_type+"-" + bestVer + "\x1b[0m");
+               Log.setup("\x1b[33;1mDetected Android toolchain: "+arm_type+"-" + bestVer + "\x1b[0m");
             }
          }
          catch(e:Dynamic) { }
@@ -513,14 +516,36 @@ class Setup
       }
       catch(e:Dynamic) { }
 
-      if(defines.exists('NDKV20+')) {
-         Log.v([
-            "x86 Platform: 16",
-            "arm Platform: 16",
-            "x86_64 Platform: 21",
-            "arm_64 Platform: 21",
-            "Frameworks should set the minSdkVersion for each APK to these values."
-         ].join('\n'));
+      if (defines.exists('HXCPP_ANDROID_PLATFORM')) {
+         Log.setup("\x1b[33;1mUsing Android NDK platform: " + defines.get("HXCPP_ANDROID_PLATFORM") + "\x1b[0m");
+      }
+      else if (defines.exists('NDKV19+')) {
+         if (defines.exists("PLATFORM_NUMBER")) {
+            Log.warn("The PLATFORM_NUMBER define is deprecated. Please use the HXCPP_ANDROID_PLATFORM define instead.");
+            defines.set("HXCPP_ANDROID_PLATFORM", Std.string(defines.get("PLATFORM_NUMBER")));
+         } else {
+            var platformsJson = root + "/meta/platforms.json";
+
+            var minPlatform:Null<Int> = try {
+               haxe.Json.parse(sys.io.File.getContent(platformsJson)).min;
+            } catch (e) {
+               Log.warn("Unable to determine minimum supported Android platform: " + e.toString());
+               null;
+            };
+
+            if (minPlatform == null) {
+               Log.warn("Defaulting to Android platform 21");
+               minPlatform = 21;
+            }
+
+            // only platform version 21 and above support 64 bit
+            // https://developer.android.com/about/versions/lollipop#Perf
+            if (minPlatform < 21 && (defines.exists('HXCPP_ARM64') || defines.exists('HXCPP_X86_64'))) {
+               minPlatform = 21;
+            }
+
+            defines.set("HXCPP_ANDROID_PLATFORM", Std.string(minPlatform));
+         }
       }
       else {
          globallySetThePlatform(root, defines);
@@ -578,7 +603,7 @@ class Setup
          defines.set("PLATFORM", "android-" + best);
          androidPlatform = best;
       }
-      defines.set("ANDROID_PLATFORM_DEFINE", "HXCPP_ANDROID_PLATFORM=" + androidPlatform);
+      defines.set("HXCPP_ANDROID_PLATFORM", Std.string(androidPlatform));
       if (Log.verbose) Log.println("");
    }
 
@@ -690,11 +715,11 @@ class Setup
                }
                ioDefines.set("HXCPP_MSVC", where );
                Sys.putEnv("HXCPP_MSVC", where);
-               Log.info("", 'Using MSVC Ver $ival in $where ($varName)');
+               Log.setup('Using MSVC Ver $ival in $where ($varName)');
             }
             else
             {
-               Log.info("", 'Using specified MSVC Ver $val');
+               Log.setup('Using specified MSVC Ver $val');
                ioDefines.set("HXCPP_MSVC", val );
                Sys.putEnv("HXCPP_MSVC", val);
             }
@@ -793,7 +818,7 @@ class Setup
             if (reg.match(str))
             {
                var cl_version = Std.parseInt(reg.matched(1));
-               Log.info("", "Using MSVC version: " + cl_version);
+               Log.setup("Using MSVC version: " + cl_version);
                ioDefines.set("MSVC_VER", cl_version+"");
                if (cl_version>=17)
                   ioDefines.set("MSVC17+","1");

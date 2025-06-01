@@ -23,7 +23,7 @@
 <include name="toolchain/gcc-toolchain.xml"/>
 
 
-<!-- BLACKBERRY TOOLS -------------------------------------------------->
+<!-- BLACKBERRY TOOLS -->
 	
 <compiler id="blackberry" exe="qcc" if="blackberry">
 	<flag value="-V${QCC_TARGET}" />
