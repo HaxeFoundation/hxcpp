@@ -140,7 +140,7 @@
   <compilerflag value="-DTRACY_NO_EXIT" if="HXCPP_TRACY_NO_EXIT"/>
   <compilerflag value="-DTRACY_ON_DEMAND" if="HXCPP_TRACY_ON_DEMAND"/>
 
-  <file name="project/thirdparty/tracy-0.11.1/TracyClient.cpp"/>
+  <file name="project/thirdparty/tracy-0.12.0/TracyClient.cpp"/>
   <cache value="1" project="hxcpp-tracy" asLibrary="true" />
 </files>
 
