@@ -99,7 +99,7 @@ void _hx_std_put_env( String e, String v )
 #ifdef HX_WINRT
    // Do nothing
 #elif defined(NEKO_WINDOWS)
-   String set = e + HX_CSTRING("=") + (v != null()?v:"");
+   String set = e + HX_CSTRING("=") + (v != null()?v:HX_CSTRING(""));
 
    #ifdef HX_SMART_STRINGS
    if (set.isUTF16Encoded())
