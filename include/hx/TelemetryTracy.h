@@ -7,8 +7,8 @@
 
 #define TRACY_ENABLE
 #include <hxcpp.h>
-#include "../../project/thirdparty/tracy-0.11.1/tracy/TracyC.h"
-#include "../../project/thirdparty/tracy-0.11.1/tracy/Tracy.hpp"
+#include "../../project/thirdparty/tracy-0.12.0/tracy/TracyC.h"
+#include "../../project/thirdparty/tracy-0.12.0/tracy/Tracy.hpp"
 
 #ifdef HXCPP_TRACY_MEMORY
 	#ifdef HXCPP_GC_MOVING
@@ -30,7 +30,7 @@
 	::hx::strbuf TracyConcat(_hx_tracy_str_buffer, TracyLine); \
 	int TracyConcat(_hx_tracy_str_length, TracyLine); \
 	const char *TracyConcat(_hx_tracy_str_buffer_ptr, TracyLine) = name.utf8_str(&TracyConcat(_hx_tracy_str_buffer, TracyLine), false, &TracyConcat(_hx_tracy_str_length, TracyLine)); \
-	::tracy::ScopedZone TracyConcat(_hx_tracy_scoped_zone,TracyLine)(_hx_stackframe.lineNumber, _hx_stackframe.position->fileName, strlen(_hx_stackframe.position->fileName), _hx_stackframe.position->fullName, strlen(_hx_stackframe.position->fullName), TracyConcat(_hx_tracy_str_buffer_ptr, TracyLine), TracyConcat(_hx_tracy_str_length, TracyLine));
+	::tracy::ScopedZone TracyConcat(_hx_tracy_scoped_zone,TracyLine)(_hx_stackframe.lineNumber, _hx_stackframe.position->fileName, strlen(_hx_stackframe.position->fileName), _hx_stackframe.position->fullName, strlen(_hx_stackframe.position->fullName), TracyConcat(_hx_tracy_str_buffer_ptr, TracyLine), TracyConcat(_hx_tracy_str_length, TracyLine), -1);
 #endif
 
 void __hxcpp_tracy_framemark();
