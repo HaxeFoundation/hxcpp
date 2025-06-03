@@ -86,6 +86,9 @@ inline bool HxCreateDetachedThread(DWORD (WINAPI *func)(void *), void *param)
 
 struct HxMutex
 {
+   bool mValid;
+   pthread_mutex_t *mMutex;
+
    HxMutex()
    {
       pthread_mutexattr_t mta;
@@ -96,9 +99,7 @@ struct HxMutex
    }
    ~HxMutex()
    {
-      if (mValid)
-         pthread_mutex_destroy(mMutex);
-      delete mMutex;
+      Clean();
    }
    void Lock() { pthread_mutex_lock(mMutex); }
    void Unlock() { pthread_mutex_unlock(mMutex); }
@@ -107,12 +108,16 @@ struct HxMutex
    void Clean()
    {
       if (mValid)
+      {
          pthread_mutex_destroy(mMutex);
-      mValid = 0;
+         mValid = false;
+      }
+      if (mMutex)
+      {
+         delete mMutex;
+         mMutex = nullptr;
+      }
    }
-
-   bool mValid;
-   pthread_mutex_t *mMutex;
 };
 
 #define THREAD_FUNC_TYPE void *
@@ -198,19 +203,20 @@ struct HxSemaphore
 
 struct HxSemaphore
 {
+   HxMutex         mMutex;
+   pthread_cond_t  *mCondition;
+   bool            mSet;
+
+
    HxSemaphore()
    {
       mSet = false;
-      mValid = true;
       mCondition = new pthread_cond_t();
       pthread_cond_init(mCondition,0);
    }
    ~HxSemaphore()
    {
-      if (mValid)
-      {
-         pthread_cond_destroy(mCondition);
-      }
+      Clean();
    }
    // For autolock
    inline operator HxMutex &() { return mMutex; }
@@ -294,19 +300,14 @@ struct HxSemaphore
    void Clean()
    {
       mMutex.Clean();
-      if (mValid)
+      if (mCondition)
       {
-         mValid = false;
          pthread_cond_destroy(mCondition);
+         delete mCondition;
+         mCondition = nullptr;
       }
-      delete mCondition;
    }
 
-
-   HxMutex         mMutex;
-   pthread_cond_t  *mCondition;
-   bool            mSet;
-   bool            mValid;
 };
 
 
