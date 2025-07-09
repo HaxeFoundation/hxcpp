@@ -198,13 +198,11 @@ static bool sGcVerifyGenerational = false;
   #else
   enum { MAX_GC_THREADS = 2 };
   #endif
+  
+  // You can uncomment this for better call stacks if it crashes while collecting
+  #define HX_MULTI_THREAD_MARKING
 #else
   enum { MAX_GC_THREADS = 1 };
-#endif
-
-#if (MAX_GC_THREADS>1)
-   // You can uncomment this for better call stacks if it crashes while collecting
-   #define HX_MULTI_THREAD_MARKING
 #endif
 
 #ifdef PROFILE_THREAD_USAGE
@@ -1952,7 +1950,7 @@ public:
              if (obj)
              {
                 obj->__Mark(this);
-                #if HX_MULTI_THREAD_MARKING
+                #ifdef HX_MULTI_THREAD_MARKING
                 // Load balance
                 if (sLazyThreads && marking->count>32)
                 {
