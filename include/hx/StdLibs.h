@@ -522,9 +522,11 @@ struct AtomicObject: hx::Object {
    }
 
    Dynamic compareExchange(Dynamic expected, Dynamic replacement) {
-     hx::Object *original = aPtr.load();
+     // Note: using Dynamic instead of hx::Object* is important
+     // Dynamic has an overloaded == operator, a raw pointer to hx::Object does not.
+     Dynamic original = aPtr.load();
      while (original == expected) {
-       if (aPtr.compare_exchange_weak(original, replacement.mPtr)) {
+       if (aPtr.compare_exchange_weak(original.mPtr, replacement.mPtr)) {
          HX_OBJ_WB_GET(this, replacement.mPtr);
          return original;
        } else {
