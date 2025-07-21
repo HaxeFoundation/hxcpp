@@ -488,7 +488,7 @@ inline void* _hx_atomic_compare_exchange_cast_ptr(void *a, void *expected, void 
 #include <atomic>
 
 struct AtomicObject: hx::Object {
-  std::atomic<::hx::Object *> aPtr;
+  std::atomic< ::hx::Object *> aPtr;
 
   AtomicObject(Dynamic val) { aPtr = val.mPtr; }
 
