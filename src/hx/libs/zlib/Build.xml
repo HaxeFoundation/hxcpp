@@ -13,10 +13,6 @@
   <compilerflag value="-DSTDC" unless="windows" />
   <compilerflag value="-DHAVE_UNISTD_H" unless="windows" />
 
-  <compilerflag value="-Wno-unknown-warning" unless="MSVC_VER" />
-  <compilerflag value="-Wno-unknown-warning-option" unless="MSVC_VER" />
-  <compilerflag value="-Wno-deprecated-non-prototype" unless="MSVC_VER" />
-
   <file name="ZLib.cpp"/>
 
   <!-- HXCPP_LINK_NO_ZLIB may be set too late, so use filterout as well. -->
