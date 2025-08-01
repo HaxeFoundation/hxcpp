@@ -89,6 +89,9 @@
   <!-- Build time error, not run time -->
   <flag value="-Wl,--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
 
+  <!-- Support 16KB page sizes -->
+  <flag value="-Wl,-z,max-page-size=16384" />
+
   <flag value="-stdlib=libc++" unless="NDKV20+" />
   <flag value ="-static-libstdc++" />
   <!-- This shows the android link line, which may be so long that it breaks the tool
