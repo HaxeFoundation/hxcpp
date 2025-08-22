@@ -1226,70 +1226,98 @@ Array<Dynamic> _hx_std_socket_poll_prepare( Dynamic pdata, Array<Dynamic> rsocks
 **/
 void _hx_std_socket_poll_events(Dynamic pdata, double timeout)
 {
-    polldata *p = val_poll(pdata);
+   polldata *p = val_poll(pdata);
 
-    // Clear at entry so any early return leaves a clean -1 sentinel.
-    p->ridx[0] = -1;
-    p->widx[0] = -1;
+   p->ridx[0] = -1;
+   p->widx[0] = -1;
 
 #ifdef NEKO_WINDOWS
-    memcpy(p->outr, p->fdr, FDSIZE(p->fdr->fd_count));
-    memcpy(p->outw, p->fdw, FDSIZE(p->fdw->fd_count));
+   memcpy(p->outr, p->fdr, FDSIZE(p->fdr->fd_count));
+   memcpy(p->outw, p->fdw, FDSIZE(p->fdw->fd_count));
 
-    struct timeval t;
-    struct timeval *tt = init_timeval(timeout, &t);
+   fd_set oute;
+   FD_ZERO(&oute);
+   if (p->fdr->fd_count)
+   {
+      for (u_int i = 0; i < p->fdr->fd_count; ++i)
+         FD_SET(p->fdr->fd_array[i], &oute);
+   }
 
-    hx::EnterGCFreeZone();
-    if (select(0, p->fdr->fd_count ? p->outr : 0,
-                  p->fdw->fd_count ? p->outw : 0,
-                  NULL, tt) == SOCKET_ERROR)
-    {
-        hx::ExitGCFreeZone();
-        // ridx/widx already set to -1 at entry
-        return;
-    }
-    hx::ExitGCFreeZone();
+   struct timeval t;
+   struct timeval *tt = init_timeval(timeout, &t);
 
-    int k = 0;
-    for (int i=0; i<p->fdr->fd_count; i++)
-        if (FD_ISSET(p->fdr->fd_array[i], p->outr))
-            p->ridx[k++] = i;
-    p->ridx[k] = -1;
+   hx::EnterGCFreeZone();
+   int sel = select(
+       0,
+       p->fdr->fd_count ? p->outr : 0,
+       p->fdw->fd_count ? p->outw : 0,
+       p->fdr->fd_count ? &oute : 0,
+       tt);
+   if (sel == SOCKET_ERROR)
+   {
+      hx::ExitGCFreeZone();
 
-    k = 0;
-    for (int i=0; i<p->fdw->fd_count; i++)
-        if (FD_ISSET(p->fdw->fd_array[i], p->outw))
-            p->widx[k++] = i;
-    p->widx[k] = -1;
+      int k = 0;
+      for (u_int i = 0; i < p->fdr->fd_count; ++i)
+         p->ridx[k++] = i;
+      p->ridx[k] = -1;
+
+      return;
+   }
+   hx::ExitGCFreeZone();
+
+   int k = 0;
+   for (u_int i = 0; i < p->fdr->fd_count; ++i)
+   {
+      SOCKET fd = p->fdr->fd_array[i];
+      if (FD_ISSET(fd, p->outr) || FD_ISSET(fd, &oute))
+         p->ridx[k++] = i;
+   }
+   p->ridx[k] = -1;
+
+   k = 0;
+   for (u_int i = 0; i < p->fdw->fd_count; ++i)
+   {
+      if (FD_ISSET(p->fdw->fd_array[i], p->outw))
+         p->widx[k++] = i;
+   }
+   p->widx[k] = -1;
 
 #else
-    int tot = p->rcount + p->wcount;
-    hx::EnterGCFreeZone();
+   int tot = p->rcount + p->wcount;
+
+   hx::EnterGCFreeZone();
 poll_events_again:
-    if (poll(p->fds, tot, (int)(timeout * 1000)) < 0)
-    {
-        if (errno == EINTR) goto poll_events_again;
-        hx::ExitGCFreeZone();
-        // ridx/widx already set to -1 at entry
-        return;
-    }
-    hx::ExitGCFreeZone();
+   if (poll(p->fds, tot, (int)(timeout * 1000)) < 0)
+   {
+      if (errno == EINTR)
+         goto poll_events_again;
+      hx::ExitGCFreeZone();
 
-    int k = 0;
-    int i = 0;
-    for (i=0; i<p->rcount; i++)
-        if (p->fds[i].revents & (POLLIN | POLLHUP))
-            p->ridx[k++] = i;
-    p->ridx[k] = -1;
+      return;
+   }
+   hx::ExitGCFreeZone();
 
-    k = 0;
-    for (; i<tot; i++)
-        if (p->fds[i].revents & (POLLOUT | POLLHUP))
-            p->widx[k++] = i - p->rcount;
-    p->widx[k] = -1;
+   int k = 0;
+   int i = 0;
+
+   for (i = 0; i < p->rcount; ++i)
+   {
+      if (p->fds[i].revents & (POLLIN | POLLHUP | POLLERR | POLLNVAL))
+         p->ridx[k++] = i;
+   }
+   p->ridx[k] = -1;
+
+   k = 0;
+
+   for (; i < tot; ++i)
+   {
+      if (p->fds[i].revents & (POLLOUT | POLLHUP | POLLERR | POLLNVAL))
+         p->widx[k++] = i - p->rcount;
+   }
+   p->widx[k] = -1;
 #endif
 }
-
 
 /**
    socket_poll : 'socket array -> 'poll -> timeout:float -> 'socket array
