@@ -191,6 +191,40 @@ class Compiler
 
 
       addIdentity(ext,args);
+      switch (ext) {
+         case "c":
+            if(inFile.mCStandard != null) {
+               if(BuildTool.isMsvc()) {
+                  if (inFile.mCStandard > 17) {
+                     args.push('/std:clatest');
+                  } else if (inFile.mCStandard >= 11) {
+                     args.push('/std:c${inFile.mCStandard}');
+                  }
+               } else {
+                  args.push('-std=c${inFile.mCStandard}');
+               }
+            }
+         case "m":
+            if(inFile.mObjCStandard != null) {
+               args.push('-std=c${inFile.mObjCStandard}');
+            }
+         case "mm":
+            if(inFile.mObjCxxStandard != null) {
+               args.push('-std=c++${inFile.mObjCxxStandard}');
+            }
+         case "cpp", "c++", "cc":
+            if(inFile.mCxxStandard != null) {
+               if (BuildTool.isMsvc()) {
+                  if (inFile.mCxxStandard > 20) {
+                     args.push('/std:c++latest');
+                  } else if (inFile.mCStandard >= 14) {
+                     args.push('/std:c++${inFile.mCxxStandard}');
+                  }
+               } else {
+                  args.push('-std=c++${inFile.mCxxStandard}');
+               }
+            }
+      }
 
       var allowPch = false;
 
