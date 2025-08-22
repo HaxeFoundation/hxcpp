@@ -1224,62 +1224,70 @@ Array<Dynamic> _hx_std_socket_poll_prepare( Dynamic pdata, Array<Dynamic> rsocks
    Update the read/write flags arrays that were created with [socket_poll_prepare].
    </doc>
 **/
-void _hx_std_socket_poll_events( Dynamic pdata, double timeout )
+void _hx_std_socket_poll_events(Dynamic pdata, double timeout)
 {
-   polldata *p = val_poll(pdata);
+    polldata *p = val_poll(pdata);
 
-   #ifdef NEKO_WINDOWS
-   memcpy(p->outr,p->fdr,FDSIZE(p->fdr->fd_count));
-   memcpy(p->outw,p->fdw,FDSIZE(p->fdw->fd_count));
+    // Clear at entry so any early return leaves a clean -1 sentinel.
+    p->ridx[0] = -1;
+    p->widx[0] = -1;
 
-   struct timeval t;
-   struct timeval *tt = init_timeval(timeout,&t);
+#ifdef NEKO_WINDOWS
+    memcpy(p->outr, p->fdr, FDSIZE(p->fdr->fd_count));
+    memcpy(p->outw, p->fdw, FDSIZE(p->fdw->fd_count));
 
-   hx::EnterGCFreeZone();
-   if( select(0/* Ignored */, p->fdr->fd_count ? p->outr : 0, p->fdw->fd_count ?p->outw : 0,NULL,tt) == SOCKET_ERROR )
-   {
-      hx::ExitGCFreeZone();
-      return;
-   }
-   hx::ExitGCFreeZone();
+    struct timeval t;
+    struct timeval *tt = init_timeval(timeout, &t);
 
-   int k = 0;
-   for(int i=0;i<p->fdr->fd_count;i++)
-      if( FD_ISSET(p->fdr->fd_array[i],p->outr) )
-         p->ridx[k++] = i;
-   p->ridx[k] = -1;
+    hx::EnterGCFreeZone();
+    if (select(0, p->fdr->fd_count ? p->outr : 0,
+                  p->fdw->fd_count ? p->outw : 0,
+                  NULL, tt) == SOCKET_ERROR)
+    {
+        hx::ExitGCFreeZone();
+        // ridx/widx already set to -1 at entry
+        return;
+    }
+    hx::ExitGCFreeZone();
 
-   k = 0;
-   for(int i=0;i<p->fdw->fd_count;i++)
-      if( FD_ISSET(p->fdw->fd_array[i],p->outw) )
-         p->widx[k++] = i;
-   p->widx[k] = -1;
+    int k = 0;
+    for (int i=0; i<p->fdr->fd_count; i++)
+        if (FD_ISSET(p->fdr->fd_array[i], p->outr))
+            p->ridx[k++] = i;
+    p->ridx[k] = -1;
 
-   #else
+    k = 0;
+    for (int i=0; i<p->fdw->fd_count; i++)
+        if (FD_ISSET(p->fdw->fd_array[i], p->outw))
+            p->widx[k++] = i;
+    p->widx[k] = -1;
 
-   int tot = p->rcount + p->wcount;
-   hx::EnterGCFreeZone();
-   POSIX_LABEL(poll_events_again);
-   if( poll(p->fds,tot,(int)(timeout * 1000)) < 0 )
-   {
-      HANDLE_EINTR(poll_events_again);
-      hx::ExitGCFreeZone();
-      return;
-   }
-   hx::ExitGCFreeZone();
+#else
+    int tot = p->rcount + p->wcount;
+    hx::EnterGCFreeZone();
+poll_events_again:
+    if (poll(p->fds, tot, (int)(timeout * 1000)) < 0)
+    {
+        if (errno == EINTR) goto poll_events_again;
+        hx::ExitGCFreeZone();
+        // ridx/widx already set to -1 at entry
+        return;
+    }
+    hx::ExitGCFreeZone();
 
-   int k = 0;
-   int i = 0;
-   for(i=0;i<p->rcount;i++)
-      if( p->fds[i].revents & (POLLIN|POLLHUP) )
-         p->ridx[k++] = i;
-   p->ridx[k] = -1;
-   k = 0;
-   for(;i<tot;i++)
-      if( p->fds[i].revents & (POLLOUT|POLLHUP) )
-         p->widx[k++] = i - p->rcount;
-   p->widx[k] = -1;
-   #endif
+    int k = 0;
+    int i = 0;
+    for (i=0; i<p->rcount; i++)
+        if (p->fds[i].revents & (POLLIN | POLLHUP))
+            p->ridx[k++] = i;
+    p->ridx[k] = -1;
+
+    k = 0;
+    for (; i<tot; i++)
+        if (p->fds[i].revents & (POLLOUT | POLLHUP))
+            p->widx[k++] = i - p->rcount;
+    p->widx[k] = -1;
+#endif
 }
 
 
