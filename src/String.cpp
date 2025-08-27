@@ -454,6 +454,9 @@ inline String TCopyString(const T *inString,int inLength)
       }
       else
       {
+         if (inLength == 0) {
+            return String::emptyString;
+         }
          int length = inLength > 0 ? inLength : 0;
          const char *ptr = TConvertToUTF8(inString, &length, 0, true );
          return String(ptr,length);
