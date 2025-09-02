@@ -1380,7 +1380,7 @@ Dynamic String::charCodeAt(int inPos) const
 
 String String::fromCharCode( int c )
 {
-   if (c<=255)
+   if (0<=c && c<=255)
    {
       return sConstStrings[c];
    }
