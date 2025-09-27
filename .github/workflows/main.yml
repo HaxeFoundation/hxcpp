@@ -6,7 +6,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        haxe: [ 4.3.4, latest ]
+        haxe: [ 4.3.7, latest ]
     uses: ./.github/workflows/test.yml
     name: Test Windows (32bit)
     with:
