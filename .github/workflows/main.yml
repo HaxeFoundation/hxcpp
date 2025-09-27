@@ -6,7 +6,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        haxe: [ 4.3.4, latest ]
+        haxe: [ 4.3.7, latest ]
     uses: ./.github/workflows/test.yml
     name: Test Windows (32bit)
     with:
@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        haxe: [ 4.3.4, latest ]
+        haxe: [ 4.3.7, latest ]
     uses: ./.github/workflows/test.yml
     name: Test Windows (64bit)
     with:
@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        haxe: [ 4.3.4, latest ]
+        haxe: [ 4.3.7, latest ]
     uses: ./.github/workflows/test.yml
     name: Test MacOS (x86_64)
     with:
@@ -48,7 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        haxe: [ 4.3.4, latest ]
+        haxe: [ 4.3.7, latest ]
     uses: ./.github/workflows/test.yml
     name: Test MacOS (Arm64)
     with:
@@ -62,7 +62,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        haxe: [ 4.3.4, latest ]
+        haxe: [ 4.3.7, latest ]
     uses: ./.github/workflows/test.yml
     name: Test Linux (32bit)
     with:
@@ -76,7 +76,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        haxe: [ 4.3.4, latest ]
+        haxe: [ 4.3.7, latest ]
     uses: ./.github/workflows/test.yml
     name: Test Linux (64bit)
     with:
