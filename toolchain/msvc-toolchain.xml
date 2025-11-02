@@ -134,7 +134,6 @@
   <flag value="-NOEXP" if="HXCPP_NO_IMPLIB" />
   <lib name="${dll_import_link}" if="dll_import_link" />
   <ext value=".dll"/>
-  <libdir name="obj/lib"/>
   <flag value="-libpath:lib"/>
   <fromfile value="@"/>
   <outflag value="-out:"/>
