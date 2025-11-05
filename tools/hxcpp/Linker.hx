@@ -313,9 +313,9 @@ class Linker
 
          if (mLibDir!="")
          {
+            Log.info("\x1b[1mMove file: \x1b[0m" + mLibDir+"/"+file_name + " to " + out_name);
             sys.io.File.copy( mLibDir+"/"+file_name, out_name );
             FileSystem.deleteFile( mLibDir+"/"+file_name );
-            Log.info("\x1b[1mMove file: \x1b[0m" + mLibDir+"/"+file_name + " to " + out_name);
          }
 
          sys.io.File.saveContent(hashFile,md5);
