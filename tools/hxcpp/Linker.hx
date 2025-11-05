@@ -301,7 +301,7 @@ class Linker
 
          if (mRanLib!="")
          {
-            args = [out_name];
+            args = [out+mLibDir!=""?mLibDir + "/" + file_name:out_name];
             var result = ProcessManager.runCommand("", mRanLib, args, true, true, false, "\x1b[1mRanlib:\x1b[0m " + out_name);
             if (result!=0)
             {
