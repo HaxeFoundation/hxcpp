@@ -1,36 +1,29 @@
 <xml>
-    
+
 <!-- Set architecture -->
 <section if="HXCPP_X86">
   <set name="ARCH" value="-x86" />
-  <set name="PLATFORM_NUMBER" value="21" unless="PLATFORM_NUMBER" />
   <set name="ABITRIPLE" value="i686-linux-android" />
 </section>
 
 <section if="HXCPP_X86_64">
   <set name="ARCH" value="-x86_64" />
-  <set name="PLATFORM_NUMBER" value="21" unless="PLATFORM_NUMBER" />
   <set name="ABITRIPLE" value="x86_64-linux-android" />
 </section>
 
 <section if="HXCPP_ARMV7">
   <set name="ARCH" value="-v7" />
-  <set name="PLATFORM_NUMBER" value="21" unless="PLATFORM_NUMBER" />
   <set name="ABITRIPLE" value="armv7a-linux-androideabi" />
   <set name="EXEPREFIX" value="arm-linux-androideabi" />
 </section>
 
 <section if="HXCPP_ARM64">
   <set name="ARCH" value="-64"/>
-  <set name="PLATFORM_NUMBER" value="21" unless="PLATFORM_NUMBER" />
   <set name="ABITRIPLE" value="aarch64-linux-android" />
 </section>
 
 <error value="Please set one of the architectures, eg HXCPP_ARM64, HXCPP_X86, ..." unless="ABITRIPLE" />
 
-<set name="PLATFORM" value="android-${PLATFORM_NUMBER}" />
-<set name="ANDROID_PLATFORM_DEFINE" value="HXCPP_ANDROID_PLATFORM=${PLATFORM_NUMBER}" />
-     
 <path name="${ANDROID_NDK_ROOT}/toolchains/llvm/prebuilt/${ANDROID_HOST}/bin" />
 
 <section unless="NDKV22+">
@@ -47,8 +40,9 @@
 <compiler id="android-gcc" exe="clang++">
 
   <exe name="clang++" />
-  <flag value="--target=${ABITRIPLE}${PLATFORM_NUMBER}" />
-  
+  <flag value="--target=${ABITRIPLE}${HXCPP_ANDROID_PLATFORM}" />
+  <cppflag value="-stdlib=libc++" unless="NDKV20+" />
+
   <!-- File Related -->
   <include name="toolchain/common-defines.xml" />
   <flag value="-I${HXCPP}/include"/>
@@ -64,8 +58,8 @@
   <flag value="-DHXCPP_CLANG"/>
   <flag value="-DHX_ANDROID"/>
   <flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>
-  <flag value="-D${ANDROID_PLATFORM_DEFINE}"/>
-  
+  <flag value="-DHXCPP_ANDROID_PLATFORM=${HXCPP_ANDROID_PLATFORM}" />
+
   <!-- Options -->
   <cppflag value="-std=c++17" if="HXCPP_CPP17" />
   <flag value="-flto" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
@@ -90,11 +84,21 @@
 
   <exe name="clang++" />
   <flag value ="-shared" />
-  <flag value="--target=${ABITRIPLE}${PLATFORM_NUMBER}" />
+  <flag value="--target=${ABITRIPLE}${HXCPP_ANDROID_PLATFORM}" />
 
   <!-- Build time error, not run time -->
   <flag value="-Wl,--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
 
+  <!-- Disable 16KB page alignment workaround when explicitly requested -->
+  <section unless="HXCPP_ANDROID_NO_16K_PAGES">
+    <!-- Enable 16KB page size for NDK r27 and below -->
+    <flag value="-Wl,-z,max-page-size=16384" unless="NDKV28+" />
+
+    <!-- Extra 16KB alignment workaround for NDK r22 and below -->
+    <flag value="-Wl,-z,common-page-size=16384" unless="NDKV23+" />
+  </section>
+
+  <flag value="-stdlib=libc++" unless="NDKV20+" />
   <flag value ="-static-libstdc++" />
   <!-- This shows the android link line, which may be so long that it breaks the tool
      https://github.com/HaxeFoundation/hxcpp/pull/1091

@@ -834,9 +834,9 @@ struct BCRReturn
 };
 
 
-#define BCR_CHECK if (ctx->breakContReturn) return BCRReturn();
+#define BCR_CHECK if (ctx->breakContReturn || ctx->exception) return BCRReturn();
 #define BCR_CHECK_RET(x) if (ctx->breakContReturn) return x;
-#define BCR_VCHECK if (ctx->breakContReturn) return;
+#define BCR_VCHECK if (ctx->breakContReturn || ctx->exception) return;
 
 
 

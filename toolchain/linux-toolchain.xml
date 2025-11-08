@@ -1,6 +1,6 @@
 <xml>
 
-<!-- LINUX TOOLS -------------------------------------->
+<!-- LINUX TOOLS -->
 
 
 <section if="xcompile" >
@@ -70,7 +70,6 @@
   <flag value="-fPIC"/>
   <flag value="-m32" unless="noM32"/>
   <flag value="-m64" if="HXCPP_M64" unless="noM64" />
-  <!-- <flag value="-Wl,--unresolved-symbols=report-all"/> -->
   <flag value="-Xlinker"/>
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
   <flag value="-debug" if="debug"/>

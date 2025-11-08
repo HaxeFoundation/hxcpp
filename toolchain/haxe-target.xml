@@ -1,7 +1,7 @@
 <xml>
 
 <!-- make sure hxcpp.n is up to date -->
-<pleaseUpdateHxcppTool version="6" />
+<pleaseUpdateHxcppTool version="7" />
 
 <pragma once="true" />
 
@@ -141,7 +141,7 @@
   <compilerflag value="-DTRACY_NO_EXIT" if="HXCPP_TRACY_NO_EXIT"/>
   <compilerflag value="-DTRACY_ON_DEMAND" if="HXCPP_TRACY_ON_DEMAND"/>
 
-  <file name="project/thirdparty/tracy-0.11.1/TracyClient.cpp"/>
+  <file name="project/thirdparty/tracy-0.12.0/TracyClient.cpp"/>
   <cache value="1" project="hxcpp-tracy" asLibrary="true" />
 </files>
 
@@ -159,7 +159,7 @@
 
   <file name = "src/hx/Anon.cpp"/>
   <file name = "src/hx/Boot.cpp"/>
-  <file name = "src/hx/CFFI.cpp" tags="haxe,static" />
+  <file name = "src/hx/CFFI.cpp" tags="haxe,static,cffi" />
   <file name = "src/hx/Date.cpp"/>
   <file name = "src/hx/gc/GcCommon.cpp" tags="haxe,gc" />
   <file name = "src/hx/gc/Immix.cpp" tags="haxe,gc" />
@@ -240,7 +240,8 @@
      <ext value="${LIBEXTRA}" if="exe_link" />
   </section>
 
-  <fullouput name="${HAXE_FULL_OUTPUT_NAME}" if="HAXE_FULL_OUTPUT_NAME" />
+  <!-- Note: was - 'fullouput' -->
+  <fulloutput name="${HAXE_FULL_OUTPUT_NAME}" if="HAXE_FULL_OUTPUT_NAME" />
   <fullunstripped name="${HAXE_FULL_UNSTRIPPED_NAME}" if="HAXE_FULL_UNSTRIPPED_NAME" />
 
   <files id="__main__" unless="static_link" />

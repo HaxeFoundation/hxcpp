@@ -5,6 +5,15 @@ class ClientOne implements pack.HostInterface
    public function getOneString() : String return "1";
 }
 
+class ClientFoo implements IFoo {
+
+   public function new() {}
+
+   public function baz():String {
+       return 'foo';
+   }
+}
+
 class Client
 {
    public static var clientBool0 = true;
@@ -159,6 +168,26 @@ class Client
          return;
       }
 
+      switch LocalFunctionExceptions.testLocalCallingStatic() {
+         case Error(message):
+            Common.status = 'Failed test for throw in static called by local: ' + message;
+            return;
+         default:
+      }
+
+      switch LocalFunctionExceptions.testCatchWithinLocal() {
+         case Error(message):
+            Common.status = 'Failed test for catch in local function: ' + message;
+            return;
+         default:
+      }
+
+      switch LocalFunctionExceptions.testCatchFromLocal() {
+         case Error(message):
+            Common.status = 'Failed test for catching exception from local function: ' + message;
+            return;
+         default:
+      }
 
       final extending = new ClientExtendedExtendedRoot();
 

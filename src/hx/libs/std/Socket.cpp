@@ -98,6 +98,29 @@ SOCKET val_sock(Dynamic inValue)
 }
 
 
+void reset_sock(Dynamic inValue)
+{
+   if (inValue.mPtr)
+   {
+      int type = inValue->__GetType();
+      if (type==vtClass)
+      {
+         inValue = inValue->__Field( HX_CSTRING("__s"), hx::paccNever );
+         if (inValue.mPtr==0)
+            return;
+         type = inValue->__GetType();
+      }
+
+      if (type==socketType) {
+         static_cast<SocketWrapper *>(inValue.mPtr)->socket = INVALID_SOCKET;
+         return;
+      }
+   }
+
+   hx::Throw(HX_CSTRING("Invalid socket handle"));
+}
+
+
 /**
    <doc>
    <h1>Socket</h1>
@@ -190,9 +213,10 @@ void _hx_std_socket_close( Dynamic handle )
 {
    SOCKET s = val_sock(handle);
    POSIX_LABEL(close_again);
-   if( closesocket(s) ) {
+   if( s != INVALID_SOCKET && closesocket(s) ) {
       HANDLE_EINTR(close_again);
    }
+   reset_sock(handle);
 }
 
 /**
