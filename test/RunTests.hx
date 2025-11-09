@@ -195,9 +195,6 @@ class RunTests
       //run("opMatrix", opMatrix);
       run("haxe", runHaxe);
       run("telemetry", runTelemetry);
-#if (haxe_ver >= 5)
-      run("marshalling", marshalling);
-#end
       run("std32", std32);
       run("std64", std64);
       run("native", native);

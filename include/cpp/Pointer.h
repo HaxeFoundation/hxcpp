@@ -215,6 +215,7 @@ public:
       hx::Object *obj = inVariant.asObject();
       ptr = obj  ? (T*)inVariant.valObject->__GetHandle() : 0;
    }
+   inline Pointer(const ::cpp::marshal::PointerReference<T>);
 
    template<typename O>
    inline Pointer( const O *inValue ) : ptr( (T*) inValue) { }

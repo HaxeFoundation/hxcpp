@@ -646,4 +646,11 @@ inline cpp::Pointer<T> cpp::Pointer_obj::addressOf(const ::cpp::marshal::ValueRe
     return Pointer<T>(ref.ptr);
 }
 
+// I'm not sure why I need this pointer ctor overload, I'm sure it was working without it at some point
+template<typename T>
+inline cpp::Pointer<T>::Pointer(const ::cpp::marshal::PointerReference<T> ref)
+{
+    ptr = *ref.ptr;
+}
+
 #endif
