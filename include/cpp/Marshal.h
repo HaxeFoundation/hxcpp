@@ -2,6 +2,8 @@
 #define CPP_MARSHAL_H
 
 #include <type_traits>
+#include <cstring>
+#include <cmath>
 
 namespace cpp
 {
@@ -33,10 +35,6 @@ namespace cpp
         template<class T>
         class ValueType final
         {
-            // These true and false variants are called based on if T is a pointer
-            // If T is not a pointer trying to assign a value type to null results in a null pointer exception being thrown.
-            // But if T is a pointer then the value type holds a null pointer value.
-
             static T FromReference(const ValueReference<T>& inRHS);
             static T FromBoxed(const Boxed<T>& inRHS);
             static T FromDynamic(const Dynamic& inRHS);
@@ -131,6 +129,12 @@ namespace cpp
 
             bool operator==(const ValueReference<T>& inRHS) const;
             bool operator!=(const ValueReference<T>& inRHS) const;
+
+            template<class K>
+            K get(int index);
+
+            template<class K>
+            void set(int index, K value);
         };
 
         template<class T>
@@ -179,8 +183,185 @@ namespace cpp
             operator void**();
 
             TPtr operator->() const;
+
+            template<class K>
+            K get(int index);
+
+            template<class K>
+            void set(int index, K value);
+        };
+
+        template<class T>
+        struct View final
+        {
+            ::cpp::Pointer<T> ptr;
+            int length;
+
+            View(::cpp::Pointer<T> _ptr, int _length);
+
+            void clear();
+            void fill(T value);
+            bool isEmpty();
+            View<T> slice(int index);
+            View<T> slice(int index, int length);
+            bool tryCopyTo(const View<T>& destination);
+            template<class K> View<K> reinterpret();
+
+            bool operator==(const View<T>& inRHS) const;
+            bool operator!=(const View<T>& inRHS) const;
+
+            T& operator[] (int index);
+        };
+
+        struct Marshal final
+        {
+            template<class T>
+            static T zero() {
+                return T();
+            }
+
+            template <class T>
+            static int size(T _) {
+                return sizeof(T);
+            }
+
+            static View<uint8_t> utf8ViewOfString(::String string);
+            static View<uint16_t> wideViewOfString(::String string);
+            template<class T> static bool tryWrite(View<uint8_t> view, T value);
+            template<class T> static T read(View<uint8_t> view);
         };
     }
+}
+
+//
+
+inline cpp::marshal::View<uint8_t> cpp::marshal::Marshal::utf8ViewOfString(::String string)
+{
+    auto length = int{ 0 };
+    auto ptr    = string.utf8_str(nullptr, true, &length);
+
+    return View<uint8_t>(reinterpret_cast<uint8_t*>(const_cast<char*>(ptr)), length);
+}
+
+inline cpp::marshal::View<uint16_t> cpp::marshal::Marshal::wideViewOfString(::String string)
+{
+    auto length = int{ 0 };
+    auto ptr    = string.wc_str(nullptr, &length);
+
+    return View<uint16_t>(reinterpret_cast<uint16_t*>(const_cast<char16_t*>(ptr)), length);
+}
+
+template<class T>
+inline bool cpp::marshal::Marshal::tryWrite(View<uint8_t> view, T value)
+{
+    auto requiredSize = sizeof(T);
+    if (requiredSize > view.length)
+    {
+        return false;
+    }
+
+    std::memcpy(view.ptr, reinterpret_cast<uint8_t*>(&value), sizeof(T));
+
+    return true;
+}
+
+template<class T>
+inline T cpp::marshal::Marshal::read(View<uint8_t> view)
+{
+    return reinterpret_cast<T>(view.ptr);
+}
+
+//
+
+template<class T>
+inline cpp::marshal::View<T>::View(::cpp::Pointer<T> _ptr, int _length) : ptr(_ptr), length(_length) {}
+
+template<class T>
+inline bool cpp::marshal::View<T>::tryCopyTo(const View<T>& destination)
+{
+    auto requiredSize = sizeof(T) * length;
+    if (destination.length < requiredSize)
+    {
+        return false;
+    }
+
+    std::memcpy(destination.ptr, ptr, requiredSize);
+
+    return true;
+}
+
+template<class T>
+inline void cpp::marshal::View<T>::clear()
+{
+    std::memset(ptr, 0, sizeof(T) * length);
+}
+
+template<class T>
+inline void cpp::marshal::View<T>::fill(T value)
+{
+    for (auto i = 0; i < length; i++)
+    {
+        ptr[i] = value;
+    }
+}
+
+template<class T>
+inline bool cpp::marshal::View<T>::isEmpty()
+{
+    return length == 0;
+}
+
+template<class T>
+inline cpp::marshal::View<T> cpp::marshal::View<T>::slice(int index)
+{
+    return View<T>(ptr + index, length - index);
+}
+
+template<class T>
+inline cpp::marshal::View<T> cpp::marshal::View<T>::slice(int index, int length)
+{
+    return View<T>(ptr + index, length);
+}
+
+template<class T>
+template<class K>
+inline cpp::marshal::View<K> cpp::marshal::View<T>::reinterpret()
+{
+     auto newPtr = ::cpp::Pointer<K>{ ptr.reinterpret() };
+     auto fromSize = sizeof(T);
+     auto toSize   = sizeof(K);
+
+     if (toSize == fromSize)
+     {
+         return cpp::marshal::View<K>(newPtr, length);
+     }
+     if (toSize < fromSize)
+     {
+         return cpp::marshal::View<K>(newPtr, length * (fromSize / toSize));
+     }
+
+     auto shrink    = static_cast<double>(fromSize) / toSize;
+     auto newLength = static_cast<int>(std::floor(length * shrink));
+
+     return cpp::marshal::View<K>(newPtr, newLength);
+}
+
+template<class T>
+inline bool cpp::marshal::View<T>::operator==(const View<T>& inRHS) const
+{
+    return length == inRHS.length && ptr.ptr == inRHS.ptr.ptr;
+}
+
+template<class T>
+inline bool cpp::marshal::View<T>::operator!=(const View<T>& inRHS) const
+{
+    return length != inRHS.length || ptr.ptr != inRHS.ptr.ptr;
+}
+
+template<class T>
+inline T& cpp::marshal::View<T>::operator[](int index)
+{
+    return ptr[index];
 }
 
 // Boxed implementation
@@ -271,6 +452,20 @@ inline cpp::marshal::ValueReference<T>::ValueReference(const ValueType<O>& inRHS
 template<class T>
 template<class O>
 inline cpp::marshal::ValueReference<T>::ValueReference(const Boxed<O>& inRHS) : Super(reinterpret_cast<T*>(FromBoxed<O>(inRHS))) {}
+
+template<class T>
+template<class K>
+inline K cpp::marshal::ValueReference<T>::get(int index)
+{
+    return (*Super::ptr)[index];
+}
+
+template<class T>
+template<class K>
+inline void cpp::marshal::ValueReference<T>::set(int index, K value)
+{
+    (*Super::ptr)[index] = value;
+}
 
 template<class T>
 inline cpp::marshal::ValueReference<T>::ValueReference(const Variant& inRHS) : Super(FromDynamic<T>(inRHS)) {}
@@ -397,6 +592,13 @@ inline cpp::marshal::PointerReference<T>::PointerReference(const PointerType<O>&
 template<class T>
 template<class O>
 inline cpp::marshal::PointerReference<T>::PointerReference(const Boxed<O>& inRHS) : Super(reinterpret_cast<TPtr*>(FromBoxed<O>(inRHS))) {}
+
+template<class T>
+template<class K>
+inline void cpp::marshal::PointerReference<T>::set(int index, K value)
+{
+    (*Super::ptr)[index] = value;
+}
 
 template<class T>
 inline cpp::marshal::PointerReference<T>::PointerReference(const TPtr& inRHS) : Super(inRHS) {}

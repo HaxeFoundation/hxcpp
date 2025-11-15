@@ -265,6 +265,7 @@ namespace cpp { namespace marshal { template<class T> class ValueType; } }
 namespace cpp { namespace marshal { template<class T> class ValueReference; } }
 namespace cpp { namespace marshal { template<class T> class PointerType; } }
 namespace cpp { namespace marshal { template<class T> class PointerReference; } }
+namespace cpp { namespace marshal { template<class T> class View; } }
 template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
 namespace hx {
