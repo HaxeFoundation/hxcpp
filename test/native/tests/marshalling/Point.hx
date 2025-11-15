@@ -1,6 +1,6 @@
 package tests.marshalling;
 
-@:semantics(reference)
+@:semantics(value)
 @:include('point.hpp')
 @:cpp.ValueType({ type : 'point', namespace : [ 'hx', 'maths' ] })
 extern class Point {

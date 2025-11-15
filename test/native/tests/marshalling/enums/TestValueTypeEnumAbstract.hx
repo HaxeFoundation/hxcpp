@@ -3,7 +3,7 @@ package tests.marshalling.enums;
 import utest.Assert;
 import utest.Test;
 
-@:semantics(reference)
+@:semantics(value)
 @:include('colour.hpp')
 @:cpp.ValueType({ type : 'colour' })
 private extern enum abstract Colour(Int) {

@@ -10,7 +10,7 @@ namespace hx {
             point() = default;
             point(double _x, double _y);
 
-            static void point_vec(std::vector<::hx::maths::point>& v);
+            static void point_vec(::std::vector<::hx::maths::point>& v);
         };
     }
 }

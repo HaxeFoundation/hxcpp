@@ -3,14 +3,14 @@ package tests.marshalling.pointers;
 import utest.Assert;
 import utest.Test;
 
-@:semantics(reference)
+@:semantics(value)
 @:include('Base.hpp')
 @:cpp.PointerType
 private extern class Base {
     function foo():Int;
 }
 
-@:semantics(reference)
+@:semantics(value)
 @:include('Child.hpp')
 @:cpp.PointerType
 private extern class Child extends Base {

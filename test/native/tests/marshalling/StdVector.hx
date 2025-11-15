@@ -3,7 +3,7 @@ package tests.marshalling;
 import cpp.Reference;
 
 @:include('vector')
-@:semantics(reference)
+@:semantics(value)
 @:cpp.ValueType({ type : 'vector', namespace : [ 'std' ] })
 extern class StdVector<T> implements ArrayAccess<T> {
     @:overload(function ():Void {})

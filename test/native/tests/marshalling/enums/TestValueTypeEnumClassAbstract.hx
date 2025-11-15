@@ -3,7 +3,7 @@ package tests.marshalling.enums;
 import utest.Assert;
 import utest.Test;
 
-@:semantics(reference)
+@:semantics(value)
 @:include('Numbers.hpp')
 @:cpp.ValueType({ namespace : [ 'foo' ] })
 private extern enum abstract Numbers(Int) {

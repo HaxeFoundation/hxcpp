@@ -1,6 +1,6 @@
 package tests.marshalling;
 
-@:semantics(reference)
+@:semantics(value)
 @:include('ctx.hpp')
 @:cpp.PointerType({ type : 'ctx' })
 extern class Context {

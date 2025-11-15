@@ -3,7 +3,7 @@ package tests.marshalling.pointers;
 import utest.Assert;
 import utest.Test;
 
-@:semantics(reference)
+@:semantics(value)
 @:include('point.hpp')
 @:cpp.PointerType({ type : 'point', namespace : [ 'hx', 'maths' ] })
 private extern class Point {
@@ -11,7 +11,7 @@ private extern class Point {
     var y : Float;
 }
 
-@:semantics(reference)
+@:semantics(value)
 @:include('holder.hpp')
 @:cpp.ValueType({ type : 'holder', namespace : [] })
 private extern class Holder {
