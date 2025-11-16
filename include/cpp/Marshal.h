@@ -215,60 +215,91 @@ namespace cpp
 
         struct Marshal final
         {
-            template<class T>
-            static T zero() {
-                return T();
-            }
+            static View<char> toCharView(::String string);
+            static int toCharView(::String, View<char> buffer);
 
-            template <class T>
-            static int size(T _) {
-                return sizeof(T);
-            }
+            static View<char16_t> toWideCharView(::String string);
+            static int toWideCharView(::String, View<char16_t> buffer);
 
-            static View<uint8_t> utf8ViewOfString(::String string);
-            static View<uint16_t> wideViewOfString(::String string);
-            template<class T> static bool tryWrite(View<uint8_t> view, T value);
+            static ::String toString(View<char> buffer);
+            static ::String toString(View<char16_t> buffer);
+
             template<class T> static T read(View<uint8_t> view);
+            template<class T> static void write(View<uint8_t> view, const T& value);
         };
     }
 }
 
 //
 
-inline cpp::marshal::View<uint8_t> cpp::marshal::Marshal::utf8ViewOfString(::String string)
+inline cpp::marshal::View<char> cpp::marshal::Marshal::toCharView(::String string)
 {
-    auto length = int{ 0 };
+    auto length = 0;
     auto ptr    = string.utf8_str(nullptr, true, &length);
 
-    return View<uint8_t>(reinterpret_cast<uint8_t*>(const_cast<char*>(ptr)), length);
+    return View<char>(const_cast<char*>(ptr), length + 1);
 }
 
-inline cpp::marshal::View<uint16_t> cpp::marshal::Marshal::wideViewOfString(::String string)
+inline int cpp::marshal::Marshal::toCharView(::String string, View<char> buffer)
 {
-    auto length = int{ 0 };
+    auto length = 0;
+
+    if (string.utf8_str(buffer, &length))
+    {
+        return length;
+    }
+    else
+    {
+        hx::Throw(HX_CSTRING("Not enough space in the view to write the string"));
+
+        return 0;
+    }
+}
+
+inline cpp::marshal::View<char16_t> cpp::marshal::Marshal::toWideCharView(::String string)
+{
+    auto length = 0;
     auto ptr    = string.wc_str(nullptr, &length);
 
-    return View<uint16_t>(reinterpret_cast<uint16_t*>(const_cast<char16_t*>(ptr)), length);
+    return View<char16_t>(const_cast<char16_t*>(ptr), length + 1);
+}
+
+inline int cpp::marshal::Marshal::toWideCharView(::String string, View<char16_t> buffer)
+{
+    auto length = 0;
+
+    if (string.wc_str(buffer, &length))
+    {
+        return length;
+    }
+    else
+    {
+        hx::Throw(HX_CSTRING("Not enough space in the view to write the string"));
+
+        return 0;
+    }
+}
+
+inline ::String cpp::marshal::Marshal::toString(View<char> buffer)
+{
+    return ::String::create(buffer.ptr, buffer.length);
+}
+
+inline ::String cpp::marshal::Marshal::toString(View<char16_t> buffer)
+{
+    return ::String::create(buffer.ptr, buffer.length);
 }
 
 template<class T>
-inline bool cpp::marshal::Marshal::tryWrite(View<uint8_t> view, T value)
+inline void cpp::marshal::Marshal::write(View<uint8_t> view, const T& value)
 {
-    auto requiredSize = sizeof(T);
-    if (requiredSize > view.length)
-    {
-        return false;
-    }
-
-    std::memcpy(view.ptr, reinterpret_cast<uint8_t*>(&value), sizeof(T));
-
-    return true;
+    std::memcpy(view.ptr, reinterpret_cast<const uint8_t*>(&value), sizeof(T));
 }
 
 template<class T>
 inline T cpp::marshal::Marshal::read(View<uint8_t> view)
 {
-    return reinterpret_cast<T>(view.ptr);
+    return *(reinterpret_cast<T*>(view.ptr.ptr));
 }
 
 //
@@ -595,6 +626,13 @@ inline cpp::marshal::PointerReference<T>::PointerReference(const Boxed<O>& inRHS
 
 template<class T>
 template<class K>
+inline K cpp::marshal::PointerReference<T>::get(int index)
+{
+    return (*Super::ptr)[index];
+}
+
+template<class T>
+template<class K>
 inline void cpp::marshal::PointerReference<T>::set(int index, K value)
 {
     (*Super::ptr)[index] = value;
@@ -846,6 +884,12 @@ template<typename T>
 inline cpp::Pointer<T> cpp::Pointer_obj::addressOf(const ::cpp::marshal::ValueReference<T>& ref)
 {
     return Pointer<T>(ref.ptr);
+}
+
+template<typename T>
+inline cpp::Pointer<T*> cpp::Pointer_obj::addressOf(const ::cpp::marshal::PointerReference<T>& ref)
+{
+    return Pointer<T*>(ref.ptr);
 }
 
 // I'm not sure why I need this pointer ctor overload, I'm sure it was working without it at some point
