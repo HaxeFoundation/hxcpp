@@ -43,7 +43,8 @@ class Native
             new tests.marshalling.managed.TestClassNonStandardManagedClass(),
             new tests.marshalling.managed.TestClassStandardManagedClass(),
 
-            new tests.marshalling.view.TestView()
+            new tests.marshalling.view.TestView(),
+            new tests.marshalling.view.TestMarshal()
 			#end
 		]);
 	}
