@@ -61,4 +61,22 @@ class TestValueTypeCollections extends Test {
                 Assert.fail('expected array to have one element');
         }
     }
+
+    public function test_collection_of_pointers() {
+        final v = new StdVector<Context>();
+
+        v.push_back(Context.create());
+
+        Assert.equals(1, v.size());
+
+        Assert.equals(7, v[0].number);
+
+        v[0].number = v[0].double();
+
+        Assert.equals(14, v[0].number);
+
+        v[0] = Context.create();
+
+        Assert.equals(7, v[0].number);
+    }
 }

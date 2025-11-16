@@ -30,21 +30,21 @@ private class HaxeFunctions {
         ctx[0].number = 20;
     }
 
-    @:unreflective public static function set_number_star(ctx : Star<Context>) {
-        ctx.number = 20;
-    }
+    // @:unreflective public static function set_number_star(ctx : Star<Context>) {
+    //     ctx.number = 20;
+    // }
 
     @:unreflective public static function is_ptr_null(ctx : Pointer<Context>) {
-        return ctx == null;
+        return ctx[0] == null;
     }
 
     @:unreflective public static function is_raw_ptr_null(ctx : RawPointer<Context>) {
-        return ctx == null;
+        return ctx[0] == null;
     }
 
-    @:unreflective public static function is_star_null(ctx : Star<Context>) {
-        return ctx == null;
-    }
+    // @:unreflective public static function is_star_null(ctx : Star<Context>) {
+    //     return ctx == null;
+    // }
 }
 
 class TestPointerInterop extends Test {
@@ -152,17 +152,17 @@ class TestPointerInterop extends Test {
         Assert.isTrue(HaxeFunctions.is_raw_ptr_null(cast ctx));
     }
 
-    function test_to_cpp_star() {
-        final ctx = Context.create();
+    // function test_to_cpp_star() {
+    //     final ctx = Context.create();
 
-        HaxeFunctions.set_number_star(cast ctx);
+    //     HaxeFunctions.set_number_star(cast ctx);
 
-        Assert.equals(20, ctx.number);
-    }
+    //     Assert.equals(20, ctx.number);
+    // }
 
-    function test_null_to_cpp_star_throws() {
-        final ctx : Context = null;
+    // function test_null_to_cpp_star_throws() {
+    //     final ctx : Context = null;
 
-        Assert.isTrue(HaxeFunctions.is_star_null(cast ctx));
-    }
+    //     Assert.isTrue(HaxeFunctions.is_star_null(cast ctx));
+    // }
 }

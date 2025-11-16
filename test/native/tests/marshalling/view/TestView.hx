@@ -32,7 +32,7 @@ class TestView extends Test {
 
 	function test_reading_value_types() {
 		final buffer = new Point(0, 0);
-		final view   = new View<Point>(Pointer.addressOf(buffer), 1);
+		final view   = new View(Pointer.addressOf(buffer), 1);
 		final point  = view[0];
 
 		Assert.equals(0f64, point.x);
@@ -79,6 +79,40 @@ class TestView extends Test {
 
 		Assert.equals( 8f64, point.x);
 		Assert.equals(40f64, point.y);
+	}
+
+	function test_reading_pointer_type() {
+		final obj  = Context.create();
+		final view = new View(Pointer.addressOf(obj), 1);
+
+		Assert.isTrue(obj == view[0]);
+	}
+
+	function test_writing_pointer_type() {
+		final obj  = Context.createNull();
+		final view = new View(Pointer.addressOf(obj), 1);
+		final next = Context.create();
+
+		view[0] = next;
+
+		Assert.isTrue(next == view[0]);
+		Assert.isTrue(obj == view[0]);
+	}
+
+	function test_reading_pointer_type_field() {
+		final obj  = Context.create();
+		final view = new View(Pointer.addressOf(obj), 1);
+
+		Assert.equals(7, view[0].number);
+	}
+
+	function test_writing_pointer_type_field() {
+		final obj  = Context.create();
+		final view = new View(Pointer.addressOf(obj), 1);
+
+		view[0].number = 200;
+
+		Assert.equals(200, obj.number);
 	}
 
 	function test_slice() {
