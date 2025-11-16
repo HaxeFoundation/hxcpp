@@ -168,6 +168,11 @@ public:
    const wchar_t *wchar_str(hx::IStringAlloc *inBuffer = 0) const;
    const char16_t *wc_str(hx::IStringAlloc *inBuffer = 0, int *outCharLength = 0) const;
 
+#if (HXCPP_API_LEVEL >= 500)
+   bool wc_str(::cpp::marshal::View<char16_t> buffer, int* outCharLength = nullptr) const;
+   bool utf8_str(::cpp::marshal::View<char> buffer, int* outByteLength = nullptr) const;
+#endif
+
    const char *__CStr() const { return utf8_str(); };
    const wchar_t *__WCStr() const { return wchar_str(0); }
    inline operator const char *() { return utf8_str(); }

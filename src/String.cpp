@@ -1761,6 +1761,131 @@ const char16_t * String::wc_str(hx::IStringAlloc *inBuffer, int *outCharLength) 
    return str;
 }
 
+#if (HXCPP_API_LEVEL >= 500)
+
+bool String::wc_str(::cpp::marshal::View<char16_t> buffer, int* outCharLength) const
+{
+#ifdef HX_SMART_STRINGS
+    if (isUTF16Encoded())
+    {
+        if (buffer.length < length + 1)
+        {
+            return false;
+        }
+
+        if (nullptr != outCharLength)
+        {
+            *outCharLength = length + 1;
+        }
+
+        std::memcpy(buffer.ptr, __w, sizeof(char16_t) * length);
+
+        buffer[length] = 0;
+
+        return true;
+    }
+#endif
+
+    auto charCount = 0;
+    auto source    = reinterpret_cast<const unsigned char*>(__s);
+    auto cursor    = source;
+    auto end       = source + length;
+
+    while (cursor < end)
+    {
+        auto code = DecodeAdvanceUTF8(cursor, end);
+
+        charCount += UTF16BytesCheck(code);
+    }
+
+    if (buffer.length < charCount + 1)
+    {
+        return false;
+    }
+
+    cursor = source;
+    auto output = buffer.ptr.ptr;
+
+    while (cursor < end)
+    {
+        auto code = DecodeAdvanceUTF8(cursor, end);
+
+        Char16AdvanceSet(output, code);
+    }
+
+    *output = 0;
+
+    if (nullptr != outCharLength)
+    {
+        *outCharLength = length + 1;
+    }
+
+    return true;
+}
+
+bool String::utf8_str(::cpp::marshal::View<char> buffer, int* outByteLength) const
+{
+#ifdef HX_SMART_STRINGS
+    if (isUTF16Encoded())
+    {
+        auto cursor = __w;
+
+        while (Char16Advance(cursor)) {}
+
+        auto calculated = cursor - __w - 1;
+
+        cursor = __w;
+
+        auto end   = cursor + calculated;
+        auto chars = 0;
+
+        while (cursor < end)
+        {
+            chars += UTF8Bytes(Char16Advance(cursor));
+        }
+
+        if (buffer.length < chars + 1)
+        {
+            return false;
+        }
+
+        auto output = buffer.ptr.ptr;
+        cursor = __w;
+
+        while (cursor < end)
+        {
+            UTF8EncodeAdvance(output, Char16Advance(cursor));
+        }
+
+        *output = 0;
+
+        if (nullptr != outByteLength)
+        {
+            *outByteLength = chars + 1;
+        }
+
+        return true;
+    }
+#endif
+
+    if (buffer.length < length)
+    {
+        return false;
+    }
+
+    if (nullptr != outByteLength)
+    {
+        *outByteLength = length + 1;
+    }
+
+    std::memcpy(buffer.ptr, __s, sizeof(char) * length);
+
+    buffer[length] = 0;
+
+    return true;
+}
+
+#endif
 
 const wchar_t * String::wchar_str(hx::IStringAlloc *inBuffer) const
 {
