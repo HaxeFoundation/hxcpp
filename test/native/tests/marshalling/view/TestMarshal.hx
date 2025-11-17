@@ -1,5 +1,6 @@
 package tests.marshalling.view;
 
+import haxe.ds.Vector;
 import cpp.Char;
 import cpp.Char16;
 import cpp.Pointer;
@@ -244,5 +245,91 @@ class TestMarshal extends Test {
 			Assert.equals((0xDE02:Char16), view[1]);
 			Assert.equals(0, view[2]);
 		}
+	}
+
+	function test_ascii_chars_to_string() {
+		final buffer = new Vector<Char>(5);
+		buffer[0] = 'H'.code;
+		buffer[1] = 'e'.code;
+		buffer[2] = 'l'.code;
+		buffer[3] = 'l'.code;
+		buffer[4] = 'o'.code;
+		final view   = new View(Pointer.ofArray(buffer.toData()), buffer.length);
+		final string = view.toString();
+
+		Assert.equals('Hello', string);
+	}
+
+	function test_ascii_wide_chars_to_string() {
+		final buffer = new Vector<Char16>(5);
+		buffer[0] = 'H'.code;
+		buffer[1] = 'e'.code;
+		buffer[2] = 'l'.code;
+		buffer[3] = 'l'.code;
+		buffer[4] = 'o'.code;
+		final view   = new View(Pointer.ofArray(buffer.toData()), buffer.length);
+		final string = view.toString();
+
+		Assert.equals('Hello', string);
+	}
+
+	function test_null_terminated_ascii_chars_to_string() {
+		final buffer = new Vector<Char>(5);
+		buffer[0] = 'H'.code;
+		buffer[1] = 'e'.code;
+		buffer[2] = 'l'.code;
+		buffer[3] = 'l'.code;
+		buffer[4] = 'o'.code;
+		buffer[5] = 0;
+		final view   = new View(Pointer.ofArray(buffer.toData()), buffer.length);
+		final string = view.toString();
+
+		Assert.equals('Hello', string);
+	}
+	
+	function test_null_terminated_ascii_wide_chars_to_string() {
+		final buffer = new Vector<Char16>(5);
+		buffer[0] = 'H'.code;
+		buffer[1] = 'e'.code;
+		buffer[2] = 'l'.code;
+		buffer[3] = 'l'.code;
+		buffer[4] = 'o'.code;
+		buffer[5] = 0;
+		final view   = new View(Pointer.ofArray(buffer.toData()), buffer.length);
+		final string = view.toString();
+
+		Assert.equals('Hello', string);
+	}
+
+	function test_utf8_bytes_to_string() {
+		final buffer = Bytes.ofHex("f09f9882");
+		final view   = (new View(Pointer.ofArray(buffer.getData()), buffer.length).reinterpret() : View<Char>);
+		final string = view.toString();
+
+		Assert.equals('😂', string);
+	}
+
+	function test_null_terminated_utf8_bytes_to_string() {
+		final buffer = Bytes.ofHex("f09f98820000");
+		final view   = (new View(Pointer.ofArray(buffer.getData()), buffer.length).reinterpret() : View<Char>);
+		final string = view.toString();
+
+		Assert.equals('😂', string);
+	}
+
+	function test_utf16_bytes_to_string() {
+		final buffer = Bytes.ofHex("3DD802De");
+		final view   = (new View(Pointer.ofArray(buffer.getData()), buffer.length).reinterpret() : View<Char16>);
+		final string = view.toString();
+
+		Assert.equals('😂', string);
+	}
+
+	function test_null_terminated_utf16_bytes_to_string() {
+		final buffer = Bytes.ofHex("3DD802De00000000");
+		final view   = (new View(Pointer.ofArray(buffer.getData()), buffer.length).reinterpret() : View<Char16>);
+		final string = view.toString();
+
+		Assert.equals('😂', string);
 	}
 }
