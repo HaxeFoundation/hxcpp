@@ -9,10 +9,12 @@ import utest.Test;
 import utest.Assert;
 import tests.marshalling.Point;
 
+using cpp.marshal.ViewExtensions;
+
 class TestView extends Test {
 	function test_reading_ints() {
 		final buffer = [ for (i in 0...10) i + 1 ];
-		final view   = new View(Pointer.ofArray(buffer), buffer.length);
+		final view   = buffer.asView();
 
 		for (i in 0...10) {
 			Assert.equals(i + 1, view[i]);
@@ -21,7 +23,7 @@ class TestView extends Test {
 
 	function test_writing_ints() {
 		final buffer = [ for (_ in 0...10) 0 ];
-		final view   = new View(Pointer.ofArray(buffer), buffer.length);
+		final view   = buffer.asView();
 
 		for (i in 0...10) {
 			view[i] = i + 1;
@@ -117,7 +119,7 @@ class TestView extends Test {
 
 	function test_slice() {
 		final buffer = [ for (i in 0...10) i + 1 ];
-		final view   = new View(Pointer.ofArray(buffer), buffer.length);
+		final view   = buffer.asView();
 		final index  = 3;
 		final slice  = view.slice(index);
 
@@ -130,7 +132,7 @@ class TestView extends Test {
 
 	function test_slice_with_length() {
 		final buffer = [ for (i in 0...10) i + 1 ];
-		final view   = new View(Pointer.ofArray(buffer), buffer.length);
+		final view   = buffer.asView();
 		final index  = 3;
 		final length = 4;
 		final slice  = view.slice(index, length);
@@ -144,7 +146,7 @@ class TestView extends Test {
 
 	function test_clear() {
 		final buffer = [ for (_ in 0...10) 8 ];
-		final view   = new View(Pointer.ofArray(buffer), buffer.length);
+		final view   = buffer.asView();
 
 		view.slice(2, 6).clear();
 
@@ -153,7 +155,7 @@ class TestView extends Test {
 
 	function test_fill() {
 		final buffer = [ for (_ in 0...10) 0 ];
-		final view   = new View(Pointer.ofArray(buffer), buffer.length);
+		final view   = buffer.asView();
 		final value  = 8;
 
 		view.slice(2, 6).fill(value);
@@ -166,12 +168,12 @@ class TestView extends Test {
 
 		final buffer = [ for (_ in 0...10) 0 ];
 
-		Assert.isFalse(new View(Pointer.ofArray(buffer), buffer.length).isEmpty());
+		Assert.isFalse(buffer.asView().isEmpty());
 	}
 
 	function test_equality() {
 		final buffer = [ for (_ in 0...10) 0 ];
-		final view   = new View(Pointer.ofArray(buffer), buffer.length);
+		final view   = buffer.asView();
 
 		final fst = view.slice(0);
 		final snd = view.slice(0);
@@ -187,7 +189,7 @@ class TestView extends Test {
 
 	function test_reinterpret_equal_size() {
 		final buffer = [ for (_ in 0...10) 0 ];
-		final view   = new View(Pointer.ofArray(buffer), buffer.length);
+		final view   = buffer.asView();
 		final second : View<UInt32> = view.reinterpret();
 
 		Assert.equals(view.length, second.length);
@@ -195,7 +197,7 @@ class TestView extends Test {
 
 	function test_reinterpret_to_smaller_type() {
 		final buffer = [ for (_ in 0...10) 0 ];
-		final view   = new View(Pointer.ofArray(buffer), buffer.length);
+		final view   = buffer.asView();
 		final second : View<Int16> = view.reinterpret();
 
 		Assert.equals(view.length * 2, second.length);
@@ -203,7 +205,7 @@ class TestView extends Test {
 
 	function test_reinterpret_to_larger_type() {
 		final buffer = [ for (_ in 0...3) 0 ];
-		final view   = new View(Pointer.ofArray(buffer), buffer.length);
+		final view   = buffer.asView();
 		final second : View<Int64> = view.reinterpret();
 
 		Assert.equals(1, second.length);
@@ -211,7 +213,7 @@ class TestView extends Test {
 	
 	function test_reinterpret_to_larger_type_not_enough_length() {
 		final buffer = [ 0 ];
-		final view   = new View(Pointer.ofArray(buffer), buffer.length);
+		final view   = buffer.asView();
 		final second : View<Int64> = view.reinterpret();
 
 		Assert.equals(0, second.length);
@@ -219,7 +221,7 @@ class TestView extends Test {
 
 	function test_reinterpret_to_value_type() {
 		final buffer = [ 0f64, 0f64, 0f64, 0f64 ];
-		final view   = new View(Pointer.ofArray(buffer), buffer.length);
+		final view   = buffer.asView();
 		final points = (view.reinterpret() : View<Point>);
 
 		Assert.equals(2, points.length);

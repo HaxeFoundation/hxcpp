@@ -128,7 +128,7 @@ class TestMarshal extends Test {
 	function test_ascii_string_to_utf8_buffer() {
 		final source = "Hello, World!";
 		final buffer = Bytes.ofHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-		final view   = new View(Pointer.ofArray(buffer.getData()), buffer.length).reinterpret();
+		final view   = buffer.asView().reinterpret();
 		final count  = Marshal.toCharView(source, view);
 
 		if (Assert.equals(source.length + 1, count)) {
@@ -165,7 +165,7 @@ class TestMarshal extends Test {
 	function test_emoji_string_to_utf8_buffer() {
 		final source = "😂";
 		final buffer = Bytes.ofHex("FFFFFFFFFF");
-		final view   = new View(Pointer.ofArray(buffer.getData()), buffer.length).reinterpret();
+		final view   = buffer.asView().reinterpret();
 		final count  = Marshal.toCharView(source, view);
 
 		if (Assert.equals(5, count)) {
@@ -202,7 +202,7 @@ class TestMarshal extends Test {
 	function test_ascii_string_to_utf16_buffer() {
 		final source = "Hello, World!";
 		final buffer = Bytes.ofHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-		final view   = new View(Pointer.ofArray(buffer.getData()), buffer.length).reinterpret();
+		final view   = buffer.asView().reinterpret();
 		final count  = Marshal.toWideCharView(source, view);
 
 		if (Assert.equals(count, view.length)) {
@@ -237,7 +237,7 @@ class TestMarshal extends Test {
 	function test_emoji_string_to_utf16_buffer() {
 		final source = "😂";
 		final buffer = Bytes.ofHex("FFFFFFFFFFFFFFFF");
-		final view   = new View(Pointer.ofArray(buffer.getData()), 3 * 2).reinterpret();
+		final view   = buffer.asView().slice(0, 3 * 2).reinterpret();
 		final count  = Marshal.toWideCharView(source, view);
 
 		if (Assert.equals(count, view.length)) {
@@ -254,7 +254,7 @@ class TestMarshal extends Test {
 		buffer[2] = 'l'.code;
 		buffer[3] = 'l'.code;
 		buffer[4] = 'o'.code;
-		final view   = new View(Pointer.ofArray(buffer.toData()), buffer.length);
+		final view   = buffer.asView();
 		final string = view.toString();
 
 		Assert.equals('Hello', string);
@@ -267,7 +267,7 @@ class TestMarshal extends Test {
 		buffer[2] = 'l'.code;
 		buffer[3] = 'l'.code;
 		buffer[4] = 'o'.code;
-		final view   = new View(Pointer.ofArray(buffer.toData()), buffer.length);
+		final view   = buffer.asView();
 		final string = view.toString();
 
 		Assert.equals('Hello', string);
@@ -281,7 +281,7 @@ class TestMarshal extends Test {
 		buffer[3] = 'l'.code;
 		buffer[4] = 'o'.code;
 		buffer[5] = 0;
-		final view   = new View(Pointer.ofArray(buffer.toData()), buffer.length);
+		final view   = buffer.asView();
 		final string = view.toString();
 
 		Assert.equals('Hello', string);
@@ -295,7 +295,7 @@ class TestMarshal extends Test {
 		buffer[3] = 'l'.code;
 		buffer[4] = 'o'.code;
 		buffer[5] = 0;
-		final view   = new View(Pointer.ofArray(buffer.toData()), buffer.length);
+		final view   = buffer.asView();
 		final string = view.toString();
 
 		Assert.equals('Hello', string);
@@ -303,7 +303,7 @@ class TestMarshal extends Test {
 
 	function test_utf8_bytes_to_string() {
 		final buffer = Bytes.ofHex("f09f9882");
-		final view   = (new View(Pointer.ofArray(buffer.getData()), buffer.length).reinterpret() : View<Char>);
+		final view   = (buffer.asView().reinterpret() : View<Char>);
 		final string = view.toString();
 
 		Assert.equals('😂', string);
@@ -311,7 +311,7 @@ class TestMarshal extends Test {
 
 	function test_null_terminated_utf8_bytes_to_string() {
 		final buffer = Bytes.ofHex("f09f98820000");
-		final view   = (new View(Pointer.ofArray(buffer.getData()), buffer.length).reinterpret() : View<Char>);
+		final view   = (buffer.asView().reinterpret() : View<Char>);
 		final string = view.toString();
 
 		Assert.equals('😂', string);
@@ -319,7 +319,7 @@ class TestMarshal extends Test {
 
 	function test_utf16_bytes_to_string() {
 		final buffer = Bytes.ofHex("3DD802De");
-		final view   = (new View(Pointer.ofArray(buffer.getData()), buffer.length).reinterpret() : View<Char16>);
+		final view   = (buffer.asView().reinterpret() : View<Char16>);
 		final string = view.toString();
 
 		Assert.equals('😂', string);
@@ -327,7 +327,7 @@ class TestMarshal extends Test {
 
 	function test_null_terminated_utf16_bytes_to_string() {
 		final buffer = Bytes.ofHex("3DD802De00000000");
-		final view   = (new View(Pointer.ofArray(buffer.getData()), buffer.length).reinterpret() : View<Char16>);
+		final view   = (buffer.asView().reinterpret() : View<Char16>);
 		final string = view.toString();
 
 		Assert.equals('😂', string);
