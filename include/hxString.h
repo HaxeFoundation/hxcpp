@@ -46,6 +46,11 @@ public:
    static String create(const char16_t *inPtr,int inLen=-1);
    static String create(const char *inPtr,int inLen=-1);
 
+#if (HXCPP_API_LEVEL>=500)
+   static String create(const ::cpp::marshal::View<char>& buffer);
+   static String create(const ::cpp::marshal::View<char16_t>& buffer);
+#endif
+
    // Uses non-gc memory and wont ever be collected
    static ::String createPermanent(const char *inUtf8, int inLen);
    const ::String &makePermanent() const;

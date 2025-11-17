@@ -3,6 +3,7 @@
 
 #include <type_traits>
 #include <cstring>
+#include <string>
 #include <cmath>
 
 namespace cpp
@@ -282,12 +283,12 @@ inline int cpp::marshal::Marshal::toWideCharView(::String string, View<char16_t>
 
 inline ::String cpp::marshal::Marshal::toString(View<char> buffer)
 {
-    return ::String::create(buffer.ptr, buffer.length);
+    return ::String::create(buffer);
 }
 
 inline ::String cpp::marshal::Marshal::toString(View<char16_t> buffer)
 {
-    return ::String::create(buffer.ptr, buffer.length);
+    return ::String::create(buffer);
 }
 
 template<class T>

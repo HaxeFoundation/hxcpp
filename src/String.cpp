@@ -788,10 +788,23 @@ String String::create(const char *inString,int inLength)
    return String(s,len);
 }
 
+#if (HXCPP_API_LEVEL>=500)
+String String::create(const::cpp::marshal::View<char>& buffer)
+{
+    return String::create(buffer.ptr.ptr, std::char_traits<char>::length(buffer.ptr.ptr));
+}
 
+String String::create(const cpp::marshal::View<char16_t>& buffer)
+{
+    auto cursor = reinterpret_cast<const char16_t*>(buffer.ptr.ptr);
 
+    while (Char16Advance(cursor)) {}
 
+    auto calculated = cursor - buffer.ptr.ptr - 1;
 
+    return String::create(buffer.ptr.ptr, calculated);
+}
+#endif
 
 String::String(const Dynamic &inRHS)
 {
