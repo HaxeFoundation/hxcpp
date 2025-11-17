@@ -216,11 +216,11 @@ namespace cpp
 
         struct Marshal final
         {
-            static View<char> toCharView(::String string);
-            static int toCharView(::String, View<char> buffer);
+            static View<char> toCharView(const ::String& string);
+            static int toCharView(const ::String&, View<char> buffer);
 
-            static View<char16_t> toWideCharView(::String string);
-            static int toWideCharView(::String, View<char16_t> buffer);
+            static View<char16_t> toWideCharView(const ::String& string);
+            static int toWideCharView(const ::String& string, View<char16_t> buffer);
 
             static ::String toString(View<char> buffer);
             static ::String toString(View<char16_t> buffer);
@@ -233,7 +233,7 @@ namespace cpp
 
 //
 
-inline cpp::marshal::View<char> cpp::marshal::Marshal::toCharView(::String string)
+inline cpp::marshal::View<char> cpp::marshal::Marshal::toCharView(const ::String& string)
 {
     auto length = 0;
     auto ptr    = string.utf8_str(nullptr, true, &length);
@@ -241,7 +241,7 @@ inline cpp::marshal::View<char> cpp::marshal::Marshal::toCharView(::String strin
     return View<char>(const_cast<char*>(ptr), length + 1);
 }
 
-inline int cpp::marshal::Marshal::toCharView(::String string, View<char> buffer)
+inline int cpp::marshal::Marshal::toCharView(const ::String& string, View<char> buffer)
 {
     auto length = 0;
 
@@ -257,7 +257,7 @@ inline int cpp::marshal::Marshal::toCharView(::String string, View<char> buffer)
     }
 }
 
-inline cpp::marshal::View<char16_t> cpp::marshal::Marshal::toWideCharView(::String string)
+inline cpp::marshal::View<char16_t> cpp::marshal::Marshal::toWideCharView(const ::String& string)
 {
     auto length = 0;
     auto ptr    = string.wc_str(nullptr, &length);
@@ -265,7 +265,7 @@ inline cpp::marshal::View<char16_t> cpp::marshal::Marshal::toWideCharView(::Stri
     return View<char16_t>(const_cast<char16_t*>(ptr), length + 1);
 }
 
-inline int cpp::marshal::Marshal::toWideCharView(::String string, View<char16_t> buffer)
+inline int cpp::marshal::Marshal::toWideCharView(const ::String& string, View<char16_t> buffer)
 {
     auto length = 0;
 
