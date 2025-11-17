@@ -311,13 +311,12 @@ inline cpp::marshal::View<T>::View(::cpp::Pointer<T> _ptr, int _length) : ptr(_p
 template<class T>
 inline bool cpp::marshal::View<T>::tryCopyTo(const View<T>& destination)
 {
-    auto requiredSize = sizeof(T) * length;
-    if (destination.length < requiredSize)
+    if (destination.length < length)
     {
         return false;
     }
 
-    std::memcpy(destination.ptr, ptr, requiredSize);
+    std::memcpy(destination.ptr.ptr, ptr.ptr, sizeof(T) * length);
 
     return true;
 }
