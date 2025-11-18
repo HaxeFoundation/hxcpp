@@ -212,6 +212,12 @@ namespace cpp
 
         struct Marshal final
         {
+#ifdef HXCPP_BIG_ENDIAN
+            static const bool isBigEndian = true;
+#else
+            static const bool isBigEndian = false;
+#endif
+
             static View<char> toCharView(const ::String& string);
             static int toCharView(const ::String&, View<char> buffer);
 
@@ -222,7 +228,30 @@ namespace cpp
             static ::String toString(View<char16_t> buffer);
 
             template<class T> static T read(View<uint8_t> view);
+            template<class T> static ::cpp::Pointer<T> readPointer(View<uint8_t> view);
+            static int8_t readInt8(View<uint8_t> view);
+            static int16_t readInt16(View<uint8_t> view);
+            static int32_t readInt32(View<uint8_t> view);
+            static int64_t readInt64(View<uint8_t> view);
+            static uint8_t readUInt8(View<uint8_t> view);
+            static uint16_t readUInt16(View<uint8_t> view);
+            static uint32_t readUInt32(View<uint8_t> view);
+            static uint64_t readUInt64(View<uint8_t> view);
+            static float readFloat32(View<uint8_t> view);
+            static double readFloat64(View<uint8_t> view);
+
             template<class T> static void write(View<uint8_t> view, const T& value);
+            template<class T> static void writePointer(View<uint8_t> view, const Pointer<T>& value);
+            static void writeInt8(View<uint8_t> view, const int8_t& value);
+            static void writeInt16(View<uint8_t> view, const int16_t& value);
+            static void writeInt32(View<uint8_t> view, const int32_t& value);
+            static void writeInt64(View<uint8_t> view, const int64_t& value);
+            static void writeUInt8(View<uint8_t> view, const uint8_t& value);
+            static void writeUInt16(View<uint8_t> view, const uint16_t& value);
+            static void writeUInt32(View<uint8_t> view, const uint32_t& value);
+            static void writeUInt64(View<uint8_t> view, const uint64_t& value);
+            static void writeFloat32(View<uint8_t> view, const float& value);
+            static void writeFloat64(View<uint8_t> view, const double& value);
         };
     }
 }

@@ -62,13 +62,125 @@ inline ::String cpp::marshal::Marshal::toString(View<char16_t> buffer)
 }
 
 template<class T>
+inline T cpp::marshal::Marshal::read(View<uint8_t> view)
+{
+    return *(reinterpret_cast<T*>(view.ptr.ptr));
+}
+
+template<class T>
+inline ::cpp::Pointer<T> cpp::marshal::Marshal::readPointer(View<uint8_t> view)
+{
+    return read<T*>(view);
+}
+
+inline int8_t cpp::marshal::Marshal::readInt8(View<uint8_t> view)
+{
+    return read<int8_t>(view);
+}
+
+inline int16_t cpp::marshal::Marshal::readInt16(View<uint8_t> view)
+{
+    return read<int16_t>(view);
+}
+
+inline int32_t cpp::marshal::Marshal::readInt32(View<uint8_t> view)
+{
+    return read<int32_t>(view);
+}
+
+inline int64_t cpp::marshal::Marshal::readInt64(View<uint8_t> view)
+{
+    return read<int64_t>(view);
+}
+
+inline uint8_t cpp::marshal::Marshal::readUInt8(View<uint8_t> view)
+{
+    return read<uint8_t>(view);
+}
+
+inline uint16_t cpp::marshal::Marshal::readUInt16(View<uint8_t> view)
+{
+    return read<uint16_t>(view);
+}
+
+inline uint32_t cpp::marshal::Marshal::readUInt32(View<uint8_t> view)
+{
+    return read<uint32_t>(view);
+}
+
+inline uint64_t cpp::marshal::Marshal::readUInt64(View<uint8_t> view)
+{
+    return read<uint64_t>(view);
+}
+
+inline float cpp::marshal::Marshal::readFloat32(View<uint8_t> view)
+{
+    return read<float>(view);
+}
+
+inline double cpp::marshal::Marshal::readFloat64(View<uint8_t> view)
+{
+    return read<double>(view);
+}
+
+template<class T>
 inline void cpp::marshal::Marshal::write(View<uint8_t> view, const T& value)
 {
     std::memcpy(view.ptr, reinterpret_cast<const uint8_t*>(&value), sizeof(T));
 }
 
 template<class T>
-inline T cpp::marshal::Marshal::read(View<uint8_t> view)
+inline void cpp::marshal::Marshal::writePointer(View<uint8_t> view, const ::cpp::Pointer<T>& value)
 {
-    return *(reinterpret_cast<T*>(view.ptr.ptr));
+    write<T*>(view, value.ptr);
+}
+
+inline void cpp::marshal::Marshal::writeInt8(View<uint8_t> view, const int8_t& value)
+{
+    write<int8_t>(view, value);
+}
+
+inline void cpp::marshal::Marshal::writeInt16(View<uint8_t> view, const int16_t& value)
+{
+    write<int16_t>(view, value);
+}
+
+inline void cpp::marshal::Marshal::writeInt32(View<uint8_t> view, const int32_t& value)
+{
+    write<int32_t>(view, value);
+}
+
+inline void cpp::marshal::Marshal::writeInt64(View<uint8_t> view, const int64_t& value)
+{
+    write<int64_t>(view, value);
+}
+
+inline void cpp::marshal::Marshal::writeUInt8(View<uint8_t> view, const uint8_t& value)
+{
+    write<uint8_t>(view, value);
+}
+
+inline void cpp::marshal::Marshal::writeUInt16(View<uint8_t> view, const uint16_t& value)
+{
+    write<uint16_t>(view, value);
+}
+
+inline void cpp::marshal::Marshal::writeUInt32(View<uint8_t> view, const uint32_t& value)
+{
+    write<uint32_t>(view, value);
+}
+
+inline void cpp::marshal::Marshal::writeUInt64(View<uint8_t> view, const uint64_t& value)
+{
+    write<uint64_t>(view, value);
+}
+
+inline void cpp::marshal::Marshal::writeFloat32(View<uint8_t> view, const float& value)
+{
+    write<float>(view, value);
+}
+
+inline void cpp::marshal::Marshal::writeFloat64(View<uint8_t> view, const double& value)
+{
+    write<double>(view, value);
 }
