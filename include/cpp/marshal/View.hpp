@@ -77,6 +77,12 @@ inline cpp::marshal::View<K> cpp::marshal::View<T>::reinterpret()
 }
 
 template<class T>
+inline int cpp::marshal::View<T>::compare(const View<T>& inRHS)
+{
+    return std::memcmp(ptr.ptr, inRHS.ptr.ptr, sizeof(T) * length);
+}
+
+template<class T>
 inline bool cpp::marshal::View<T>::operator==(const View<T>& inRHS) const
 {
     return length == inRHS.length && ptr.ptr == inRHS.ptr.ptr;

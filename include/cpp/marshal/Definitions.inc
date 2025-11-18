@@ -203,6 +203,7 @@ namespace cpp
             View<T> slice(int index, int length);
             bool tryCopyTo(const View<T>& destination);
             template<class K> View<K> reinterpret();
+            int compare(const View<T>& inRHS);
 
             bool operator==(const View<T>& inRHS) const;
             bool operator!=(const View<T>& inRHS) const;
