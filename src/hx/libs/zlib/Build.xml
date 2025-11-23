@@ -10,10 +10,12 @@
   <cache value="true" asLibrary="1" />
 
   <compilerflag value="-I${ZLIB_DIR}"/>
+  <compilerflag value="-I${this_dir}"/>
   <compilerflag value="-DSTDC" unless="windows" />
   <compilerflag value="-DHAVE_UNISTD_H" unless="windows" />
 
   <file name="ZLib.cpp"/>
+  <file name="ZLibUncompress.cpp"/>
 
   <!-- HXCPP_LINK_NO_ZLIB may be set too late, so use filterout as well. -->
   <section unless="HXCPP_LINK_NO_ZLIB" >
