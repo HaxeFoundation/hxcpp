@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zlib.h>
+#include <hx/zip/Zip.hpp>
 
 /**
    <doc>

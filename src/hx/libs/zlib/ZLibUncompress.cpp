@@ -1,12 +1,6 @@
 #include "ZlibUncompress.hpp"
 
-#include<memory>
-
-int hx::zip::Uncompress_obj::flushNone = Z_NO_FLUSH;
-int hx::zip::Uncompress_obj::flushSync = Z_SYNC_FLUSH;
-int hx::zip::Uncompress_obj::flushFull = Z_FULL_FLUSH;
-int hx::zip::Uncompress_obj::flushFinish = Z_FINISH;
-int hx::zip::Uncompress_obj::flushBlock = Z_BLOCK;
+#include <memory>
 
 hx::zip::Uncompress hx::zip::Uncompress_obj::create(int windowSize)
 {
@@ -18,19 +12,19 @@ hx::zip::Uncompress hx::zip::Uncompress_obj::create(int windowSize)
 		hx::Throw(HX_CSTRING("ZLib Error"));
 	}
 
-	return new hx::zip::zlib::ZLibUncompress(handle.release(), windowSize);
+	return new hx::zip::zlib::ZLibUncompress(handle.release());
 }
 
-hx::zip::zlib::ZLibUncompress::ZLibUncompress(z_stream* inHandle, int inFlush) : handle(inHandle), flush(inFlush)
+hx::zip::zlib::ZLibUncompress::ZLibUncompress(z_stream* inHandle) : handle(inHandle), flush(0)
 {
 	_hx_set_finalizer(this, [](Dynamic obj) { reinterpret_cast<ZLibUncompress*>(obj.mPtr)->close(); });
 }
 
-hx::zip::UncompressResult hx::zip::zlib::ZLibUncompress::execute(cpp::marshal::View<uint8_t> src, cpp::marshal::View<uint8_t> dst)
+hx::zip::Result hx::zip::zlib::ZLibUncompress::execute(cpp::marshal::View<uint8_t> src, cpp::marshal::View<uint8_t> dst)
 {
-	handle->next_in = src.ptr;
-	handle->next_out = dst.ptr;
-	handle->avail_in = src.length;
+	handle->next_in   = src.ptr;
+	handle->next_out  = dst.ptr;
+	handle->avail_in  = src.length;
 	handle->avail_out = dst.length;
 
 	EnterGCFreeZone();
@@ -42,7 +36,7 @@ hx::zip::UncompressResult hx::zip::zlib::ZLibUncompress::execute(cpp::marshal::V
 		hx::Throw(HX_CSTRING("ZLib Error"));
 	}
 
-	auto result = UncompressResult();
+	auto result = Result();
 	result.done  = error == Z_STREAM_END;
 	result.write = src.length - handle->avail_in;
 	result.read  = dst.length - handle->avail_out;
@@ -50,9 +44,30 @@ hx::zip::UncompressResult hx::zip::zlib::ZLibUncompress::execute(cpp::marshal::V
 	return result;
 }
 
-void hx::zip::zlib::ZLibUncompress::setFlushMode(int mode)
+void hx::zip::zlib::ZLibUncompress::setFlushMode(Flush mode)
 {
-	flush = mode;
+	switch (mode)
+	{
+	case Flush::None:
+		flush = Z_NO_FLUSH;
+		break;
+
+	case Flush::Sync:
+		flush = Z_SYNC_FLUSH;
+		break;
+
+	case Flush::Full:
+		flush = Z_FULL_FLUSH;
+		break;
+
+	case Flush::Finish:
+		flush = Z_FINISH;
+		break;
+
+	case Flush::Block:
+		flush = Z_BLOCK;
+		break;
+	}
 }
 
 void hx::zip::zlib::ZLibUncompress::close()

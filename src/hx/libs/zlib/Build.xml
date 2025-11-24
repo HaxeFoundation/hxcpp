@@ -16,6 +16,7 @@
 
   <file name="ZLib.cpp"/>
   <file name="ZLibUncompress.cpp"/>
+  <file name="ZLibCompress.cpp"/>
 
   <!-- HXCPP_LINK_NO_ZLIB may be set too late, so use filterout as well. -->
   <section unless="HXCPP_LINK_NO_ZLIB" >

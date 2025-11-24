@@ -14,10 +14,10 @@ namespace hx
 				z_stream* handle;
 				int flush;
 
-				ZLibUncompress(z_stream* inHandle, int inFlush);
+				ZLibUncompress(z_stream* inHandle);
 
-				UncompressResult execute(cpp::marshal::View<uint8_t> src, cpp::marshal::View<uint8_t> dst) override;
-				void setFlushMode(int mode) override;
+				Result execute(cpp::marshal::View<uint8_t> src, cpp::marshal::View<uint8_t> dst) override;
+				void setFlushMode(Flush mode) override;
 				void close() override;
 			};
 		}
