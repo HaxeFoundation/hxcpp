@@ -227,6 +227,8 @@ jobs:
           haxe: ${{ inputs.haxe }}
       - name: install haxe libs
         run: haxelib install compile-cpp.hxml --always
+        # haxe 4 tests don't build with latest utest
+        if: inputs.haxe != 'latest'
       - name: build
         run: haxe compile-cpp.hxml -D ${{ env.HXCPP_ARCH_FLAG }} -D no_http
       - name: run
