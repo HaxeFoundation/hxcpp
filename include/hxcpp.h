@@ -68,11 +68,7 @@
    #define HXCPP_ALIGN_FLOAT
 #endif
 
-// Must allign allocs to 8 bytes to match floating point requirement?
-// Ints must br read on 4-byte boundary
-#if (!defined(HXCPP_ALIGN_FLOAT) && (defined(EMSCRIPTEN) || defined(GCW0)) )
-   #define HXCPP_ALIGN_ALLOC
-#endif
+#define HXCPP_ALIGN_ALLOC
 
 
 // Some compilers are over-enthusiastic about what they #define ...
