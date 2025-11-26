@@ -83,7 +83,9 @@
   <cppflag value="-frtti"/>
   <pchflag value="-x" />
   <pchflag value="c++-header" />
-  <cppflag value="--std=c++11" />
+  <cppflag value="--std=c++11" unless="HXCPP_CPP17 || HXCPP_CPP20"/>
+  <cppflag value="--std=c++17" if="HXCPP_CPP17"/>
+  <cppflag value="--std=c++20" if="HXCPP_CPP20"/>
   <section unless="HXCPP_LINK_NO_EXCEPTIONS" >
      <flag name="-s" value="DISABLE_EXCEPTION_CATCHING=0" if="HXCPP_NO_WASM_EXEPTIONS" />
      <flag value="-fwasm-exceptions" unless="HXCPP_NO_WASM_EXEPTIONS" />
