@@ -221,3 +221,19 @@ jobs:
         run: haxe compile-cpp.hxml -D ${{ env.HXCPP_ARCH_FLAG }} -D no_http
       - name: run
         run: bin${{ inputs.sep }}cpp${{ inputs.sep }}TestMain-debug
+
+  regression:
+    runs-on: ${{ inputs.os }}
+    name: regression tests
+    defaults:
+      run:
+        working-directory: test/regression
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
+      - name: run
+        run: haxe --run Run -D ${{ env.HXCPP_ARCH_FLAG }}

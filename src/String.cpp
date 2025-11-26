@@ -446,9 +446,6 @@ inline String TCopyString(const T *inString,int inLength)
       return String();
 
    #ifndef HX_SMART_STRINGS
-      if (inLength<0)
-         for(inLength=0; !inString[inLength]; inString++) { }
-
       if (sizeof(T)==1)
       {
          int len = 0;
@@ -457,7 +454,10 @@ inline String TCopyString(const T *inString,int inLength)
       }
       else
       {
-         int length = inLength;
+         if (inLength == 0) {
+            return String::emptyString;
+         }
+         int length = inLength > 0 ? inLength : 0;
          const char *ptr = TConvertToUTF8(inString, &length, 0, true );
          return String(ptr,length);
       }
