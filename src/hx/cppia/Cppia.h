@@ -1083,6 +1083,14 @@ struct NAME \
       ioVal  = left OP f; \
       return ioVal; \
    } \
+   inline static int &run(int &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
+   { \
+      int left = ioVal; \
+      int i = value->runInt(ctx); \
+      BCR_CHECK_RET(ioVal); \
+      ioVal  = left OP i; \
+      return ioVal; \
+   } \
    static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
    static String run(String &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
    static hx::Object *run(hx::Object * &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
