@@ -37,7 +37,11 @@ void HaxeNativeClass::addVtableEntries( std::vector<std::string> &outVtable)
 
    if (functions)
       for(ScriptNamedFunction *func = functions; func->name; func++)
+#if (HXCPP_API_LEVEL >= 500)
+         if (!func->isStatic && !func->isOverride)
+#else
          if (!func->isStatic)
+#endif
             outVtable.push_back( func->name );
 }
 
