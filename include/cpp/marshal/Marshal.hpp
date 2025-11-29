@@ -1,7 +1,19 @@
 #pragma once
 
 #include "Definitions.inc"
+#include "Exceptions.hpp"
 #include <cstring>
+#include <string>
+
+inline cpp::marshal::View<char> cpp::marshal::Marshal::asView(const char* cstring)
+{
+    return cpp::marshal::View<char>(const_cast<char*>(cstring), static_cast<int>(std::char_traits<char>::length(cstring)));
+}
+
+inline cpp::marshal::View<char16_t> cpp::marshal::Marshal::asView(const char16_t* cstring)
+{
+    return cpp::marshal::View<char16_t>(const_cast<char16_t*>(cstring), static_cast<int>(std::char_traits<char16_t>::length(cstring)));
+}
 
 inline cpp::marshal::View<char> cpp::marshal::Marshal::toCharView(const ::String& string)
 {
