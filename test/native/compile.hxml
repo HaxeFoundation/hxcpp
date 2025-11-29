@@ -1,4 +1,4 @@
 -m Native
--D HXCPP_DEBUGGER
 -L utest
+-D HXCPP-DEBUGGER
 --cpp bin
