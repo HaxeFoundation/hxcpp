@@ -107,6 +107,11 @@ void hx::zip::zlib::ZLibCompress::setFlushMode(Flush mode)
 	}
 }
 
+int hx::zip::zlib::ZLibCompress::getBounds(const int length)
+{
+	return static_cast<int>(deflateBound(handle, length));
+}
+
 void hx::zip::zlib::ZLibCompress::close()
 {
 	if (nullptr == handle)

@@ -1,5 +1,7 @@
 #pragma once
 
+HX_DECLARE_CLASS2(hx, zip, Zip)
+
 namespace hx
 {
 	namespace zip
@@ -18,6 +20,13 @@ namespace hx
 			int write;
 
 			Result() = default;
+		};
+
+		struct Zip_obj : hx::Object
+		{
+			virtual Result execute(cpp::marshal::View<uint8_t> src, cpp::marshal::View<uint8_t> dst) = 0;
+			virtual void setFlushMode(Flush mode) = 0;
+			virtual void close() = 0;
 		};
 	}
 }

@@ -9,13 +9,10 @@ namespace hx
 {
 	namespace zip
 	{
-		struct Uncompress_obj : hx::Object
+		struct Uncompress_obj : Zip_obj
 		{
 			static Uncompress create(int windowSize);
-
-			virtual Result execute(cpp::marshal::View<uint8_t> src, cpp::marshal::View<uint8_t> dst) = 0;
-			virtual void setFlushMode(Flush mode) = 0;
-			virtual void close() = 0;
+			static Array<uint8_t> run(cpp::marshal::View<uint8_t> src, int bufferSize);
 		};
 	}
 }

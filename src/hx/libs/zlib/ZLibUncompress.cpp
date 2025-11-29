@@ -1,6 +1,7 @@
 #include "ZlibUncompress.hpp"
 
 #include <memory>
+#include <vector>
 
 hx::zip::Uncompress hx::zip::Uncompress_obj::create(int windowSize)
 {
@@ -13,6 +14,46 @@ hx::zip::Uncompress hx::zip::Uncompress_obj::create(int windowSize)
 	}
 
 	return new hx::zip::zlib::ZLibUncompress(handle.release());
+}
+
+Array<uint8_t> hx::zip::Uncompress_obj::run(cpp::marshal::View<uint8_t> src, int bufferSize)
+{
+	auto handle = std::make_unique<z_stream>();
+	auto error  = inflateInit2(handle.get(), 15);
+
+	if (error != Z_OK)
+	{
+		hx::Throw(HX_CSTRING("ZLib Error"));
+	}
+
+	auto buffer    = std::vector<uint8_t>(bufferSize);
+	auto output    = Array<uint8_t>(0, 0);
+	auto srcCursor = 0;
+
+	while (Z_STREAM_END != error)
+	{
+		auto srcView = src.slice(srcCursor);
+
+		handle->next_in   = srcView.ptr;
+		handle->next_out  = buffer.data();
+		handle->avail_in  = srcView.length;
+		handle->avail_out = buffer.size();
+
+		EnterGCFreeZone();
+		error = inflate(handle.get(), Z_SYNC_FLUSH);
+		ExitGCFreeZone();
+
+		if (error < 0)
+		{
+			hx::Throw(HX_CSTRING("ZLib Error"));
+		}
+
+		output->memcpy(output->length, buffer.data(), buffer.size() - handle->avail_out);
+
+		srcCursor += srcView.length - handle->avail_in;
+	}
+
+	return output;
 }
 
 hx::zip::zlib::ZLibUncompress::ZLibUncompress(z_stream* inHandle) : handle(inHandle), flush(0)
