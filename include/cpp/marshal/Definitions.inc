@@ -210,6 +210,10 @@ namespace cpp
             bool operator!=(const View<T>& inRHS) const;
 
             T& operator[] (int index);
+
+            operator void* ();
+            operator T* ();
+            operator Pointer<T>();
         };
 
         struct Marshal final
