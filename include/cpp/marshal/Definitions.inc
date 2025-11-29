@@ -100,6 +100,7 @@ namespace cpp
             // This allows 'StaticCast' to be used from arrays
             using Ptr = Dynamic;
 
+            ValueReference();
             ValueReference(const null& inRHS);
             ValueReference(const ValueType<T>& inRHS);
             ValueReference(const Boxed<T>& inRHS);
@@ -218,6 +219,9 @@ namespace cpp
 #else
             static const bool isBigEndian = false;
 #endif
+
+            static View<char> asView(const char* cstring);
+            static View<char16_t> asView(const char16_t* cstring);
 
             static View<char> toCharView(const ::String& string);
             static int toCharView(const ::String&, View<char> buffer);

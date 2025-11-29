@@ -22,6 +22,9 @@ inline O* cpp::marshal::ValueReference<T>::FromBoxed(const Boxed<O>& inRHS)
 }
 
 template<class T>
+inline cpp::marshal::ValueReference<T>::ValueReference() : Super(nullptr) {}
+
+template<class T>
 inline cpp::marshal::ValueReference<T>::ValueReference(const null& inRHS) : Super(inRHS) {}
 
 template<class T>
