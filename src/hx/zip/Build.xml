@@ -1,0 +1,26 @@
+<xml>
+  <pragma once="true" />
+
+  <section unless="HXCPP_ZIP_XML">
+    <set name="HXCPP_ZIP_ZLIB" value="1" unless="HXCPP_ZIP_LIBDEFLATE"/>
+    
+    <set name="HXCPP_ZIP_XML" value="${this_dir}/zlib/Build.xml" if="HXCPP_ZIP_ZLIB"/>
+    <set name="HXCPP_ZIP_XML" value="${this_dir}/libdeflate/Build.xml" if="HXCPP_ZIP_LIBDEFLATE"/>
+  </section>
+
+  <set name="HXCPP_ZIP_ZLIB" value="1"/>
+  
+  <import name="${HXCPP_ZIP_XML}"/>
+
+  <files id="hxcpp_zip" dir="${this_dir}">
+    <depend files="hxcpp-depends"/>
+    <depend name="${this_dir}/Build.xml" dateOnly="true" />
+    <cache value="true" asLibrary="1" />
+
+    <file name="Zip.cpp"/>
+  </files>
+
+  <target id="haxe">
+    <files id="hxcpp_zip"/>
+  </target>
+</xml>

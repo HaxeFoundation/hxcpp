@@ -15,11 +15,11 @@ namespace hx
 		};
 
 		struct Result final {
-			bool done;
-			int read;
-			int write;
+			const bool done;
+			const int read;
+			const int write;
 
-			Result() = default;
+			Result(int inDone, int inRead, int inWrite);
 		};
 
 		struct Zip_obj : hx::Object

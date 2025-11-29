@@ -77,12 +77,11 @@ hx::zip::Result hx::zip::zlib::ZLibUncompress::execute(cpp::marshal::View<uint8_
 		hx::Throw(HX_CSTRING("ZLib Error"));
 	}
 
-	auto result = Result();
-	result.done  = error == Z_STREAM_END;
-	result.write = src.length - handle->avail_in;
-	result.read  = dst.length - handle->avail_out;
-
-	return result;
+	return
+		Result(
+			error == Z_STREAM_END,
+			dst.length - handle->avail_out,
+			src.length - handle->avail_in);
 }
 
 void hx::zip::zlib::ZLibUncompress::setFlushMode(Flush mode)
