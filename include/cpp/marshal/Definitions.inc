@@ -193,15 +193,15 @@ namespace cpp
         struct View final
         {
             ::cpp::Pointer<T> ptr;
-            int length;
+            size_t length;
 
-            View(::cpp::Pointer<T> _ptr, int _length);
+            View(::cpp::Pointer<T> _ptr, size_t _length);
 
             void clear();
             void fill(T value);
             bool isEmpty();
-            View<T> slice(int index);
-            View<T> slice(int index, int length);
+            View<T> slice(size_t index);
+            View<T> slice(size_t index, size_t length);
             bool tryCopyTo(const View<T>& destination);
             template<class K> View<K> reinterpret();
             int compare(const View<T>& inRHS);
@@ -209,7 +209,7 @@ namespace cpp
             bool operator==(const View<T>& inRHS) const;
             bool operator!=(const View<T>& inRHS) const;
 
-            T& operator[] (int index);
+            T& operator[] (size_t index);
 
             operator void* ();
             operator T* ();

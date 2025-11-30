@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Definitions.inc"
-#include "Exceptions.hpp"
 #include <cstring>
 #include <string>
 

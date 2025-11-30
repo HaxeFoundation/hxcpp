@@ -5,7 +5,7 @@
 #include <cmath>
 
 template<class T>
-inline cpp::marshal::View<T>::View(::cpp::Pointer<T> _ptr, int _length) : ptr(_ptr), length(_length) {}
+inline cpp::marshal::View<T>::View(::cpp::Pointer<T> _ptr, size_t _length) : ptr(_ptr), length(_length) {}
 
 template<class T>
 inline bool cpp::marshal::View<T>::tryCopyTo(const View<T>& destination)
@@ -42,13 +42,13 @@ inline bool cpp::marshal::View<T>::isEmpty()
 }
 
 template<class T>
-inline cpp::marshal::View<T> cpp::marshal::View<T>::slice(int index)
+inline cpp::marshal::View<T> cpp::marshal::View<T>::slice(size_t index)
 {
     return View<T>(ptr + index, length - index);
 }
 
 template<class T>
-inline cpp::marshal::View<T> cpp::marshal::View<T>::slice(int index, int length)
+inline cpp::marshal::View<T> cpp::marshal::View<T>::slice(size_t index, size_t length)
 {
     return View<T>(ptr + index, length);
 }
@@ -95,7 +95,7 @@ inline bool cpp::marshal::View<T>::operator!=(const View<T>& inRHS) const
 }
 
 template<class T>
-inline T& cpp::marshal::View<T>::operator[](int index)
+inline T& cpp::marshal::View<T>::operator[](size_t index)
 {
     return ptr[index];
 }
