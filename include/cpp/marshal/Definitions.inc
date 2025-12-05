@@ -249,6 +249,26 @@ namespace cpp
             static float readFloat32(View<uint8_t> view);
             static double readFloat64(View<uint8_t> view);
 
+            template<class T> static ::cpp::Pointer<T> readLittleEndianPointer(View<uint8_t> view);
+            static int16_t readLittleEndianInt16(View<uint8_t> view);
+            static int32_t readLittleEndianInt32(View<uint8_t> view);
+            static int64_t readLittleEndianInt64(View<uint8_t> view);
+            static uint16_t readLittleEndianUInt16(View<uint8_t> view);
+            static uint32_t readLittleEndianUInt32(View<uint8_t> view);
+            static uint64_t readLittleEndianUInt64(View<uint8_t> view);
+            static float readLittleEndianFloat32(View<uint8_t> view);
+            static double readLittleEndianFloat64(View<uint8_t> view);
+
+            template<class T> static ::cpp::Pointer<T> readBigEndianPointer(View<uint8_t> view);
+            static int16_t readBigEndianInt16(View<uint8_t> view);
+            static int32_t readBigEndianInt32(View<uint8_t> view);
+            static int64_t readBigEndianInt64(View<uint8_t> view);
+            static uint16_t readBigEndianUInt16(View<uint8_t> view);
+            static uint32_t readBigEndianUInt32(View<uint8_t> view);
+            static uint64_t readBigEndianUInt64(View<uint8_t> view);
+            static float readBigEndianFloat32(View<uint8_t> view);
+            static double readBigEndianFloat64(View<uint8_t> view);
+
             template<class T> static void write(View<uint8_t> view, const T& value);
             template<class T> static void writePointer(View<uint8_t> view, const Pointer<T>& value);
             static void writeInt8(View<uint8_t> view, const int8_t& value);
@@ -261,6 +281,26 @@ namespace cpp
             static void writeUInt64(View<uint8_t> view, const uint64_t& value);
             static void writeFloat32(View<uint8_t> view, const float& value);
             static void writeFloat64(View<uint8_t> view, const double& value);
+
+            template<class T> static void writeLittleEndianPointer(View<uint8_t> view, const Pointer<T>& value);
+            static void writeLittleEndianInt16(View<uint8_t> view, const int16_t& value);
+            static void writeLittleEndianInt32(View<uint8_t> view, const int32_t& value);
+            static void writeLittleEndianInt64(View<uint8_t> view, const int64_t& value);
+            static void writeLittleEndianUInt16(View<uint8_t> view, const uint16_t& value);
+            static void writeLittleEndianUInt32(View<uint8_t> view, const uint32_t& value);
+            static void writeLittleEndianUInt64(View<uint8_t> view, const uint64_t& value);
+            static void writeLittleEndianFloat32(View<uint8_t> view, const float& value);
+            static void writeLittleEndianFloat64(View<uint8_t> view, const double& value);
+
+            template<class T> static void writeBigEndianPointer(View<uint8_t> view, const Pointer<T>& value);
+            static void writeBigEndianInt16(View<uint8_t> view, const int16_t& value);
+            static void writeBigEndianInt32(View<uint8_t> view, const int32_t& value);
+            static void writeBigEndianInt64(View<uint8_t> view, const int64_t& value);
+            static void writeBigEndianUInt16(View<uint8_t> view, const uint16_t& value);
+            static void writeBigEndianUInt32(View<uint8_t> view, const uint32_t& value);
+            static void writeBigEndianUInt64(View<uint8_t> view, const uint64_t& value);
+            static void writeBigEndianFloat32(View<uint8_t> view, const float& value);
+            static void writeBigEndianFloat64(View<uint8_t> view, const double& value);
         };
     }
 }
