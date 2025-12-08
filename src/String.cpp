@@ -1962,10 +1962,7 @@ String String::substr(int inFirst, Dynamic inLen) const
    if (inFirst<0) inFirst = 0;
    if (len<0)
    {
-      len += length;
-      // This logic matches flash ....
-      if (inFirst + len >=length)
-         len = 0;
+      len = length + len - inFirst;
    }
 
    if (len<=0 || inFirst>=length)
