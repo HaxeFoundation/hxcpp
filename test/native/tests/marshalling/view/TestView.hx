@@ -117,6 +117,22 @@ class TestView extends Test {
 		Assert.equals(200, obj.number);
 	}
 
+	function test_reading_error() {
+		final buffer = [ for (i in 0...10) i + 1 ];
+
+		Assert.raises(() -> final _ = buffer.asView()[-1], String);
+		Assert.raises(() -> final _ = buffer.asView()[10], String);
+		Assert.raises(() -> final _ = buffer.asView()[20], String);
+	}
+
+	function test_writing_error() {
+		final buffer = [ for (i in 0...10) i + 1 ];
+
+		Assert.raises(() -> buffer.asView()[-1] = 100, String);
+		Assert.raises(() -> buffer.asView()[10] = 100, String);
+		Assert.raises(() -> buffer.asView()[20] = 100, String);
+	}
+
 	function test_slice() {
 		final buffer = [ for (i in 0...10) i + 1 ];
 		final view   = buffer.asView();
@@ -128,6 +144,14 @@ class TestView extends Test {
 				Assert.equals(i + index + 1, slice[i]);
 			}
 		}
+	}
+
+	function test_slice_errors() {
+		final buffer = [ for (i in 0...10) i + 1 ];
+
+		Assert.raises(() -> buffer.asView().slice(-1), String);
+		Assert.raises(() -> buffer.asView().slice(100), String);
+		Assert.isTrue(buffer.asView().slice(10).isEmpty());
 	}
 
 	function test_slice_with_length() {
@@ -142,6 +166,17 @@ class TestView extends Test {
 				Assert.equals(i + index + 1, slice[i]);
 			}
 		}
+	}
+
+	function test_slice_with_length_errors() {
+		final buffer = [ for (i in 0...10) i + 1 ];
+
+		Assert.raises(() -> buffer.asView().slice(-1, 5), String);
+		Assert.raises(() -> buffer.asView().slice(5, -1), String);
+		Assert.raises(() -> buffer.asView().slice(1, 100), String);
+		Assert.raises(() -> buffer.asView().slice(100, 5), String);
+		Assert.raises(() -> buffer.asView().slice(10, 5), String);
+		Assert.isTrue(buffer.asView().slice(10, 0).isEmpty());
 	}
 
 	function test_clear() {
@@ -238,5 +273,23 @@ class TestView extends Test {
 
 		Assert.equals(7f64, buffer[0]);
 		Assert.equals(26f64, buffer[1]);
+	}
+
+	function test_tryCopyTo() {
+		final buffer = [ for (i in 0...10) i ];
+		final biggerDst   = buffer.copy();
+		final matchingDst = buffer.copy();
+		final smallerDst  = buffer.copy();
+
+		biggerDst.resize(20);
+		smallerDst.resize(5);
+
+		Assert.isTrue(buffer.asView().tryCopyTo(biggerDst.asView()));
+		Assert.isTrue(buffer.asView().tryCopyTo(matchingDst.asView()));
+		Assert.isFalse(buffer.asView().tryCopyTo(smallerDst.asView()));
+
+		Assert.same(buffer, biggerDst.slice(0, 10));
+		Assert.same(buffer, matchingDst);
+		Assert.same(buffer.slice(0, smallerDst.length), smallerDst);
 	}
 }

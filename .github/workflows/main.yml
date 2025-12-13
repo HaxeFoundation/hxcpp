@@ -42,7 +42,7 @@ jobs:
       arch: 64
       sep: /
       ext: .dylib
-      os: macos-13
+      os: macos-15-intel
 
   MacOSArm:
     strategy:

@@ -147,26 +147,14 @@ jobs:
           uses: ./.github/workflows/setup
           with:
             haxe: ${{ inputs.haxe }}
-        - name: install mariadb
+        - name: setup mariadb
           if: runner.os == 'Linux'
           run: |
             set -ex
-            sudo rm -R /var/lib/mysql/
-            curl -sSL https://downloads.mariadb.com/MariaDB/mariadb_repo_setup > mariadb_repo_setup
-            curl -sSL https://downloads.mariadb.com/MariaDB/mariadb_repo_setup.sha256 > mariadb_repo_setup.sha256
-            sha256sum --check mariadb_repo_setup.sha256
-            sudo bash mariadb_repo_setup
             sudo apt-get update -qqy
-            sudo apt-get remove -qqy mysql-common
-            sudo apt-get autoremove -qqy
             sudo apt-get install -qqy mariadb-server
-        - name: configure mariadb
-          if: runner.os == 'Linux'
-          run: |
-            set -ex
-            sudo systemctl unmask mysql.service
-            sudo systemctl start mysql
-            sudo mysql -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
+            sudo systemctl start mariadb
+            sudo mariadb -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
         - name: build
           run: haxe compile${{ inputs.arch }}.hxml
         - name: run
@@ -227,6 +215,8 @@ jobs:
           haxe: ${{ inputs.haxe }}
       - name: install haxe libs
         run: haxelib install compile-cpp.hxml --always
+        # haxe 4 tests don't build with latest utest
+        if: inputs.haxe != 'latest'
       - name: build
         run: haxe compile-cpp.hxml -D ${{ env.HXCPP_ARCH_FLAG }} -D no_http
       - name: run

@@ -189,6 +189,22 @@ class Client
          default:
       }
 
+      // regression test for #926
+      var x:Dynamic = 3;
+      x *= 5;
+      if (x != 15) {
+         Common.status = 'Failed regression test for #926. x: $x';
+         return;
+      }
+
+      // regression test for #1257
+      var x = 1290555;
+      x *= 1290555;
+      if (x != -915102823) {
+         Common.status = 'Failed regression test for #1257. x: $x';
+         return;
+      }
+
       final extending = new ClientExtendedExtendedRoot();
 
       extending.addValue();

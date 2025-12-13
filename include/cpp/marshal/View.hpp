@@ -5,7 +5,7 @@
 #include <cmath>
 
 template<class T>
-inline cpp::marshal::View<T>::View(::cpp::Pointer<T> _ptr, int _length) : ptr(_ptr), length(_length) {}
+inline cpp::marshal::View<T>::View(::cpp::Pointer<T> _ptr, size_t _length) : ptr(_ptr), length(_length) {}
 
 template<class T>
 inline bool cpp::marshal::View<T>::tryCopyTo(const View<T>& destination)
@@ -42,24 +42,34 @@ inline bool cpp::marshal::View<T>::isEmpty()
 }
 
 template<class T>
-inline cpp::marshal::View<T> cpp::marshal::View<T>::slice(int index)
+inline cpp::marshal::View<T> cpp::marshal::View<T>::slice(int64_t index)
 {
+    if (index < 0 || index > length)
+    {
+        hx::Throw(HX_CSTRING("View OOB"));
+    }
+
     return View<T>(ptr + index, length - index);
 }
 
 template<class T>
-inline cpp::marshal::View<T> cpp::marshal::View<T>::slice(int index, int length)
+inline cpp::marshal::View<T> cpp::marshal::View<T>::slice(int64_t inIndex, int64_t inLength)
 {
-    return View<T>(ptr + index, length);
+    if (inIndex < 0 || inLength < 0 || inIndex > length || inIndex + inLength > length)
+    {
+        hx::Throw(HX_CSTRING("View OOB"));
+    }
+
+    return View<T>(ptr + inIndex, inLength);
 }
 
 template<class T>
 template<class K>
 inline cpp::marshal::View<K> cpp::marshal::View<T>::reinterpret()
 {
-    auto newPtr = ::cpp::Pointer<K>{ ptr.reinterpret() };
+    auto newPtr   = ::cpp::Pointer<K>{ ptr.reinterpret() };
     auto fromSize = sizeof(T);
-    auto toSize = sizeof(K);
+    auto toSize   = sizeof(K);
 
     if (toSize == fromSize)
     {
@@ -70,7 +80,7 @@ inline cpp::marshal::View<K> cpp::marshal::View<T>::reinterpret()
         return cpp::marshal::View<K>(newPtr, length * (fromSize / toSize));
     }
 
-    auto shrink = static_cast<double>(fromSize) / toSize;
+    auto shrink    = static_cast<double>(fromSize) / toSize;
     auto newLength = static_cast<int>(std::floor(length * shrink));
 
     return cpp::marshal::View<K>(newPtr, newLength);
@@ -79,7 +89,15 @@ inline cpp::marshal::View<K> cpp::marshal::View<T>::reinterpret()
 template<class T>
 inline int cpp::marshal::View<T>::compare(const View<T>& inRHS)
 {
-    return std::memcmp(ptr.ptr, inRHS.ptr.ptr, sizeof(T) * length);
+    auto common = length < inRHS.length ? length : inRHS.length;
+    auto result = std::memcmp(ptr.ptr, inRHS.ptr.ptr, sizeof(T) * common);
+
+    if (result)
+    {
+        return result;
+    }
+
+    return length - inRHS.length;
 }
 
 template<class T>
@@ -95,8 +113,13 @@ inline bool cpp::marshal::View<T>::operator!=(const View<T>& inRHS) const
 }
 
 template<class T>
-inline T& cpp::marshal::View<T>::operator[](int index)
+inline T& cpp::marshal::View<T>::operator[](int64_t index)
 {
+    if (index < 0 || index >= length)
+    {
+        hx::Throw(HX_CSTRING("View OOB"));
+    }
+
     return ptr[index];
 }
 

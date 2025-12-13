@@ -68,11 +68,7 @@
    #define HXCPP_ALIGN_FLOAT
 #endif
 
-// Must allign allocs to 8 bytes to match floating point requirement?
-// Ints must br read on 4-byte boundary
-#if (!defined(HXCPP_ALIGN_FLOAT) && (defined(EMSCRIPTEN) || defined(GCW0)) )
-   #define HXCPP_ALIGN_ALLOC
-#endif
+#define HXCPP_ALIGN_ALLOC
 
 
 // Some compilers are over-enthusiastic about what they #define ...
@@ -355,13 +351,15 @@ typedef PropertyAccessMode PropertyAccess;
 #endif
 #include <hx/StdLibs.h>
 #include <cpp/Pointer.h>
-#include <cpp/marshal/Boxed.hpp>
-#include <cpp/marshal/ValueType.hpp>
-#include <cpp/marshal/PointerType.hpp>
-#include <cpp/marshal/ValueReference.hpp>
-#include <cpp/marshal/PointerReference.hpp>
-#include <cpp/marshal/View.hpp>
-#include <cpp/marshal/Marshal.hpp>
+#if (HXCPP_API_LEVEL>=500)
+    #include <cpp/marshal/Boxed.hpp>
+    #include <cpp/marshal/ValueType.hpp>
+    #include <cpp/marshal/PointerType.hpp>
+    #include <cpp/marshal/ValueReference.hpp>
+    #include <cpp/marshal/PointerReference.hpp>
+    #include <cpp/marshal/View.hpp>
+    #include <cpp/marshal/Marshal.hpp>
+#endif
 #include <hx/Native.h>
 #include <hx/Operators.h>
 #include <hx/Functions.h>
