@@ -1813,7 +1813,7 @@ bool String::wc_str(::cpp::marshal::View<char16_t> buffer, int* outCharLength) c
 
         std::memcpy(buffer.ptr, __w, sizeof(char16_t) * length);
 
-        buffer[length] = 0;
+        buffer[int64_t{ length }] = 0;
 
         return true;
     }
@@ -1913,7 +1913,7 @@ bool String::utf8_str(::cpp::marshal::View<char> buffer, int* outByteLength) con
 
     std::memcpy(buffer.ptr, __s, sizeof(char) * length);
 
-    buffer[length] = 0;
+    buffer[int64_t{ length }] = 0;
 
     return true;
 }
