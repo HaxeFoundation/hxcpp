@@ -56,14 +56,14 @@ inline cpp::marshal::ValueReference<T>::ValueReference(const Boxed<O>& inRHS) : 
 
 template<class T>
 template<class K>
-inline K cpp::marshal::ValueReference<T>::get(int index)
+inline K cpp::marshal::ValueReference<T>::get(int64_t index)
 {
     return (*Super::ptr)[index];
 }
 
 template<class T>
 template<class K>
-inline void cpp::marshal::ValueReference<T>::set(int index, K value)
+inline void cpp::marshal::ValueReference<T>::set(int64_t index, K value)
 {
     (*Super::ptr)[index] = value;
 }
