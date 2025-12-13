@@ -3667,8 +3667,10 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
                compiler->mult(ioValue, sJitTempF0, ioValue,true);
             else
             {
-               compiler->mult(sJitTempF0, sJitTempF0, ioValue,true);
-               compiler->convert(sJitTempF0, etFloat, ioValue, exprType );
+               JitTemp fval(compiler, jtFloat);
+               compiler->convert(ioValue, exprType, fval, etFloat);
+               compiler->mult(sJitTempF0, sJitTempF0, fval, true);
+               compiler->convert(sJitTempF0, etFloat, ioValue, exprType);
             }
          }
          break;
