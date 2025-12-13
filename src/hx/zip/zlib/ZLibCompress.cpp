@@ -3,9 +3,11 @@
 #include <memory>
 #include <limits>
 
+#define ZLIB_OBJ_CLOSED ::hx::Throw(HX_CSTRING("Compress closed"))
+
 hx::zip::Compress hx::zip::Compress_obj::create(int level)
 {
-	auto handle = std::make_unique<z_stream>();
+	auto handle = std::unique_ptr<z_stream>(new z_stream());
 	auto error  = deflateInit(handle.get(), level);
 
 	if (error != Z_OK)
@@ -19,7 +21,7 @@ hx::zip::Compress hx::zip::Compress_obj::create(int level)
 Array<uint8_t> hx::zip::Compress_obj::run(cpp::marshal::View<uint8_t> src, int level)
 {
 	auto error  = 0;
-	auto handle = std::make_unique<z_stream>();
+	auto handle = std::unique_ptr<z_stream>(new z_stream());
 
 	if (Z_OK != (error = deflateInit(handle.get(), level)))
 	{
@@ -49,7 +51,7 @@ Array<uint8_t> hx::zip::Compress_obj::run(cpp::marshal::View<uint8_t> src, int l
 
 	deflateEnd(handle.get());
 
-	return output;
+	return output->slice(0, handle->total_out);
 }
 
 hx::zip::zlib::ZLibCompress::ZLibCompress(z_stream* inHandle) : handle(inHandle), flush(0)
@@ -59,6 +61,11 @@ hx::zip::zlib::ZLibCompress::ZLibCompress(z_stream* inHandle) : handle(inHandle)
 
 hx::zip::Result hx::zip::zlib::ZLibCompress::execute(cpp::marshal::View<uint8_t> src, cpp::marshal::View<uint8_t> dst)
 {
+	if (handle == nullptr)
+	{
+		ZLIB_OBJ_CLOSED;
+	}
+
 	handle->next_in   = src.ptr;
 	handle->next_out  = dst.ptr;
 	handle->avail_in  = src.length;
@@ -76,12 +83,17 @@ hx::zip::Result hx::zip::zlib::ZLibCompress::execute(cpp::marshal::View<uint8_t>
 	return
 		Result(
 			error == Z_STREAM_END,
-			dst.length - handle->avail_out,
-			src.length - handle->avail_in);
+			dst.length - handle->total_in,
+			src.length - handle->total_out);
 }
 
 void hx::zip::zlib::ZLibCompress::setFlushMode(Flush mode)
 {
+	if (handle == nullptr)
+	{
+		ZLIB_OBJ_CLOSED;
+	}
+
 	switch (mode)
 	{
 	case Flush::None:
@@ -108,6 +120,11 @@ void hx::zip::zlib::ZLibCompress::setFlushMode(Flush mode)
 
 int hx::zip::zlib::ZLibCompress::getBounds(const int length)
 {
+	if (handle == nullptr)
+	{
+		ZLIB_OBJ_CLOSED;
+	}
+
 	return static_cast<int>(deflateBound(handle, length));
 }
 
@@ -121,4 +138,6 @@ void hx::zip::zlib::ZLibCompress::close()
 	deflateEnd(handle);
 
 	handle = nullptr;
+
+	_hx_set_finalizer(this, nullptr);
 }

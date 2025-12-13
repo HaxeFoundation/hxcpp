@@ -3,9 +3,11 @@
 #include <memory>
 #include <vector>
 
+#define ZLIB_OBJ_CLOSED ::hx::Throw(HX_CSTRING("Compress closed"))
+
 hx::zip::Uncompress hx::zip::Uncompress_obj::create(int windowSize)
 {
-	auto handle = std::make_unique<z_stream>();
+	auto handle = std::unique_ptr<z_stream>(new z_stream());
 	auto error  = inflateInit2(handle.get(), windowSize);
 
 	if (error != Z_OK)
@@ -18,7 +20,7 @@ hx::zip::Uncompress hx::zip::Uncompress_obj::create(int windowSize)
 
 Array<uint8_t> hx::zip::Uncompress_obj::run(cpp::marshal::View<uint8_t> src, int bufferSize)
 {
-	auto handle = std::make_unique<z_stream>();
+	auto handle = std::unique_ptr<z_stream>(new z_stream());
 	auto error  = inflateInit2(handle.get(), 15);
 
 	if (error != Z_OK)
@@ -63,6 +65,11 @@ hx::zip::zlib::ZLibUncompress::ZLibUncompress(z_stream* inHandle) : handle(inHan
 
 hx::zip::Result hx::zip::zlib::ZLibUncompress::execute(cpp::marshal::View<uint8_t> src, cpp::marshal::View<uint8_t> dst)
 {
+	if (handle == nullptr)
+	{
+		ZLIB_OBJ_CLOSED;
+	}
+
 	handle->next_in   = src.ptr;
 	handle->next_out  = dst.ptr;
 	handle->avail_in  = src.length;
@@ -80,12 +87,17 @@ hx::zip::Result hx::zip::zlib::ZLibUncompress::execute(cpp::marshal::View<uint8_
 	return
 		Result(
 			error == Z_STREAM_END,
-			dst.length - handle->avail_out,
-			src.length - handle->avail_in);
+			handle->total_in,
+			handle->total_out);
 }
 
 void hx::zip::zlib::ZLibUncompress::setFlushMode(Flush mode)
 {
+	if (handle == nullptr)
+	{
+		ZLIB_OBJ_CLOSED;
+	}
+
 	switch (mode)
 	{
 	case Flush::None:
@@ -120,4 +132,6 @@ void hx::zip::zlib::ZLibUncompress::close()
 	inflateEnd(handle);
 
 	handle = nullptr;
+
+	_hx_set_finalizer(this, nullptr);
 }

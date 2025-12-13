@@ -2,13 +2,8 @@
   <pragma once="true" />
 
   <section unless="HXCPP_ZIP_XML">
-    <set name="HXCPP_ZIP_ZLIB" value="1" unless="HXCPP_ZIP_LIBDEFLATE"/>
-    
-    <set name="HXCPP_ZIP_XML" value="${this_dir}/zlib/Build.xml" if="HXCPP_ZIP_ZLIB"/>
-    <set name="HXCPP_ZIP_XML" value="${this_dir}/libdeflate/Build.xml" if="HXCPP_ZIP_LIBDEFLATE"/>
+    <set name="HXCPP_ZIP_XML" value="${this_dir}/zlib/Build.xml"/>
   </section>
-
-  <set name="HXCPP_ZIP_ZLIB" value="1"/>
   
   <import name="${HXCPP_ZIP_XML}"/>
 
