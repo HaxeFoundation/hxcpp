@@ -200,8 +200,8 @@ namespace cpp
             void clear();
             void fill(T value);
             bool isEmpty();
-            View<T> slice(size_t index);
-            View<T> slice(size_t index, size_t length);
+            View<T> slice(int64_t index);
+            View<T> slice(int64_t index, int64_t length);
             bool tryCopyTo(const View<T>& destination);
             template<class K> View<K> reinterpret();
             int compare(const View<T>& inRHS);
@@ -209,7 +209,7 @@ namespace cpp
             bool operator==(const View<T>& inRHS) const;
             bool operator!=(const View<T>& inRHS) const;
 
-            T& operator[] (size_t index);
+            T& operator[] (int64_t index);
 
             operator void* ();
             operator T* ();
