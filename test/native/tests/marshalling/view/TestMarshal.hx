@@ -24,11 +24,23 @@ class TestMarshal extends Test {
 		Assert.equals(value, storage);
 	}
 
+	function test_write_not_enough_space() {
+		final storage = Bytes.alloc(1);
+
+		Assert.raises(() -> storage.asView().writeInt32(0));
+	}
+
 	function test_read_int() {
 		final storage = 200;
 		final source  = new View(Pointer.addressOf(storage), 1);
 
 		Assert.isTrue(storage == source.asBytesView().read());
+	}
+
+	function test_read_not_enough_space() {
+		final storage = Bytes.alloc(1);
+
+		Assert.raises(() -> storage.asView().readInt32());
 	}
 
 	function test_write_float() {
