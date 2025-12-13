@@ -89,6 +89,11 @@ inline ::String cpp::marshal::Marshal::toString(View<char16_t> buffer)
 template<class T>
 inline T cpp::marshal::Marshal::read(View<uint8_t> view)
 {
+    if (view.length < sizeof(T))
+    {
+        hx::Throw(HX_CSTRING("View too small"));
+    }
+
     return *(reinterpret_cast<T*>(view.ptr.ptr));
 }
 
@@ -151,6 +156,11 @@ inline double cpp::marshal::Marshal::readFloat64(View<uint8_t> view)
 template<class T>
 inline void cpp::marshal::Marshal::write(View<uint8_t> view, const T& value)
 {
+    if (view.length < sizeof(T))
+    {
+        hx::Throw(HX_CSTRING("View too small"));
+    }
+
     std::memcpy(view.ptr, reinterpret_cast<const uint8_t*>(&value), sizeof(T));
 }
 
