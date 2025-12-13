@@ -5,19 +5,14 @@ import haxe.io.UInt16Array;
 import haxe.io.UInt32Array;
 import haxe.io.Int32Array;
 import haxe.io.Float64Array;
-import cpp.Float32;
 import haxe.io.Float32Array;
 import haxe.io.ArrayBufferView;
 import haxe.io.Bytes;
 import haxe.ds.Vector;
-import cpp.Int64;
-import cpp.UInt32;
-import cpp.Int16;
 import cpp.Pointer;
 import cpp.marshal.View;
 import utest.Test;
 import utest.Assert;
-import tests.marshalling.Point;
 
 using cpp.marshal.ViewExtensions;
 
