@@ -351,7 +351,7 @@ typedef PropertyAccessMode PropertyAccess;
 #endif
 #include <hx/StdLibs.h>
 #include <cpp/Pointer.h>
-#ifdef HXCPP_API_LEVEL>=500
+#if (HXCPP_API_LEVEL>=500)
     #include <cpp/marshal/Boxed.hpp>
     #include <cpp/marshal/ValueType.hpp>
     #include <cpp/marshal/PointerType.hpp>
