@@ -16,6 +16,6 @@
   </files>
 
   <target id="haxe">
-    <files id="hxcpp_zip"/>
+    <files id="hxcpp_zip_api"/>
   </target>
 </xml>
