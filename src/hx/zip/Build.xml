@@ -13,7 +13,7 @@
     <depend files="hxcpp-depends"/>
     <depend name="${this_dir}/Build.xml" dateOnly="true" />
 
-    <file name="Zip.cpp"/>
+    <file name="${this_dir}/Zip.cpp"/>
   </files>
 
   <target id="haxe">
