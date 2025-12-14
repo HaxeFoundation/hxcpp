@@ -45,8 +45,8 @@
   </files>
 
   <target id="haxe">
-    <files id="zlib_sources" unless="HXCPP_LINK_NO_ZLIB"/>
     <files id="hxcpp_zlib_impl" />
+    <files id="zlib_sources" unless="HXCPP_LINK_NO_ZLIB"/>
   </target>
 
 </xml>
