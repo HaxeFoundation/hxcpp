@@ -1,5 +1,5 @@
 #include <hxcpp.h>
-#include "ZlibUncompress.hpp"
+#include "ZLibUncompress.hpp"
 
 #include <memory>
 #include <vector>
