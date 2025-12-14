@@ -5,7 +5,7 @@
 #include <cmath>
 
 template<class T>
-inline cpp::marshal::View<T>::View(::cpp::Pointer<T> _ptr, size_t _length) : ptr(_ptr), length(_length) {}
+inline cpp::marshal::View<T>::View(::cpp::Pointer<T> _ptr, int64_t _length) : ptr(_ptr), length(_length) {}
 
 template<class T>
 inline bool cpp::marshal::View<T>::tryCopyTo(const View<T>& destination)
