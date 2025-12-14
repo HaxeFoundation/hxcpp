@@ -38,7 +38,7 @@
 </files>
 
 <target id="haxe">
-  <files id="hxcpp_zlib" />
+  <files id="hxcpp_zlib_impl" />
 </target>
 
 </xml>
