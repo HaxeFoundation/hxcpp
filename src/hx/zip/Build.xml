@@ -7,7 +7,7 @@
   
   <import name="${HXCPP_ZIP_XML}"/>
 
-  <files id="hxcpp_zip" dir="${this_dir}">
+  <files id="hxcpp_zip_api" dir="${this_dir}">
     <depend files="hxcpp-depends"/>
     <depend name="${this_dir}/Build.xml" dateOnly="true" />
     <cache value="true" asLibrary="1" />
