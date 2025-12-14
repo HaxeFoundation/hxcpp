@@ -129,10 +129,10 @@ namespace cpp
             bool operator!=(const ValueReference<T>& inRHS) const;
 
             template<class K>
-            K get(int index);
+            K get(int64_t index);
 
             template<class K>
-            void set(int index, K value);
+            void set(int64_t index, K value);
         };
 
         template<class T>
@@ -183,19 +183,19 @@ namespace cpp
             TPtr operator->() const;
 
             template<class K>
-            K get(int index);
+            K get(int64_t index);
 
             template<class K>
-            void set(int index, K value);
+            void set(int64_t index, K value);
         };
 
         template<class T>
         struct View final
         {
             ::cpp::Pointer<T> ptr;
-            size_t length;
+            int64_t length;
 
-            View(::cpp::Pointer<T> _ptr, size_t _length);
+            View(::cpp::Pointer<T> _ptr, int64_t _length);
 
             void clear();
             void fill(T value);
