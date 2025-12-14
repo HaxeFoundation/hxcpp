@@ -52,7 +52,7 @@ Array<uint8_t> hx::zip::Compress_obj::run(cpp::marshal::View<uint8_t> src, int l
 
 	deflateEnd(handle.get());
 
-	return output->slice(0, handle->total_out);
+	return output->slice(0, static_cast<int>(handle->total_out));
 }
 
 hx::zip::zlib::ZLibCompress::ZLibCompress(z_stream* inHandle) : handle(inHandle), flush(0)
@@ -84,8 +84,8 @@ hx::zip::Result hx::zip::zlib::ZLibCompress::execute(cpp::marshal::View<uint8_t>
 	return
 		Result(
 			error == Z_STREAM_END,
-			handle->total_in,
-			handle->total_out);
+			static_cast<int>(handle->total_in),
+			static_cast<int>(handle->total_out));
 }
 
 void hx::zip::zlib::ZLibCompress::setFlushMode(Flush mode)

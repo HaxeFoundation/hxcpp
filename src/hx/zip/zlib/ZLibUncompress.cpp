@@ -88,8 +88,8 @@ hx::zip::Result hx::zip::zlib::ZLibUncompress::execute(cpp::marshal::View<uint8_
 	return
 		Result(
 			error == Z_STREAM_END,
-			handle->total_in,
-			handle->total_out);
+			static_cast<int>(handle->total_in),
+			static_cast<int>(handle->total_out));
 }
 
 void hx::zip::zlib::ZLibUncompress::setFlushMode(Flush mode)
