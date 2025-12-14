@@ -369,6 +369,7 @@ typedef PropertyAccessMode PropertyAccess;
 #include <hx/Boot.h>
 #include <hx/Undefine.h>
 #include <hx/LessThanEq.h>
+#include <hx/asys/Asys.h>
 
 #endif
 

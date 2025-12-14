@@ -189,6 +189,10 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx);
 void GCAddRoot(hx::Object **inRoot);
 void GCRemoveRoot(hx::Object **inRoot);
 
+#if (HXCPP_API_LEVEL>=430)
+void GCPinPtr(void* inPtr);
+void GCUnpinPtr(void* inPtr);
+#endif
 
 // This is used internally in hxcpp
 // It calls InternalNew, and takes care of null-terminating the result
@@ -234,6 +238,35 @@ public:
 	bool locked;
 };
 
+class HXCPP_EXTERN_CLASS_ATTRIBUTES AutoGCZone
+{
+private:
+   bool open;
+
+public:
+   AutoGCZone() : open(true) { ExitGCFreeZone(); }
+   ~AutoGCZone() { if(open) { EnterGCFreeZone(); } }
+};
+
+template<class THxObject = hx::Object>
+class HXCPP_EXTERN_CLASS_ATTRIBUTES RootedObject
+{
+public:
+   THxObject* rooted;
+
+   RootedObject(THxObject* object) : rooted(object) { GCAddRoot(reinterpret_cast<hx::Object**>(&rooted)); }
+   ~RootedObject() { GCRemoveRoot(reinterpret_cast<hx::Object**>(&rooted)); }
+};
+
+template<>
+class HXCPP_EXTERN_CLASS_ATTRIBUTES RootedObject<hx::Object>
+{
+public:
+   hx::Object* rooted;
+
+   RootedObject(hx::Object* object) : rooted(object) { GCAddRoot(&rooted); }
+   ~RootedObject() { GCRemoveRoot(&rooted); }
+};
 
 // Defined in Class.cpp, these function is called from the Gc to start the marking/visiting
 void MarkClassStatics(hx::MarkContext *__inCtx);
