@@ -84,8 +84,8 @@ hx::zip::Result hx::zip::zlib::ZLibCompress::execute(cpp::marshal::View<uint8_t>
 	return
 		Result(
 			error == Z_STREAM_END,
-			dst.length - handle->total_in,
-			src.length - handle->total_out);
+			handle->total_in,
+			handle->total_out);
 }
 
 void hx::zip::zlib::ZLibCompress::setFlushMode(Flush mode)

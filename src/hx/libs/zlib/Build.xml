@@ -1,0 +1,7 @@
+<xml>
+
+  <pragma once="true" />
+
+  <import name="${this_dir}/../../zip/Build.xml"/>
+
+</xml>
