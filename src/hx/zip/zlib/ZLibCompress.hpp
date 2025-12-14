@@ -1,5 +1,6 @@
 #pragma once
 
+#include <hxcpp.h>
 #include <hx/zip/Compress.hpp>
 #include <zlib.h>
 

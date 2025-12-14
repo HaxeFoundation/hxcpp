@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef HXCPP_H
+#include <hxcpp.h>
+#endif
+
 HX_DECLARE_CLASS2(hx, zip, Zip)
 
 namespace hx

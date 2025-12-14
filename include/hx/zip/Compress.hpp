@@ -1,6 +1,5 @@
 #pragma once
 
-#include <hxcpp.h>
 #include "Zip.hpp"
 
 HX_DECLARE_CLASS2(hx, zip, Compress)

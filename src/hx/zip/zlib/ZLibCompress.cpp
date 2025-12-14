@@ -1,3 +1,4 @@
+#include <hxcpp.h>
 #include "ZLibCompress.hpp"
 
 #include <memory>
