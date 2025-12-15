@@ -1,0 +1,52 @@
+<xml>
+
+  <pragma once="true" />
+
+  <set name="ZLIB_DIR" value="${HXCPP}/project/thirdparty/zlib-1.3.1"/>
+
+  <files id="zlib_sources">
+    <cache value="true" asLibrary="true" />
+
+    <compilerflag value="-I${ZLIB_DIR}"/>
+    <compilerflag value="-DSTDC" unless="windows" />
+    <compilerflag value="-DHAVE_UNISTD_H" unless="windows" />
+
+    <!-- HXCPP_LINK_NO_ZLIB may be set too late, so use filterout as well. -->
+    <file name="${ZLIB_DIR}/adler32.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/compress.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/crc32.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/deflate.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/gzclose.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/gzlib.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/gzread.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/gzwrite.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/infback.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/inffast.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/inflate.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/inftrees.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/trees.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/uncompr.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+    <file name="${ZLIB_DIR}/zutil.c" filterout="HXCPP_LINK_NO_ZLIB" tags="" />
+  </files>
+
+  <files id="hxcpp_zlib_impl" >
+    <depend files="hxcpp-depends"/>
+    <depend name="${this_dir}/Build.xml" dateOnly="true" />
+    <depend name="${this_dir}/ZLibCompress.hpp"/>
+    <depend name="${this_dir}/ZLibUncompress.hpp"/>
+
+    <cache value="true" asLibrary="true" />
+
+    <compilerflag value="-I${ZLIB_DIR}"/>
+    <compilerflag value="-I${this_dir}"/>
+
+    <file name="ZLibUncompress.cpp"/>
+    <file name="ZLibCompress.cpp"/>
+  </files>
+
+  <target id="haxe">
+    <files id="hxcpp_zlib_impl" />
+    <files id="zlib_sources" unless="HXCPP_LINK_NO_ZLIB"/>
+  </target>
+
+</xml>

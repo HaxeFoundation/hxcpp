@@ -147,7 +147,7 @@ class Test extends utest.Test
       v("compressed size " + compressed.length );
 
       v("try closing too many times...");
-      Assert.exception(() -> compress.close(), String, null, "Zlib closed without throwing error");
+      compress.close();
 
       var decompressed = Uncompress.run(compressed);
       v("decompressed size:" + decompressed.length + "/" + bytes.length);

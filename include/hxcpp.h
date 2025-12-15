@@ -351,15 +351,13 @@ typedef PropertyAccessMode PropertyAccess;
 #endif
 #include <hx/StdLibs.h>
 #include <cpp/Pointer.h>
-#if (HXCPP_API_LEVEL>=500)
-    #include <cpp/marshal/Boxed.hpp>
-    #include <cpp/marshal/ValueType.hpp>
-    #include <cpp/marshal/PointerType.hpp>
-    #include <cpp/marshal/ValueReference.hpp>
-    #include <cpp/marshal/PointerReference.hpp>
-    #include <cpp/marshal/View.hpp>
-    #include <cpp/marshal/Marshal.hpp>
-#endif
+#include <cpp/marshal/Boxed.hpp>
+#include <cpp/marshal/ValueType.hpp>
+#include <cpp/marshal/PointerType.hpp>
+#include <cpp/marshal/ValueReference.hpp>
+#include <cpp/marshal/PointerReference.hpp>
+#include <cpp/marshal/View.hpp>
+#include <cpp/marshal/Marshal.hpp>
 #include <hx/Native.h>
 #include <hx/Operators.h>
 #include <hx/Functions.h>

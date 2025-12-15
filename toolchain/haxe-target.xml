@@ -69,6 +69,9 @@
   <depend name="${HXCPP}/include/cpp/marshal/View.hpp"/>
   <depend name="${HXCPP}/include/cpp/marshal/Marshal.hpp"/>
   <depend name="${HXCPP}/include/hx/Scriptable.h"/>
+  <depend name="${HXCPP}/include/hx/zip/Zip.hpp"/>
+  <depend name="${HXCPP}/include/hx/zip/Compress.hpp"/>
+  <depend name="${HXCPP}/include/hx/zip/Uncompress.hpp"/>
   <section unless="HXCPP_LINK_NO_TOOL_DEPENDS" >
      <depend name="${HXCPP}/toolchain/haxe-target.xml" dateOnly="true" />
      <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml" dateOnly="true" />

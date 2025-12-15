@@ -1,0 +1,22 @@
+<xml>
+  <pragma once="true" />
+
+  <section unless="HXCPP_ZIP_XML">
+    <set name="HXCPP_ZIP_XML" value="${this_dir}/zlib/Build.xml"/>
+  </section>
+  
+  <import name="${HXCPP_ZIP_XML}"/>
+
+  <files id="hxcpp_zip_api">
+    <cache value="true" asLibrary="true" />
+
+    <depend files="hxcpp-depends"/>
+    <depend name="${this_dir}/Build.xml" dateOnly="true" />
+
+    <file name="${this_dir}/Zip.cpp"/>
+  </files>
+
+  <target id="haxe">
+    <files id="hxcpp_zip_api"/>
+  </target>
+</xml>
