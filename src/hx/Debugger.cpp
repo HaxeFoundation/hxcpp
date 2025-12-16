@@ -56,6 +56,9 @@ static Dynamic g_addParameterToStackFrameFunction;
 // Signature: inThreadInfo : Dynamic -> inStackFrame : Dynamic -> Void
 static Dynamic g_addStackFrameToThreadInfoFunction;
 
+#if defined(HXCPP_SCRIPTABLE) && (HXCPP_API_LEVEL >= 500)
+Dynamic g_onScriptLoadedFunction{};
+#endif
 
 // This is the thread number of the debugger thread, extracted from
 // information about the thread that called 
@@ -1452,6 +1455,15 @@ void __hxcpp_dbg_setAddStackFrameToThreadInfoFunction(Dynamic function)
     hx::g_addStackFrameToThreadInfoFunction = function;
     GCAddRoot(&(hx::g_addStackFrameToThreadInfoFunction.mPtr));
 }
+
+
+#if defined(HXCPP_SCRIPTABLE) && (HXCPP_API_LEVEL >= 500)
+void __hxcpp_dbg_setOnScriptLoadedFunction(Dynamic function)
+{
+    hx::g_onScriptLoadedFunction = function;
+    GCAddRoot(&(hx::g_onScriptLoadedFunction.mPtr));
+}
+#endif
 
 
 Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow)

@@ -38,6 +38,7 @@ Defines affecting how the code is compiled.  These can be on the command line wh
 | *HXCPP_PROFILER*        | Add profiler support |
 | *HXCPP_TELEMETRY*       | Add telemetry support |
 | *HXCPP_CPP11*           | Use c++11 features and link libraries |
+| *HXCPP_CPP17*           | Use c++17 features and link libraries |
 | *exe_link*              | Generate executable file (rather than dynamic library on android) |
 | *static_link*           | Generate static library |
 | *dll_link*              | Generate dynamic library |
@@ -67,7 +68,7 @@ Defines affecting target architecture.
 | *HXCPP_LINUX_ARM64*     | Run on a linux ARM64 device |
 | *winrt*                 | Compile for windowsRt/windows UWP |
 | *android*               | Compile for android |
-| *PLATFORM*              | Specify the android platform for NDK compilation |
+| *HXCPP_ANDROID_PLATFORM* | Specify the android platform for NDK compilation |
 | *ANDROID_NDK_ROOT*      | Specify the location of the android NDK toolchain |
 | *ANDROID_NDK_DIR*       | Specify the search location for finding the android NDK toolchain |
 | *HXCPP_X86*             | Compile android for x86 architecture |

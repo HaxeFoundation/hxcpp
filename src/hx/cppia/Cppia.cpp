@@ -439,7 +439,7 @@ struct BlockExpr : public CppiaExpr
          return;
       CppiaExpr **e = &expressions[0];
       CppiaExpr **end = e+expressions.size();
-      for(;e<end && !ctx->breakContReturn;e++)
+      for(;e<end && !ctx->breakContReturn && !ctx->exception;e++)
       {
          CPPIA_STACK_LINE((*e));
          (*e)->runVoid(ctx);
@@ -800,8 +800,7 @@ struct CallFunExpr : public CppiaExpr
    {
       unsigned char *pointer = ctx->pointer;
       function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):ctx->getThis(false),args);
-      if (ctx->breakContReturn)
-         return;
+      BCR_VCHECK;
 
       AutoStack save(ctx,pointer);
       ctx->runVoid(function);
@@ -3701,8 +3700,10 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
                compiler->mult(ioValue, sJitTempF0, ioValue,true);
             else
             {
-               compiler->mult(sJitTempF0, sJitTempF0, ioValue,true);
-               compiler->convert(sJitTempF0, etFloat, ioValue, exprType );
+               JitTemp fval(compiler, jtFloat);
+               compiler->convert(ioValue, exprType, fval, etFloat);
+               compiler->mult(sJitTempF0, sJitTempF0, fval, true);
+               compiler->convert(sJitTempF0, etFloat, ioValue, exprType);
             }
          }
          break;
@@ -5981,7 +5982,7 @@ struct TVars : public CppiaVoidExpr
    {
       CppiaExpr **v = &vars[0];
       CppiaExpr **end = v + vars.size();
-      for(;v<end && !ctx->breakContReturn;v++)
+      for(;v<end && !ctx->breakContReturn && !ctx->exception;v++)
          (*v)->runVoid(ctx);
    }
 
@@ -6031,8 +6032,14 @@ struct ForExpr : public CppiaVoidExpr
 
       while(hasNext())
       {
+         if (ctx->exception)
+            return;
          var.set(ctx,getNext());
+         if (ctx->exception)
+            return;
          loop->runVoid(ctx);
+         if (ctx->exception)
+            return;
 
          if (ctx->breakContReturn)
          {
@@ -6078,6 +6085,9 @@ struct WhileExpr : public CppiaVoidExpr
       {
          loop->runVoid(ctx);
 
+         if (ctx->exception)
+            break;
+
          if (ctx->breakContReturn)
          {
             if (ctx->breakContReturn & (bcrBreak|bcrReturn))
@@ -6086,7 +6096,7 @@ struct WhileExpr : public CppiaVoidExpr
             ctx->breakContReturn = 0;
          }
 
-         if (!condition->runInt(ctx) || ctx->breakContReturn)
+         if (!condition->runInt(ctx) || ctx->breakContReturn || ctx->exception)
             break;
       }
       ctx->breakContReturn &= ~bcrLoop;
@@ -6371,30 +6381,38 @@ struct TryExpr : public CppiaVoidExpr
       }
       return this;
    }
+
+   void handleException(CppiaCtx* ctx, Dynamic caught) {
+      //Class cls = caught.mPtr ? caught->__GetClass() : 0;
+      for(int i=0;i<catchCount;i++)
+      {
+         Catch &c = catches[i];
+         if ( c.type->isClassOf(caught) )
+         {
+            ctx->exception = nullptr;
+            HX_STACK_BEGIN_CATCH
+            c.var.set(ctx,caught);
+            c.body->runVoid(ctx);
+            return;
+         }
+      }
+      HX_STACK_DO_THROW(caught);
+   }
+
    // TODO - return types...
    void runVoid(CppiaCtx *ctx)
    {
       try
       {
          body->runVoid(ctx);
-         BCR_VCHECK;
       }
       catch(Dynamic caught)
       {
-         //Class cls = caught.mPtr ? caught->__GetClass() : 0;
-         for(int i=0;i<catchCount;i++)
-         {
-            Catch &c = catches[i];
-            if ( c.type->isClassOf(caught) )
-            {
-               HX_STACK_BEGIN_CATCH
-               c.var.set(ctx,caught);
-               c.body->runVoid(ctx);
-               return;
-            }
-         }
-         HX_STACK_DO_THROW(caught);
+         handleException(ctx,caught);
+         return;
       }
+      if (ctx->exception)
+         handleException(ctx,ctx->exception);
    }
 
    #ifdef CPPIA_JIT

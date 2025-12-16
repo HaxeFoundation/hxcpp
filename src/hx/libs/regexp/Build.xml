@@ -4,7 +4,7 @@
 
 <set name="PCRE_DIR" value="${HXCPP}/project/thirdparty/pcre2-10.42/src" />
 
-<files id="pcre2-8" >
+<files id="pcre2-8" tags="" >
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
   <cache value="true" asLibrary="true" />
@@ -15,7 +15,7 @@
   <include name="${this_dir}/pcre2_sources.xml" />
 </files>
 
-<files id="pcre2-16" >
+<files id="pcre2-16" tags="" >
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
   <cache value="true" asLibrary="true" />

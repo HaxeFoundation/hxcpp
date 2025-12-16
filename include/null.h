@@ -92,6 +92,7 @@ class null
      operator char () { return 0; }
      operator unsigned char () { return 0; }
      operator signed char () { return 0; }
+     operator char16_t () { return 0; }
      operator short () { return 0; }
      operator unsigned short () { return 0; }
      operator cpp::UInt64 () { return 0; }
@@ -148,6 +149,7 @@ class null
 	  HX_NULL_COMPARE_OPS(unsigned short)
 	  HX_NULL_COMPARE_OPS(signed char)
 	  HX_NULL_COMPARE_OPS(unsigned char)
+      HX_NULL_COMPARE_OPS(char16_t)
 	  HX_NULL_COMPARE_OPS(cpp::Int64)
 	  HX_NULL_COMPARE_OPS(cpp::UInt64)
 	  HX_NULL_COMPARE_MOST_OPS(String)
@@ -217,6 +219,7 @@ HX_COMPARE_NULL_OPS(short)
 HX_COMPARE_NULL_OPS(unsigned short)
 HX_COMPARE_NULL_OPS(signed char)
 HX_COMPARE_NULL_OPS(unsigned char)
+HX_COMPARE_NULL_OPS(char16_t)
 HX_COMPARE_NULL_OPS(cpp::UInt64)
 HX_COMPARE_NULL_OPS(cpp::Int64)
 

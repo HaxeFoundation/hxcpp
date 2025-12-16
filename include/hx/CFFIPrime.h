@@ -542,247 +542,252 @@ struct AutoValue
 
 #elif defined(STATIC_LINK)
 
+#if defined(HXCPP_STATIC_CFFI) || defined(HXCPP_NO_PRIME_EXPORT)
+#define PRIME_EXPORT
+#else
+#define PRIME_EXPORT EXPORT
+#endif
 
 #define DEFINE_PRIME0(func) extern "C" { \
-  EXPORT value func##__prime(const char *inSig) { \
+  PRIME_EXPORT value func##__prime(const char *inSig) { \
      if (!cffi::CheckSig0(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap() { return cffi::ToValue( func() ); } \
-  EXPORT void *func##__0() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__0() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__0",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME0v(func) extern "C" { \
-  EXPORT value func##__prime(const char *inSig) { \
+  PRIME_EXPORT value func##__prime(const char *inSig) { \
      if (!cffi::CheckSig0(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap() { func(); return alloc_null(); } \
-  EXPORT void *func##__0() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__0() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__0",(void *)(&func##__wrap)); \
 }
 
 
 #define DEFINE_PRIME1(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig1(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(PRIME_ARG_DECL1) { return cffi::ToValue( func(PRIME_ARG_LIST1) ); } \
-  EXPORT void *func##__1() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__1() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__1",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME1v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig1(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(PRIME_ARG_DECL1) { func(PRIME_ARG_LIST1); return alloc_null(); } \
-  EXPORT void *func##__1() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__1() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__1",(void *)(&func##__wrap)); \
 }
 
 
 #define DEFINE_PRIME2(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig2(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(PRIME_ARG_DECL2) { return cffi::ToValue( func(PRIME_ARG_LIST2) ); } \
-  EXPORT void *func##__2() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__2() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__2",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME2v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig2(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(PRIME_ARG_DECL2) { func(PRIME_ARG_LIST2); return alloc_null(); } \
-  EXPORT void *func##__2() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__2() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__2",(void *)(&func##__wrap)); \
 }
 
 
 #define DEFINE_PRIME3(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig3(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(PRIME_ARG_DECL3) { return cffi::ToValue( func(PRIME_ARG_LIST3) ); } \
-  EXPORT void *func##__3() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__3() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__3",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME3v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig3(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(PRIME_ARG_DECL3) { func(PRIME_ARG_LIST3); return alloc_null(); } \
-  EXPORT void *func##__3() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__3() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__3",(void *)(&func##__wrap)); \
 }
 
 
 #define DEFINE_PRIME4(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig4(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(PRIME_ARG_DECL4) { return cffi::ToValue( func(PRIME_ARG_LIST4) ); } \
-  EXPORT void *func##__4() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__4() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__4",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME4v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig4(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(PRIME_ARG_DECL4) { func(PRIME_ARG_LIST4); return alloc_null(); } \
-  EXPORT void *func##__4() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__4() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__4",(void *)(&func##__wrap)); \
 }
 
 
 #define DEFINE_PRIME5(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig5(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(PRIME_ARG_DECL5) { return cffi::ToValue( func(PRIME_ARG_LIST5) ); } \
-  EXPORT void *func##__5() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__5() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__5",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME5v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig5(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(PRIME_ARG_DECL5) { func(PRIME_ARG_LIST5); return alloc_null(); } \
-  EXPORT void *func##__5() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__5() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__5",(void *)(&func##__wrap)); \
 }
 
 
 #define DEFINE_PRIME6(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig6(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST6) ); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME6v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig6(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST6); return alloc_null(); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 
 #define DEFINE_PRIME7(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig7(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST7) ); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME7v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig7(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST7); return alloc_null(); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME8(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig8(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST8) ); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME8v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig8(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST8); return alloc_null(); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 
 #define DEFINE_PRIME9(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig9(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST9) ); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME9v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig9(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST9); return alloc_null(); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME10(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig10(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST10) ); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME10v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig10(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST10); return alloc_null(); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 
 #define DEFINE_PRIME11(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig11(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST11) ); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME11v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig11(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST11); return alloc_null(); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 
 #define DEFINE_PRIME12(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig12(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST12) ); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME12v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig12(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST12); return alloc_null(); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
@@ -790,38 +795,38 @@ struct AutoValue
 
 
 #define DEFINE_PRIME13(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig13(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST13) ); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME13v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig13(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST13); return alloc_null(); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 
 #define DEFINE_PRIME14(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig14(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST14) ); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME14v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig14(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST14); return alloc_null(); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
@@ -829,19 +834,19 @@ struct AutoValue
 
 
 #define DEFINE_PRIME15(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig15(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST15) ); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }
 
 #define DEFINE_PRIME15v(func) extern "C" { \
-  EXPORT void *func##__prime(const char *inSig) { \
+  PRIME_EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig15(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST15); return alloc_null(); } \
-  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  PRIME_EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
   int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
   int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
 }

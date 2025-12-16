@@ -834,9 +834,9 @@ struct BCRReturn
 };
 
 
-#define BCR_CHECK if (ctx->breakContReturn) return BCRReturn();
+#define BCR_CHECK if (ctx->breakContReturn || ctx->exception) return BCRReturn();
 #define BCR_CHECK_RET(x) if (ctx->breakContReturn) return x;
-#define BCR_VCHECK if (ctx->breakContReturn) return;
+#define BCR_VCHECK if (ctx->breakContReturn || ctx->exception) return;
 
 
 
@@ -1090,6 +1090,14 @@ struct NAME \
       Float f = value->runFloat(ctx); \
       BCR_CHECK_RET(ioVal); \
       ioVal  = left OP f; \
+      return ioVal; \
+   } \
+   inline static int &run(int &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
+   { \
+      int left = ioVal; \
+      int i = value->runInt(ctx); \
+      BCR_CHECK_RET(ioVal); \
+      ioVal  = left OP i; \
       return ioVal; \
    } \
    static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \

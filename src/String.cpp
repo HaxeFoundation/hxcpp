@@ -788,10 +788,41 @@ String String::create(const char *inString,int inLength)
    return String(s,len);
 }
 
+String String::create(const::cpp::marshal::View<char>& buffer)
+{
+    auto start = buffer.ptr.ptr;
+    auto end   = start + buffer.length;
 
+    while (start < end) {
+        if (*start == false)
+        {
+            break;
+        }
 
+        start++;
+    }
 
+    return String::create(buffer.ptr.ptr, buffer.length - (end - start));
+}
 
+String String::create(const cpp::marshal::View<char16_t>& buffer)
+{
+    auto start = reinterpret_cast<const char16_t*>(buffer.ptr.ptr);
+    auto end   = start + buffer.length;
+    auto extra = 0;
+
+    while (start < end) {
+        if (Char16Advance(start) == false)
+        {
+            // set extra to 1 so we don't include the null terminating character in the calculated length.
+            extra = 1;
+
+            break;
+        }
+    }
+
+    return String::create(buffer.ptr.ptr, buffer.length - (end - start) - extra);
+}
 
 String::String(const Dynamic &inRHS)
 {
@@ -1380,7 +1411,7 @@ Dynamic String::charCodeAt(int inPos) const
 
 String String::fromCharCode( int c )
 {
-   if (c<=255)
+   if (0<=c && c<=255)
    {
       return sConstStrings[c];
    }
@@ -1546,7 +1577,7 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
    else
    {
       const unsigned char *p0 = (const unsigned char *)inBytes->GetBase();
-      #ifdef HX_SMART_STRINGS
+#ifdef HX_SMART_STRINGS
       bool hasWChar = false;
       const unsigned char *p = p0 + pos;
       for(int i=0;i<len;i++)
@@ -1560,7 +1591,7 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
          outString = _hx_utf8_to_utf16(p0+pos,len,true);
       }
       else
-      #endif
+#endif
       outString = String( GCStringDup((const char *)p0+pos, len, 0), len);
    }
 }
@@ -1761,6 +1792,127 @@ const char16_t * String::wc_str(hx::IStringAlloc *inBuffer, int *outCharLength) 
    return str;
 }
 
+bool String::wc_str(::cpp::marshal::View<char16_t> buffer, int* outCharLength) const
+{
+#ifdef HX_SMART_STRINGS
+    if (isUTF16Encoded())
+    {
+        if (buffer.length < length + 1)
+        {
+            return false;
+        }
+
+        if (nullptr != outCharLength)
+        {
+            *outCharLength = length + 1;
+        }
+
+        std::memcpy(buffer.ptr, __w, sizeof(char16_t) * length);
+
+        buffer[int64_t{ length }] = 0;
+
+        return true;
+    }
+#endif
+
+    auto charCount = 0;
+    auto source    = reinterpret_cast<const unsigned char*>(__s);
+    auto cursor    = source;
+    auto end       = source + length;
+
+    while (cursor < end)
+    {
+        auto code = DecodeAdvanceUTF8(cursor, end);
+
+        charCount += UTF16BytesCheck(code);
+    }
+
+    if (buffer.length < charCount + 1)
+    {
+        return false;
+    }
+
+    cursor = source;
+    auto output = buffer.ptr.ptr;
+
+    while (cursor < end)
+    {
+        auto code = DecodeAdvanceUTF8(cursor, end);
+
+        Char16AdvanceSet(output, code);
+    }
+
+    *output = 0;
+
+    if (nullptr != outCharLength)
+    {
+        *outCharLength = length + 1;
+    }
+
+    return true;
+}
+
+bool String::utf8_str(::cpp::marshal::View<char> buffer, int* outByteLength) const
+{
+#ifdef HX_SMART_STRINGS
+    if (isUTF16Encoded())
+    {
+        auto cursor = __w;
+
+        while (Char16Advance(cursor)) {}
+
+        auto calculated = cursor - __w - 1;
+
+        cursor = __w;
+
+        auto end   = cursor + calculated;
+        auto chars = 0;
+
+        while (cursor < end)
+        {
+            chars += UTF8Bytes(Char16Advance(cursor));
+        }
+
+        if (buffer.length < chars + 1)
+        {
+            return false;
+        }
+
+        auto output = buffer.ptr.ptr;
+        cursor = __w;
+
+        while (cursor < end)
+        {
+            UTF8EncodeAdvance(output, Char16Advance(cursor));
+        }
+
+        *output = 0;
+
+        if (nullptr != outByteLength)
+        {
+            *outByteLength = chars + 1;
+        }
+
+        return true;
+    }
+#endif
+
+    if (buffer.length < length)
+    {
+        return false;
+    }
+
+    if (nullptr != outByteLength)
+    {
+        *outByteLength = length + 1;
+    }
+
+    std::memcpy(buffer.ptr, __s, sizeof(char) * length);
+
+    buffer[int64_t{ length }] = 0;
+
+    return true;
+}
 
 const wchar_t * String::wchar_str(hx::IStringAlloc *inBuffer) const
 {
@@ -1962,10 +2114,7 @@ String String::substr(int inFirst, Dynamic inLen) const
    if (inFirst<0) inFirst = 0;
    if (len<0)
    {
-      len += length;
-      // This logic matches flash ....
-      if (inFirst + len >=length)
-         len = 0;
+      len = length + len - inFirst;
    }
 
    if (len<=0 || inFirst>=length)

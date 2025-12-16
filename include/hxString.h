@@ -46,6 +46,9 @@ public:
    static String create(const char16_t *inPtr,int inLen=-1);
    static String create(const char *inPtr,int inLen=-1);
 
+   static String create(const ::cpp::marshal::View<char>& buffer);
+   static String create(const ::cpp::marshal::View<char16_t>& buffer);
+
    // Uses non-gc memory and wont ever be collected
    static ::String createPermanent(const char *inUtf8, int inLen);
    const ::String &makePermanent() const;
@@ -167,6 +170,9 @@ public:
    inline const char *out_str(hx::IStringAlloc *inBuffer = 0) const { return utf8_str(inBuffer,false); }
    const wchar_t *wchar_str(hx::IStringAlloc *inBuffer = 0) const;
    const char16_t *wc_str(hx::IStringAlloc *inBuffer = 0, int *outCharLength = 0) const;
+
+   bool wc_str(::cpp::marshal::View<char16_t> buffer, int* outCharLength = nullptr) const;
+   bool utf8_str(::cpp::marshal::View<char> buffer, int* outByteLength = nullptr) const;
 
    const char *__CStr() const { return utf8_str(); };
    const wchar_t *__WCStr() const { return wchar_str(0); }

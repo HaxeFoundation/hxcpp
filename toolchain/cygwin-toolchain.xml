@@ -1,4 +1,4 @@
-<!-- CYGWIN TOOLS -------------------------------------->
+<!-- CYGWIN TOOLS -->
 <xml>
 <include name="toolchain/gcc-toolchain.xml"/>
 
@@ -44,4 +44,3 @@
 </linker>
 
 </xml>
-

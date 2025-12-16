@@ -68,11 +68,7 @@
    #define HXCPP_ALIGN_FLOAT
 #endif
 
-// Must allign allocs to 8 bytes to match floating point requirement?
-// Ints must br read on 4-byte boundary
-#if (!defined(HXCPP_ALIGN_FLOAT) && (defined(EMSCRIPTEN) || defined(GCW0)) )
-   #define HXCPP_ALIGN_ALLOC
-#endif
+#define HXCPP_ALIGN_ALLOC
 
 
 // Some compilers are over-enthusiastic about what they #define ...
@@ -259,6 +255,13 @@ namespace hx { template<typename O> class ObjectPtr; }
 namespace cpp { template<typename S,typename H> class Struct; }
 namespace cpp { template<typename T> class Pointer; }
 namespace cpp { template<typename T> class Function; }
+namespace cpp { namespace marshal { template<class T> class Boxed_obj; } }
+namespace cpp { namespace marshal { template<class T> using Boxed =::hx::ObjectPtr<Boxed_obj<T>>; } }
+namespace cpp { namespace marshal { template<class T> class ValueType; } }
+namespace cpp { namespace marshal { template<class T> class ValueReference; } }
+namespace cpp { namespace marshal { template<class T> class PointerType; } }
+namespace cpp { namespace marshal { template<class T> class PointerReference; } }
+namespace cpp { namespace marshal { template<class T> class View; } }
 template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
 namespace hx {
@@ -349,6 +352,13 @@ typedef PropertyAccessMode PropertyAccess;
 #endif
 #include <hx/StdLibs.h>
 #include <cpp/Pointer.h>
+#include <cpp/marshal/Boxed.hpp>
+#include <cpp/marshal/ValueType.hpp>
+#include <cpp/marshal/PointerType.hpp>
+#include <cpp/marshal/ValueReference.hpp>
+#include <cpp/marshal/PointerReference.hpp>
+#include <cpp/marshal/View.hpp>
+#include <cpp/marshal/Marshal.hpp>
 #include <hx/Native.h>
 #include <hx/Operators.h>
 #if (HXCPP_API_LEVEL>=500)

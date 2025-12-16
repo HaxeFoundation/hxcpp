@@ -251,7 +251,8 @@ class Linker
          }
 
          // Place list of obj files in a file called "all_objs"
-         if (mFromFile!="")
+         // In some situations with the compile cache, we might have an empty list
+         if (mFromFile!="" && objs.length!=0)
          {
             PathManager.mkdir(tmpDir);
             var fname = tmpDir + "/all_objs";
@@ -290,8 +291,9 @@ class Linker
 
          args = args.concat(libs);
 
+         var lib_name = mLibDir!="" ? mLibDir+"/"+file_name : out_name;
          var result = ProcessManager.runCommand("", mExe, args, true, true, false,
-             "\x1b[1mLink: \x1b[0m" + out_name);
+             "\x1b[1mLink: \x1b[0m" + lib_name);
          if (result!=0)
          {
             Tools.exit(result);
@@ -300,8 +302,8 @@ class Linker
 
          if (mRanLib!="")
          {
-            args = [out_name];
-            var result = ProcessManager.runCommand("", mRanLib, args, true, true, false, "\x1b[1mRanlib:\x1b[0m " + out_name);
+            args = [lib_name];
+            var result = ProcessManager.runCommand("", mRanLib, args, true, true, false, "\x1b[1mRanlib:\x1b[0m " + lib_name);
             if (result!=0)
             {
                Tools.exit(result);
@@ -311,6 +313,7 @@ class Linker
 
          if (mLibDir!="")
          {
+            Log.info("\x1b[1mMove file: \x1b[0m" + mLibDir+"/"+file_name + " to " + out_name);
             sys.io.File.copy( mLibDir+"/"+file_name, out_name );
             FileSystem.deleteFile( mLibDir+"/"+file_name );
          }
