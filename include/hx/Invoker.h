@@ -35,113 +35,81 @@ namespace hx
             };
 		}
 
-        // for some reason gcc gives us a "expected a type got std::remove_pointer<T>::type" error if I try and std::remove_pointer<T>::type as a template parameter.
-        // but std::remove_pointer_t<T> from C++ 14 works? so just implement that ourselves...
-        template< class T >
-        using remove_pointer_t = typename std::remove_pointer<T>::type;
+        template<class T>
+        struct ConversionTrait
+        {
+            inline static Dynamic toDynamic(T v) { return Dynamic{ v }; }
+            inline static T fromDynamic(Dynamic d) { return T{ d }; }
+        };
 
-        template< class T >
-        using remove_const_t = typename std::remove_const<T>::type;
+        template<class T>
+        struct ConversionTrait<T*>
+        {
+            inline static Dynamic toDynamic(T* v) { return Dynamic{ ::cpp::Pointer<T>(v)}; }
+            inline static T* fromDynamic(Dynamic d) { return ::cpp::Pointer<T>(d).ptr; }
+        };
+
+        template<class T>
+        struct ConversionTrait<::cpp::Pointer<T>>
+        {
+            inline static Dynamic toDynamic(::cpp::Pointer<T> v) { return Dynamic{ v }; }
+            inline static ::cpp::Pointer<T> fromDynamic(Dynamic d) { return cpp::Pointer<T>(d); }
+        };
+
+        template<class T>
+        struct ConversionTrait<::cpp::Struct<T>>
+        {
+            inline static Dynamic toDynamic(::cpp::Struct<T> v) { return Dynamic{ v }; }
+            inline static ::cpp::Struct<T> fromDynamic(Dynamic d) { return cpp::Struct<T>(d); }
+        };
+
+        template<class T>
+        struct ConversionTrait<::cpp::marshal::ValueReference<T>>
+        {
+            inline static Dynamic toDynamic(::cpp::marshal::ValueReference<T> v) { return Dynamic{ v }; }
+            inline static ::cpp::marshal::ValueReference<T> fromDynamic(Dynamic d) { return ::cpp::marshal::ValueReference<T>{ ::cpp::marshal::ValueType<T>{ d } }; }
+        };
+
+        template<class T>
+        struct ConversionTrait<::cpp::marshal::ValueType<T>>
+        {
+            inline static Dynamic toDynamic(::cpp::marshal::ValueType<T> v) { return Dynamic{ v }; }
+            inline static ::cpp::marshal::ValueType<T> fromDynamic(Dynamic d) { return ::cpp::marshal::ValueType<T>{ d }; }
+        };
+
+        template<class T>
+        struct ConversionTrait<::cpp::marshal::PointerReference<T>>
+        {
+            inline static Dynamic toDynamic(::cpp::marshal::PointerReference<T> v) { return Dynamic{ v }; }
+            inline static ::cpp::marshal::PointerReference<T> fromDynamic(Dynamic d) { return ::cpp::marshal::PointerReference<T>{ ::cpp::marshal::PointerType<T>{ d } }; }
+        };
+
+        template<class T>
+        struct ConversionTrait<::cpp::marshal::PointerType<T>>
+        {
+            inline static Dynamic toDynamic(::cpp::marshal::PointerType<T> v) { return Dynamic{ v }; }
+            inline static ::cpp::marshal::PointerType<T> fromDynamic(Dynamic d) { return ::cpp::marshal::PointerType<T>{ d }; }
+        };
 
         namespace unwrap
         {
             template<typename T>
-            T __hx_struct(Dynamic value, std::true_type)
-            {
-                return value;
-            }
-
-            template<typename T>
-            T __hx_struct(Dynamic value, std::false_type)
-            {
-                return ::cpp::Struct<T>(value);
-            }
-
-            template<typename T>
-            T __hx_object_pointer(Dynamic value, std::true_type)
-            {
-                return value;
-            }
-
-            template<typename T>
-            T __hx_object_pointer(Dynamic value, std::false_type)
-            {
-                return ::cpp::Pointer<remove_pointer_t<T>>(value);
-            }
-
-            template<typename T>
-            T __hx_pointer(Dynamic value, std::true_type)
-            {
-                return __hx_object_pointer<T>(value, std::is_base_of<remove_pointer_t<T>, ::hx::Object>{});
-            }
-
-            template<typename T>
-            T __hx_pointer(Dynamic value, std::false_type)
-            {
-                return __hx_struct<T>(value, std::is_constructible<Dynamic, T>{});
-            }
-
-            template<typename T>
             T fromDynamic(Dynamic value)
             {
-                return __hx_pointer<T>(value, std::is_pointer<T>{});
+                using traits = ConversionTrait<T>;
+
+                return traits::fromDynamic(value);
             }
         }
 
         namespace wrap
         {
             template<typename T>
-            Dynamic __hx_struct(T value, std::true_type)
-            {
-                return value;
-            }
-
-            template<typename T>
-            Dynamic __hx_struct(T value, std::false_type)
-            {
-                return cpp::Struct<T>(value);
-            }
-
-            template<typename T>
-            Dynamic __hx_object_pointer(T value, std::true_type)
-            {
-                return Dynamic(value);
-            }
-
-            template<typename T>
-            Dynamic __hx_object_pointer_strip_const(T value, std::false_type)
-            {
-                return Dynamic(cpp::Pointer<remove_pointer_t<T>>(value));
-            }
-
-            template<typename T>
-            Dynamic __hx_object_pointer_strip_const(T value, std::true_type)
-            {
-                return Dynamic(cpp::Pointer<remove_const_t<remove_pointer_t<T>>>(value));
-            }
-
-            template<typename T>
-            Dynamic __hx_object_pointer(T value, std::false_type)
-            {
-                return __hx_object_pointer_strip_const(value, std::is_const<remove_pointer_t<T>>{});
-            }
-
-            template<typename T>
-            Dynamic __hx_pointer(T value, std::true_type)
-            {
-                return __hx_object_pointer(value, std::is_base_of<remove_pointer_t<T>, ::hx::Object>{});
-            }
-
-            template<typename T>
-            Dynamic __hx_pointer(T value, std::false_type)
-            {
-                return __hx_struct(value, std::is_constructible<Dynamic, T>{});
-            }
-
-            template<typename T>
             Dynamic toDynamic(T value)
             {
-                return __hx_pointer(value, std::is_pointer<T>{});
+                using traits = ConversionTrait<T>;
+
+                return traits::toDynamic(value);
             }
         }
 

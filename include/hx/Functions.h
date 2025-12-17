@@ -47,9 +47,9 @@ namespace hx
             return sizeof...(TArgs);
         }
 
-        Dynamic __Run(const Array<Dynamic>& inArgs) = 0;
+        Dynamic __Run(const Array<Dynamic>& inArgs) override = 0;
 
-        virtual TReturn _hx_run(TArgs... args) = 0;
+        virtual TReturn HX_LOCAL_RUN(TArgs... args) = 0;
     };
 
     template<class TReturn, class... TArgs>
