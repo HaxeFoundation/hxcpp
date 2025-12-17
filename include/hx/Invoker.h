@@ -38,7 +38,16 @@ namespace hx
         template<class T>
         struct ConversionTrait
         {
-            inline static Dynamic toDynamic(T v) { return Dynamic{ v }; }
+            inline static Dynamic _hx_struct(T value, std::true_type)
+            {
+                return Dynamic{ value };
+            }
+            inline static Dynamic _hx_struct(T value, std::false_type)
+            {
+                return ::cpp::Struct<T>(value);
+            }
+
+            inline static Dynamic toDynamic(T v) { return _hx_struct(v, std::is_constructible<Dynamic, T>{}); }
             inline static T fromDynamic(Dynamic d) { return T{ d }; }
         };
 
@@ -52,42 +61,42 @@ namespace hx
         template<class T>
         struct ConversionTrait<::cpp::Pointer<T>>
         {
-            inline static Dynamic toDynamic(::cpp::Pointer<T> v) { return Dynamic{ v }; }
+            inline static Dynamic toDynamic(::cpp::Pointer<T> v) { return v; }
             inline static ::cpp::Pointer<T> fromDynamic(Dynamic d) { return cpp::Pointer<T>(d); }
         };
 
         template<class T>
         struct ConversionTrait<::cpp::Struct<T>>
         {
-            inline static Dynamic toDynamic(::cpp::Struct<T> v) { return Dynamic{ v }; }
+            inline static Dynamic toDynamic(::cpp::Struct<T> v) { return v; }
             inline static ::cpp::Struct<T> fromDynamic(Dynamic d) { return cpp::Struct<T>(d); }
         };
 
         template<class T>
         struct ConversionTrait<::cpp::marshal::ValueReference<T>>
         {
-            inline static Dynamic toDynamic(::cpp::marshal::ValueReference<T> v) { return Dynamic{ v }; }
+            inline static Dynamic toDynamic(::cpp::marshal::ValueReference<T> v) { return v; }
             inline static ::cpp::marshal::ValueReference<T> fromDynamic(Dynamic d) { return ::cpp::marshal::ValueReference<T>{ ::cpp::marshal::ValueType<T>{ d } }; }
         };
 
         template<class T>
         struct ConversionTrait<::cpp::marshal::ValueType<T>>
         {
-            inline static Dynamic toDynamic(::cpp::marshal::ValueType<T> v) { return Dynamic{ v }; }
+            inline static Dynamic toDynamic(::cpp::marshal::ValueType<T> v) { return ::cpp::marshal::ValueReference<T>{ v }; }
             inline static ::cpp::marshal::ValueType<T> fromDynamic(Dynamic d) { return ::cpp::marshal::ValueType<T>{ d }; }
         };
 
         template<class T>
         struct ConversionTrait<::cpp::marshal::PointerReference<T>>
         {
-            inline static Dynamic toDynamic(::cpp::marshal::PointerReference<T> v) { return Dynamic{ v }; }
+            inline static Dynamic toDynamic(::cpp::marshal::PointerReference<T> v) { return v; }
             inline static ::cpp::marshal::PointerReference<T> fromDynamic(Dynamic d) { return ::cpp::marshal::PointerReference<T>{ ::cpp::marshal::PointerType<T>{ d } }; }
         };
 
         template<class T>
         struct ConversionTrait<::cpp::marshal::PointerType<T>>
         {
-            inline static Dynamic toDynamic(::cpp::marshal::PointerType<T> v) { return Dynamic{ v }; }
+            inline static Dynamic toDynamic(::cpp::marshal::PointerType<T> v) { return ::cpp::marshal::PointerReference<T>{ v }; }
             inline static ::cpp::marshal::PointerType<T> fromDynamic(Dynamic d) { return ::cpp::marshal::PointerType<T>{ d }; }
         };
 
