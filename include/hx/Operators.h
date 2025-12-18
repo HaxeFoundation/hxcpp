@@ -345,7 +345,7 @@ template<> struct DynamicConvertType< Array_obj< ::String> * > { enum { Convert 
 template<typename T> struct DynamicConvertType< Array_obj<T> * > { enum { Convert = sizeof(T) }; };
 template<> struct DynamicConvertType< cpp::VirtualArray_obj * > { enum { Convert = aciVirtualArray }; };
 
-#ifdef HXCPP_SCRIPTABLE
+#if (HXCPP_API_LEVEL>=500 && defined(HXCPP_SCRIPTABLE))
 
 // We need to specify callables getting a formal conversion due to an unfortunate edge case involving cppia.
 // Generics are type erased with Dynamic so the parameter is lost at runtime, this means that if a cppia script were
