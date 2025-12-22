@@ -67,7 +67,7 @@ template<class T>
 template<class K>
 inline cpp::marshal::View<K> cpp::marshal::View<T>::reinterpret()
 {
-    auto newPtr   = ::cpp::Pointer<K>{ ptr.reinterpret() };
+    auto newPtr   = ::cpp::Pointer<K>(reinterpret_cast<K*>(ptr.ptr));
     auto fromSize = sizeof(T);
     auto toSize   = sizeof(K);
 

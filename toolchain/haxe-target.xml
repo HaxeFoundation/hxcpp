@@ -68,6 +68,9 @@
   <depend name="${HXCPP}/include/cpp/marshal/ValueReference.hpp"/>
   <depend name="${HXCPP}/include/cpp/marshal/View.hpp"/>
   <depend name="${HXCPP}/include/cpp/marshal/Marshal.hpp"/>
+  <depend name="${HXCPP}/include/cpp/encoding/ASCII.hpp"/>
+  <depend name="${HXCPP}/include/cpp/encoding/UTF8.hpp"/>
+  <depend name="${HXCPP}/include/cpp/encoding/UTF16.hpp"/>
   <depend name="${HXCPP}/include/hx/Scriptable.h"/>
   <depend name="${HXCPP}/include/hx/zip/Zip.hpp"/>
   <depend name="${HXCPP}/include/hx/zip/Compress.hpp"/>
@@ -198,6 +201,10 @@
   <file name = "src/Enum.cpp"/>
   <file name = "src/Math.cpp"/>
   <file name = "src/String.cpp" tags="haxe,hxstring" />
+
+  <file name = "src/cpp/encoding/ASCII.cpp"/>
+  <file name = "src/cpp/encoding/UTF8.cpp"/>
+  <file name = "src/cpp/encoding/UTF16.cpp"/>
 
   <addTwice if="linux||android" />
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />
