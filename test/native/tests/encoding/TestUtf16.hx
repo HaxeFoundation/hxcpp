@@ -175,6 +175,6 @@ class TestUtf16 extends Test {
 	}
 
 	public function test_decode_empty_view() {
-		Assert.raises(() -> Utf16.decode(ViewExtensions.empty()));
+		Assert.equals("", Utf16.decode(ViewExtensions.empty()));
 	}
 }

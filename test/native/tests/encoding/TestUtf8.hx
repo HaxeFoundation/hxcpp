@@ -152,6 +152,6 @@ class TestUtf8 extends Test {
 	}
 
 	public function test_decode_empty_view() {
-		Assert.raises(() -> Utf8.decode(ViewExtensions.empty()));
+		Assert.equals("",Utf8.decode(ViewExtensions.empty()));
 	}
 }

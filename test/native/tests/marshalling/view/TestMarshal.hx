@@ -134,12 +134,12 @@ class TestMarshal extends Test {
 	function test_asCharView() {
 		final view = "hello".asCharView();
 		
-		Assert.equals(5, view.length);
+		Assert.equals(5i64, view.length);
 	}
 
 	function test_asWideCharView() {
 		final view = "😂".asWideCharView();
 		
-		Assert.equals(2, view.length);
+		Assert.equals(2i64, view.length);
 	}
 }
