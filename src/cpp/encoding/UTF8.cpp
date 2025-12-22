@@ -2,6 +2,22 @@
 
 using namespace cpp::marshal;
 
+namespace
+{
+    bool isAsciiBuffer(View<uint8_t>& buffer)
+    {
+        for (auto i = int64_t{ 0 }; i < buffer.length; i++)
+        {
+            if (buffer.ptr[i] > 127)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
 int64_t cpp::encoding::Utf8::getByteCount(const char32_t& codepoint)
 {
     if (codepoint <= 0x7F)
@@ -24,7 +40,7 @@ int64_t cpp::encoding::Utf8::getByteCount(const char32_t& codepoint)
 
 int64_t cpp::encoding::Utf8::getByteCount(const String& string)
 {
-    if (hx::IsNull(string))
+    if (null() == string)
     {
         hx::NullReference("String", false);
     }
@@ -54,7 +70,7 @@ int64_t cpp::encoding::Utf8::getByteCount(const String& string)
 
 int64_t cpp::encoding::Utf8::encode(const String& string, cpp::marshal::View<uint8_t> buffer)
 {
-    if (hx::IsNull(string))
+    if (null() == string)
     {
         hx::NullReference("String", false);
     }
@@ -148,7 +164,12 @@ String cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer)
 {
     if (buffer.isEmpty())
     {
-        return hx::Throw(HX_CSTRING("View empty"));
+        return String::emptyString;
+    }
+
+    if (isAsciiBuffer(buffer))
+    {
+        return Ascii::decode(buffer);
     }
 
     auto bytes     = int64_t{ 0 };

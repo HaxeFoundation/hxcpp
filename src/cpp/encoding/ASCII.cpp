@@ -14,7 +14,7 @@ bool cpp::encoding::Ascii::isEncoded(const String& string)
 
 int64_t cpp::encoding::Ascii::encode(const String& string, View<uint8_t> buffer)
 {
-	if (hx::IsNull(string))
+	if (null() == string)
 	{
 		hx::NullReference("String", false);
 	}

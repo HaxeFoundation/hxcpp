@@ -9,11 +9,21 @@ namespace
 	{
 		return codepoint >= 0xd800 && codepoint < 0xe000;
 	}
+
+	bool isLowSurrogate(char32_t codepoint)
+	{
+		return codepoint >= 0xdc00 && codepoint < 0xe000;
+	}
+
+	bool isHighSurrogate(char32_t codepoint)
+	{
+		return codepoint >= 0xd800 && codepoint < 0xdc00;
+	}
 }
 
 bool cpp::encoding::Utf16::isEncoded(const String& string)
 {
-	if (hx::IsNull(string))
+	if (null() == string)
 	{
 		hx::NullReference("String", false);
 	}
@@ -36,7 +46,7 @@ int32_t cpp::encoding::Utf16::getByteCount(const char32_t& codepoint)
 
 int64_t cpp::encoding::Utf16::getByteCount(const String& string)
 {
-	if (hx::IsNull(string))
+	if (null() == string)
 	{
 		hx::NullReference("String", false);
 	}
@@ -59,7 +69,7 @@ int64_t cpp::encoding::Utf16::getByteCount(const String& string)
 
 int64_t cpp::encoding::Utf16::encode(const String& string, cpp::marshal::View<uint8_t> buffer)
 {
-	if (hx::IsNull(string))
+	if (null() == string)
 	{
 		hx::NullReference("String", false);
 	}
@@ -149,7 +159,7 @@ String cpp::encoding::Utf16::decode(cpp::marshal::View<uint8_t> buffer)
 {
 	if (buffer.isEmpty())
 	{
-		return hx::Throw(HX_CSTRING("View empty"));
+		return String::emptyString;
 	}
 
 	auto bytes     = int64_t{ 0 };

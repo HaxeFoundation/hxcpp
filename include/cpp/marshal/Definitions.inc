@@ -224,17 +224,8 @@ namespace cpp
             static const bool isBigEndian = false;
 #endif
 
-            static View<char> asView(const char* cstring);
-            static View<char16_t> asView(const char16_t* cstring);
-
-            static View<char> toCharView(const ::String& string);
-            static int toCharView(const ::String&, View<char> buffer);
-
-            static View<char16_t> toWideCharView(const ::String& string);
-            static int toWideCharView(const ::String& string, View<char16_t> buffer);
-
-            static ::String toString(View<char> buffer);
-            static ::String toString(View<char16_t> buffer);
+            static View<char> asCharView(const ::String& string);
+            static View<char16_t> asWideCharView(const ::String& string);
 
             template<class T> static T read(View<uint8_t> view);
             template<class T> static ::cpp::Pointer<T> readPointer(View<uint8_t> view);

@@ -18,72 +18,34 @@ namespace
     }
 }
 
-inline cpp::marshal::View<char> cpp::marshal::Marshal::asView(const char* cstring)
+inline cpp::marshal::View<char> cpp::marshal::Marshal::asCharView(const ::String& string)
 {
-    return cpp::marshal::View<char>(const_cast<char*>(cstring), static_cast<int>(std::char_traits<char>::length(cstring)));
-}
-
-inline cpp::marshal::View<char16_t> cpp::marshal::Marshal::asView(const char16_t* cstring)
-{
-    return cpp::marshal::View<char16_t>(const_cast<char16_t*>(cstring), static_cast<int>(std::char_traits<char16_t>::length(cstring)));
-}
-
-inline cpp::marshal::View<char> cpp::marshal::Marshal::toCharView(const ::String& string)
-{
-    auto length = 0;
-    auto ptr    = string.utf8_str(nullptr, true, &length);
-
-    return View<char>(const_cast<char*>(ptr), length + 1);
-}
-
-inline int cpp::marshal::Marshal::toCharView(const ::String& string, View<char> buffer)
-{
-    auto length = 0;
-
-    if (string.utf8_str(buffer, &length))
+    if (null() == string)
     {
-        return length;
+        hx::NullReference("string", false);
     }
-    else
+
+    if (false == string.isAsciiEncoded())
     {
-        hx::Throw(HX_CSTRING("Not enough space in the view to write the string"));
-
-        return 0;
+        hx::Throw(HX_CSTRING("String is not ASCII encoded"));
     }
+
+    return View<char>(const_cast<char*>(string.raw_ptr()), string.length);
 }
 
-inline cpp::marshal::View<char16_t> cpp::marshal::Marshal::toWideCharView(const ::String& string)
+inline cpp::marshal::View<char16_t> cpp::marshal::Marshal::asWideCharView(const ::String& string)
 {
-    auto length = 0;
-    auto ptr    = string.wc_str(nullptr, &length);
-
-    return View<char16_t>(const_cast<char16_t*>(ptr), length + 1);
-}
-
-inline int cpp::marshal::Marshal::toWideCharView(const ::String& string, View<char16_t> buffer)
-{
-    auto length = 0;
-
-    if (string.wc_str(buffer, &length))
+    if (null() == string)
     {
-        return length;
+        hx::NullReference("string", false);
     }
-    else
+
+    if (false == string.isUTF16Encoded())
     {
-        hx::Throw(HX_CSTRING("Not enough space in the view to write the string"));
-
-        return 0;
+        hx::Throw(HX_CSTRING("String is not ASCII encoded"));
     }
-}
 
-inline ::String cpp::marshal::Marshal::toString(View<char> buffer)
-{
-    return ::String::create(buffer);
-}
-
-inline ::String cpp::marshal::Marshal::toString(View<char16_t> buffer)
-{
-    return ::String::create(buffer);
+    return View<char16_t>(const_cast<char16_t*>(string.raw_wptr()), string.length);
 }
 
 template<class T>
