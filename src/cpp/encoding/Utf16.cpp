@@ -67,6 +67,16 @@ int64_t cpp::encoding::Utf16::getByteCount(const String& string)
 	}
 }
 
+int64_t cpp::encoding::Utf16::getCharCount(const char32_t& codepoint)
+{
+	return getByteCount(codepoint) / sizeof(char16_t);
+}
+
+int64_t cpp::encoding::Utf16::getCharCount(const String& string)
+{
+	return getByteCount(string) / sizeof(char16_t);
+}
+
 int64_t cpp::encoding::Utf16::encode(const String& string, cpp::marshal::View<uint8_t> buffer)
 {
 	if (null() == string)
