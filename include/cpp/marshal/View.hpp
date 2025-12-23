@@ -21,6 +21,15 @@ inline bool cpp::marshal::View<T>::tryCopyTo(const View<T>& destination)
 }
 
 template<class T>
+inline void cpp::marshal::View<T>::copyTo(const View<T>& destination)
+{
+    if (tryCopyTo(destination) == false)
+    {
+        hx::Throw(HX_CSTRING("View OOB"));
+    }
+}
+
+template<class T>
 inline void cpp::marshal::View<T>::clear()
 {
     std::memset(ptr, 0, sizeof(T) * length);

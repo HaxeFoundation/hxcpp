@@ -202,6 +202,7 @@ namespace cpp
             bool isEmpty();
             View<T> slice(int64_t index);
             View<T> slice(int64_t index, int64_t length);
+            void copyTo(const View<T>& destination);
             bool tryCopyTo(const View<T>& destination);
             template<class K> View<K> reinterpret();
             int compare(const View<T>& inRHS);
