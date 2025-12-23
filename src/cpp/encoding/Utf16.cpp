@@ -174,31 +174,31 @@ String cpp::encoding::Utf16::decode(cpp::marshal::View<uint8_t> buffer)
 		return String::emptyString;
 	}
 
-	auto bytes     = int64_t{ 0 };
-    auto codepoint = char32_t{ 0 };
-    auto i         = int64_t{ 0 };
-
+    auto chars = int64_t{ 0 };
+	auto i     = int64_t{ 0 };
     while (i < buffer.length)
     {
-        i     += decode(buffer.slice(i), codepoint);
-        bytes += getByteCount(codepoint);
+		auto p = codepoint(buffer.slice(i));
+
+		chars += getCharCount(p);
+		i     += getByteCount(p);
     }
 
-	auto backing = static_cast<uint8_t*>(hx::NewGCPrivate(0, bytes + sizeof(char16_t)));
-	auto output  = View<uint8_t>(backing, bytes);
+	auto backing = View<char16_t>(::String::allocChar16Ptr(chars), chars);
+	auto output  = backing.reinterpret<uint8_t>();
 
 	while (false == buffer.isEmpty())
 	{
-		buffer = buffer.slice(decode(buffer, codepoint));
-		output = output.slice(encode(codepoint, output));
+		auto p = codepoint(buffer);
+
+		buffer = buffer.slice(getByteCount(p));
+		output = output.slice(encode(p, output));
 	}
 
-	reinterpret_cast<uint32_t*>(backing)[-1] |= HX_GC_STRING_CHAR16_T;
-
-	return String(reinterpret_cast<char16_t*>(backing), bytes / sizeof(char16_t));
+	return String(backing.ptr.ptr, chars);
 }
 
-int cpp::encoding::Utf16::decode(cpp::marshal::View<uint8_t> buffer, char32_t& codepoint)
+char32_t cpp::encoding::Utf16::codepoint(cpp::marshal::View<uint8_t> buffer)
 {
 	auto first = static_cast<char16_t>(Marshal::readUInt16(buffer));
 
@@ -207,17 +207,13 @@ int cpp::encoding::Utf16::decode(cpp::marshal::View<uint8_t> buffer, char32_t& c
 		auto second = static_cast<char16_t>(Marshal::readUInt16(buffer.slice(2)));
 		if (0xDC00 <= second && second < 0xE000)
 		{
-			codepoint = static_cast<char32_t>((((first - 0xD800) << 10) | (second - 0xDC00)) + 0x10000);
-
-			return 4;
+			return static_cast<char32_t>((((first - 0xD800) << 10) | (second - 0xDC00)) + 0x10000);
 		}
 
-		return hx::Throw(HX_CSTRING("Invalid UTF16"));
+		return int{ hx::Throw(HX_CSTRING("Invalid UTF16")) };
 	}
 	else
 	{
-		codepoint = static_cast<char32_t>(first);
-
-		return 2;
+		return static_cast<char32_t>(first);
 	}
 }

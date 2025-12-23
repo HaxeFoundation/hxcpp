@@ -54,13 +54,14 @@ int64_t cpp::encoding::Utf8::getByteCount(const String& string)
 #if defined(HX_SMART_STRINGS)
     auto source     = View<char16_t>(string.raw_wptr(), string.length).reinterpret<uint8_t>();
     auto length     = source.length;
-    auto codepoint  = char32_t{ 0 };
     auto bytes      = int64_t{ 0 };
 
     while (false == source.isEmpty())
     {
-        source = source.slice(Utf16::decode(source, codepoint));
-        bytes += getByteCount(codepoint);
+        auto p = Utf16::codepoint(source);
+
+        source = source.slice(Utf16::getByteCount(p));
+        bytes += getByteCount(p);
     }
 
     return bytes;
@@ -118,12 +119,13 @@ int64_t cpp::encoding::Utf8::encode(const String& string, cpp::marshal::View<uin
 
     auto initialPtr = buffer.ptr.ptr;
     auto source     = View<char16_t>(string.raw_wptr(), string.length).reinterpret<uint8_t>();
-    auto codepoint  = char32_t{ 0 };
 
     while (false == source.isEmpty())
     {
-        source = source.slice(Utf16::decode(source, codepoint));
-        buffer = buffer.slice(encode(codepoint, buffer));
+        auto p = Utf16::codepoint(source);
+
+        source = source.slice(Utf16::getByteCount(p));
+        buffer = buffer.slice(encode(p, buffer));
     }
 
     return buffer.ptr.ptr - initialPtr;
