@@ -140,7 +140,7 @@ class TestView extends Test {
 		final slice  = view.slice(index);
 
 		if (Assert.equals(7i64, slice.length)) {
-			for (i in 0...(cast slice.length : Int)) {
+			for (i in 0...haxe.Int64.toInt(slice.length)) {
 				Assert.equals(i + index + 1, slice[i]);
 			}
 		}
@@ -162,7 +162,7 @@ class TestView extends Test {
 		final slice  = view.slice(index, length);
 
 		if (Assert.equals(haxe.Int64.ofInt(length), slice.length)) {
-			for (i in 0...(cast slice.length : Int)) {
+			for (i in 0...haxe.Int64.toInt(slice.length)) {
 				Assert.equals(i + index + 1, slice[i]);
 			}
 		}
