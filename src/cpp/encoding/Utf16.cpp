@@ -207,7 +207,7 @@ int64_t cpp::encoding::Utf16::decode(cpp::marshal::View<uint8_t> buffer, char32_
 		auto second = static_cast<char16_t>(Marshal::readUInt16(buffer.slice(2)));
 		if (0xDC00 <= second && second < 0xE000)
 		{
-			codepoint = ((((first - 0xD800) << 10) | (second - 0xDC00)) + 0x10000);
+			codepoint = static_cast<char32_t>((((first - 0xD800) << 10) | (second - 0xDC00)) + 0x10000);
 
 			return 4;
 		}
@@ -216,7 +216,7 @@ int64_t cpp::encoding::Utf16::decode(cpp::marshal::View<uint8_t> buffer, char32_
 	}
 	else
 	{
-		codepoint = first;
+		codepoint = static_cast<char32_t>(first);
 
 		return 2;
 	}

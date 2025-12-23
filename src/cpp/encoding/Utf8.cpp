@@ -136,7 +136,7 @@ int64_t cpp::encoding::Utf8::encode(const char32_t& codepoint, cpp::marshal::Vie
 {
     if (codepoint <= 0x7F)
     {
-        buffer[0] = codepoint;
+        buffer[0] = static_cast<uint8_t>(codepoint);
 
         return 1;
     }
@@ -224,7 +224,7 @@ String cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer)
 
 int64_t cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer, char32_t& codepoint)
 {
-    auto& b0 = buffer[0];
+    auto b0 = static_cast<char32_t>(buffer[0]);
 
     if ((b0 & 0x80) == 0)
     {
