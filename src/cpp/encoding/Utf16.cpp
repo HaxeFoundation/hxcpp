@@ -121,38 +121,36 @@ int64_t cpp::encoding::Utf16::encode(const String& string, cpp::marshal::View<ui
 
 int64_t cpp::encoding::Utf16::encode(const char32_t& codepoint, cpp::marshal::View<uint8_t> buffer)
 {
-	if (codepoint >= 0x10000)
+	if (codepoint < 0xD800)
 	{
-		auto over = codepoint - 0x10000;
-		if (over >= 0x10000)
-		{
-			Marshal::writeUInt16(buffer, 0xFFFD);
-
-			return 2;
-		}
-		else
-		{
-			auto staging = std::array<uint16_t, 2>();
-			staging[0] = (over >> 10) + 0xD800;
-			staging[1] = (over & 0x3FF) + 0xDC00;
-
-			Marshal::writeUInt32(buffer, *reinterpret_cast<uint32_t*>(staging.data()));
-
-			return 4;
-		}
-	}
-	else if (isSurrogate(codepoint))
-	{
-		Marshal::writeUInt16(buffer, 0xFFFD);
+		Marshal::writeUInt16(buffer, static_cast<char16_t>(codepoint));
 
 		return 2;
 	}
-	else
+	else if (codepoint < 0xE000)
 	{
-		Marshal::writeUInt16(buffer, static_cast<uint16_t>(codepoint));
+		// D800 - DFFF is invalid
+
+		return hx::Throw(HX_CSTRING("Invalid UTF16"));
+	}
+	else if (codepoint < 0x10000)
+	{
+		Marshal::writeUInt16(buffer, static_cast<char16_t>(codepoint));
 
 		return 2;
 	}
+	else if (codepoint < 0x110000)
+	{
+		auto staging = std::array<char16_t, 2>();
+		staging[0] = 0xD800 + (((codepoint - 0x10000) >> 10) & 0x3FF);
+		staging[1] = 0xDC00 + ((codepoint - 0x10000) & 0x3FF);
+
+		Marshal::writeUInt32(buffer, *reinterpret_cast<uint32_t*>(staging.data()));
+
+		return 4;
+	}
+
+	return 0;
 }
 
 String cpp::encoding::Utf16::decode(cpp::marshal::View<uint8_t> buffer)
