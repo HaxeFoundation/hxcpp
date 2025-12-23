@@ -31,7 +31,7 @@ bool cpp::encoding::Utf16::isEncoded(const String& string)
 	return string.isUTF16Encoded();
 }
 
-int32_t cpp::encoding::Utf16::getByteCount(const char32_t& codepoint)
+int cpp::encoding::Utf16::getByteCount(const char32_t& codepoint)
 {
 	if (codepoint >= 0x10000)
 	{
@@ -67,7 +67,7 @@ int64_t cpp::encoding::Utf16::getByteCount(const String& string)
 	}
 }
 
-int64_t cpp::encoding::Utf16::getCharCount(const char32_t& codepoint)
+int cpp::encoding::Utf16::getCharCount(const char32_t& codepoint)
 {
 	return getByteCount(codepoint) / sizeof(char16_t);
 }
@@ -129,7 +129,7 @@ int64_t cpp::encoding::Utf16::encode(const String& string, cpp::marshal::View<ui
 	}
 }
 
-int64_t cpp::encoding::Utf16::encode(const char32_t& codepoint, cpp::marshal::View<uint8_t> buffer)
+int cpp::encoding::Utf16::encode(const char32_t& codepoint, cpp::marshal::View<uint8_t> buffer)
 {
 	if (codepoint < 0xD800)
 	{
@@ -198,7 +198,7 @@ String cpp::encoding::Utf16::decode(cpp::marshal::View<uint8_t> buffer)
 	return String(reinterpret_cast<char16_t*>(backing), bytes / sizeof(char16_t));
 }
 
-int64_t cpp::encoding::Utf16::decode(cpp::marshal::View<uint8_t> buffer, char32_t& codepoint)
+int cpp::encoding::Utf16::decode(cpp::marshal::View<uint8_t> buffer, char32_t& codepoint)
 {
 	auto first = static_cast<char16_t>(Marshal::readUInt16(buffer));
 

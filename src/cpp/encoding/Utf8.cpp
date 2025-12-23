@@ -19,7 +19,7 @@ namespace
     }
 }
 
-int64_t cpp::encoding::Utf8::getByteCount(const char32_t& codepoint)
+int cpp::encoding::Utf8::getByteCount(const char32_t& codepoint)
 {
     if (codepoint <= 0x7F)
     {
@@ -69,7 +69,7 @@ int64_t cpp::encoding::Utf8::getByteCount(const String& string)
 #endif
 }
 
-int64_t cpp::encoding::Utf8::getCharCount(const char32_t& codepoint)
+int cpp::encoding::Utf8::getCharCount(const char32_t& codepoint)
 {
     return getByteCount(codepoint) / sizeof(char);
 }
@@ -132,7 +132,7 @@ int64_t cpp::encoding::Utf8::encode(const String& string, cpp::marshal::View<uin
 #endif
 }
 
-int64_t cpp::encoding::Utf8::encode(const char32_t& codepoint, cpp::marshal::View<uint8_t> buffer)
+int cpp::encoding::Utf8::encode(const char32_t& codepoint, cpp::marshal::View<uint8_t> buffer)
 {
     if (codepoint <= 0x7F)
     {
@@ -222,7 +222,7 @@ String cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer)
     return String(reinterpret_cast<char16_t*>(backing), bytes / sizeof(char16_t));
 }
 
-int64_t cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer, char32_t& codepoint)
+int cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer, char32_t& codepoint)
 {
     auto b0 = static_cast<char32_t>(buffer[0]);
 
