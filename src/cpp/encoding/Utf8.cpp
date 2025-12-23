@@ -224,12 +224,7 @@ String cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer)
 
 int64_t cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer, char32_t& codepoint)
 {
-    if (0 == buffer.length)
-    {
-        return hx::Throw(HX_CSTRING("Empty view"));
-    }
-
-    auto b0 = buffer[0];
+    auto& b0 = buffer[0];
 
     if ((b0 & 0x80) == 0)
     {
@@ -239,23 +234,33 @@ int64_t cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer, char32_t
     }
     else if ((b0 & 0xE0) == 0xC0)
     {
-        codepoint = (static_cast<char32_t>(b0 & 0x1F) << 6) | static_cast<char32_t>(buffer[1] & 0x3F);
+        codepoint = (static_cast<char32_t>(b0 & 0x1F) << 6) | static_cast<char32_t>(buffer.slice(1)[0] & 0x3F);
 
         return 2;
     }
     else if ((b0 & 0xF0) == 0xE0)
     {
-        codepoint = (static_cast<char32_t>(b0 & 0x0F) << 12) | (static_cast<char32_t>(buffer[1] & 0x3F) << 6) | static_cast<char32_t>(buffer[2] & 0x3F);
+        auto staging = std::array<uint8_t, 2>();
+        auto dst     = View<uint8_t>(staging.data(), staging.size());
+
+        buffer.slice(1, staging.size()).copyTo(dst);
+
+        codepoint = (static_cast<char32_t>(b0 & 0x0F) << 12) | (static_cast<char32_t>(staging[0] & 0x3F) << 6) | static_cast<char32_t>(staging[1] & 0x3F);
 
         return 3;
     }
     else if ((b0 & 0xF8) == 0xF0)
     {
+        auto staging = std::array<uint8_t, 3>();
+        auto dst     = View<uint8_t>(staging.data(), staging.size());
+
+        buffer.slice(1, staging.size()).copyTo(dst);
+
         codepoint =
             (static_cast<char32_t>(b0 & 0x07) << 18) |
-            (static_cast<char32_t>(buffer[1] & 0x3F) << 12) |
-            (static_cast<char32_t>(buffer[2] & 0x3F) << 6) |
-            static_cast<char32_t>(buffer[3] & 0x3F);
+            (static_cast<char32_t>(staging[0] & 0x3F) << 12) |
+            (static_cast<char32_t>(staging[1] & 0x3F) << 6) |
+            static_cast<char32_t>(staging[2] & 0x3F);
 
         return 4;
     }

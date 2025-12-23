@@ -151,11 +151,15 @@ int64_t cpp::encoding::Utf16::encode(const char32_t& codepoint, cpp::marshal::Vi
 	}
 	else if (codepoint < 0x110000)
 	{
-		auto staging = std::array<char16_t, 2>();
-		staging[0] = 0xD800 + (((codepoint - 0x10000) >> 10) & 0x3FF);
-		staging[1] = 0xDC00 + ((codepoint - 0x10000) & 0x3FF);
+		auto staging = std::array<uint8_t, 4>();
+		auto fst     = View<uint8_t>(staging.data(), 2);
+		auto snd     = View<uint8_t>(staging.data() + 2, 2);
+		auto all     = View<uint8_t>(staging.data(), staging.size());
 
-		Marshal::writeUInt32(buffer, *reinterpret_cast<uint32_t*>(staging.data()));
+		Marshal::writeUInt16(fst, 0xD800 + (((codepoint - 0x10000) >> 10) & 0x3FF));
+		Marshal::writeUInt16(snd, 0xDC00 + ((codepoint - 0x10000) & 0x3FF));
+
+		all.copyTo(buffer);
 
 		return 4;
 	}
