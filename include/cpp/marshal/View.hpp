@@ -131,21 +131,3 @@ inline T& cpp::marshal::View<T>::operator[](int64_t index)
 
     return ptr[index];
 }
-
-template<class T>
-inline cpp::marshal::View<T>::operator void* ()
-{
-    return ptr.ptr;
-}
-
-template<class T>
-inline cpp::marshal::View<T>::operator T* ()
-{
-    return ptr.ptr;
-}
-
-template<class T>
-inline cpp::marshal::View<T>::operator cpp::Pointer<T> ()
-{
-    return ptr;
-}
