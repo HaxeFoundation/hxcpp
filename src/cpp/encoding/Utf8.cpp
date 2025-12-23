@@ -1,4 +1,5 @@
 #include <hxcpp.h>
+#include <array>
 
 using namespace cpp::marshal;
 
@@ -133,40 +134,55 @@ int64_t cpp::encoding::Utf8::encode(const String& string, cpp::marshal::View<uin
 
 int64_t cpp::encoding::Utf8::encode(const char32_t& codepoint, cpp::marshal::View<uint8_t> buffer)
 {
-    if (getByteCount(codepoint) > buffer.length)
-    {
-        hx::Throw(HX_CSTRING("Buffer too small"));
-    }
-
     if (codepoint <= 0x7F)
     {
-        buffer.ptr[0] = codepoint;
+        buffer[0] = codepoint;
 
         return 1;
     }
     else if (codepoint <= 0x7FF)
     {
-        buffer.ptr[0] = (0xC0 | (codepoint >> 6));
-        buffer.ptr[1] = (0x80 | (codepoint & 63));
+        auto data = std::array<uint8_t, 2>
+        { {
+            static_cast<uint8_t>(0xC0 | (codepoint >> 6)),
+            static_cast<uint8_t>(0x80 | (codepoint & 63))
+        } };
+        auto src = View<uint8_t>(data.data(), data.size());
+        
+        src.copyTo(buffer);
 
-        return 2;
+        return data.size();
     }
     else if (codepoint <= 0xFFFF)
     {
-        buffer.ptr[0] = (0xE0 | (codepoint >> 12));
-        buffer.ptr[1] = (0x80 | ((codepoint >> 6) & 63));
-        buffer.ptr[2] = (0x80 | (codepoint & 63));
+        auto data = std::array<uint8_t, 3>
+        { {
+            static_cast<uint8_t>(0xE0 | (codepoint >> 12)),
+            static_cast<uint8_t>(0x80 | ((codepoint >> 6) & 63)),
+            static_cast<uint8_t>(0x80 | (codepoint & 63))
+        } };
 
-        return 3;
+        auto src = View<uint8_t>(data.data(), data.size());
+
+        src.copyTo(buffer);
+
+        return data.size();
     }
     else
     {
-        buffer.ptr[0] = (0xF0 | (codepoint >> 18));
-        buffer.ptr[1] = (0x80 | ((codepoint >> 12) & 63));
-        buffer.ptr[2] = (0x80 | ((codepoint >> 6) & 63));
-        buffer.ptr[3] = (0x80 | (codepoint & 63));
+        auto data = std::array<uint8_t, 4>
+        { {
+            static_cast<uint8_t>(0xF0 | (codepoint >> 18)),
+            static_cast<uint8_t>(0x80 | ((codepoint >> 12) & 63)),
+            static_cast<uint8_t>(0x80 | ((codepoint >> 6) & 63)),
+            static_cast<uint8_t>(0x80 | (codepoint & 63))
+        } };
 
-        return 4;
+        auto src = View<uint8_t>(data.data(), data.size());
+
+        src.copyTo(buffer);
+
+        return data.size();
     }
 }
 
