@@ -201,13 +201,14 @@ String cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer)
     }
 
     auto bytes     = int64_t{ 0 };
-    auto codepoint = char32_t{ 0 };
     auto i         = int64_t{ 0 };
 
     while (i < buffer.length)
     {
-        i     += decode(buffer.slice(i), codepoint);
-        bytes += Utf16::getByteCount(codepoint);
+        auto p = codepoint(buffer.slice(i));
+
+        i     += getByteCount(p);
+        bytes += Utf16::getByteCount(p);
     }
 
     auto backing = static_cast<uint8_t*>(hx::NewGCPrivate(0, bytes + sizeof(char16_t)));
@@ -215,8 +216,10 @@ String cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer)
 
     while (false == buffer.isEmpty())
     {
-        buffer = buffer.slice(decode(buffer, codepoint));
-        output = output.slice(Utf16::encode(codepoint, output));
+        auto p = codepoint(buffer.slice(i));
+
+        buffer = buffer.slice(getByteCount(p));
+        output = output.slice(Utf16::encode(p, output));
     }
 
     reinterpret_cast<uint32_t*>(backing)[-1] |= HX_GC_STRING_CHAR16_T;
@@ -224,21 +227,17 @@ String cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer)
     return String(reinterpret_cast<char16_t*>(backing), bytes / sizeof(char16_t));
 }
 
-int cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer, char32_t& codepoint)
+char32_t cpp::encoding::Utf8::codepoint(cpp::marshal::View<uint8_t> buffer)
 {
     auto b0 = static_cast<char32_t>(buffer[0]);
 
     if ((b0 & 0x80) == 0)
     {
-        codepoint = b0;
-
-        return 1;
+        return b0;
     }
     else if ((b0 & 0xE0) == 0xC0)
     {
-        codepoint = (static_cast<char32_t>(b0 & 0x1F) << 6) | static_cast<char32_t>(buffer.slice(1)[0] & 0x3F);
-
-        return 2;
+        return (static_cast<char32_t>(b0 & 0x1F) << 6) | static_cast<char32_t>(buffer.slice(1)[0] & 0x3F);
     }
     else if ((b0 & 0xF0) == 0xE0)
     {
@@ -247,9 +246,7 @@ int cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer, char32_t& co
 
         buffer.slice(1, staging.size()).copyTo(dst);
 
-        codepoint = (static_cast<char32_t>(b0 & 0x0F) << 12) | (static_cast<char32_t>(staging[0] & 0x3F) << 6) | static_cast<char32_t>(staging[1] & 0x3F);
-
-        return 3;
+        return (static_cast<char32_t>(b0 & 0x0F) << 12) | (static_cast<char32_t>(staging[0] & 0x3F) << 6) | static_cast<char32_t>(staging[1] & 0x3F);
     }
     else if ((b0 & 0xF8) == 0xF0)
     {
@@ -258,16 +255,14 @@ int cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer, char32_t& co
 
         buffer.slice(1, staging.size()).copyTo(dst);
 
-        codepoint =
+        return
             (static_cast<char32_t>(b0 & 0x07) << 18) |
             (static_cast<char32_t>(staging[0] & 0x3F) << 12) |
             (static_cast<char32_t>(staging[1] & 0x3F) << 6) |
             static_cast<char32_t>(staging[2] & 0x3F);
-
-        return 4;
     }
     else
     {
-        return hx::Throw(HX_CSTRING("Failed to read codepoint"));
+        return int{ hx::Throw(HX_CSTRING("Failed to read codepoint")) };
     }
 }
