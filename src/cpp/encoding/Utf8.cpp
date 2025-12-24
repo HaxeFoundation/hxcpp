@@ -200,31 +200,29 @@ String cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer)
         return Ascii::decode(buffer);
     }
 
-    auto bytes     = int64_t{ 0 };
-    auto i         = int64_t{ 0 };
+    auto chars = int64_t{ 0 };
+    auto i     = int64_t{ 0 };
 
     while (i < buffer.length)
     {
         auto p = codepoint(buffer.slice(i));
 
         i     += getByteCount(p);
-        bytes += Utf16::getByteCount(p);
+        chars += Utf16::getCharCount(p);
     }
 
-    auto backing = static_cast<uint8_t*>(hx::NewGCPrivate(0, bytes + sizeof(char16_t)));
-    auto output  = View<uint8_t>(backing, bytes);
+    auto backing = View<char16_t>(::String::allocChar16Ptr(chars), chars);
+    auto output  = backing.reinterpret<uint8_t>();
 
     while (false == buffer.isEmpty())
     {
-        auto p = codepoint(buffer.slice(i));
+        auto p = codepoint(buffer);
 
         buffer = buffer.slice(getByteCount(p));
         output = output.slice(Utf16::encode(p, output));
     }
 
-    reinterpret_cast<uint32_t*>(backing)[-1] |= HX_GC_STRING_CHAR16_T;
-
-    return String(reinterpret_cast<char16_t*>(backing), bytes / sizeof(char16_t));
+    return String(backing.ptr.ptr, chars);
 }
 
 char32_t cpp::encoding::Utf8::codepoint(cpp::marshal::View<uint8_t> buffer)
