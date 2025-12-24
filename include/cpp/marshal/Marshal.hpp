@@ -35,6 +35,7 @@ inline cpp::marshal::View<char> cpp::marshal::Marshal::asCharView(const ::String
 
 inline cpp::marshal::View<char16_t> cpp::marshal::Marshal::asWideCharView(const ::String& string)
 {
+#if defined(HX_SMART_STRINGS)
     if (null() == string)
     {
         hx::NullReference("string", false);
@@ -46,6 +47,9 @@ inline cpp::marshal::View<char16_t> cpp::marshal::Marshal::asWideCharView(const 
     }
 
     return View<char16_t>(const_cast<char16_t*>(string.raw_wptr()), string.length);
+#else
+    return hx::Throw(HX_CSTRING("HX_SMART_STRINGS not defined"));
+#endif
 }
 
 template<class T>
