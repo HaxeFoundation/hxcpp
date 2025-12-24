@@ -19,6 +19,42 @@ namespace
 	{
 		return codepoint >= 0xd800 && codepoint < 0xdc00;
 	}
+
+	bool isAsciiBuffer(View<uint8_t> buffer)
+	{
+		while (buffer.isEmpty() == false)
+		{
+			auto p = cpp::encoding::Utf16::codepoint(buffer);
+
+			if (p > 127)
+			{
+				return false;
+			}
+
+			buffer = buffer.slice(cpp::encoding::Utf16::getByteCount(p));
+		}
+
+		return true;
+	}
+
+	String toAsciiString(View<uint8_t> buffer)
+	{
+		auto bytes  = buffer.length / sizeof(char16_t);
+		auto chars  = View<char>(hx::InternalNew(bytes + 1, false), bytes * sizeof(char));
+		auto output = chars.reinterpret<uint8_t>();
+
+		while (buffer.isEmpty() == false)
+		{
+			auto p = cpp::encoding::Utf16::codepoint(buffer);
+
+			output[0] = static_cast<uint8_t>(p);
+
+			buffer = buffer.slice(cpp::encoding::Utf16::getByteCount(p));
+			output = output.slice(1);
+		}
+		
+		return String(chars.ptr.ptr, chars.length);
+	}
 }
 
 bool cpp::encoding::Utf16::isEncoded(const String& string)
@@ -172,6 +208,11 @@ String cpp::encoding::Utf16::decode(cpp::marshal::View<uint8_t> buffer)
 	if (buffer.isEmpty())
 	{
 		return String::emptyString;
+	}
+
+	if (isAsciiBuffer(buffer))
+	{
+		return toAsciiString(buffer);
 	}
 
     auto chars = int64_t{ 0 };

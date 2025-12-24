@@ -162,4 +162,54 @@ class TestViewExtensions extends Test {
 			}
 		}
 	}
+
+	function test_szToString_char_no_null() {
+		final vec = new Vector<cpp.Char>(4);
+        vec[0] = 't'.code;
+        vec[1] = 'e'.code;
+        vec[2] = 's'.code;
+        vec[3] = 't'.code;
+
+		Assert.equals("test", vec.asView().szToString());
+	}
+
+	function test_szToString_char() {
+		final vec = new Vector<cpp.Char>(9);
+        vec[0] = 't'.code;
+        vec[1] = 'e'.code;
+        vec[2] = 's'.code;
+        vec[3] = 't'.code;
+        vec[4] = 0;
+        vec[5] = 't'.code;
+        vec[6] = 'e'.code;
+        vec[7] = 's'.code;
+        vec[8] = 't'.code;
+
+		Assert.equals("test", vec.asView().szToString());
+	}
+
+	function test_szToString_char16_no_null() {
+		final vec = new Vector<cpp.Char16>(4);
+        vec[0] = 't'.code;
+        vec[1] = 'e'.code;
+        vec[2] = 's'.code;
+        vec[3] = 't'.code;
+
+		Assert.equals("test", vec.asView().szToString());
+	}
+
+	function test_szToString16_char() {
+		final vec = new Vector<cpp.Char16>(9);
+        vec[0] = 't'.code;
+        vec[1] = 'e'.code;
+        vec[2] = 's'.code;
+        vec[3] = 't'.code;
+        vec[4] = 0;
+        vec[5] = 't'.code;
+        vec[6] = 'e'.code;
+        vec[7] = 's'.code;
+        vec[8] = 't'.code;
+
+		Assert.equals("test", vec.asView().szToString());
+	}
 }

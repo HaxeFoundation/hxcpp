@@ -5,14 +5,18 @@ using namespace cpp::marshal;
 
 namespace
 {
-    bool isAsciiBuffer(View<uint8_t>& buffer)
+    bool isAsciiBuffer(View<uint8_t> buffer)
     {
-        for (auto i = int64_t{ 0 }; i < buffer.length; i++)
+        while (buffer.isEmpty() == false)
         {
-            if (buffer.ptr[i] > 127)
+            auto p = cpp::encoding::Utf8::codepoint(buffer);
+
+            if (p > 127)
             {
                 return false;
             }
+
+            buffer = buffer.slice(cpp::encoding::Utf8::getByteCount(p));
         }
 
         return true;

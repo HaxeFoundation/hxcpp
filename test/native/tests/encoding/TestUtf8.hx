@@ -118,23 +118,17 @@ class TestUtf8 extends Test {
 	}
 
 	public function test_decode_codepoint() {
-		var codepoint : cpp.Char32 = 0;
-
 		var bytes = Bytes.ofHex('61');
-		Assert.equals(1i64, Utf8.decode(bytes.asView(), codepoint));
-		Assert.equals('a'.code, cast codepoint);
+		Assert.equals('a'.code, Utf8.codepoint(bytes.asView()));
 
 		var bytes = Bytes.ofHex('c685');
-		Assert.equals(2i64, Utf8.decode(bytes.asView(), codepoint));
-		Assert.equals('ƅ'.code, cast codepoint);
+		Assert.equals('ƅ'.code, Utf8.codepoint(bytes.asView()));
 
 		var bytes = Bytes.ofHex('e38390');
-		Assert.equals(3i64, Utf8.decode(bytes.asView(), codepoint));
-		Assert.equals('バ'.code, cast codepoint);
+		Assert.equals('バ'.code, Utf8.codepoint(bytes.asView()));
 
 		var bytes = Bytes.ofHex('f09d84b3');
-		Assert.equals(4i64, Utf8.decode(bytes.asView(), codepoint));
-		Assert.equals('𝄳'.code, cast codepoint);
+		Assert.equals('𝄳'.code, Utf8.codepoint(bytes.asView()));
 	}
 
 	public function test_decode_string() {
