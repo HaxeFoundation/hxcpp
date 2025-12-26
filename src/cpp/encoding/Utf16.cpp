@@ -209,20 +209,20 @@ String cpp::encoding::Utf16::decode(const cpp::marshal::View<uint8_t>& buffer)
 		return toAsciiString(buffer);
 	}
 
-    auto chars = int64_t{ 0 };
-	auto i     = int64_t{ 0 };
+	auto i = int64_t{ 0 };
     while (i < buffer.length)
     {
 		auto p = codepoint(buffer.slice(i));
 
-		chars += getCharCount(p);
-		i     += getByteCount(p);
+		i += getByteCount(p);
     }
 
+	auto chars   = i / sizeof(char16_t);
 	auto backing = View<char16_t>(::String::allocChar16Ptr(chars), chars);
 	auto output  = backing.reinterpret<uint8_t>();
 	auto k       = int64_t{ 0 };
 
+	i = 0;
 	while (i < buffer.length)
 	{
 		auto p = codepoint(buffer.slice(i));
