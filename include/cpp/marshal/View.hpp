@@ -122,23 +122,12 @@ inline bool cpp::marshal::View<T>::operator!=(const View<T>& inRHS) const
 }
 
 template<class T>
-inline T& cpp::marshal::View<T>::operator[](int64_t index)
+inline T& cpp::marshal::View<T>::operator[](int64_t index) const
 {
     if (index < 0 || index >= length)
     {
         hx::Throw(HX_CSTRING("View OOB"));
     }
 
-    return ptr[index];
-}
-
-template<class T>
-inline const T& cpp::marshal::View<T>::operator[](int64_t index) const
-{
-    if (index < 0 || index >= length)
-    {
-        hx::Throw(HX_CSTRING("View OOB"));
-    }
-
-    return ptr[index];
+    return ptr.ptr[index];
 }

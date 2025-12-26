@@ -5,18 +5,19 @@ using namespace cpp::marshal;
 
 namespace
 {
-    bool isAsciiBuffer(View<uint8_t> buffer)
+    bool isAsciiBuffer(const View<uint8_t>& buffer)
     {
-        while (buffer.isEmpty() == false)
+        auto i = int64_t{ 0 };
+        while (i < buffer.length)
         {
-            auto p = cpp::encoding::Utf8::codepoint(buffer);
+            auto p = cpp::encoding::Utf8::codepoint(buffer.slice(i));
 
             if (p > 127)
             {
                 return false;
             }
 
-            buffer = buffer.slice(cpp::encoding::Utf8::getByteCount(p));
+            i += cpp::encoding::Utf8::getByteCount(p);
         }
 
         return true;
@@ -56,15 +57,17 @@ int64_t cpp::encoding::Utf8::getByteCount(const String& string)
     }
 
 #if defined(HX_SMART_STRINGS)
-    auto source     = View<char16_t>(string.raw_wptr(), string.length).reinterpret<uint8_t>();
-    auto length     = source.length;
-    auto bytes      = int64_t{ 0 };
+    auto source = View<char16_t>(string.raw_wptr(), string.length).reinterpret<uint8_t>();
+    auto length = source.length;
+    auto bytes  = int64_t{ 0 };
+    auto i      = int64_t{ 0 };
 
-    while (false == source.isEmpty())
+    while (i < source.length)
     {
-        auto p = Utf16::codepoint(source);
+        auto slice = source.slice(i);
+        auto p     = Utf16::codepoint(slice);
 
-        source = source.slice(Utf16::getByteCount(p));
+        i     += Utf16::getByteCount(p);
         bytes += getByteCount(p);
     }
 
@@ -84,7 +87,7 @@ int64_t cpp::encoding::Utf8::getCharCount(const String& string)
     return getByteCount(string) / sizeof(char);
 }
 
-int64_t cpp::encoding::Utf8::encode(const String& string, cpp::marshal::View<uint8_t> buffer)
+int64_t cpp::encoding::Utf8::encode(const String& string, const cpp::marshal::View<uint8_t>& buffer)
 {
     if (null() == string)
     {
@@ -103,7 +106,7 @@ int64_t cpp::encoding::Utf8::encode(const String& string, cpp::marshal::View<uin
 
     if (string.isAsciiEncoded())
     {
-        auto src = cpp::marshal::View<uint8_t>(reinterpret_cast<uint8_t*>(const_cast<char*>(string.raw_ptr())), string.length * sizeof(char));
+        auto src = cpp::marshal::View<uint8_t>(reinterpret_cast<uint8_t*>(const_cast<char*>(string.raw_ptr())), string.length);
 
         if (src.tryCopyTo(buffer))
         {
@@ -123,22 +126,24 @@ int64_t cpp::encoding::Utf8::encode(const String& string, cpp::marshal::View<uin
 
     auto initialPtr = buffer.ptr.ptr;
     auto source     = View<char16_t>(string.raw_wptr(), string.length).reinterpret<uint8_t>();
+    auto i          = int64_t{ 0 };
+    auto k          = int64_t{ 0 };
 
-    while (false == source.isEmpty())
+    while (i < source.length)
     {
-        auto p = Utf16::codepoint(source);
+        auto p = Utf16::codepoint(source.slice(i));
 
-        source = source.slice(Utf16::getByteCount(p));
-        buffer = buffer.slice(encode(p, buffer));
+        i += Utf16::getByteCount(p);
+        k += encode(p, buffer.slice(k));
     }
 
-    return buffer.ptr.ptr - initialPtr;
+    return k;
 #else
     return hx::Throw(HX_CSTRING("Unexpected encoding error"));
 #endif
 }
 
-int cpp::encoding::Utf8::encode(const char32_t& codepoint, cpp::marshal::View<uint8_t> buffer)
+int cpp::encoding::Utf8::encode(const char32_t& codepoint, const cpp::marshal::View<uint8_t>& buffer)
 {
     if (codepoint <= 0x7F)
     {
@@ -192,7 +197,7 @@ int cpp::encoding::Utf8::encode(const char32_t& codepoint, cpp::marshal::View<ui
     }
 }
 
-String cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer)
+String cpp::encoding::Utf8::decode(const cpp::marshal::View<uint8_t>& buffer)
 {
     if (buffer.isEmpty())
     {
@@ -217,19 +222,21 @@ String cpp::encoding::Utf8::decode(cpp::marshal::View<uint8_t> buffer)
 
     auto backing = View<char16_t>(::String::allocChar16Ptr(chars), chars);
     auto output  = backing.reinterpret<uint8_t>();
+    auto k       = int64_t{ 0 };
 
-    while (false == buffer.isEmpty())
+    i = 0;
+    while (i < buffer.length)
     {
-        auto p = codepoint(buffer);
+        auto p = codepoint(buffer.slice(i));
 
-        buffer = buffer.slice(getByteCount(p));
-        output = output.slice(Utf16::encode(p, output));
+        i += getByteCount(p);
+        k += Utf16::encode(p, output.slice(k));
     }
 
     return String(backing.ptr.ptr, chars);
 }
 
-char32_t cpp::encoding::Utf8::codepoint(cpp::marshal::View<uint8_t> buffer)
+char32_t cpp::encoding::Utf8::codepoint(const cpp::marshal::View<uint8_t>& buffer)
 {
     auto b0 = static_cast<char32_t>(buffer[0]);
 

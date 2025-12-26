@@ -210,8 +210,7 @@ namespace cpp
             bool operator==(const View<T>& inRHS) const;
             bool operator!=(const View<T>& inRHS) const;
 
-            T& operator[] (int64_t index);
-            const T& operator[] (int64_t index) const;
+            T& operator[] (int64_t index) const;
         };
 
         struct Marshal final
