@@ -1,5 +1,6 @@
 package tests.marshalling.view;
 
+import haxe.Int64;
 import haxe.io.UInt8Array;
 import haxe.io.UInt16Array;
 import haxe.io.UInt32Array;
@@ -49,7 +50,7 @@ class TestViewExtensions extends Test {
 		final array = [ 100, 200, 300, 400 ];
 		final view  = array.asView();
 
-		if (Assert.equals(array.length, view.length)) {
+		if (Assert.equals(Int64.ofInt(array.length), view.length)) {
 			for (i in 0...array.length) {
 				Assert.equals(array[i], view[i]);
 			}
@@ -60,7 +61,7 @@ class TestViewExtensions extends Test {
 		final vector = Vector.fromData([ 100, 200, 300, 400 ]);
 		final view   = vector.asView();
 
-		if (Assert.equals(vector.length, view.length)) {
+		if (Assert.equals(Int64.ofInt(vector.length), view.length)) {
 			for (i in 0...vector.length) {
 				Assert.equals(vector[i], view[i]);
 			}
@@ -71,7 +72,7 @@ class TestViewExtensions extends Test {
 		final bytes = Bytes.ofData([ 10, 20, 30, 40 ]);
 		final view  = bytes.asView();
 
-		if (Assert.equals(bytes.length, view.length)) {
+		if (Assert.equals(Int64.ofInt(bytes.length), view.length)) {
 			for (i in 0...bytes.length) {
 				Assert.equals(bytes.get(i), view[i]);
 			}
@@ -83,7 +84,7 @@ class TestViewExtensions extends Test {
 		final buffer = ArrayBufferView.fromBytes(Bytes.ofData([ for (i in 0...100) i ])).sub(index, 10);
 		final view   = buffer.asView();
 
-		if (Assert.equals(buffer.byteLength, view.length)) {
+		if (Assert.equals(Int64.ofInt(buffer.byteLength), view.length)) {
 			for (i in 0...buffer.byteLength) {
 				Assert.equals(buffer.buffer.get(index + i), view[i]);
 			}
@@ -95,7 +96,7 @@ class TestViewExtensions extends Test {
 		final buffer = Float32Array.fromArray([ for (i in 0...100) i ]).sub(index, 10);
 		final view   = buffer.asView();
 
-		if (Assert.equals(buffer.length, view.length)) {
+		if (Assert.equals(Int64.ofInt(buffer.length), view.length)) {
 			for (i in 0...buffer.length) {
 				Assert.equals(buffer[i], view[i]);
 			}
@@ -107,7 +108,7 @@ class TestViewExtensions extends Test {
 		final buffer = Float64Array.fromArray([ for (i in 0...100) i ]).sub(index, 10);
 		final view   = buffer.asView();
 
-		if (Assert.equals(buffer.length, view.length)) {
+		if (Assert.equals(Int64.ofInt(buffer.length), view.length)) {
 			for (i in 0...buffer.length) {
 				Assert.equals(buffer[i], view[i]);
 			}
@@ -119,7 +120,7 @@ class TestViewExtensions extends Test {
 		final buffer = Int32Array.fromArray([ for (i in 0...100) i ]).sub(index, 10);
 		final view   = buffer.asView();
 
-		if (Assert.equals(buffer.length, view.length)) {
+		if (Assert.equals(Int64.ofInt(buffer.length), view.length)) {
 			for (i in 0...buffer.length) {
 				Assert.equals(buffer[i], view[i]);
 			}
@@ -131,7 +132,7 @@ class TestViewExtensions extends Test {
 		final buffer = UInt32Array.fromArray([ for (i in 0...100) i ]).sub(index, 10);
 		final view   = buffer.asView();
 
-		if (Assert.equals(buffer.length, view.length)) {
+		if (Assert.equals(Int64.ofInt(buffer.length), view.length)) {
 			for (i in 0...buffer.length) {
 				Assert.equals(buffer[i], view[i]);
 			}
@@ -143,7 +144,7 @@ class TestViewExtensions extends Test {
 		final buffer = UInt16Array.fromArray([ for (i in 0...100) i ]).sub(index, 10);
 		final view   = buffer.asView();
 
-		if (Assert.equals(buffer.length, view.length)) {
+		if (Assert.equals(Int64.ofInt(buffer.length), view.length)) {
 			for (i in 0...buffer.length) {
 				Assert.equals(buffer[i], view[i]);
 			}
@@ -155,10 +156,60 @@ class TestViewExtensions extends Test {
 		final buffer = UInt8Array.fromArray([ for (i in 0...100) i ]).sub(index, 10);
 		final view   = buffer.asView();
 
-		if (Assert.equals(buffer.length, view.length)) {
+		if (Assert.equals(Int64.ofInt(buffer.length), view.length)) {
 			for (i in 0...buffer.length) {
 				Assert.equals(buffer[i], view[i]);
 			}
 		}
+	}
+
+	function test_szToString_char_no_null() {
+		final vec = new Vector<cpp.Char>(4);
+        vec[0] = 't'.code;
+        vec[1] = 'e'.code;
+        vec[2] = 's'.code;
+        vec[3] = 't'.code;
+
+		Assert.equals("test", vec.asView().szToString());
+	}
+
+	function test_szToString_char() {
+		final vec = new Vector<cpp.Char>(9);
+        vec[0] = 't'.code;
+        vec[1] = 'e'.code;
+        vec[2] = 's'.code;
+        vec[3] = 't'.code;
+        vec[4] = 0;
+        vec[5] = 't'.code;
+        vec[6] = 'e'.code;
+        vec[7] = 's'.code;
+        vec[8] = 't'.code;
+
+		Assert.equals("test", vec.asView().szToString());
+	}
+
+	function test_szToString_char16_no_null() {
+		final vec = new Vector<cpp.Char16>(4);
+        vec[0] = 't'.code;
+        vec[1] = 'e'.code;
+        vec[2] = 's'.code;
+        vec[3] = 't'.code;
+
+		Assert.equals("test", vec.asView().szToString());
+	}
+
+	function test_szToString16_char() {
+		final vec = new Vector<cpp.Char16>(9);
+        vec[0] = 't'.code;
+        vec[1] = 'e'.code;
+        vec[2] = 's'.code;
+        vec[3] = 't'.code;
+        vec[4] = 0;
+        vec[5] = 't'.code;
+        vec[6] = 'e'.code;
+        vec[7] = 's'.code;
+        vec[8] = 't'.code;
+
+		Assert.equals("test", vec.asView().szToString());
 	}
 }
