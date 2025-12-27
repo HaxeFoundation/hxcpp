@@ -123,6 +123,7 @@ int64_t cpp::encoding::Utf16::encode(const String& string, const cpp::marshal::V
 		return hx::Throw(HX_CSTRING("Buffer too small"));
 	}
 
+#if defined(HX_SMART_STRINGS)
 	if (string.isUTF16Encoded())
 	{
 		auto src = cpp::marshal::View<uint8_t>(reinterpret_cast<uint8_t*>(const_cast<char16_t*>(string.raw_wptr())), string.length * sizeof(char16_t));
@@ -137,6 +138,7 @@ int64_t cpp::encoding::Utf16::encode(const String& string, const cpp::marshal::V
 		}
 	}
 	else
+#endif
 	{
 		auto bytes = int64_t{ 0 };
 		for (auto i = 0; i < string.length; i++)
@@ -209,6 +211,7 @@ String cpp::encoding::Utf16::decode(const cpp::marshal::View<uint8_t>& buffer)
 		return toAsciiString(buffer);
 	}
 
+#if defined(HX_SMART_STRINGS)
 	auto i = int64_t{ 0 };
     while (i < buffer.length)
     {
@@ -232,6 +235,9 @@ String cpp::encoding::Utf16::decode(const cpp::marshal::View<uint8_t>& buffer)
 	}
 
 	return String(backing.ptr.ptr, chars);
+#else
+	return hx::Throw(HX_CSTRING("Not Implemented : UTF16 decode when HX_SMART_STRINGS is not defined"));
+#endif
 }
 
 char32_t cpp::encoding::Utf16::codepoint(const cpp::marshal::View<uint8_t>& buffer)

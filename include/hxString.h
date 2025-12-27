@@ -148,8 +148,10 @@ public:
 
    ::String toString() { return *this; }
 
+#if (HXCPP_API_LEVEL<500)
     ::String __URLEncode() const;
     ::String __URLDecode() const;
+#else
 
 
     ::String toUpperCase() const;

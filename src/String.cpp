@@ -520,130 +520,6 @@ inline String TCopyString(const T *inString,int inLength)
    #endif
 }
 
-
-String __hxcpp_char_array_to_utf8_string(Array<int> &inChars,int inFirst, int inLen)
-{
-   int len = inChars->length;
-   if (inFirst<0)
-     inFirst = 0;
-   if (inLen<0) inLen = len;
-   if (inFirst+inLen>len)
-      inLen = len-inFirst;
-   if (inLen<=0)
-      return String::emptyString;
-
-   int *base = &inChars[0];
-   #ifdef HX_SMART_STRINGS
-   bool hasBig = false;
-   for(int i=0;i<inLen;i++)
-      if (base[i+inFirst]>127)
-      {
-         hasBig = true;
-         break;
-      }
-
-   if (hasBig)
-   {
-      char16_t *ptr = String::allocChar16Ptr(inLen);
-      for(int i=0;i<inLen;i++)
-         ptr[i] = base[i+inFirst];
-      return String(ptr, inLen);
-   }
-   #endif
-   char *result = TConvertToUTF8(base+inFirst,&len,0,true);
-   return String(result,len);
-}
-
-Array<int> __hxcpp_utf8_string_to_char_array(String &inString)
-{
-   #ifdef HX_SMART_STRINGS
-   Array<int> result = Array_obj<int>::__new(inString.length);
-   if (inString.isUTF16Encoded())
-   {
-      const char16_t *ptr = inString.wc_str();
-      for(int i=0;i<inString.length;i++)
-         result[i] = ptr[i];
-   }
-   else
-   {
-      const char *ptr = inString.raw_ptr();
-      for(int i=0;i<inString.length;i++)
-         result[i] = ptr[i];
-   }
-   #else
-   Array<int> result = Array_obj<int>::__new(0,inString.length);
-
-   const unsigned char *src = (const unsigned char *)inString.__s;
-   const unsigned char *end = src + inString.length;
-   while(src<end)
-       result->push(DecodeAdvanceUTF8(src));
-
-   if (src!=end)
-      hx::Throw(HX_CSTRING("Invalid UTF8"));
-   #endif
-
-   return result;
-}
-
-
-String __hxcpp_char_bytes_to_utf8_string(String &inBytes)
-{
-   #ifdef HX_SMART_STRINGS
-   // This does not really make much sense
-   return inBytes;
-   #else
-   int len = inBytes.length;
-   char *result = TConvertToUTF8((unsigned char *)inBytes.__s,&len,0,true);
-   return String(result,len);
-   #endif
-}
-
-
-String __hxcpp_utf8_string_to_char_bytes(String &inUTF8)
-{
-   #ifdef HX_SMART_STRINGS
-   // This does not really make much sense
-   return inUTF8;
-   #else
-    const unsigned char *src = (unsigned char *)inUTF8.__s;
-    const unsigned char *end = src + inUTF8.length;
-    int char_count = 0;
-    while(src<end)
-    {
-        int c = DecodeAdvanceUTF8(src,end);
-        char_count++;
-        if( c == 8364 ) // euro symbol
-           c = 164;
-        else if ( c == 0xFEFF ) // BOM
-        {
-           char_count--;
-        }
-        else if( c > 255 )
-            hx::Throw(HX_CSTRING("Utf8::decode invalid character"));
-    }
-
-    if (src!=end)
-       hx::Throw(HX_CSTRING("Invalid UTF8"));
-
-    char *result = hx::NewString(char_count);
-
-    src = (unsigned char *)inUTF8.__s;
-    char_count = 0;
-    while(src<end)
-    {
-        int c = DecodeAdvanceUTF8(src);
-        if( c == 8364 ) // euro symbol
-           c = 164;
-        if ( c != 0xFEFF ) // BOM
-           result[char_count++] = c;
-    }
-
-   result[char_count] = '\0';
-   return String(result,char_count);
-   #endif
-}
-
-
 void _hx_utf8_iter(String inString, Dynamic inIter)
 {
    #ifdef HX_SMART_STRINGS
@@ -1024,40 +900,6 @@ static void fixHashPerm16(const String &str)
 
 static unsigned char safeChars[256];
 
-String String::__URLEncode() const
-{
-   Array<unsigned char> bytes(0,length);
-   // utf8-encode
-   __hxcpp_bytes_of_string(bytes,*this);
-
-   int extra = 0;
-   int utf8_chars = bytes->__length();
-   for(int i=0;i<utf8_chars;i++)
-      if (!safeChars[bytes[i]])
-         extra++;
-   if (extra==0)
-      return *this;
-
-   int l = utf8_chars + extra*2;
-   char *result = hx::NewString(l);
-   char *ptr = result;
-
-   for(int i=0;i<utf8_chars;i++)
-   {
-      if (!safeChars[bytes[i]])
-      {
-         static char hex[] = "0123456789ABCDEF";
-         unsigned char b = bytes[i];
-         *ptr++ = '%';
-         *ptr++ = hex[ b>>4 ];
-         *ptr++ = hex[ b & 0x0f ];
-      }
-      else
-         *ptr++ = bytes[i];
-   }
-   return String(result,l);
-}
-
 String String::toUpperCase() const
 {
    #ifdef HX_SMART_STRINGS
@@ -1108,73 +950,6 @@ static int hex(int inChar)
    if (inChar>='A' && inChar<='F')
       return inChar-'A' + 10;
    return 0;
-}
-
-
-String String::__URLDecode() const
-{
-   // Create the decoded string; the decoded form might have fewer than
-   // [length] characters, but it won't have more.  If it has fewer than
-   // [length], some memory will be wasted here, but on the assumption that
-   // most URLs have only a few '%NN' encodings in them, don't bother
-   // counting the number of characters in the resulting string first.
-   char *decoded = NewString(length), *d = decoded;
-
-   bool hasBig = false;
-
-   #ifdef HX_SMART_STRINGS
-   if (isUTF16Encoded())
-   {
-      for (int i = 0; i < length; i++)
-      {
-         int c = __w[i];
-         if (c > 127)
-            *d++ = '?';
-         else if (c == '+')
-            *d++ = ' ';
-         else if ((c == '%') && (i < (length - 2)))
-         {
-            int ch = ((hex(__w[i + 1]) << 4) | (hex(__w[i + 2])));
-            if (ch>127)
-               hasBig = true;
-            *d++ = ch;
-            i += 2;
-         }
-         else
-             *d++ = c;
-      }
-   }
-   else
-   #endif
-   {
-      for (int i = 0; i < length; i++)
-      {
-         int c = __s[i];
-         if (c > 127)
-            *d++ = '?';
-         else if (c == '+')
-            *d++ = ' ';
-         else if ((c == '%') && (i < (length - 2)))
-         {
-            int ch = ((hex(__s[i + 1]) << 4) | (hex(__s[i + 2])));
-            #ifdef HX_SMART_STRINGS
-            if (ch>127)
-               hasBig = true;
-            #endif
-            *d++ = ch;
-            i += 2;
-         }
-         else
-             *d++ = c;
-      }
-   }
-
-   #ifdef HX_SMART_STRINGS
-   if (hasBig)
-      return _hx_utf8_to_utf16((const unsigned char *)decoded, d-decoded,false);
-   #endif
-
-   return String( decoded, (d - decoded) );
 }
 
 ::String &::String::dup()
@@ -1478,50 +1253,6 @@ String String::charAt( int at ) const
    return fromCharCode(__s[at]);
 }
 
-void __hxcpp_bytes_of_string(Array<unsigned char> &outBytes,const String &inString)
-{
-   if (!inString.length)
-      return;
-
-   #ifdef HX_SMART_STRINGS
-   if (inString.isUTF16Encoded())
-   {
-      const char16_t *src = inString.raw_wptr();
-      const char16_t *end = src + inString.length;
-      while(src<end)
-      {
-         int c = Char16Advance(src);
-
-         if( c <= 0x7F )
-            outBytes->push(c);
-         else if( c <= 0x7FF )
-         {
-            outBytes->push( 0xC0 | (c >> 6) );
-            outBytes->push( 0x80 | (c & 63) );
-         }
-         else if( c <= 0xFFFF )
-         {
-            outBytes->push( 0xE0 | (c >> 12) );
-            outBytes->push( 0x80 | ((c >> 6) & 63) );
-            outBytes->push( 0x80 | (c & 63) );
-         }
-         else
-         {
-            outBytes->push( 0xF0 | (c >> 18) );
-            outBytes->push( 0x80 | ((c >> 12) & 63) );
-            outBytes->push( 0x80 | ((c >> 6) & 63) );
-            outBytes->push( 0x80 | (c & 63) );
-         }
-      }
-   }
-   else
-   #endif
-   {
-      outBytes->__SetSize(inString.length);
-      memcpy(outBytes->GetBase(), inString.raw_ptr(),inString.length);
-   }
-}
-
 #ifdef HX_SMART_STRINGS
 String _hx_utf8_to_utf16(const unsigned char *ptr, int inUtf8Len, bool addHash)
 {
@@ -1566,37 +1297,6 @@ String _hx_utf8_to_utf16(const unsigned char *ptr, int inUtf8Len, bool addHash)
    return String(str, char16Count);
 }
 #endif
-
-
-void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int pos,int len,bool inCopyPointer)
-{
-   if (inCopyPointer)
-      outString = String( (const char *)inBytes->GetBase(), len);
-   else if (len==0)
-      outString = String::emptyString;
-   else
-   {
-      const unsigned char *p0 = (const unsigned char *)inBytes->GetBase();
-#ifdef HX_SMART_STRINGS
-      bool hasWChar = false;
-      const unsigned char *p = p0 + pos;
-      for(int i=0;i<len;i++)
-         if (p[i]>127)
-         {
-            hasWChar = true;
-            break;
-         }
-      if (hasWChar)
-      {
-         outString = _hx_utf8_to_utf16(p0+pos,len,true);
-      }
-      else
-#endif
-      outString = String( GCStringDup((const char *)p0+pos, len, 0), len);
-   }
-}
-
-
 
 const char * String::utf8_str(hx::IStringAlloc *inBuffer,bool throwInvalid, int *byteLength) const
 {
@@ -2556,3 +2256,302 @@ void String::__boot()
            &CreateEmptyString, &CreateString, 0, 0, 0
     );
 }
+
+// -------- HAXE < 5 FUNCTIONS ----------------------------------------
+
+#if (HXCPP_API_LEVEL<500)
+
+String String::__URLEncode() const
+{
+    Array<unsigned char> bytes(0, length);
+    // utf8-encode
+    __hxcpp_bytes_of_string(bytes, *this);
+
+    int extra = 0;
+    int utf8_chars = bytes->__length();
+    for (int i = 0; i < utf8_chars; i++)
+        if (!safeChars[bytes[i]])
+            extra++;
+    if (extra == 0)
+        return *this;
+
+    int l = utf8_chars + extra * 2;
+    char* result = hx::NewString(l);
+    char* ptr = result;
+
+    for (int i = 0; i < utf8_chars; i++)
+    {
+        if (!safeChars[bytes[i]])
+        {
+            static char hex[] = "0123456789ABCDEF";
+            unsigned char b = bytes[i];
+            *ptr++ = '%';
+            *ptr++ = hex[b >> 4];
+            *ptr++ = hex[b & 0x0f];
+        }
+        else
+            *ptr++ = bytes[i];
+    }
+    return String(result, l);
+}
+
+String String::__URLDecode() const
+{
+    // Create the decoded string; the decoded form might have fewer than
+    // [length] characters, but it won't have more.  If it has fewer than
+    // [length], some memory will be wasted here, but on the assumption that
+    // most URLs have only a few '%NN' encodings in them, don't bother
+    // counting the number of characters in the resulting string first.
+    char* decoded = NewString(length), * d = decoded;
+
+    bool hasBig = false;
+
+#ifdef HX_SMART_STRINGS
+    if (isUTF16Encoded())
+    {
+        for (int i = 0; i < length; i++)
+        {
+            int c = __w[i];
+            if (c > 127)
+                *d++ = '?';
+            else if (c == '+')
+                *d++ = ' ';
+            else if ((c == '%') && (i < (length - 2)))
+            {
+                int ch = ((hex(__w[i + 1]) << 4) | (hex(__w[i + 2])));
+                if (ch > 127)
+                    hasBig = true;
+                *d++ = ch;
+                i += 2;
+            }
+            else
+                *d++ = c;
+        }
+    }
+    else
+#endif
+    {
+        for (int i = 0; i < length; i++)
+        {
+            int c = __s[i];
+            if (c > 127)
+                *d++ = '?';
+            else if (c == '+')
+                *d++ = ' ';
+            else if ((c == '%') && (i < (length - 2)))
+            {
+                int ch = ((hex(__s[i + 1]) << 4) | (hex(__s[i + 2])));
+#ifdef HX_SMART_STRINGS
+                if (ch > 127)
+                    hasBig = true;
+#endif
+                * d++ = ch;
+                i += 2;
+            }
+            else
+                *d++ = c;
+        }
+    }
+
+#ifdef HX_SMART_STRINGS
+    if (hasBig)
+        return _hx_utf8_to_utf16((const unsigned char*)decoded, d - decoded, false);
+#endif
+
+    return String(decoded, (d - decoded));
+}
+
+void __hxcpp_bytes_of_string(Array<unsigned char>& outBytes, const String& inString)
+{
+    if (!inString.length)
+        return;
+
+#ifdef HX_SMART_STRINGS
+    if (inString.isUTF16Encoded())
+    {
+        const char16_t* src = inString.raw_wptr();
+        const char16_t* end = src + inString.length;
+        while (src < end)
+        {
+            int c = Char16Advance(src);
+
+            if (c <= 0x7F)
+                outBytes->push(c);
+            else if (c <= 0x7FF)
+            {
+                outBytes->push(0xC0 | (c >> 6));
+                outBytes->push(0x80 | (c & 63));
+            }
+            else if (c <= 0xFFFF)
+            {
+                outBytes->push(0xE0 | (c >> 12));
+                outBytes->push(0x80 | ((c >> 6) & 63));
+                outBytes->push(0x80 | (c & 63));
+            }
+            else
+            {
+                outBytes->push(0xF0 | (c >> 18));
+                outBytes->push(0x80 | ((c >> 12) & 63));
+                outBytes->push(0x80 | ((c >> 6) & 63));
+                outBytes->push(0x80 | (c & 63));
+            }
+        }
+    }
+    else
+#endif
+    {
+        outBytes->__SetSize(inString.length);
+        memcpy(outBytes->GetBase(), inString.raw_ptr(), inString.length);
+    }
+}
+
+void __hxcpp_string_of_bytes(Array<unsigned char>& inBytes, String& outString, int pos, int len, bool inCopyPointer)
+{
+    if (inCopyPointer)
+        outString = String((const char*)inBytes->GetBase(), len);
+    else if (len == 0)
+        outString = String::emptyString;
+    else
+    {
+        const unsigned char* p0 = (const unsigned char*)inBytes->GetBase();
+#ifdef HX_SMART_STRINGS
+        bool hasWChar = false;
+        const unsigned char* p = p0 + pos;
+        for (int i = 0; i < len; i++)
+            if (p[i] > 127)
+            {
+                hasWChar = true;
+                break;
+            }
+        if (hasWChar)
+        {
+            outString = _hx_utf8_to_utf16(p0 + pos, len, true);
+        }
+        else
+#endif
+            outString = String(GCStringDup((const char*)p0 + pos, len, 0), len);
+    }
+}
+
+String __hxcpp_char_array_to_utf8_string(Array<int>& inChars, int inFirst, int inLen)
+{
+    int len = inChars->length;
+    if (inFirst < 0)
+        inFirst = 0;
+    if (inLen < 0) inLen = len;
+    if (inFirst + inLen > len)
+        inLen = len - inFirst;
+    if (inLen <= 0)
+        return String::emptyString;
+
+    int* base = &inChars[0];
+#ifdef HX_SMART_STRINGS
+    bool hasBig = false;
+    for (int i = 0; i < inLen; i++)
+        if (base[i + inFirst] > 127)
+        {
+            hasBig = true;
+            break;
+        }
+
+    if (hasBig)
+    {
+        char16_t* ptr = String::allocChar16Ptr(inLen);
+        for (int i = 0; i < inLen; i++)
+            ptr[i] = base[i + inFirst];
+        return String(ptr, inLen);
+    }
+#endif
+    char* result = TConvertToUTF8(base + inFirst, &len, 0, true);
+    return String(result, len);
+}
+
+Array<int> __hxcpp_utf8_string_to_char_array(String& inString)
+{
+#ifdef HX_SMART_STRINGS
+    Array<int> result = Array_obj<int>::__new(inString.length);
+    if (inString.isUTF16Encoded())
+    {
+        const char16_t* ptr = inString.wc_str();
+        for (int i = 0; i < inString.length; i++)
+            result[i] = ptr[i];
+    }
+    else
+    {
+        const char* ptr = inString.raw_ptr();
+        for (int i = 0; i < inString.length; i++)
+            result[i] = ptr[i];
+    }
+#else
+    Array<int> result = Array_obj<int>::__new(0, inString.length);
+
+    const unsigned char* src = (const unsigned char*)inString.__s;
+    const unsigned char* end = src + inString.length;
+    while (src < end)
+        result->push(DecodeAdvanceUTF8(src));
+
+    if (src != end)
+        hx::Throw(HX_CSTRING("Invalid UTF8"));
+#endif
+
+    return result;
+}
+
+
+String __hxcpp_char_bytes_to_utf8_string(String& inBytes)
+{
+#ifdef HX_SMART_STRINGS
+    // This does not really make much sense
+    return inBytes;
+#else
+    int len = inBytes.length;
+    char* result = TConvertToUTF8((unsigned char*)inBytes.__s, &len, 0, true);
+    return String(result, len);
+#endif
+}
+
+String __hxcpp_utf8_string_to_char_bytes(String& inUTF8)
+{
+#ifdef HX_SMART_STRINGS
+    // This does not really make much sense
+    return inUTF8;
+#else
+    const unsigned char* src = (unsigned char*)inUTF8.__s;
+    const unsigned char* end = src + inUTF8.length;
+    int char_count = 0;
+    while (src < end)
+    {
+        int c = DecodeAdvanceUTF8(src, end);
+        char_count++;
+        if (c == 8364) // euro symbol
+            c = 164;
+        else if (c == 0xFEFF) // BOM
+        {
+            char_count--;
+        }
+        else if (c > 255)
+            hx::Throw(HX_CSTRING("Utf8::decode invalid character"));
+    }
+
+    if (src != end)
+        hx::Throw(HX_CSTRING("Invalid UTF8"));
+
+    char* result = hx::NewString(char_count);
+
+    src = (unsigned char*)inUTF8.__s;
+    char_count = 0;
+    while (src < end)
+    {
+        int c = DecodeAdvanceUTF8(src);
+        if (c == 8364) // euro symbol
+            c = 164;
+        if (c != 0xFEFF) // BOM
+            result[char_count++] = c;
+    }
+
+    result[char_count] = '\0';
+    return String(result, char_count);
+#endif
+}
+
+#endif

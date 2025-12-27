@@ -50,7 +50,7 @@ inline cpp::marshal::View<char16_t> cpp::marshal::Marshal::asWideCharView(const 
 #else
     hx::Throw(HX_CSTRING("HX_SMART_STRINGS not defined"));
 
-    return View<char16_t>(nullptr, 0);
+    return View<char16_t>(cpp::Pointer<char16_t>(null()), 0);
 #endif
 }
 

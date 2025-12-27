@@ -209,6 +209,7 @@ String cpp::encoding::Utf8::decode(const cpp::marshal::View<uint8_t>& buffer)
         return Ascii::decode(buffer);
     }
 
+#if defined(HX_SMART_STRINGS)
     auto chars = int64_t{ 0 };
     auto i     = int64_t{ 0 };
 
@@ -232,8 +233,15 @@ String cpp::encoding::Utf8::decode(const cpp::marshal::View<uint8_t>& buffer)
         i += getByteCount(p);
         k += Utf16::encode(p, output.slice(k));
     }
-
+        
     return String(backing.ptr.ptr, chars);
+#else
+    auto backing = View<char>(hx::InternalNew(buffer.length, false), buffer.length);
+
+    std::memcpy(backing.ptr.ptr, buffer.ptr.ptr, buffer.length);
+
+    return String(backing.ptr.ptr, static_cast<int>(buffer.length));
+#endif
 }
 
 char32_t cpp::encoding::Utf8::codepoint(const cpp::marshal::View<uint8_t>& buffer)
