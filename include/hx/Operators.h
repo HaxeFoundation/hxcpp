@@ -8,6 +8,8 @@ template<typename T> inline bool null::operator != (const hx::ObjectPtr<T> &O) c
 
 template<typename T> inline bool null::operator == (const Array<T> &O) const { return !O.mPtr; }
 template<typename T> inline bool null::operator != (const Array<T> &O) const { return O.mPtr; }
+template<class TReturn, class... TArgs> inline bool null::operator==(const ::hx::Callable<TReturn(TArgs...)>& O) const { return !O.mPtr; }
+template<class TReturn, class... TArgs> inline bool null::operator!=(const ::hx::Callable<TReturn(TArgs...)>& O) const { return O.mPtr; }
 inline bool null::operator == (const hx::FieldRef &O) const { return !O.HasPointer(); }
 inline bool null::operator != (const hx::FieldRef &O) const { return O.HasPointer(); }
 inline bool null::operator == (const hx::IndexRef &O) const { return !O.HasPointer(); }
@@ -342,6 +344,17 @@ template<> struct DynamicConvertType< Array_obj<Dynamic> * > { enum { Convert = 
 template<> struct DynamicConvertType< Array_obj< ::String> * > { enum { Convert = aciStringArray }; };
 template<typename T> struct DynamicConvertType< Array_obj<T> * > { enum { Convert = sizeof(T) }; };
 template<> struct DynamicConvertType< cpp::VirtualArray_obj * > { enum { Convert = aciVirtualArray }; };
+
+#if (HXCPP_API_LEVEL>=500 && defined(HXCPP_SCRIPTABLE))
+
+// We need to specify callables getting a formal conversion due to an unfortunate edge case involving cppia.
+// Generics are type erased with Dynamic so the parameter is lost at runtime, this means that if a cppia script were
+// to push a closure into a array of Void->Void functions in the host it would not be pushing a callable since cppia
+// does not use them internally.
+// Later when the host perform a static cast on those elements to get a callable it will cause a memory error.
+template<typename T> struct DynamicConvertType< ::hx::Callable_obj<T>* > { enum { Convert = aciAlwaysConvert }; };
+
+#endif
 
 }
 
