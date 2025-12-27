@@ -2205,7 +2205,13 @@ class BuildTool
                   var ver = extract_version.matched(1);
                   var split_best = best.split(".");
                   var split_ver = ver.split(".");
-                  if (Std.parseFloat(split_ver[0]) > Std.parseFloat(split_best[0]) || Std.parseFloat(split_ver[1]) > Std.parseFloat(split_best[1]))
+                  var major_ver = Std.parseFloat(split_ver[0]);
+                  var minor_ver = Std.parseFloat(split_ver[1]);
+                  var major_best = Std.parseFloat(split_best[0]);
+                  var minor_best = Std.parseFloat(split_best[1]);
+                  if (major_ver == major_best && Math.isNaN(minor_best))
+                     best = ver;
+                  else if (major_ver > major_best || minor_ver > minor_best)
                      best = ver;
                }
             }
