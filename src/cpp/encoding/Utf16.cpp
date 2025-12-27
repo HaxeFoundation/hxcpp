@@ -1,4 +1,6 @@
 #include <hxcpp.h>
+#include <cpp/encoding/Utf16.hpp>
+#include <cpp/encoding/Utf8.hpp>
 #include <array>
 
 using namespace cpp::marshal;

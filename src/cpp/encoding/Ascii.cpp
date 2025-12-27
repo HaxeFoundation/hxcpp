@@ -1,4 +1,5 @@
 #include <hxcpp.h>
+#include <cpp/encoding/Ascii.hpp>
 
 using namespace cpp::marshal;
 

@@ -1,0 +1,20 @@
+<xml>
+  <pragma once="true" />
+
+  <files id="hxcpp_encoding">
+    <cache value="true" asLibrary="true" />
+
+    <compilerflag value="-I${HXCPP}/include/cpp/encoding"/>
+
+    <depend files="hxcpp-depends"/>
+    <depend name="${this_dir}/Build.xml" dateOnly="true" />
+
+    <file name="${this_dir}/Ascii.cpp"/>
+    <file name="${this_dir}/Utf8.cpp"/>
+    <file name="${this_dir}/Utf16.cpp"/>
+  </files>
+
+  <target id="haxe">
+    <files id="hxcpp_encoding"/>
+  </target>
+</xml>
