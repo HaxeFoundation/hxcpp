@@ -1,3 +1,223 @@
+#if defined(HX_MACOS) || defined(IPHONE) || defined(APPLETV)
+
+#include <Security/Security.h>
+#include <Security/SecureTransport.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <errno.h>
+
+#include <hxcpp.h>
+
+#define val_ssl(o)    ((sslctx*)o.mPtr)
+#define val_conf(o)   ((sslconf*)o.mPtr)
+#define val_socket(o) ((SocketWrapper*)o.mPtr)
+#define val_cert(o)   ((sslcert*)o.mPtr)
+#define val_pkey(o)   ((sslpkey*)o.mPtr)
+
+struct SocketWrapper : public hx::Object {
+	HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSocket };
+	int socket;
+};
+
+struct sslcert : public hx::Object {
+	HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSslCert };
+	void create() { _hx_set_finalizer(this, finalize); }
+	void destroy() {}
+	static void finalize(Dynamic obj) { ((sslcert*)obj.mPtr)->destroy(); }
+	String toString() { return HX_CSTRING("sslcert"); }
+};
+
+struct sslpkey : public hx::Object {
+	HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSslKey };
+	void create() { _hx_set_finalizer(this, finalize); }
+	void destroy() {}
+	static void finalize(Dynamic obj) { ((sslpkey*)obj.mPtr)->destroy(); }
+	String toString() { return HX_CSTRING("sslpkey"); }
+};
+
+struct sslctx : public hx::Object {
+	HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSsl };
+	SSLContextRef sslCtx = nullptr;
+	void create(bool isServer = false) {
+		sslCtx = SSLCreateContext(kCFAllocatorDefault, isServer ? kSSLServerSide : kSSLClientSide, kSSLStreamType);
+		if (!sslCtx) hx::Throw(HX_CSTRING("Failed to create SSL context"));
+		_hx_set_finalizer(this, finalize);
+	}
+	void destroy() {
+		if (sslCtx) { CFRelease(sslCtx); sslCtx = nullptr; }
+	}
+	static void finalize(Dynamic obj) {
+		((sslctx*)obj.mPtr)->destroy();
+	}
+	String toString() { return HX_CSTRING("sslctx_native"); }
+};
+
+struct sslconf : public hx::Object {
+	HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSslConf };
+	bool isServer;
+	void create(bool server) { isServer = server; _hx_set_finalizer(this, finalize); }
+	void destroy() {}
+	static void finalize(Dynamic obj) { ((sslconf*)obj.mPtr)->destroy(); }
+	String toString() { return HX_CSTRING("sslconf"); }
+};
+
+Dynamic _hx_ssl_conf_new(bool isServer) {
+	sslconf* conf = new sslconf(); conf->create(isServer);
+	return conf;
+}
+
+void _hx_ssl_conf_close(Dynamic hconf) {
+	val_conf(hconf)->destroy();
+}
+
+void _hx_ssl_conf_set_ca(Dynamic hconf, Dynamic hcert) {
+	// Using system trust by default
+}
+
+void _hx_ssl_conf_set_verify(Dynamic hconf, int mode) {
+	// TODO
+}
+
+void _hx_ssl_conf_set_cert(Dynamic hconf, Dynamic hcert, Dynamic hpkey) {
+	// TODO
+}
+
+void _hx_ssl_conf_set_servername_callback(Dynamic hconf, Dynamic cb) {
+	// TODO
+}
+
+Dynamic _hx_ssl_cert_load_file(String file) {
+	hx::Throw(HX_CSTRING("ssl_cert_load_file not supported"));
+	return null();
+}
+
+Dynamic _hx_ssl_cert_load_path(String path) {
+	hx::Throw(HX_CSTRING("ssl_cert_load_path not supported"));
+	return null();
+}
+
+Dynamic _hx_ssl_new(Dynamic hconf) {
+	sslctx* ctx = new sslctx();
+	ctx->create(val_conf(hconf)->isServer);
+	return ctx;
+}
+
+void _hx_ssl_close(Dynamic hssl) {
+	val_ssl(hssl)->destroy();
+}
+
+static OSStatus socket_read(SSLConnectionRef conn, void *data, size_t *len) {
+	int fd = (int)(intptr_t)conn;
+	ssize_t ret = recv(fd, data, *len, 0);
+	if (ret > 0) { *len = ret; return noErr; }
+	if (ret == 0) return errSSLClosedGraceful;
+	if (errno == EAGAIN || errno == EWOULDBLOCK) return errSSLWouldBlock;
+	return errSecIO;
+}
+static OSStatus socket_write(SSLConnectionRef conn, const void *data, size_t *len) {
+	int fd = (int)(intptr_t)conn;
+	ssize_t ret = send(fd, data, *len, 0);
+	if (ret > 0) { *len = ret; return noErr; }
+	if (errno == EAGAIN || errno == EWOULDBLOCK) return errSSLWouldBlock;
+	return errSecIO;
+}
+
+void _hx_ssl_set_socket(Dynamic hssl, Dynamic hsocket) {
+	sslctx* ctx = val_ssl(hssl);
+	SocketWrapper* sock = val_socket(hsocket);
+	SSLSetConnection(ctx->sslCtx, (SSLConnectionRef)(intptr_t)sock->socket);
+	SSLSetIOFuncs(ctx->sslCtx, socket_read, socket_write);
+	SSLSetProtocolVersionMin(ctx->sslCtx, kTLSProtocol1);
+	SSLSetProtocolVersionMax(ctx->sslCtx, kTLSProtocol13);
+}
+
+void _hx_ssl_set_hostname(Dynamic hssl, String hostname) {
+	sslctx* ctx = val_ssl(hssl);
+	hx::strbuf buf;
+	SSLSetPeerDomainName(ctx->sslCtx, hostname.utf8_str(&buf), hostname.length);
+}
+
+void _hx_ssl_handshake(Dynamic hssl) {
+	sslctx* ctx = val_ssl(hssl);
+	OSStatus s = SSLHandshake(ctx->sslCtx);
+	if (s == errSSLWouldBlock) hx::Throw(HX_CSTRING("Blocking"));
+	if (s != noErr) hx::Throw(HX_CSTRING("SSL handshake error"));
+}
+
+int _hx_ssl_send(Dynamic hssl, Array<unsigned char> buf, int p, int l) {
+	sslctx* ctx = val_ssl(hssl);
+	const void* data = &buf[0] + p;
+	size_t len = l;
+	OSStatus s = SSLWrite(ctx->sslCtx, data, len, &len);
+	if (s == errSSLWouldBlock) hx::Throw(HX_CSTRING("Blocking"));
+	if (s != noErr) hx::Throw(HX_CSTRING("SSL write error"));
+	return (int)len;
+}
+
+int _hx_ssl_recv(Dynamic hssl, Array<unsigned char> buf, int p, int l) {
+	sslctx* ctx = val_ssl(hssl);
+	void* data = &buf[0] + p;
+	size_t len = l;
+	OSStatus s = SSLRead(ctx->sslCtx, data, len, &len);
+	if (s == errSSLWouldBlock) hx::Throw(HX_CSTRING("Blocking"));
+	if (s == errSSLClosedGraceful || s == errSSLClosedAbort) return 0;
+	if (s != noErr) hx::Throw(HX_CSTRING("SSL read error"));
+	return (int)len;
+}
+
+void _hx_ssl_send_char(Dynamic hssl, int c) {
+	sslctx* ctx = val_ssl(hssl);
+	UInt8 byte = (UInt8)c;
+	size_t processed = 0;
+	OSStatus s = SSLWrite(ctx->sslCtx, &byte, 1, &processed);
+	if (s == errSSLWouldBlock) hx::Throw(HX_CSTRING("Blocking"));
+	if (s != noErr || processed != 1) hx::Throw(HX_CSTRING("SSL write error"));
+}
+
+int _hx_ssl_recv_char(Dynamic hssl) {
+	sslctx* ctx = val_ssl(hssl);
+	UInt8 byte;
+	size_t processed = 0;
+	OSStatus s = SSLRead(ctx->sslCtx, &byte, 1, &processed);
+	if (s == errSSLWouldBlock) hx::Throw(HX_CSTRING("Blocking"));
+	if (s != noErr || processed == 0) hx::Throw(HX_CSTRING("ssl_recv_char"));
+	return (int)byte;
+}
+
+void _hx_ssl_write(Dynamic hssl, Array<unsigned char> buf) {
+	int total = buf->length;
+	int offset = 0;
+	while (total > 0) {
+		int sent = _hx_ssl_send(hssl, buf, offset, total);
+		offset += sent;
+		total -= sent;
+	}
+}
+
+Array<unsigned char> _hx_ssl_read(Dynamic hssl) {
+	Array<unsigned char> res = Array_obj<unsigned char>::__new();
+	unsigned char buffer[256];
+	while (true) {
+		size_t processed = 0;
+		OSStatus s = SSLRead(val_ssl(hssl)->sslCtx, buffer, sizeof(buffer), &processed);
+		if (s == errSSLWouldBlock) hx::Throw(HX_CSTRING("Blocking"));
+		if (s == errSSLClosedGraceful || s == errSSLClosedAbort) break;
+		if (s != noErr) hx::Throw(HX_CSTRING("SSL read error"));
+		if (processed == 0) break;
+		res->memcpy(res->length, buffer, processed);
+	}
+	return res;
+}
+
+void _hx_ssl_init() {}
+
+Dynamic _hx_ssl_cert_load_defaults() {
+	return null();
+}
+
+#else
+
 #include <string.h>
 
 #ifdef HX_WINDOWS
@@ -896,3 +1116,5 @@ void _hx_ssl_init() {
 	mbedtls_ctr_drbg_init( &ctr_drbg );
 	mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0 );
 }
+
+#endif
