@@ -1,7 +1,5 @@
 #pragma once
 
-#include <hxcpp.h>
-
 namespace cpp
 {
 	namespace encoding
