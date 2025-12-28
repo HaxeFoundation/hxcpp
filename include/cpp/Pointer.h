@@ -350,6 +350,8 @@ public:
    template<typename O> inline void set_ref(O val) {  }
 
    operator Dynamic () const { return CreateDynamicPointer(ptr); }
+   template<class T>
+   operator Pointer<T>() const { return Pointer<T>(static_cast<T*>(ptr)); }
    //operator hx::Val () const { return CreateDynamicPointer((void *)ptr); }
    operator void * () { return ptr; }
    void * get_raw() { return ptr; }
