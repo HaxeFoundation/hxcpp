@@ -434,6 +434,14 @@ class Setup
       else
       {
          root = defines.get("ANDROID_NDK_ROOT");
+
+         if (!FileSystem.exists(root)) {
+            Log.error('ANDROID_NDK_ROOT ["$root"] directory does not exist');
+         }
+         if (!FileSystem.isDirectory(root)) {
+            Log.error('ANDROID_NDK_ROOT ["$root"] is not a diretory');
+         }
+
          Log.setup("\x1b[33;1mUsing Android NDK root: " + root + "\x1b[0m");
       }
 
