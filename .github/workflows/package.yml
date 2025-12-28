@@ -16,9 +16,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: Aidan63/setup-haxe@3d3101bcd0a2001699fc8295f4d9eddd0724d3e9
+      - uses: krdlab/setup-haxe@v2
         with:
-          haxe-version: 4.3.4
+          haxe-version: 4.3.7
 
       - name: Set Haxelib
         run: |
