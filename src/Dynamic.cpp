@@ -402,6 +402,11 @@ Dynamic::Dynamic(char16_t inVal)
     mPtr = fromInt(inVal);
 }
 
+Dynamic::Dynamic(char32_t inVal)
+{
+    mPtr = fromInt(inVal);
+}
+
 Dynamic::Dynamic(double inVal)
 {
    if ( (int)inVal==inVal && inVal>=-1 && inVal<256 )

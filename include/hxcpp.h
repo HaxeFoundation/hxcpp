@@ -358,6 +358,9 @@ typedef PropertyAccessMode PropertyAccess;
 #include <cpp/marshal/PointerReference.hpp>
 #include <cpp/marshal/View.hpp>
 #include <cpp/marshal/Marshal.hpp>
+#include <cpp/encoding/Ascii.hpp>
+#include <cpp/encoding/Utf8.hpp>
+#include <cpp/encoding/Utf16.hpp>
 #include <hx/Native.h>
 #include <hx/Operators.h>
 #include <hx/Functions.h>
