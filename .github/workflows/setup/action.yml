@@ -9,7 +9,7 @@ runs:
     - name: install haxe
       uses: Aidan63/setup-haxe@3d3101bcd0a2001699fc8295f4d9eddd0724d3e9
       with:
-        haxe-version: ${{ inputs.haxe }}
+        haxe-version: ${{ inputs.haxe == 'latest' && '2026-01-05_development_3aed86e' || inputs.haxe }}
 
     - name: install haxe libraries
       shell: pwsh
