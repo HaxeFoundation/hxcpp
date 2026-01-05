@@ -8,12 +8,15 @@ namespace cpp
         {
             static bool isEncoded(const String& string);
 
+            static int getByteCount(const null& _);
             static int getByteCount(const char32_t& codepoint);
             static int64_t getByteCount(const String& string);
 
+            static int getCharCount(const null& _);
             static int getCharCount(const char32_t& codepoint);
             static int64_t getCharCount(const String& string);
 
+            static int encode(const null& _, const cpp::marshal::View<uint8_t>& buffer);
             static int encode(const char32_t& codepoint, const cpp::marshal::View<uint8_t>& buffer);
             static int64_t encode(const String& string, const cpp::marshal::View<uint8_t>& buffer);
 
