@@ -24,6 +24,12 @@ namespace
     }
 }
 
+int cpp::encoding::Utf8::getByteCount(const null&)
+{
+    hx::NullReference("String", false);
+    return 0;
+}
+
 int cpp::encoding::Utf8::getByteCount(const char32_t& codepoint)
 {
     if (codepoint <= 0x7F)
@@ -77,6 +83,12 @@ int64_t cpp::encoding::Utf8::getByteCount(const String& string)
 #endif
 }
 
+int cpp::encoding::Utf8::getCharCount(const null&)
+{
+    hx::NullReference("String", false);
+    return 0;
+}
+
 int cpp::encoding::Utf8::getCharCount(const char32_t& codepoint)
 {
     return getByteCount(codepoint) / sizeof(char);
@@ -85,6 +97,12 @@ int cpp::encoding::Utf8::getCharCount(const char32_t& codepoint)
 int64_t cpp::encoding::Utf8::getCharCount(const String& string)
 {
     return getByteCount(string) / sizeof(char);
+}
+
+int cpp::encoding::Utf8::encode(const null&, const cpp::marshal::View<uint8_t>& buffer)
+{
+    hx::NullReference("String", false);
+    return 0;
 }
 
 int64_t cpp::encoding::Utf8::encode(const String& string, const cpp::marshal::View<uint8_t>& buffer)

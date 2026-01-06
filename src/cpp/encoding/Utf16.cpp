@@ -68,6 +68,12 @@ bool cpp::encoding::Utf16::isEncoded(const String& string)
 	return string.isUTF16Encoded();
 }
 
+int cpp::encoding::Utf16::getByteCount(const null&)
+{
+	hx::NullReference("String", false);
+	return 0;
+}
+
 int cpp::encoding::Utf16::getByteCount(const char32_t& codepoint)
 {
 	return codepoint <= 0xFFFF ? 2 : 4;
@@ -96,6 +102,12 @@ int64_t cpp::encoding::Utf16::getByteCount(const String& string)
 	}
 }
 
+int cpp::encoding::Utf16::getCharCount(const null&)
+{
+	hx::NullReference("String", false);
+	return 0;
+}
+
 int cpp::encoding::Utf16::getCharCount(const char32_t& codepoint)
 {
 	return getByteCount(codepoint) / sizeof(char16_t);
@@ -104,6 +116,12 @@ int cpp::encoding::Utf16::getCharCount(const char32_t& codepoint)
 int64_t cpp::encoding::Utf16::getCharCount(const String& string)
 {
 	return getByteCount(string) / sizeof(char16_t);
+}
+
+int cpp::encoding::Utf16::encode(const null&, const cpp::marshal::View<uint8_t>& buffer)
+{
+	hx::NullReference("String", false);
+	return 0;
 }
 
 int64_t cpp::encoding::Utf16::encode(const String& string, const cpp::marshal::View<uint8_t>& buffer)
