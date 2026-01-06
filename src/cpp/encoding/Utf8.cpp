@@ -24,7 +24,7 @@ namespace
     }
 }
 
-int cpp::encoding::Utf8::getByteCount(const null& _)
+int cpp::encoding::Utf8::getByteCount(const null&)
 {
     hx::NullReference("String", false);
     return 0;
@@ -83,7 +83,7 @@ int64_t cpp::encoding::Utf8::getByteCount(const String& string)
 #endif
 }
 
-int cpp::encoding::Utf8::getCharCount(const null& _)
+int cpp::encoding::Utf8::getCharCount(const null&)
 {
     hx::NullReference("String", false);
     return 0;
@@ -99,7 +99,7 @@ int64_t cpp::encoding::Utf8::getCharCount(const String& string)
     return getByteCount(string) / sizeof(char);
 }
 
-int cpp::encoding::Utf8::encode(const null& _, const cpp::marshal::View<uint8_t>& buffer)
+int cpp::encoding::Utf8::encode(const null&, const cpp::marshal::View<uint8_t>& buffer)
 {
     hx::NullReference("String", false);
     return 0;
