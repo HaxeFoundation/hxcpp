@@ -5,10 +5,12 @@
 <section if="linux_host||mac_host">
   <section if="HXCPP_M64">
     <set name="HXCPP_MINGW_EXE" value="x86_64-w64-mingw32-g++" unless="HXCPP_MINGW_EXE" />
+    <set name="HXCPP_WINDRES" value="x86_64-w64-mingw32-windres" unless="HXCPP_WINDRES" />
     <set name="MINGW_ROOT" value="/usr/x86_64-w64-mingw32" unless="MINGW_ROOT" />
   </section>
   <section unless="HXCPP_M64">
     <set name="HXCPP_MINGW_EXE" value="i686-w64-mingw32-g++" unless="HXCPP_MINGW_EXE" />
+    <set name="HXCPP_WINDRES" value="i686-w64-mingw32-windres" unless="HXCPP_WINDRES" />
     <set name="MINGW_ROOT" value="/usr/i686-w64-mingw32" unless="MINGW_ROOT" />
   </section>
 </section>
@@ -49,6 +51,9 @@
   <objdir value="obj/mingw${OBJEXT}/"/>
   <outflag value="-o"/>
   <ext value=".o"/>
+
+  <rcexe name="${HXCPP_WINDRES}" />
+  <rcext value=".o" />
 </compiler>
 
 <linker id="dll" exe="g++">
