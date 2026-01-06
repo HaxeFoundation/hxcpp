@@ -291,5 +291,13 @@ class TestView extends Test {
 		Assert.same(buffer, biggerDst.slice(0, 10));
 		Assert.same(buffer, matchingDst);
 		Assert.same(buffer.slice(0, smallerDst.length), smallerDst);
+
+		final overlapped = buffer.copy();
+
+		final regionA = overlapped.asView().slice(2, 5);
+		final regionB = overlapped.asView().slice(4, 5);
+
+		Assert.isTrue(regionB.tryCopyTo(regionA));
+		Assert.same([0, 1, 4, 5, 6, 7, 8, 7, 8, 9], overlapped);
 	}
 }
