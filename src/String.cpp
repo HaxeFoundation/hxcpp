@@ -2256,56 +2256,134 @@ String &String::operator+=(const String &inRHS)
    return *this;
 }
 
-#ifdef HXCPP_VISIT_ALLOCS
-#define STRING_VISIT_FUNC \
-    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_STRING(mThis.raw_ref()); }
+#if (HXCPP_API_LEVEL>=500)
+    #ifdef HXCPP_VISIT_ALLOCS
+        #define STRING_VISIT_FUNC \
+            void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); }
+    #else
+        #define STRING_VISIT_FUNC
+    #endif
+
+    #define HX_STRING_ARG_LIST0
+    #define HX_STRING_ARG_LIST1(arg0) arg0
+    #define HX_STRING_ARG_LIST2(arg0, arg1) arg0, arg1
+
+    #define HX_STRING_FUNC_LIST0
+    #define HX_STRING_FUNC_LIST1(arg0) arg0 inArg0
+    #define HX_STRING_FUNC_LIST2(arg0, arg1) arg0 inArg0, arg1 inArg1
+
+    #define HX_STRING_FUNC(value, name, args_list, func_list, args_call) \
+        ::hx::Callable<value(args_list)> String::name##_dyn() \
+        { \
+            struct _hx_string_##name : public ::hx::AutoCallable_obj<value(args_list)> \
+            { \
+                ::String mThis; \
+                _hx_string_##name(const ::String& inThis) : mThis(inThis) \
+                { \
+                    HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
+                } \
+                value HX_LOCAL_RUN(func_list) override \
+                { \
+                    return mThis.name(args_call); \
+                } \
+                void __SetThis(Dynamic inThis) override \
+                { \
+                    mThis = inThis; \
+                } \
+                void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+                STRING_VISIT_FUNC \
+                int __Compare(const ::hx::Object* inRhs) const override \
+                { \
+                    auto casted = dynamic_cast<const _hx_string_##name *>(inRhs); \
+                    if (!casted) return 1; \
+                    if (!hx::IsPointerEq(mThis, casted->mThis)) return -1; \
+                    return 0; \
+                } \
+            }; \
+            return new _hx_string_##name(*this); \
+        }
+
+    HX_STRING_FUNC(::String, charAt, HX_STRING_ARG_LIST1(int), HX_STRING_FUNC_LIST1(int), HX_ARG_LIST1);
+    HX_STRING_FUNC(::Dynamic, charCodeAt, HX_STRING_ARG_LIST1(int), HX_STRING_FUNC_LIST1(int), HX_ARG_LIST1);
+    HX_STRING_FUNC(int, indexOf, HX_STRING_ARG_LIST2(::String, ::Dynamic), HX_STRING_FUNC_LIST2(::String, ::Dynamic), HX_ARG_LIST2);
+    HX_STRING_FUNC(int, lastIndexOf, HX_STRING_ARG_LIST2(::String, ::Dynamic), HX_STRING_FUNC_LIST2(::String, ::Dynamic), HX_ARG_LIST2);
+    HX_STRING_FUNC(::Array<::String>, split, HX_STRING_ARG_LIST1(::String), HX_STRING_FUNC_LIST1(::String), HX_ARG_LIST1);
+    HX_STRING_FUNC(::String, substr, HX_STRING_ARG_LIST2(int, ::Dynamic), HX_STRING_FUNC_LIST2(int, ::Dynamic), HX_ARG_LIST2);
+    HX_STRING_FUNC(::String, substring, HX_STRING_ARG_LIST2(int, ::Dynamic), HX_STRING_FUNC_LIST2(int, ::Dynamic), HX_ARG_LIST2);
+    HX_STRING_FUNC(::String, toLowerCase, HX_STRING_ARG_LIST0, HX_STRING_FUNC_LIST0, HX_ARG_LIST0);
+    HX_STRING_FUNC(::String, toString, HX_STRING_ARG_LIST0, HX_STRING_FUNC_LIST0, HX_ARG_LIST0);
+    HX_STRING_FUNC(::String, toUpperCase, HX_STRING_ARG_LIST0, HX_STRING_FUNC_LIST0, HX_ARG_LIST0);
+
+    ::hx::Callable<::String(int)> String::fromCharCode_dyn()
+    {
+        struct _hx_string_fromCharCode : public ::hx::AutoCallable_obj<::String(HX_STRING_ARG_LIST1(int))>
+        {
+            ::String HX_LOCAL_RUN(HX_STRING_FUNC_LIST1(int)) override
+            {
+                return ::String::fromCharCode(HX_ARG_LIST1);
+            }
+            int __Compare(const ::hx::Object* inRhs) const override
+            {
+                return dynamic_cast<const _hx_string_fromCharCode*>(inRhs) ? 0 : -1;
+            }
+        };
+
+        return new _hx_string_fromCharCode();
+    }
 #else
-#define STRING_VISIT_FUNC
+    #ifdef HXCPP_VISIT_ALLOCS
+    #define STRING_VISIT_FUNC \
+        void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_STRING(mThis.raw_ref()); }
+    #else
+    #define STRING_VISIT_FUNC
+    #endif
+
+    #define DEFINE_STRING_FUNC(func,array_list,dynamic_arg_list,arg_list,ARG_C) \
+    struct __String_##func : public hx::Object \
+    { \
+       bool __IsFunction() const { return true; } \
+       HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
+       String mThis; \
+       __String_##func(const String &inThis) : mThis(inThis) { \
+          HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
+       } \
+       String toString() const{ return HX_CSTRING(#func); } \
+       String __ToString() const{ return HX_CSTRING(#func); } \
+       int __GetType() const { return vtFunction; } \
+       void *__GetHandle() const { return const_cast<char *>(mThis.raw_ptr()); } \
+       int __ArgCount() const { return ARG_C; } \
+       void __Mark(hx::MarkContext *__inCtx) { HX_MARK_STRING(mThis.raw_ptr()); } \
+       Dynamic __Run(const Array<Dynamic> &inArgs) \
+       { \
+          return mThis.func(array_list); return Dynamic(); \
+       } \
+       Dynamic __run(dynamic_arg_list) \
+       { \
+          return mThis.func(arg_list); return Dynamic(); \
+       } \
+       STRING_VISIT_FUNC \
+       void  __SetThis(Dynamic inThis) { mThis = inThis; } \
+    }; \
+    Dynamic String::func##_dyn()  { return new __String_##func(*this);  }
+
+
+    #define DEFINE_STRING_FUNC0(func) DEFINE_STRING_FUNC(func,HX_ARR_LIST0,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0,0)
+    #define DEFINE_STRING_FUNC1(func) DEFINE_STRING_FUNC(func,HX_ARR_LIST1,HX_DYNAMIC_ARG_LIST1,HX_ARG_LIST1,1)
+    #define DEFINE_STRING_FUNC2(func) DEFINE_STRING_FUNC(func,HX_ARR_LIST2,HX_DYNAMIC_ARG_LIST2,HX_ARG_LIST2,2)
+
+    DEFINE_STRING_FUNC1(charAt);
+    DEFINE_STRING_FUNC1(charCodeAt);
+    DEFINE_STRING_FUNC2(indexOf);
+    DEFINE_STRING_FUNC2(lastIndexOf);
+    DEFINE_STRING_FUNC1(split);
+    DEFINE_STRING_FUNC2(substr);
+    DEFINE_STRING_FUNC2(substring);
+    DEFINE_STRING_FUNC0(toLowerCase);
+    DEFINE_STRING_FUNC0(toUpperCase);
+    DEFINE_STRING_FUNC0(toString);
+
+    STATIC_HX_DEFINE_DYNAMIC_FUNC1(String, fromCharCode, return)
 #endif
-
-#define DEFINE_STRING_FUNC(func,array_list,dynamic_arg_list,arg_list,ARG_C) \
-struct __String_##func : public hx::Object \
-{ \
-   bool __IsFunction() const { return true; } \
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
-   String mThis; \
-   __String_##func(const String &inThis) : mThis(inThis) { \
-      HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
-   } \
-   String toString() const{ return HX_CSTRING(#func); } \
-   String __ToString() const{ return HX_CSTRING(#func); } \
-   int __GetType() const { return vtFunction; } \
-   void *__GetHandle() const { return const_cast<char *>(mThis.raw_ptr()); } \
-   int __ArgCount() const { return ARG_C; } \
-   Dynamic __Run(const Array<Dynamic> &inArgs) \
-   { \
-      return mThis.func(array_list); return Dynamic(); \
-   } \
-   Dynamic __run(dynamic_arg_list) \
-   { \
-      return mThis.func(arg_list); return Dynamic(); \
-   } \
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_STRING(mThis.raw_ptr()); } \
-   STRING_VISIT_FUNC \
-   void  __SetThis(Dynamic inThis) { mThis = inThis; } \
-}; \
-Dynamic String::func##_dyn()  { return new __String_##func(*this);  }
-
-
-#define DEFINE_STRING_FUNC0(func) DEFINE_STRING_FUNC(func,HX_ARR_LIST0,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0,0)
-#define DEFINE_STRING_FUNC1(func) DEFINE_STRING_FUNC(func,HX_ARR_LIST1,HX_DYNAMIC_ARG_LIST1,HX_ARG_LIST1,1)
-#define DEFINE_STRING_FUNC2(func) DEFINE_STRING_FUNC(func,HX_ARR_LIST2,HX_DYNAMIC_ARG_LIST2,HX_ARG_LIST2,2)
-
-DEFINE_STRING_FUNC1(charAt);
-DEFINE_STRING_FUNC1(charCodeAt);
-DEFINE_STRING_FUNC2(indexOf);
-DEFINE_STRING_FUNC2(lastIndexOf);
-DEFINE_STRING_FUNC1(split);
-DEFINE_STRING_FUNC2(substr);
-DEFINE_STRING_FUNC2(substring);
-DEFINE_STRING_FUNC0(toLowerCase);
-DEFINE_STRING_FUNC0(toUpperCase);
-DEFINE_STRING_FUNC0(toString);
 
 hx::Val String::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
@@ -2342,8 +2420,6 @@ static String sStringFields[] = {
    HX_CSTRING("toString"),
    String(null())
 };
-
-STATIC_HX_DEFINE_DYNAMIC_FUNC1(String,fromCharCode,return )
 
 namespace hx
 {

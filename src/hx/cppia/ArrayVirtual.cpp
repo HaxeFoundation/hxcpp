@@ -601,11 +601,11 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       TRY_NATIVE
       if (FUNC==afMap)
       {
-         return inArray->map(inFunction).mPtr;
+         return inArray->map(Dynamic(inFunction)).mPtr;
       }
       else
       {
-         return inArray->filter(inFunction).mPtr;
+         return inArray->filter(Dynamic(inFunction)).mPtr;
       }
       CATCH_NATIVE
       return 0;

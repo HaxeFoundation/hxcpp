@@ -36,7 +36,7 @@ struct TObjcBlockVoidVoid
    {
       NSHaxeWrapperClass *wrapper = [[NSHaxeWrapperClass alloc] init:func.mPtr];
       t wrap = ^ {
-         wrapper->haxeObject->__run();
+         wrapper->haxeObject->__Run(Array_obj<Dynamic>::__new(0));
       };
       return wrap;
    }
@@ -52,7 +52,7 @@ struct TObjcBlockRetVoid
    {
       NSHaxeWrapperClass *wrapper = [[NSHaxeWrapperClass alloc] init:func.mPtr];
       t wrap = ^() {
-         return (Ret) wrapper->haxeObject->__run();
+         return (Ret) wrapper->haxeObject->__Run(Array_obj<Dynamic>::__new(0));
       };
       return wrap;
    }
@@ -69,7 +69,7 @@ struct TObjcBlockVoidArgs1
    {
       NSHaxeWrapperClass *wrapper = [[NSHaxeWrapperClass alloc] init:func.mPtr];
       t wrap = ^(Arg0 a0) {
-         wrapper->haxeObject->__run(a0);
+         wrapper->haxeObject->__Run(Array_obj<Dynamic>::__new(1)->init(0, a0));
       };
       return wrap;
    }
@@ -83,7 +83,7 @@ struct TObjcBlockRetArgs1
    {
       NSHaxeWrapperClass *wrapper = [[NSHaxeWrapperClass alloc] init:func.mPtr];
       t wrap = ^(Arg0 a0) {
-         return (Ret) wrapper->haxeObject->__run(a0);
+         return (Ret) wrapper->haxeObject->__Run(Array_obj<Dynamic>::__new(1)->init(0, a0));
       } ;
    }
 };
@@ -100,7 +100,7 @@ struct TObjcBlockVoidArgs2
    {
       NSHaxeWrapperClass *wrapper = [[NSHaxeWrapperClass alloc] init:func.mPtr];
       t wrap = ^(Arg0 a0, Arg1 a1) {
-         wrapper->haxeObject->__run(a0,a1);
+         wrapper->haxeObject->__Run(Array_obj<Dynamic>::__new(2)->init(0, a0)->init(1, a1));
       };
       return wrap;
    }
@@ -114,7 +114,7 @@ struct TObjcBlockRetArgs2
    {
       NSHaxeWrapperClass *wrapper = [[NSHaxeWrapperClass alloc] init:func.mPtr];
       t wrap = ^(Arg0 a0, Arg1 a1) {
-         return (Ret) wrapper->haxeObject->__run(a0,a1);
+         return (Ret) wrapper->haxeObject->__Run(Array_obj<Dynamic>::__new(2)->init(0, a0)->init(1, a1));
       } ;
    }
 };
@@ -130,7 +130,7 @@ struct TObjcBlockVoidArgs3
    {
       NSHaxeWrapperClass *wrapper = [[NSHaxeWrapperClass alloc] init:func.mPtr];
       t wrap = ^(Arg0 a0, Arg1 a1, Arg2 a2) {
-         wrapper->haxeObject->__run(a0,a1,a2);
+         wrapper->haxeObject->__Run(Array_obj<Dynamic>::__new(3)->init(0, a0)->init(1, a1)->init(2, a2));
       };
       return wrap;
    }
@@ -144,7 +144,7 @@ struct TObjcBlockRetArgs3
    {
       NSHaxeWrapperClass *wrapper = [[NSHaxeWrapperClass alloc] init:func.mPtr];
       t wrap = ^(Arg0 a0, Arg1 a1, Arg2 a2) {
-         return (Ret) wrapper->haxeObject->__run(a0,a1,a2);
+         return (Ret) wrapper->haxeObject->__Run(Array_obj<Dynamic>::__new(3)->init(0, a0)->init(1, a1)->init(2, a2));
       } ;
    }
 };
@@ -160,7 +160,7 @@ struct TObjcBlockVoidArgs4
    {
       NSHaxeWrapperClass *wrapper = [[NSHaxeWrapperClass alloc] init:func.mPtr];
       t wrap = ^(Arg0 a0, Arg1 a1, Arg2 a2, Arg3 a3) {
-         wrapper->haxeObject->__run(a0,a1,a2,a3);
+         wrapper->haxeObject->__Run(Array_obj<Dynamic>::__new(4)->init(0, a0)->init(1, a1)->init(2, a2)->init(3, a3));
       };
       return wrap;
    }
@@ -174,7 +174,7 @@ struct TObjcBlockRetArgs4
    {
       NSHaxeWrapperClass *wrapper = [[NSHaxeWrapperClass alloc] init:func.mPtr];
       t wrap = ^(Arg0 a0, Arg1 a1, Arg2 a2, Arg3 a3) {
-         return (Ret) wrapper->haxeObject->__run(a0,a1,a2,a3);
+         return (Ret) wrapper->haxeObject->__Run(Array_obj<Dynamic>::__new(4)->init(0, a0)->init(1, a1)->init(2, a2)->init(3, a3));
       } ;
    }
 };
@@ -190,7 +190,7 @@ struct TObjcBlockVoidArgs5
    {
       NSHaxeWrapperClass *wrapper = [[NSHaxeWrapperClass alloc] init:func.mPtr];
       t wrap = ^(Arg0 a0, Arg1 a1, Arg2 a2, Arg3 a3, Arg4 a4) {
-         wrapper->haxeObject->__run(a0,a1,a2,a3,a4);
+         wrapper->haxeObject->__Run(Array_obj<Dynamic>::__new(5)->init(0, a0)->init(1, a1)->init(2, a2)->init(3, a3)->init(4, a4));
       };
       return wrap;
    }
@@ -204,7 +204,7 @@ struct TObjcBlockRetArgs5
    {
       NSHaxeWrapperClass *wrapper = [[NSHaxeWrapperClass alloc] init:func.mPtr];
       t wrap = ^(Arg0 a0, Arg1 a1, Arg2 a2, Arg3 a3, Arg4 a4) {
-         return (Ret) wrapper->haxeObject->__run(a0,a1,a2,a3,a4);
+         return (Ret) wrapper->haxeObject->__Run(Array_obj<Dynamic>::__new(5)->init(0, a0)->init(1, a1)->init(2, a2)->init(3, a3)->init(4, a4));
       } ;
    }
 };
