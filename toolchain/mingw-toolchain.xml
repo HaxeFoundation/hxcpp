@@ -4,16 +4,19 @@
 
 <section if="linux_host||mac_host">
   <section if="HXCPP_M64">
-    <set name="HXCPP_MINGW_EXE" value="x86_64-w64-mingw32-g++" unless="HXCPP_MINGW_EXE" />
-    <set name="MINGW_ROOT" value="/usr/x86_64-w64-mingw32" unless="MINGW_ROOT" />
+    <set name="ABITRIPLE" value="x86_64-w64-mingw32" />
   </section>
   <section unless="HXCPP_M64">
-    <set name="HXCPP_MINGW_EXE" value="i686-w64-mingw32-g++" unless="HXCPP_MINGW_EXE" />
-    <set name="MINGW_ROOT" value="/usr/i686-w64-mingw32" unless="MINGW_ROOT" />
+    <set name="ABITRIPLE" value="i686-w64-mingw32" />
   </section>
+  <set name="EXEPREFIX" value="${ABITRIPLE}" />
+  <set name="HXCPP_MINGW_EXE" value="${EXEPREFIX}-g++" unless="HXCPP_MINGW_EXE" />
+  <set name="HXCPP_MINGW_RC_EXE" value="${EXEPREFIX}-windres" unless="HXCPP_MINGW_RC_EXE" />
+  <set name="MINGW_ROOT" value="/usr/${ABITRIPLE}" unless="MINGW_ROOT" />
 </section>
 
 <set name="HXCPP_MINGW_EXE" value="g++.exe" unless="HXCPP_MINGW_EXE"/>
+<set name="HXCPP_MINGW_RC_EXE" value="windres.exe" unless="HXCPP_MINGW_RC_EXE" />
 
 
 <setup name="mingw" />
@@ -49,6 +52,9 @@
   <objdir value="obj/mingw${OBJEXT}/"/>
   <outflag value="-o"/>
   <ext value=".o"/>
+
+  <rcexe name="${HXCPP_MINGW_RC_EXE}" />
+  <rcext value=".o" />
 </compiler>
 
 <linker id="dll" exe="g++">
