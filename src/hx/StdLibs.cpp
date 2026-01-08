@@ -283,8 +283,6 @@ void __hxcpp_stdlibs_boot()
    //_setmode(_fileno(stdin), 0x00040000); // _O_U8TEXT
    #endif
 
-   // This is necessary for UTF-8 output to work correctly.
-   setlocale(LC_ALL, "");
    setlocale(LC_NUMERIC, "C");
 
    // I think this does more harm than good.

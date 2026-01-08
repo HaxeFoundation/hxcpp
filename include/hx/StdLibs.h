@@ -154,6 +154,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_char_bytes_to_utf8_string(String &i
 HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_utf8_string_to_char_bytes(String &inUTF8);
 
 
+
 #ifdef HXCPP_GC_GENERATIONAL
    #define HX_MAP_THIS this, h
    #define HX_MAP_THIS_ this,

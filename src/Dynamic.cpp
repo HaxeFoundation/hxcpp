@@ -402,6 +402,11 @@ Dynamic::Dynamic(char16_t inVal)
     mPtr = fromInt(inVal);
 }
 
+Dynamic::Dynamic(char32_t inVal)
+{
+    mPtr = fromInt(inVal);
+}
+
 Dynamic::Dynamic(double inVal)
 {
    if ( (int)inVal==inVal && inVal>=-1 && inVal<256 )
@@ -497,6 +502,7 @@ DYN_OP_ADD(unsigned short)
 DYN_OP_ADD(signed char)
 DYN_OP_ADD(unsigned char)
 DYN_OP_ADD(char16_t)
+DYN_OP_ADD(char32_t)
 DYN_OP_ADD(cpp::Int64)
 DYN_OP_ADD(cpp::UInt64)
 

@@ -19,11 +19,19 @@ struct ScriptNamedFunction : public ScriptFunction
 {
    ScriptNamedFunction(const ScriptFunction &s) : ScriptFunction(s), name(0), isStatic(false), superExecute(0) { }
 
+#if (HXCPP_API_LEVEL >= 500)
+   ScriptNamedFunction(const char *inName=0,StackExecute inExe=0,const char *inSig=0, bool inIsStatic=false, StackExecute superExecute=0, bool inIsOverride=false)
+      : ScriptFunction(inExe, inSig), name(inName), isStatic(inIsStatic), isOverride(inIsOverride), superExecute(superExecute)  { }
+#else
    ScriptNamedFunction(const char *inName=0,StackExecute inExe=0,const char *inSig=0, bool inIsStatic=false, StackExecute superExecute=0)
       : ScriptFunction(inExe, inSig), name(inName), isStatic(inIsStatic), superExecute(superExecute)  { }
+#endif
 
    const char *name;
    bool isStatic;
+#if (HXCPP_API_LEVEL >= 500)
+   bool isOverride;
+#endif
    StackExecute superExecute;
 };
 

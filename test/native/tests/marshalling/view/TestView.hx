@@ -139,8 +139,8 @@ class TestView extends Test {
 		final index  = 3;
 		final slice  = view.slice(index);
 
-		if (Assert.equals(7, slice.length)) {
-			for (i in 0...slice.length) {
+		if (Assert.equals(7i64, slice.length)) {
+			for (i in 0...haxe.Int64.toInt(slice.length)) {
 				Assert.equals(i + index + 1, slice[i]);
 			}
 		}
@@ -161,8 +161,8 @@ class TestView extends Test {
 		final length = 4;
 		final slice  = view.slice(index, length);
 
-		if (Assert.equals(length, slice.length)) {
-			for (i in 0...slice.length) {
+		if (Assert.equals(haxe.Int64.ofInt(length), slice.length)) {
+			for (i in 0...haxe.Int64.toInt(slice.length)) {
 				Assert.equals(i + index + 1, slice[i]);
 			}
 		}
@@ -243,7 +243,7 @@ class TestView extends Test {
 		final view   = buffer.asView();
 		final second : View<Int64> = view.reinterpret();
 
-		Assert.equals(1, second.length);
+		Assert.equals(1i64, second.length);
 	}
 	
 	function test_reinterpret_to_larger_type_not_enough_length() {
@@ -251,7 +251,7 @@ class TestView extends Test {
 		final view   = buffer.asView();
 		final second : View<Int64> = view.reinterpret();
 
-		Assert.equals(0, second.length);
+		Assert.equals(0i64, second.length);
 	}
 
 	function test_reinterpret_to_value_type() {
@@ -259,7 +259,7 @@ class TestView extends Test {
 		final view   = buffer.asView();
 		final points = (view.reinterpret() : View<Point>);
 
-		Assert.equals(2, points.length);
+		Assert.equals(2i64, points.length);
 		Assert.equals(0f64, points[0].x);
 		Assert.equals(0f64, points[0].y);
 
@@ -291,5 +291,13 @@ class TestView extends Test {
 		Assert.same(buffer, biggerDst.slice(0, 10));
 		Assert.same(buffer, matchingDst);
 		Assert.same(buffer.slice(0, smallerDst.length), smallerDst);
+
+		final overlapped = buffer.copy();
+
+		final regionA = overlapped.asView().slice(2, 5);
+		final regionB = overlapped.asView().slice(4, 5);
+
+		Assert.isTrue(regionB.tryCopyTo(regionA));
+		Assert.same([0, 1, 4, 5, 6, 7, 8, 7, 8, 9], overlapped);
 	}
 }
