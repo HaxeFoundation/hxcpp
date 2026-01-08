@@ -2203,10 +2203,32 @@ class BuildTool
                if (extract_version.match(file))
                {
                   var ver = extract_version.matched(1);
-                  var split_best = best.split(".");
                   var split_ver = ver.split(".");
-                  if (Std.parseFloat(split_ver[0]) > Std.parseFloat(split_best[0]) || Std.parseFloat(split_ver[1]) > Std.parseFloat(split_best[1]))
+                  var major_ver = Std.parseFloat(split_ver[0]);
+                  var minor_ver = Std.parseFloat(split_ver[1]);
+                  if (Math.isNaN(major_ver) || Math.isNaN(minor_ver))
+                  {
+                     // if version is the wrong format, skip it
+                     continue;
+                  }
+                  var split_best = best.split(".");
+                  var major_best = Std.parseFloat(split_best[0]);
+                  var minor_best = Std.parseFloat(split_best[1]);
+                  if (Math.isNaN(major_best) || Math.isNaN(minor_best))
+                  {
+                     // shouldn't happen, but just to be safe
                      best = ver;
+                  }
+                  else if (major_ver > major_best)
+                  {
+                     // prefer higher major version
+                     best = ver;
+                  }
+                  else if (major_ver == major_best && minor_ver > minor_best)
+                  {
+                     // if major versions are equal, prefer higher minor version
+                     best = ver;
+                  }
                }
             }
             if (best!="0.0")
