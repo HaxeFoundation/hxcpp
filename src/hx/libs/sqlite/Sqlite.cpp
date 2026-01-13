@@ -200,8 +200,9 @@ result *getResult(Dynamic handle, bool inRequireStatement)
 Dynamic _hx_sqlite_connect(String filename)
 {
    sqlite3 *sqlDb = 0;
+   const char *filenameUtf8 = filename.utf8_str();
    __hxcpp_enter_gc_free_zone();
-   int err = sqlite3_open(filename.utf8_str(),&sqlDb);
+   int err = sqlite3_open(filenameUtf8,&sqlDb);
    __hxcpp_exit_gc_free_zone();
    if (err != SQLITE_OK)
       sqlite_error(sqlDb);
