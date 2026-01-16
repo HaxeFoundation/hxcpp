@@ -213,6 +213,21 @@ namespace cpp
             T& operator[] (int64_t index) const;
         };
 
+        class RootHandle
+        {
+            ::hx::Object** object;
+
+            RootHandle(hx::Object** obj);
+
+        public:
+            static RootHandle create(Dynamic obj);
+            static RootHandle fromVoidPointer(::cpp::Pointer<void> ptr);
+
+            ::cpp::Pointer<void> toVoidPointer();
+            Dynamic getObject();
+            void close();
+        };
+
         struct Marshal final
         {
 #ifdef HXCPP_BIG_ENDIAN
