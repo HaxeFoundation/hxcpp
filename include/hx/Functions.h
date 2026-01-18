@@ -132,7 +132,7 @@ namespace hx
 
                 void* __GetHandle() const override
                 {
-                    return wrapped.GetPtr();
+                    return wrapped->__GetHandle();
                 }
 
                 inline void __Mark(hx::MarkContext* __inCtx) override
@@ -172,7 +172,7 @@ namespace hx
 
                 void* __GetHandle() const override
                 {
-                    return wrapped.GetPtr();
+                    return wrapped->__GetHandle();
                 }
 
                 inline void __Mark(hx::MarkContext* __inCtx) override
@@ -218,7 +218,7 @@ namespace hx
 
                         void* __GetHandle() const override
                         {
-                            return wrapped.GetPtr();
+                            return wrapped->__GetHandle();
                         }
 
                         inline void __Mark(hx::MarkContext* __inCtx) override
@@ -312,7 +312,7 @@ namespace hx
 
                 void* __GetHandle() const override
                 {
-                    return wrapped.GetPtr();
+                    return wrapped->__GetHandle();
                 }
 
                 inline void __Mark(hx::MarkContext* __inCtx) override
@@ -358,7 +358,7 @@ namespace hx
 
                         void* __GetHandle() const override
                         {
-                            return wrapped.GetPtr();
+                            return wrapped->__GetHandle();
                         }
 
                         inline void __Mark(hx::MarkContext* __inCtx) override
