@@ -690,7 +690,7 @@ namespace cpp
 #if (HXCPP_API_LEVEL>=500)
     ::hx::Callable<bool()> IteratorBase::hasNext_dyn()
     {
-        struct _hx_iterator_hasNext : public ::hx::AutoCallable_obj<bool()>
+        struct _hx_iterator_hasNext final : public ::hx::AutoCallable_obj<bool()>
         {
             ::hx::ObjectPtr<IteratorBase> __this;
 
@@ -702,6 +702,11 @@ namespace cpp
             bool HX_LOCAL_RUN() final override
             {
                 return __this->hasNext();
+            }
+
+            void* __GetHandle() const override
+            {
+                return __this.GetPtr();
             }
 
             void __Mark(hx::MarkContext* __inCtx) final override
@@ -734,6 +739,11 @@ namespace cpp
             ::Dynamic HX_LOCAL_RUN() final override
             {
                 return __this->_dynamicNext();
+            }
+
+            void* __GetHandle() const override
+            {
+                return __this.GetPtr();
             }
 
             void __Mark(hx::MarkContext* __inCtx) final override
@@ -800,7 +810,7 @@ namespace cpp
 #define HX_VARRAY_FUNC(ret, value, name, args_list, func_list, args_call) \
     ::hx::Callable<value(args_list)> VirtualArray_obj::name##_dyn() \
     { \
-        struct _hx_virtualarray_##name : public ::hx::AutoCallable_obj<value(args_list)> \
+        struct _hx_virtualarray_##name final : public ::hx::AutoCallable_obj<value(args_list)> \
         { \
             VirtualArray mThis; \
             _hx_virtualarray_##name(::cpp::VirtualArray inThis) : mThis(inThis) \
@@ -811,6 +821,7 @@ namespace cpp
             { \
                 ret mThis->name(args_call); \
             } \
+            void* __GetHandle() const override { return mThis.GetPtr(); } \
             void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
             ARRAY_VISIT_FUNC \
             int __Compare(const ::hx::Object* inRhs) const override \

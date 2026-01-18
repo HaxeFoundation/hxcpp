@@ -1411,7 +1411,7 @@ namespace hx
     template<class ELEM_> \
     ::hx::Callable<value(args_list)> Array_obj<ELEM_>::name##_dyn() \
     { \
-        struct _hx_array_##name : public ::hx::AutoCallable_obj<value(args_list)> \
+        struct _hx_array_##name final : public ::hx::AutoCallable_obj<value(args_list)> \
         { \
             Array<ELEM_> mThis; \
             _hx_array_##name(Array<ELEM_> inThis) : mThis(inThis) \
@@ -1422,6 +1422,7 @@ namespace hx
             { \
                 ret mThis->name(args_call); \
             } \
+            void *__GetHandle() const override { return mThis.GetPtr(); } \
             void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
             ARRAY_VISIT_FUNC \
             int __Compare(const ::hx::Object* inRhs) const override \
@@ -1460,7 +1461,7 @@ template<class ELEM_>
 template<class TO>
 ::hx::Callable<Array<TO>(::hx::Callable<TO(ELEM_)>)> Array_obj<ELEM_>::map_dyn()
 {
-    struct _hx_array_map : public ::hx::AutoCallable_obj<Array<TO>(::hx::Callable<TO(ELEM_)>)>
+    struct _hx_array_map final : public ::hx::AutoCallable_obj<Array<TO>(::hx::Callable<TO(ELEM_)>)>
     {
         Array<ELEM_> mThis;
         _hx_array_map(Array<ELEM_> inThis) : mThis(inThis)
@@ -1482,6 +1483,10 @@ template<class TO>
             if (!casted) return 1;
             if (mThis != casted->mThis) return -1;
             return 0;
+        }
+        void* __GetHandle() const override
+        {
+            return mThis.GetPtr();
         }
     };
 
