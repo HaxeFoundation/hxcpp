@@ -11,9 +11,14 @@ public:
    virtual bool hasNext() = 0;
    virtual Dynamic _dynamicNext() = 0;
 
-   Dynamic hasNext_dyn( );
-   Dynamic next_dyn( );
-   Dynamic _dynamicNext_dyn( );
+#if (HXCPP_API_LEVEL>=500)
+   ::hx::Callable<bool()> hasNext_dyn();
+   ::hx::Callable<::Dynamic()> next_dyn();
+#else
+   Dynamic hasNext_dyn();
+   Dynamic next_dyn();
+   Dynamic _dynamicNext_dyn();
+#endif
 };
 
 

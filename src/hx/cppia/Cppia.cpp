@@ -886,6 +886,12 @@ void SLJIT_CALL callDynamic(CppiaCtx *ctx, hx::Object *inFunction, int inArgs)
    //ctx->pointer = (unsigned char *)base;
 
    TRY_NATIVE
+#if (HXCPP_API_LEVEL>=500)
+       Array<Dynamic> argArray = Array_obj<Dynamic>::__new(inArgs, inArgs);
+       for (int s = 0; s < inArgs; s++)
+           argArray[s] = base[s];
+       base[0] = inFunction->__Run(argArray).mPtr;
+#else
       switch(inArgs)
       {
          case 0:
@@ -914,6 +920,7 @@ void SLJIT_CALL callDynamic(CppiaCtx *ctx, hx::Object *inFunction, int inArgs)
             base[0] = inFunction->__Run(argArray).mPtr;
             }
       }
+#endif
    CATCH_NATIVE
    ctx->pointer = oldPointer;
 }
@@ -949,6 +956,15 @@ struct CallDynamicFunction : public CppiaExprWithValue
    hx::Object *runObject(CppiaCtx *ctx)
    {
       int n = args.size();
+#if (HXCPP_API_LEVEL>=500)
+      Array<Dynamic> argVals = Array_obj<Dynamic>::__new(n, n);
+      for (int a = 0; a < n; a++)
+      {
+          argVals[a] = Dynamic(args[a]->runObject(ctx));
+          BCR_CHECK;
+      }
+      return value->__Run(argVals).mPtr;
+#else
       switch(n)
       {
          case 0:
@@ -1012,6 +1028,7 @@ struct CallDynamicFunction : public CppiaExprWithValue
          BCR_CHECK;
       }
       return value->__Run(argVals).mPtr;
+#endif
    }
 
    int runInt(CppiaCtx *ctx)
@@ -2944,12 +2961,16 @@ struct GetFieldByName : public CppiaDynamicExpr
          }
          name = inModule.strings[nameId];
          const StaticInfo *info = staticClass->GetStaticStorage(name);
-         if (info && info->type!=hx::fsUnknown)
+
+         // Do not use a MemReference for static access to objects.
+         // If the object in question is a hx::Callable_obj, its pointer will be downcasted to a hx::Object* and then updated to a non callable_obj pointer.
+         // This leads to memory exceptions later when then trying to invoke that callable.
+         if (info && info->type!=hx::fsUnknown && info->type != fsObject)
          {
-            CppiaExpr *replace = createStaticAccess(this, info->type, info->address);
-            replace->link(inModule);
-            delete this;
-            return replace;
+             CppiaExpr* replace = createStaticAccess(this, info->type, info->address);
+             replace->link(inModule);
+             delete this;
+             return replace;
          }
       }
 
@@ -3089,7 +3110,18 @@ struct Call : public CppiaDynamicExpr
    {
       hx::Object *funcVal = func->runObject(ctx);
       CPPIA_CHECK_FUNC(funcVal);
+
       int size = args.size();
+#if (HXCPP_API_LEVEL>=500)
+      Array<Dynamic> argArray = Array_obj<Dynamic>::__new(size, size);
+      for (int s = 0; s < size; s++)
+      {
+          argArray[s] = args[s]->runObject(ctx);
+          BCR_CHECK;
+      }
+
+      return funcVal->__Run(argArray).mPtr;
+#else
       switch(size)
       {
          case 0:
@@ -3158,6 +3190,7 @@ struct Call : public CppiaDynamicExpr
 
             return funcVal->__Run(argArray).mPtr;
       }
+#endif
       return 0;
    }
 

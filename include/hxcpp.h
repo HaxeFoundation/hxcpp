@@ -339,6 +339,7 @@ typedef PropertyAccessMode PropertyAccess;
 #include <cpp/CppInt32__.h>
 // This needs to "see" other declarations ...
 #include <hx/GcTypeInference.h>
+#include <hx/Functions.h>
 #include <hx/FieldRef.h>
 #include "Array.h"
 #include <hx/Anon.h>
@@ -364,7 +365,9 @@ typedef PropertyAccessMode PropertyAccess;
 #include <cpp/encoding/Utf16.hpp>
 #include <hx/Native.h>
 #include <hx/Operators.h>
-#include <hx/Functions.h>
+#if (HXCPP_API_LEVEL>=500)
+#include <hx/Invoker.h>
+#endif
 // second time ...
 #include <cpp/Variant.h>
 #include <hx/Debug.h>

@@ -54,6 +54,7 @@
   <flag value="-Wno-unused-value" />
   <flag value="-Wno-format-extra-args" />
   <flag value="-Wno-overflow" />
+  <flag value="-Wno-inconsistent-missing-override"/>
   <flag value="-fsanitize=thread" if="HXCPP_THREAD_SANITIZE" />
   <cppflag value="-Wno-invalid-offsetof" />
   <cppflag value="-Wno-return-type-c-linkage" />

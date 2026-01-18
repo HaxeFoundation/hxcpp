@@ -48,12 +48,14 @@ struct CMemberFunction0 : public hx::Object
       return mFunction(mThis.GetPtr());
       
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run() 
    { 
       
       return mFunction(mThis.GetPtr());
       
    } 
+#endif
 }; 
 
 
@@ -86,10 +88,12 @@ struct CStaticFunction0 : public hx::Object
    { 
       return mFunction();
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run() 
    { 
       return mFunction();
    } 
+#endif
 }; 
 
 
@@ -145,12 +149,14 @@ struct CMemberFunction1 : public hx::Object
       return mFunction(mThis.GetPtr(), inArgs[0]);
       
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run(const Dynamic &inArg0) 
    { 
       
       return mFunction(mThis.GetPtr(), inArg0);
       
    } 
+#endif
 }; 
 
 
@@ -183,10 +189,12 @@ struct CStaticFunction1 : public hx::Object
    { 
       return mFunction(inArgs[0]);
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run(const Dynamic &inArg0) 
    { 
       return mFunction(inArg0);
    } 
+#endif
 }; 
 
 
@@ -242,12 +250,14 @@ struct CMemberFunction2 : public hx::Object
       return mFunction(mThis.GetPtr(), inArgs[0],inArgs[1]);
       
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1) 
    { 
       
       return mFunction(mThis.GetPtr(), inArg0,inArg1);
       
    } 
+#endif
 }; 
 
 
@@ -280,10 +290,12 @@ struct CStaticFunction2 : public hx::Object
    { 
       return mFunction(inArgs[0],inArgs[1]);
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1) 
    { 
       return mFunction(inArg0,inArg1);
    } 
+#endif
 }; 
 
 
@@ -339,12 +351,14 @@ struct CMemberFunction3 : public hx::Object
       return mFunction(mThis.GetPtr(), inArgs[0],inArgs[1],inArgs[2]);
       
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2) 
    { 
       
       return mFunction(mThis.GetPtr(), inArg0,inArg1,inArg2);
       
    } 
+#endif
 }; 
 
 
@@ -377,10 +391,12 @@ struct CStaticFunction3 : public hx::Object
    { 
       return mFunction(inArgs[0],inArgs[1],inArgs[2]);
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2) 
    { 
       return mFunction(inArg0,inArg1,inArg2);
    } 
+#endif
 }; 
 
 
@@ -436,12 +452,14 @@ struct CMemberFunction4 : public hx::Object
       return mFunction(mThis.GetPtr(), inArgs[0],inArgs[1],inArgs[2],inArgs[3]);
       
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3) 
    { 
       
       return mFunction(mThis.GetPtr(), inArg0,inArg1,inArg2,inArg3);
       
    } 
+#endif
 }; 
 
 
@@ -474,10 +492,12 @@ struct CStaticFunction4 : public hx::Object
    { 
       return mFunction(inArgs[0],inArgs[1],inArgs[2],inArgs[3]);
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3) 
    { 
       return mFunction(inArg0,inArg1,inArg2,inArg3);
    } 
+#endif
 }; 
 
 
@@ -533,12 +553,14 @@ struct CMemberFunction5 : public hx::Object
       return mFunction(mThis.GetPtr(), inArgs[0],inArgs[1],inArgs[2],inArgs[3],inArgs[4]);
       
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4) 
    { 
       
       return mFunction(mThis.GetPtr(), inArg0,inArg1,inArg2,inArg3,inArg4);
       
    } 
+#endif
 }; 
 
 
@@ -571,10 +593,12 @@ struct CStaticFunction5 : public hx::Object
    { 
       return mFunction(inArgs[0],inArgs[1],inArgs[2],inArgs[3],inArgs[4]);
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4) 
    { 
       return mFunction(inArg0,inArg1,inArg2,inArg3,inArg4);
    } 
+#endif
 }; 
 
 
@@ -590,6 +614,8 @@ Dynamic CreateStaticFunction5(const char *inName,StaticFunction5 inFunc)
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5)
 {
    CheckFPtr();
@@ -605,9 +631,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6)
 {
    CheckFPtr();
@@ -623,9 +652,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7)
 {
    CheckFPtr();
@@ -641,9 +673,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8)
 {
    CheckFPtr();
@@ -659,9 +694,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9)
 {
    CheckFPtr();
@@ -677,9 +715,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10)
 {
    CheckFPtr();
@@ -695,9 +736,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11)
 {
    CheckFPtr();
@@ -713,9 +757,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12)
 {
    CheckFPtr();
@@ -731,9 +778,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13)
 {
    CheckFPtr();
@@ -749,9 +799,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14)
 {
    CheckFPtr();
@@ -767,9 +820,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15)
 {
    CheckFPtr();
@@ -785,9 +841,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16)
 {
    CheckFPtr();
@@ -803,9 +862,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17)
 {
    CheckFPtr();
@@ -821,9 +883,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18)
 {
    CheckFPtr();
@@ -839,9 +904,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19)
 {
    CheckFPtr();
@@ -857,9 +925,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20)
 {
    CheckFPtr();
@@ -875,9 +946,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21)
 {
    CheckFPtr();
@@ -893,9 +967,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22)
 {
    CheckFPtr();
@@ -911,9 +988,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23)
 {
    CheckFPtr();
@@ -929,9 +1009,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24)
 {
    CheckFPtr();
@@ -947,9 +1030,12 @@ namespace cpp
 }
 }
 
+#endif
 
 
  
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24,const Dynamic &inArg25)
 {
    CheckFPtr();
@@ -965,6 +1051,7 @@ namespace cpp
 }
 }
 
+#endif
 
 
 

@@ -27,7 +27,6 @@ enum hxObjectType
    vtAbstractBase = 0x100,
 };
 
-
 namespace hx
 {
 
@@ -240,7 +239,7 @@ public:
    virtual Dynamic __GetItem(int inIndex) const;
    virtual Dynamic __SetItem(int inIndex,Dynamic inValue);
 
-
+#if (HXCPP_API_LEVEL<500)
    typedef const Dynamic &D;
    virtual Dynamic __run();
    virtual Dynamic __run(D a);
@@ -248,6 +247,7 @@ public:
    virtual Dynamic __run(D a,D b,D c);
    virtual Dynamic __run(D a,D b,D c,D d);
    virtual Dynamic __run(D a,D b,D c,D d,D e);
+#endif
 
    virtual int __ArgCount() const { return -1; }
 
@@ -322,7 +322,13 @@ public:
    inline ObjectPtr(const SOURCE_ *inPtr,bool inCheckCast=true)
    {
       if (!SetPtr(const_cast<SOURCE_ *>(inPtr)))
-         CastPtr(const_cast<SOURCE_ *>(inPtr),inCheckCast);
+         CastPtr(
+#if (HXCPP_API_LEVEL>=500)
+             reinterpret_cast<::hx::Object*>(const_cast<SOURCE_ *>(inPtr))
+#else
+             const_cast<SOURCE_*>(inPtr)
+#endif
+             ,inCheckCast);
    }
 
    inline ObjectPtr &operator=(const null &inNull) { mPtr = 0; return *this; }
@@ -401,7 +407,6 @@ public:
 
 
 } // end namespace hx
-
 
 
 #endif

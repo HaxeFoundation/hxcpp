@@ -1,5 +1,7 @@
 
 ::foreach PARAMS:: ::if (ARG>=6)::
+
+#if (HXCPP_API_LEVEL<500)
 Dynamic Dynamic::NS::operator()(::DYNAMIC_ARG_LIST::)
 {
    CheckFPtr();
@@ -15,6 +17,7 @@ namespace cpp
 }
 }
 
+#endif
 
 ::else::
 
@@ -59,6 +62,7 @@ struct CMemberFunction::ARG:: : public hx::Object
       return mFunction(mThis.GetPtr());
       ::end::
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run(::DYNAMIC_ARG_LIST::) 
    { 
       ::if (ARG>0)::
@@ -67,6 +71,7 @@ struct CMemberFunction::ARG:: : public hx::Object
       return mFunction(mThis.GetPtr());
       ::end::
    } 
+#endif
 }; 
 
 
@@ -99,10 +104,12 @@ struct CStaticFunction::ARG:: : public hx::Object
    { 
       return mFunction(::ARR_LIST::);
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run(::DYNAMIC_ARG_LIST::) 
    { 
       return mFunction(::ARG_LIST::);
    } 
+#endif
 }; 
 
 
