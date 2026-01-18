@@ -2275,7 +2275,7 @@ String &String::operator+=(const String &inRHS)
     #define HX_STRING_FUNC(value, name, args_list, func_list, args_call) \
         ::hx::Callable<value(args_list)> String::name##_dyn() \
         { \
-            struct _hx_string_##name : public ::hx::AutoCallable_obj<value(args_list)> \
+            struct _hx_string_##name final : public ::hx::AutoCallable_obj<value(args_list)> \
             { \
                 ::String mThis; \
                 _hx_string_##name(const ::String& inThis) : mThis(inThis) \
@@ -2290,6 +2290,7 @@ String &String::operator+=(const String &inRHS)
                 { \
                     mThis = inThis; \
                 } \
+                void* __GetHandle() const override { return const_cast<char *>(mThis.raw_ptr()); } \
                 void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
                 STRING_VISIT_FUNC \
                 int __Compare(const ::hx::Object* inRhs) const override \
