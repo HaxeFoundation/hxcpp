@@ -2,6 +2,8 @@
 
 #include <hx/Thread.h>
 #include <time.h>
+#include <hx/thread/ConditionVariable.hpp>
+#include <hx/thread/RecursiveMutex.hpp>
 
 DECLARE_TLS_DATA(class hxThreadInfo, tlsCurrentThread);
 
@@ -432,74 +434,27 @@ void __hxcpp_tls_set(int inID,Dynamic inVal)
 
 // --- Mutex ------------------------------------------------------------
 
-class hxMutex : public hx::Object
-{
-public:
-
-	hxMutex()
-	{
-		mFinalizer = new hx::InternalFinalizer(this);
-		mFinalizer->mFinalizer = clean;
-	}
-
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdMutex };
-
-   #ifdef HXCPP_VISIT_ALLOCS
-	void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
-   #endif
-
-	hx::InternalFinalizer *mFinalizer;
-
-	static void clean(hx::Object *inObj)
-	{
-		hxMutex *m = dynamic_cast<hxMutex *>(inObj);
-		if (m) m->mMutex.Clean();
-	}
-	bool Try()
-	{
-		return mMutex.TryLock();
-	}
-	void Acquire()
-	{
-		hx::EnterGCFreeZone();
-		mMutex.Lock();
-		hx::ExitGCFreeZone();
-	}
-	void Release()
-	{
-		mMutex.Unlock();
-	}
-
-
-   HxMutex mMutex;
-};
-
-
-
 Dynamic __hxcpp_mutex_create()
 {
-	return new hxMutex;
+	return new hx::thread::RecursiveMutex_obj();
 }
 void __hxcpp_mutex_acquire(Dynamic inMutex)
 {
-	hxMutex *mutex = dynamic_cast<hxMutex *>(inMutex.mPtr);
-	if (!mutex)
-		throw HX_INVALID_OBJECT;
-	mutex->Acquire();
+	auto mutex = inMutex.Cast<hx::thread::RecursiveMutex>();
+
+	mutex->acquire();
 }
 bool __hxcpp_mutex_try(Dynamic inMutex)
 {
-	hxMutex *mutex = dynamic_cast<hxMutex *>(inMutex.mPtr);
-	if (!mutex)
-		throw HX_INVALID_OBJECT;
-	return mutex->Try();
+	auto mutex = inMutex.Cast<hx::thread::RecursiveMutex>();
+
+	return mutex->tryAcquire();
 }
 void __hxcpp_mutex_release(Dynamic inMutex)
 {
-	hxMutex *mutex = dynamic_cast<hxMutex *>(inMutex.mPtr);
-	if (!mutex)
-		throw HX_INVALID_OBJECT;
-	return mutex->Release();
+	auto mutex = inMutex.Cast<hx::thread::RecursiveMutex>();
+
+	mutex->release();
 }
 
 #if defined(HX_LINUX) || defined(HX_ANDROID)
@@ -631,192 +586,51 @@ void __hxcpp_semaphore_release(Dynamic inSemaphore) {
   semaphore->Release();
 }
 
-class hxCondition : public hx::Object {
-public:
-#ifdef HX_WINDOWS
-#ifndef HXCPP_WINXP_COMPAT
-	CRITICAL_SECTION cs;
-	CONDITION_VARIABLE cond;
-#endif
-#else
-	pthread_cond_t *cond;
-	pthread_mutex_t *mutex;
-#endif
-  hx::InternalFinalizer *mFinalizer;
-  hxCondition() {
-    mFinalizer = new hx::InternalFinalizer(this);
-    mFinalizer->mFinalizer = clean;
-#ifdef HX_WINDOWS
-#ifndef HXCPP_WINXP_COMPAT
-    InitializeCriticalSection(&cs);
-	InitializeConditionVariable(&cond);
-#else
-	throw Dynamic(HX_CSTRING("Condition variables are not supported on Windows XP"));
-#endif
-#else
-    pthread_condattr_t cond_attr;
-    pthread_condattr_init(&cond_attr);
-    cond = new pthread_cond_t();
-    pthread_cond_init(cond, &cond_attr);
-    pthread_condattr_destroy(&cond_attr);
-    pthread_mutexattr_t mutex_attr;
-    pthread_mutexattr_init(&mutex_attr);
-    mutex = new pthread_mutex_t();
-    pthread_mutex_init(mutex, &mutex_attr);
-    pthread_mutexattr_destroy(&mutex_attr);
-#endif
-  }
-
-  HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdCondition };
-
-#ifdef HXCPP_VISIT_ALLOCS
-  void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
-#endif
-  static void clean(hx::Object *inObj) {
-    hxCondition *cond = dynamic_cast<hxCondition *>(inObj);
-    if (cond) {
-#ifdef HX_WINDOWS
-#ifndef HXCPP_WINXP_COMPAT
-      DeleteCriticalSection(&cond->cs);
-#endif
-#else
-      pthread_cond_destroy(cond->cond);
-      delete cond->cond;
-      pthread_mutex_destroy(cond->mutex);
-      delete cond->mutex;
-#endif
-    }
-  }
-
-  void Acquire() {
-#ifdef HX_WINDOWS
-#ifndef HXCPP_WINXP_COMPAT
-	  EnterCriticalSection(&cs);
-#endif
-#else
-	  pthread_mutex_lock(mutex);
-#endif
-  }
-
-  bool TryAcquire() {
-#ifdef HX_WINDOWS
-#ifndef HXCPP_WINXP_COMPAT
-    return (bool)TryEnterCriticalSection(&cs);
-#else
-	return false;
-#endif
-#else
-    return pthread_mutex_trylock(mutex);
-#endif
-  }
-
-  void Release() {
-#ifdef HX_WINDOWS
-#ifndef HXCPP_WINXP_COMPAT
-	  LeaveCriticalSection(&cs);
-#endif
-#else
-	  pthread_mutex_unlock(mutex);
-#endif
-  }
-
-  void Wait() {
-#ifdef HX_WINDOWS
-#ifndef HXCPP_WINXP_COMPAT
-	  SleepConditionVariableCS(&cond,&cs,INFINITE);
-#endif
-#else
-	  pthread_cond_wait(cond, mutex);
-#endif
-  }
-
-  bool TimedWait(double timeout) {
-#ifdef HX_WINDOWS
-#ifndef HXCPP_WINXP_COMPAT
-	  return (bool)SleepConditionVariableCS(&cond, &cs, (DWORD)((FLOAT)timeout * 1000.0));
-#else
-	  return false;
-#endif
-#else
-    struct timeval tv;
-    struct timespec t;
-    double delta = timeout;
-    int idelta = (int)delta, idelta2;
-    delta -= idelta;
-    delta *= 1.0e9;
-    gettimeofday(&tv, NULL);
-    delta += tv.tv_usec * 1000.0;
-    idelta2 = (int)(delta / 1e9);
-    delta -= idelta2 * 1e9;
-    t.tv_sec = tv.tv_sec + idelta + idelta2;
-    t.tv_nsec = (long)delta;
-    return pthread_cond_timedwait(cond, mutex, &t);
-#endif
-  }
-  void Signal() {
-#ifdef HX_WINDOWS
-#ifndef HXCPP_WINXP_COMPAT
-	  WakeConditionVariable(&cond);
-#endif
-#else
-	  pthread_cond_signal(cond);
-#endif
-  }
-  void Broadcast() {
-#ifdef HX_WINDOWS
-#ifndef HXCPP_WINXP_COMPAT
-	  WakeAllConditionVariable(&cond);
-#endif
-#else
-	  pthread_cond_broadcast(cond);
-#endif
-  }
-};
-
-Dynamic __hxcpp_condition_create(void) {
-  return new hxCondition;
+Dynamic __hxcpp_condition_create(void)
+{
+	return new hx::thread::ConditionVariable_obj();
 }
-void __hxcpp_condition_acquire(Dynamic inCond) {
-  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
-  if (!cond)
-    throw HX_INVALID_OBJECT;
-  cond->Acquire();
+void __hxcpp_condition_acquire(Dynamic inCond)
+{
+	auto condition = inCond.Cast<hx::thread::ConditionVariable>();
+  
+	condition->acquire();
 }
-bool __hxcpp_condition_try_acquire(Dynamic inCond) {
-  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
-  if (!cond)
-    throw HX_INVALID_OBJECT;
-  return cond->TryAcquire();
+bool __hxcpp_condition_try_acquire(Dynamic inCond)
+{
+	auto condition = inCond.Cast<hx::thread::ConditionVariable>();
+
+	return condition->tryAcquire();
 }
-void __hxcpp_condition_release(Dynamic inCond) {
-  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
-  if (!cond)
-    throw HX_INVALID_OBJECT;
-  cond->Release();
+void __hxcpp_condition_release(Dynamic inCond)
+{
+	auto condition = inCond.Cast<hx::thread::ConditionVariable>();
+
+	condition->release();
 }
-void __hxcpp_condition_wait(Dynamic inCond) {
-  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
-  if (!cond)
-    throw HX_INVALID_OBJECT;
-  cond->Wait();
+void __hxcpp_condition_wait(Dynamic inCond)
+{
+	auto condition = inCond.Cast<hx::thread::ConditionVariable>();
+
+	condition->wait();
 }
-bool __hxcpp_condition_timed_wait(Dynamic inCond, double timeout) {
-  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
-  if (!cond)
-    throw HX_INVALID_OBJECT;
-  return cond->TimedWait(timeout);
+bool __hxcpp_condition_timed_wait(Dynamic inCond, double timeout)
+{
+	auto condition = inCond.Cast<hx::thread::ConditionVariable>();
+
+	return condition->timedWait(timeout);
 }
-void __hxcpp_condition_signal(Dynamic inCond) {
-  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
-  if (!cond)
-    throw HX_INVALID_OBJECT;
-  cond->Signal();
+void __hxcpp_condition_signal(Dynamic inCond)
+{
+	auto condition = inCond.Cast<hx::thread::ConditionVariable>();
+
+	condition->signal();
 }
-void __hxcpp_condition_broadcast(Dynamic inCond) {
-  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
-  if (!cond)
-    throw HX_INVALID_OBJECT;
-  cond->Broadcast();
+void __hxcpp_condition_broadcast(Dynamic inCond)
+{
+	auto condition = inCond.Cast<hx::thread::ConditionVariable>();
+
+	condition->broadcast();
 }
 
 // --- Lock ------------------------------------------------------------
