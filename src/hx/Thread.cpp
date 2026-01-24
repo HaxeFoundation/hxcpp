@@ -499,6 +499,7 @@ public:
 #endif
 
   void Acquire() {
+	hx::EnterGCFreeZone();
 #if HX_WINDOWS
 	WaitForSingleObject(sem, INFINITE);
 #elif defined(POSIX_SEMAPHORE)
@@ -506,9 +507,11 @@ public:
 #elif defined(APPLE_SEMAPHORE)
     dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
 #endif
+	hx::ExitGCFreeZone();
   }
 
   bool TryAcquire(double timeout) {
+	hx::AutoGCFreeZone blocking;
 #ifdef HX_WINDOWS
     return WaitForSingleObject(sem, (DWORD)((FLOAT)timeout * 1000.0)) == 0;
 #elif defined(POSIX_SEMAPHORE)
