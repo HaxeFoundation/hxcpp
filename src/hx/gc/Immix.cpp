@@ -2393,6 +2393,9 @@ static RootSet sgRootSet;
 typedef hx::UnorderedMap<void *,int> OffsetRootSet;
 static OffsetRootSet *sgOffsetRootSet=0;
 
+typedef hx::UnorderedSet<void*> PinSet;
+static PinSet sgPinSet;
+
 void GCAddRoot(hx::Object **inRoot)
 {
    AutoLock lock(*sGCRootLock);
@@ -2404,7 +2407,6 @@ void GCRemoveRoot(hx::Object **inRoot)
    AutoLock lock(*sGCRootLock);
    sgRootSet.erase(inRoot);
 }
-
 
 void GcAddOffsetRoot(void *inRoot, int inOffset)
 {
@@ -3217,6 +3219,14 @@ public:
          unsigned int *blob = ((unsigned int *)inLarge) - 2;
          unsigned int size = *blob;
          mLargeListLock.Lock();
+
+         if (hx::sgPinSet.count(inLarge))
+         {
+            mLargeListLock.Unlock();
+
+            return;
+         }
+
          mLargeAllocated -= size;
          // Could somehow keep it in the list, but mark as recycled?
          mLargeList.qerase_val(blob);
@@ -4764,9 +4774,36 @@ public:
             hx::Object *obj = (hx::Object *)(ptr - offset);
 
             if (obj)
-               hx::MarkObjectAlloc(obj , &mMarker );
+               hx::MarkObjectAlloc(obj , &mMarker);
          }
       } // automark
+
+      {
+      hx::AutoMarkPush info(&mMarker, "Pins", "pin");
+
+      for (hx::PinSet::iterator i = hx::sgPinSet.begin(); i != hx::sgPinSet.end(); ++i)
+      {
+         void* const ptr = *i;
+         if (!ptr)
+         {
+            continue;
+         }
+
+         auto ptr_i = reinterpret_cast<size_t>(ptr) - sizeof(int);
+         auto flags = *reinterpret_cast<unsigned int*>(ptr_i);
+         auto onLOH = (flags & 0xffff) == 0;
+
+         if (!onLOH)
+         {
+            BlockData* block = reinterpret_cast<BlockData*>(reinterpret_cast<size_t>(ptr) & IMMIX_BLOCK_BASE_MASK);
+            BlockDataInfo* info = (*gBlockInfo)[block->mId];
+
+            info->pin();
+         }
+
+         hx::MarkAlloc(ptr, &mMarker);
+      }
+      }
 
       #ifdef PROFILE_COLLECT
       hx::rootObjects = sObjectMarks;
@@ -5633,6 +5670,29 @@ public:
 
 namespace hx
 {
+#if (HXCPP_API_LEVEL>=430)
+void GCPinPtr(void* inPtr)
+{
+   if (IsConstAlloc(inPtr))
+   {
+      return;
+   }
+  
+   AutoLock(sGlobalAlloc->mLargeListLock);
+   sgPinSet.emplace(inPtr);
+}
+
+void GCUnpinPtr(void* inPtr)
+{
+   if (IsConstAlloc(inPtr))
+   {
+      return;
+   }
+
+   AutoLock(sGlobalAlloc->mLargeListLock);
+   sgPinSet.erase(inPtr);
+}
+#endif
 
 MarkChunk *MarkChunk::swapForNew()
 {
