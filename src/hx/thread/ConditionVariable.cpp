@@ -48,7 +48,7 @@ bool hx::thread::ConditionVariable_obj::timedWait(double seconds)
 {
 	hx::AutoGCFreeZone zone;
 
-	return impl->condition.wait_for(impl->mutex, std::chrono::duration<double>(seconds)) == std::cv_status::timeout;
+	return impl->condition.wait_for(impl->mutex, std::chrono::duration<double>(seconds)) == std::cv_status::no_timeout;
 }
 
 void hx::thread::ConditionVariable_obj::signal()
