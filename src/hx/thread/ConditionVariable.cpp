@@ -6,7 +6,7 @@
 
 struct hx::thread::ConditionVariable_obj::Impl
 {
-	std::mutex mutex;
+	std::recursive_mutex mutex;
 	std::condition_variable_any condition;
 };
 
