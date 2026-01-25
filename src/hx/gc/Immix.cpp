@@ -6,6 +6,7 @@
 #include "../Hash.h"
 #include "GcRegCapture.h"
 #include <hx/Unordered.h>
+#include <mutex>
 
 #ifdef EMSCRIPTEN
    #include <emscripten/stack.h>
@@ -2386,7 +2387,7 @@ void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx)
 
 // --- Roots -------------------------------
 
-FILE_SCOPE HxMutex *sGCRootLock = 0;
+FILE_SCOPE std::mutex* sGCRootLock = nullptr;
 typedef hx::UnorderedSet<hx::Object **> RootSet;
 static RootSet sgRootSet;
 
@@ -2395,20 +2396,20 @@ static OffsetRootSet *sgOffsetRootSet=0;
 
 void GCAddRoot(hx::Object **inRoot)
 {
-   AutoLock lock(*sGCRootLock);
+   std::lock_guard<std::mutex> lock(*sGCRootLock);
    sgRootSet.insert(inRoot);
 }
 
 void GCRemoveRoot(hx::Object **inRoot)
 {
-   AutoLock lock(*sGCRootLock);
+   std::lock_guard<std::mutex> lock(*sGCRootLock);
    sgRootSet.erase(inRoot);
 }
 
 
 void GcAddOffsetRoot(void *inRoot, int inOffset)
 {
-   AutoLock lock(*sGCRootLock);
+   std::lock_guard<std::mutex> lock(*sGCRootLock);
    if (!sgOffsetRootSet)
       sgOffsetRootSet = new OffsetRootSet();
    (*sgOffsetRootSet)[inRoot] = inOffset;
@@ -2416,13 +2417,13 @@ void GcAddOffsetRoot(void *inRoot, int inOffset)
 
 void GcSetOffsetRoot(void *inRoot, int inOffset)
 {
-   AutoLock lock(*sGCRootLock);
+   std::lock_guard<std::mutex> lock(*sGCRootLock);
    (*sgOffsetRootSet)[inRoot] = inOffset;
 }
 
 void GcRemoveOffsetRoot(void *inRoot)
 {
-   AutoLock lock(*sGCRootLock);
+   std::lock_guard<std::mutex> lock(*sGCRootLock);
    OffsetRootSet::iterator r = sgOffsetRootSet->find(inRoot);
    sgOffsetRootSet->erase(r);
 }
@@ -2436,7 +2437,7 @@ void GcRemoveOffsetRoot(void *inRoot)
 class WeakRef;
 typedef hx::QuickVec<WeakRef *> WeakRefs;
 
-FILE_SCOPE HxMutex *sFinalizerLock = 0;
+FILE_SCOPE std::mutex *sFinalizerLock = 0;
 FILE_SCOPE WeakRefs sWeakRefs;
 
 class WeakRef : public hx::Object
@@ -2449,9 +2450,8 @@ public:
       mRef = inRef;
       if (mRef.mPtr)
       {
-         sFinalizerLock->Lock();
+         std::lock_guard<std::mutex> lock(*sFinalizerLock);
          sWeakRefs.push(this);
-         sFinalizerLock->Unlock();
       }
    }
 
@@ -6603,8 +6603,8 @@ void InitAlloc()
    sgAllocInit = true;
    sGlobalAlloc = new GlobalAllocator();
    sgFinalizers = new FinalizerList();
-   sFinalizerLock = new HxMutex();
-   sGCRootLock = new HxMutex();
+   sFinalizerLock = new std::mutex();
+   sGCRootLock = new std::mutex();
    hx::Object tmp;
    void **stack = *(void ***)(&tmp);
    sgObject_root = stack[0];
