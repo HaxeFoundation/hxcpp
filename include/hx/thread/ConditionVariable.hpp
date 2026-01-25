@@ -18,7 +18,6 @@ namespace hx
 			bool tryAcquire();
 			void release();
 			void wait();
-			bool timedWait(double seconds);
 			void signal();
 			void broadcast();
 
