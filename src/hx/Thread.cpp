@@ -4,13 +4,12 @@
 #include <time.h>
 #include <hx/thread/ConditionVariable.hpp>
 #include <hx/thread/RecursiveMutex.hpp>
+#include <atomic>
 
 DECLARE_TLS_DATA(class hxThreadInfo, tlsCurrentThread);
 
-// g_threadInfoMutex allows atomic access to g_nextThreadNumber
-static HxMutex g_threadInfoMutex;
 // Thread number 0 is reserved for the main thread
-static int g_nextThreadNumber = 1;
+static std::atomic_int g_nextThreadNumber(1);
 
 
 // How to manage hxThreadInfo references for non haxe threads (main, extenal)?
@@ -297,9 +296,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
     #ifdef EMSCRIPTEN
     return hx::Throw( HX_CSTRING("Threads are not supported on Emscripten") );
     #else
-    g_threadInfoMutex.Lock();
     int threadNumber = g_nextThreadNumber++;
-    g_threadInfoMutex.Unlock();
 
 	hxThreadInfo *info = new hxThreadInfo(inStart, threadNumber);
 
