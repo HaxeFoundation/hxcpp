@@ -393,8 +393,8 @@ static int sgTimeToNextTableUpdate = 1;
 
 
 
-HxMutex  *gThreadStateChangeLock=0;
-HxMutex  *gSpecialObjectLock=0;
+std::recursive_mutex *gThreadStateChangeLock=nullptr;
+std::recursive_mutex *gSpecialObjectLock=nullptr;
 
 class LocalAllocator;
 enum LocalAllocState { lasNew, lasRunning, lasStopped, lasWaiting, lasTerminal };
@@ -2500,7 +2500,7 @@ InternalFinalizer::InternalFinalizer(hx::Object *inObj, finalizer inFinalizer)
    mFinalizer = inFinalizer;
 
    // Ensure this survives generational collect
-   AutoLock lock(*gSpecialObjectLock);
+   std::lock_guard<std::recursive_mutex> lock(*gSpecialObjectLock);
    sgFinalizers->push(this);
 }
 
@@ -2797,7 +2797,7 @@ void  GCSetFinalizer( hx::Object *obj, hx::finalizer f )
    if (((unsigned int *)obj)[-1] & HX_GC_CONST_ALLOC_BIT)
       throw Dynamic(HX_CSTRING("set_finalizer - invalid const object"));
 
-   AutoLock lock(*gSpecialObjectLock);
+   std::lock_guard<std::recursive_mutex> lock(*gSpecialObjectLock);
    if (f==0)
    {
       FinalizerMap::iterator i = sFinalizerMap.find(obj);
@@ -2817,7 +2817,7 @@ void  GCSetHaxeFinalizer( hx::Object *obj, HaxeFinalizer f )
    if (((unsigned int *)obj)[-1] & HX_GC_CONST_ALLOC_BIT)
       throw Dynamic(HX_CSTRING("set_finalizer - invalid const object"));
 
-   AutoLock lock(*gSpecialObjectLock);
+   std::lock_guard<std::recursive_mutex> lock(*gSpecialObjectLock);
    if (f==0)
    {
       HaxeFinalizerMap::iterator i = sHaxeFinalizerMap.find(obj);
@@ -2835,13 +2835,13 @@ void GCDoNotKill(hx::Object *inObj)
    if (((unsigned int *)inObj)[-1] & HX_GC_CONST_ALLOC_BIT)
       throw Dynamic(HX_CSTRING("doNotKill - invalid const object"));
 
-   AutoLock lock(*gSpecialObjectLock);
+   std::lock_guard<std::recursive_mutex> lock(*gSpecialObjectLock);
    sMakeZombieSet.insert(inObj);
 }
 
 hx::Object *GCGetNextZombie()
 {
-   AutoLock lock(*gSpecialObjectLock);
+   std::lock_guard<std::recursive_mutex> lock(*gSpecialObjectLock);
    if (sZombieList.empty())
       return 0;
    hx::Object *result = sZombieList.pop();
@@ -2850,13 +2850,13 @@ hx::Object *GCGetNextZombie()
 
 void RegisterWeakHash(HashBase<String> *inHash)
 {
-   AutoLock lock(*gSpecialObjectLock);
+   std::lock_guard<std::recursive_mutex> lock(*gSpecialObjectLock);
    sWeakHashList.push(inHash);
 }
 
 void RegisterWeakHash(HashBase<Dynamic> *inHash)
 {
-   AutoLock lock(*gSpecialObjectLock);
+   std::lock_guard<std::recursive_mutex> lock(*gSpecialObjectLock);
    sWeakHashList.push(inHash);
 }
 
@@ -3153,12 +3153,12 @@ public:
    {
       if (!gThreadStateChangeLock)
       {
-         gThreadStateChangeLock = new HxMutex();
-         gSpecialObjectLock = new HxMutex();
+         gThreadStateChangeLock = new std::recursive_mutex();
+         gSpecialObjectLock = new std::recursive_mutex();
       }
       // Until we add ourselves, the collector will not wait
       //  on us - ie, we are assumed ot be in a GC free zone.
-      AutoLock lock(*gThreadStateChangeLock);
+      std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
       mLocalAllocs.push(inAlloc);
       // TODO Attach debugger
    }
@@ -3181,7 +3181,7 @@ public:
 
    LocalAllocator *GetPooledAllocator()
    {
-      AutoLock lock(*gThreadStateChangeLock);
+      std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
       for(int p=0;p<LOCAL_POOL_SIZE;p++)
       {
          if (mLocalPool[p])
@@ -3614,7 +3614,7 @@ public:
 
          #ifndef HXCPP_SINGLE_THREADED_APP
          hx::EnterGCFreeZone();
-         gThreadStateChangeLock->Lock();
+         gThreadStateChangeLock->lock();
          hx::ExitGCFreeZoneLocked();
 
          result = GetNextFree(inRequiredBytes);
@@ -3663,7 +3663,7 @@ public:
          mCurrentRowsInUse += result->GetFreeRows();
 
          #ifndef HXCPP_SINGLE_THREADED_APP
-         gThreadStateChangeLock->Unlock();
+         gThreadStateChangeLock->unlock();
          #endif
 
 
@@ -4214,7 +4214,7 @@ public:
  
    void *GetIDObject(int inIndex)
    {
-      AutoLock lock(*gSpecialObjectLock);
+      std::lock_guard<std::recursive_mutex> lock(*gSpecialObjectLock);
       if (inIndex<0 || inIndex>hx::sIdObjectMap.size())
          return 0;
       return hx::sIdObjectMap[inIndex];
@@ -4222,7 +4222,7 @@ public:
 
    int GetObjectID(void * inPtr)
    {
-      AutoLock lock(*gSpecialObjectLock);
+      std::lock_guard<std::recursive_mutex> lock(*gSpecialObjectLock);
       hx::ObjectIdMap::iterator i = hx::sObjectIdMap.find( (hx::Object *)inPtr );
       if (i!=hx::sObjectIdMap.end())
          return i->second;
@@ -4864,12 +4864,12 @@ public:
       {
          if (inLocked)
          {
-            gThreadStateChangeLock->Unlock();
+            gThreadStateChangeLock->unlock();
 
             hx::PauseForCollect();
 
             hx::EnterGCFreeZone();
-            gThreadStateChangeLock->Lock();
+            gThreadStateChangeLock->lock();
             hx::ExitGCFreeZoneLocked();
          }
          else
@@ -4888,7 +4888,7 @@ public:
       this_local = (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsStackContext;
 
       if (!inLocked)
-         gThreadStateChangeLock->Lock();
+         gThreadStateChangeLock->lock();
 
       for(int i=0;i<mLocalAllocs.size();i++)
          if (mLocalAllocs[i]!=this_local)
@@ -5406,7 +5406,7 @@ public:
          }
 
          if (!inLocked)
-            gThreadStateChangeLock->Unlock();
+            gThreadStateChangeLock->unlock();
       #else
         #ifdef HXCPP_SCRIPTABLE
         hx::gMainThreadContext->byteMarkId = hx::gByteMarkID;
@@ -5900,7 +5900,7 @@ public:
          EnterGCFreeZone();
       #endif
 
-      AutoLock lock(*gThreadStateChangeLock);
+      std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
 
       #ifdef HX_WINDOWS
       mID = 0;
@@ -6127,7 +6127,7 @@ public:
       if (!mGCFreeZone)
          CriticalGCError("GCFree Zone mismatch");
 
-      AutoLock lock(*gThreadStateChangeLock);
+      std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
       mReadyForCollect.Reset();
       mGCFreeZone = false;
       #endif
@@ -7039,13 +7039,13 @@ void __hxcpp_set_finalizer(Dynamic inObj, void *inFunc)
 
 void __hxcpp_add_member_finalizer(hx::Object *inObject, _hx_member_finalizer f, bool inPin)
 {
-   AutoLock lock(*gSpecialObjectLock);
+   std::lock_guard<std::recursive_mutex> lock(*gSpecialObjectLock);
    hx::sFinalizableList.push( hx::Finalizable(inObject, f, inPin) );
 }
 
 void __hxcpp_add_alloc_finalizer(void *inAlloc, _hx_alloc_finalizer f, bool inPin)
 {
-   AutoLock lock(*gSpecialObjectLock);
+   std::lock_guard<std::recursive_mutex> lock(*gSpecialObjectLock);
    hx::sFinalizableList.push( hx::Finalizable(inAlloc, f, inPin) );
 }
 
