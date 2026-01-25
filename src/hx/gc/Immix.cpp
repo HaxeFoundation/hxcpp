@@ -3216,19 +3216,19 @@ public:
       {
          unsigned int *blob = ((unsigned int *)inLarge) - 2;
          unsigned int size = *blob;
-         mLargeListLock.Lock();
+         mLargeListLock.lock();
          mLargeAllocated -= size;
          // Could somehow keep it in the list, but mark as recycled?
          mLargeList.qerase_val(blob);
          // We could maybe free anyhow?
          if (!largeObjectRecycle.hasExtraCapacity(1))
          {
-            mLargeListLock.Unlock();
+            mLargeListLock.unlock();
             HxFree(blob);
             return;
          }
          largeObjectRecycle.push(blob);
-         mLargeListLock.Unlock();
+         mLargeListLock.unlock();
       }
    }
 
@@ -3269,7 +3269,7 @@ public:
             {
                if (do_lock && !isLocked)
                {
-                  mLargeListLock.Lock();
+                  mLargeListLock.lock();
                   isLocked = true;
                   if (  i>=largeObjectRecycle.size() || largeObjectRecycle[i][0] != inSize )
                      continue;
@@ -3295,7 +3295,7 @@ public:
 
          if (isLocked)
          {
-            mLargeListLock.Unlock();
+            mLargeListLock.unlock();
             isLocked = false;
          }
 
@@ -3320,13 +3320,13 @@ public:
       #endif
 
       if (do_lock && !isLocked)
-         mLargeListLock.Lock();
+         mLargeListLock.lock();
 
       mLargeList.push(result);
       mLargeAllocated += inSize;
 
       if (do_lock)
-         mLargeListLock.Unlock();
+         mLargeListLock.unlock();
 
 #ifdef HXCPP_TELEMETRY
       __hxt_gc_alloc(result + 2, inSize);
@@ -3363,12 +3363,12 @@ public:
       #endif
 
       if (do_lock)
-         mLargeListLock.Lock();
+         mLargeListLock.lock();
 
       mLargeAllocated += inDelta;
 
       if (do_lock)
-         mLargeListLock.Unlock();
+         mLargeListLock.unlock();
    }
 
    // Gets a block with the 'zeroLock' acquired, which means the zeroing thread
@@ -5623,7 +5623,7 @@ public:
    volatile int mZeroListQueue;
 
    LargeList mLargeList;
-   HxMutex    mLargeListLock;
+   std::mutex mLargeListLock;
    hx::QuickVec<LocalAllocator *> mLocalAllocs;
    LocalAllocator *mLocalPool[LOCAL_POOL_SIZE];
    hx::QuickVec<unsigned int *> largeObjectRecycle;
