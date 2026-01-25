@@ -8,6 +8,7 @@
 #include <hx/Telemetry.h>
 #include <hx/Unordered.h>
 #include <hx/OS.h>
+#include <mutex>
 
 
 #if defined(HXCPP_CATCH_SEGV) && !defined(_MSC_VER)
@@ -45,7 +46,7 @@ namespace hx
 const char* EXTERN_CLASS_NAME = "extern";
 
 #ifdef HXCPP_STACK_IDS
-static HxMutex sStackMapMutex;
+static std::mutex sStackMapMutex;
 typedef UnorderedMap<int, StackContext *> StackMap;
 static StackMap sStackMap;
 #endif
@@ -245,9 +246,10 @@ void StackContext::onThreadAttach()
    #ifdef HXCPP_STACK_IDS
    mThreadId = __hxcpp_GetCurrentThreadNumber();
 
-   sStackMapMutex.Lock();
-   sStackMap[mThreadId] = this;
-   sStackMapMutex.Unlock();
+   {
+       std::lock_guard<std::mutex> guard(sStackMapMutex);
+       sStackMap[mThreadId] = this;
+   }
    #endif
 
    #ifdef HXCPP_DEBUGGER
@@ -302,9 +304,10 @@ void StackContext::onThreadDetach()
    #endif
 
    #ifdef HXCPP_STACK_IDS
-   sStackMapMutex.Lock();
-   sStackMap.erase(mThreadId);
-   sStackMapMutex.Unlock();
+   {
+       std::lock_guard<std::mutex> guard(sStackMapMutex);
+       sStackMap.erase(mThreadId);
+   }
    mThreadId = 0;
    #endif
 
@@ -317,18 +320,17 @@ void StackContext::onThreadDetach()
 void StackContext::getAllStackIds( QuickVec<int> &outIds )
 {
    outIds.clear();
-   sStackMapMutex.Lock();
+
+   std::lock_guard<std::mutex> guard(sStackMapMutex);
+
    for(StackMap::iterator i=sStackMap.begin(); i!=sStackMap.end(); ++i)
       outIds.push(i->first);
-   sStackMapMutex.Unlock();
 }
 
 StackContext *StackContext::getStackForId(int id)
 {
-   sStackMapMutex.Lock();
-   StackContext *result = sStackMap[id];
-   sStackMapMutex.Unlock();
-   return result;
+   std::lock_guard<std::mutex> guard(sStackMapMutex);
+   return sStackMap[id];
 }
 #endif
 
