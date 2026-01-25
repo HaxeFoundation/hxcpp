@@ -63,7 +63,7 @@ public:
         Stash();
 
         // When a profiler exists, the profiler thread needs to exist
-        std::lock_guard<std::mutex> lock(gThreadMutex);
+        std::lock_guard<std::recursive_mutex> lock(gThreadMutex);
    
         gThreadRefCount += 1;
         if (gThreadRefCount == 1) {
@@ -73,7 +73,7 @@ public:
 
     ~Telemetry()
     {
-        std::lock_guard<std::mutex> lock(gThreadMutex);
+        std::lock_guard<std::recursive_mutex> lock(gThreadMutex);
 
         gThreadRefCount -= 1;
     }
@@ -144,7 +144,7 @@ public:
       }
 
       {
-          std::lock_guard<std::mutex> lock(gStashMutex);
+          std::lock_guard<std::recursive_mutex> lock(gStashMutex);
 
           stashed.push_back(*stash);
       }
@@ -154,7 +154,7 @@ public:
 
     TelemetryFrame* Dump()
     {
-      std::lock_guard<std::mutex> lock(gStashMutex);
+      std::lock_guard<std::recursive_mutex> lock(gStashMutex);
       if (stashed.size()<1) {
         return 0;
       }
@@ -335,19 +335,19 @@ private:
 
     std::vector<int> *allocation_data;
 
-    static std::mutex gStashMutex;
-    static std::mutex gThreadMutex;
+    static std::recursive_mutex gStashMutex;
+    static std::recursive_mutex gThreadMutex;
     static int gThreadRefCount;
     static int gProfileClock;
 
-    static std::mutex alloc_mutex;
+    static std::recursive_mutex alloc_mutex;
     static std::map<void*, Telemetry*> alloc_map;
 };
-/* static */ std::mutex Telemetry::gStashMutex;
-/* static */ std::mutex Telemetry::gThreadMutex;
+/* static */ std::recursive_mutex Telemetry::gStashMutex;
+/* static */ std::recursive_mutex Telemetry::gThreadMutex;
 /* static */ int Telemetry::gThreadRefCount;
 /* static */ int Telemetry::gProfileClock;
-/* static */ std::mutex Telemetry::alloc_mutex;
+/* static */ std::recursive_mutex Telemetry::alloc_mutex;
 /* static */ std::map<void*, Telemetry*> Telemetry::alloc_map;
 
 
