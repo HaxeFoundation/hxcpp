@@ -443,7 +443,7 @@ class BuildTool
 
          var to_be_compiled = new Array<File>();
 
-         var cached = useCache && mCompiler.createCompilerVersion(group);
+         var cached = useCache && mCompiler.createCompilerVersion();
 
          var inList = new Array<Bool>();
          var groupIsOutOfDate = mDirtyList.indexOf(group.mId)>=0 || mDirtyList.indexOf("all")>=0;
