@@ -572,13 +572,7 @@ enum AllocType { allocNone, allocString, allocObject, allocMarked };
 struct BlockDataInfo *gBlockStack = 0;
 typedef hx::QuickVec<hx::Object *> ObjectStack;
 
-
 static std::recursive_mutex sThreadPoolLock;
-
-inline void WaitThreadLocked(std::condition_variable_any* ioSignal)
-{
-    ioSignal->wait(sThreadPoolLock);
-}
 
 // For threaded marking/block reclaiming
 static unsigned int sRunningThreads = 0;
@@ -4466,8 +4460,8 @@ public:
         // May be woken multiple times if sRunningThreads is set to 0 then 1 before we sleep
         sThreadSleeping[inId] = true;
         // Spurious wake?
-        while( !(sRunningThreads & (1<<inId) ) )
-        WaitThreadLocked(sThreadWake[inId]);
+        sThreadWake[inId]->wait(sThreadPoolLock, [&inId]() { return sRunningThreads & (1 << inId); });
+        
         sThreadSleeping[inId] = false;
    }
 
@@ -4571,8 +4565,7 @@ public:
 
          std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
          sThreadJobDoneSleeping = true;
-         while(sRunningThreads)
-             WaitThreadLocked(sThreadJobDone);
+         sThreadJobDone->wait(sThreadPoolLock, []() { return sRunningThreads == false; });
          sThreadJobDoneSleeping = false;
          sgThreadPoolAbort = false;
          sAllThreads = 0;
@@ -4617,8 +4610,7 @@ public:
       {
          // Join the workers...
          sThreadJobDoneSleeping = true;
-         while(sRunningThreads)
-            WaitThreadLocked(sThreadJobDone);
+         sThreadJobDone->wait(sThreadPoolLock, []() { return sRunningThreads == false; });
          sThreadJobDoneSleeping = false;
 
          sAllThreads = 0;
