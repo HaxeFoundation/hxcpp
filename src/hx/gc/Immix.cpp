@@ -572,7 +572,7 @@ enum AllocType { allocNone, allocString, allocObject, allocMarked };
 struct BlockDataInfo *gBlockStack = 0;
 typedef hx::QuickVec<hx::Object *> ObjectStack;
 
-static std::recursive_mutex sThreadPoolLock;
+static std::mutex sThreadPoolLock;
 
 // For threaded marking/block reclaiming
 static unsigned int sRunningThreads = 0;
@@ -1536,7 +1536,7 @@ struct GlobalChunks
 
       if (MAX_GC_THREADS>1 && sLazyThreads)
       {
-         std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
+         std::lock_guard<std::mutex> l(sThreadPoolLock);
 
          #ifdef PROFILE_THREAD_USAGE
            #define CHECK_THREAD_WAKE(tid) \
@@ -1710,7 +1710,7 @@ struct GlobalChunks
                      return result;
                }
             }
-            std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
+            std::lock_guard<std::mutex> l(sThreadPoolLock);
             completeThreadLocked(inThreadId);
          }
          return result;
@@ -4421,7 +4421,7 @@ public:
          if (mZeroListQueue + mThreadJobId < mZeroList.size())
          {
             // Wake zeroing thread
-            std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
+            std::lock_guard<std::mutex> l(sThreadPoolLock);
             if (!(sRunningThreads & 0x01))
             {
                #ifdef PROFILE_THREAD_USAGE
@@ -4436,7 +4436,7 @@ public:
 
    void finishThreadJob(int inId)
    {
-      std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
+      std::lock_guard<std::mutex> l(sThreadPoolLock);
       if (sRunningThreads & (1<<inId))
       {
          sRunningThreads &= ~(1<<inId);
@@ -4454,7 +4454,7 @@ public:
 
    void waitForThreadWake(int inId)
    {
-        std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
+        std::lock_guard<std::mutex> l(sThreadPoolLock);
         int count = 0;
 
         // May be woken multiple times if sRunningThreads is set to 0 then 1 before we sleep
@@ -4551,7 +4551,7 @@ public:
             sgThreadPoolAbort = true;
             if (sgThreadPoolJob==tpjAsyncZeroJit)
             {
-               std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
+               std::lock_guard<std::mutex> l(sThreadPoolLock);
                // Thread will be waiting, but not finished
                if (sRunningThreads & 0x1)
                {
@@ -4563,7 +4563,7 @@ public:
          }
 
 
-         std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
+         std::lock_guard<std::mutex> l(sThreadPoolLock);
          sThreadJobDoneSleeping = true;
          sThreadJobDone->wait(sThreadPoolLock, []() { return sRunningThreads == false; });
          sThreadJobDoneSleeping = false;
@@ -4589,7 +4589,7 @@ public:
             CreateWorker(i);
       }
 
-      std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
+      std::lock_guard<std::mutex> l(sThreadPoolLock);
 
       sgThreadPoolJob = inJob;
 
