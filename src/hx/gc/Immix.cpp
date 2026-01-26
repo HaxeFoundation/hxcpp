@@ -7,6 +7,7 @@
 #include "GcRegCapture.h"
 #include <hx/Unordered.h>
 #include <mutex>
+#include <condition_variable>
 
 #ifdef EMSCRIPTEN
    #include <emscripten/stack.h>
@@ -572,23 +573,12 @@ struct BlockDataInfo *gBlockStack = 0;
 typedef hx::QuickVec<hx::Object *> ObjectStack;
 
 
-typedef HxMutex ThreadPoolLock;
+static std::recursive_mutex sThreadPoolLock;
 
-static ThreadPoolLock sThreadPoolLock;
-
-#if !defined(HX_WINDOWS) && !defined(EMSCRIPTEN) && \
-   !defined(__SNC__) && !defined(__ORBIS__)
-#define HX_GC_PTHREADS
-typedef pthread_cond_t ThreadPoolSignal;
-inline void WaitThreadLocked(ThreadPoolSignal &ioSignal)
+inline void WaitThreadLocked(std::condition_variable_any* ioSignal)
 {
-   pthread_cond_wait(&ioSignal, sThreadPoolLock.mMutex);
+    ioSignal->wait(sThreadPoolLock);
 }
-#else
-typedef HxSemaphore ThreadPoolSignal;
-#endif
-
-typedef TAutoLock<ThreadPoolLock> ThreadPoolAutoLock;
 
 // For threaded marking/block reclaiming
 static unsigned int sRunningThreads = 0;
@@ -615,20 +605,16 @@ static bool sgThreadPoolAbort = false;
 
 // Pthreads enters the sleep state while holding a mutex, so it no cost to update
 //  the sleeping state and thereby avoid over-signalling the condition
-bool             sThreadSleeping[MAX_GC_THREADS];
-ThreadPoolSignal sThreadWake[MAX_GC_THREADS];
-bool             sThreadJobDoneSleeping = false;
-ThreadPoolSignal sThreadJobDone;
+bool                         sThreadSleeping[MAX_GC_THREADS];
+std::condition_variable_any* sThreadWake[MAX_GC_THREADS];
+bool                         sThreadJobDoneSleeping = false;
+std::condition_variable_any* sThreadJobDone;
 
 
-static inline void SignalThreadPool(ThreadPoolSignal &ioSignal, bool sThreadSleeping)
+static inline void SignalThreadPool(std::condition_variable_any* ioSignal, bool sThreadSleeping)
 {
-   #ifdef HX_GC_PTHREADS
-   if (sThreadSleeping)
-      pthread_cond_signal(&ioSignal);
-   #else
-   ioSignal.Set();
-   #endif
+    if (sThreadSleeping)
+        ioSignal->notify_one();
 }
 
 static void wakeThreadLocked(int inThreadId)
@@ -1556,7 +1542,7 @@ struct GlobalChunks
 
       if (MAX_GC_THREADS>1 && sLazyThreads)
       {
-         ThreadPoolAutoLock l(sThreadPoolLock);
+         std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
 
          #ifdef PROFILE_THREAD_USAGE
            #define CHECK_THREAD_WAKE(tid) \
@@ -1730,7 +1716,7 @@ struct GlobalChunks
                      return result;
                }
             }
-            ThreadPoolAutoLock l(sThreadPoolLock);
+            std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
             completeThreadLocked(inThreadId);
          }
          return result;
@@ -4441,7 +4427,7 @@ public:
          if (mZeroListQueue + mThreadJobId < mZeroList.size())
          {
             // Wake zeroing thread
-            ThreadPoolAutoLock l(sThreadPoolLock);
+            std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
             if (!(sRunningThreads & 0x01))
             {
                #ifdef PROFILE_THREAD_USAGE
@@ -4456,7 +4442,7 @@ public:
 
    void finishThreadJob(int inId)
    {
-      ThreadPoolAutoLock l(sThreadPoolLock);
+      std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
       if (sRunningThreads & (1<<inId))
       {
          sRunningThreads &= ~(1<<inId);
@@ -4474,22 +4460,15 @@ public:
 
    void waitForThreadWake(int inId)
    {
-      #ifdef HX_GC_PTHREADS
-      {
-         ThreadPoolAutoLock l(sThreadPoolLock);
-         int count = 0;
+        std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
+        int count = 0;
 
-         // May be woken multiple times if sRunningThreads is set to 0 then 1 before we sleep
-         sThreadSleeping[inId] = true;
-         // Spurious wake?
-         while( !(sRunningThreads & (1<<inId) ) )
-            WaitThreadLocked(sThreadWake[inId]);
-         sThreadSleeping[inId] = false;
-      }
-      #else
-      while( !(sRunningThreads & (1<<inId) ) )
-         sThreadWake[inId].Wait();
-      #endif
+        // May be woken multiple times if sRunningThreads is set to 0 then 1 before we sleep
+        sThreadSleeping[inId] = true;
+        // Spurious wake?
+        while( !(sRunningThreads & (1<<inId) ) )
+        WaitThreadLocked(sThreadWake[inId]);
+        sThreadSleeping[inId] = false;
    }
 
 
@@ -4552,19 +4531,18 @@ public:
    {
       void *info = (void *)(size_t)inId;
 
-      #ifdef HX_GC_PTHREADS
-         pthread_cond_init(&sThreadWake[inId],0);
-         sThreadSleeping[inId] = false;
-         if (inId==0)
-            pthread_cond_init(&sThreadJobDone,0);
-
-         pthread_t result = 0;
-         int created = pthread_create(&result,0,SThreadLoop,info);
-         bool ok = created==0;
-      #elif defined(EMSCRIPTEN)
+      #if defined(EMSCRIPTEN)
          // Only one thread
       #else
-         bool ok = HxCreateDetachedThread(SThreadLoop, info);
+         sThreadWake[inId] = new std::condition_variable_any();
+         if (0 == inId)
+         {
+             sThreadJobDone = new std::condition_variable_any();
+         }
+
+         sThreadSleeping[inId] = false;
+
+         HxCreateDetachedThread(SThreadLoop, info);
       #endif
    }
 
@@ -4579,7 +4557,7 @@ public:
             sgThreadPoolAbort = true;
             if (sgThreadPoolJob==tpjAsyncZeroJit)
             {
-               ThreadPoolAutoLock l(sThreadPoolLock);
+               std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
                // Thread will be waiting, but not finished
                if (sRunningThreads & 0x1)
                {
@@ -4591,16 +4569,11 @@ public:
          }
 
 
-         #ifdef HX_GC_PTHREADS
-         ThreadPoolAutoLock lock(sThreadPoolLock);
+         std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
          sThreadJobDoneSleeping = true;
          while(sRunningThreads)
              WaitThreadLocked(sThreadJobDone);
          sThreadJobDoneSleeping = false;
-         #else
-         while(sRunningThreads)
-            sThreadJobDone.Wait();
-         #endif
          sgThreadPoolAbort = false;
          sAllThreads = 0;
          sgThreadPoolJob = tpjNone;
@@ -4623,10 +4596,7 @@ public:
             CreateWorker(i);
       }
 
-      #ifdef HX_GC_PTHREADS
-      ThreadPoolAutoLock lock(sThreadPoolLock);
-      #endif
-
+      std::lock_guard<std::recursive_mutex> l(sThreadPoolLock);
 
       sgThreadPoolJob = inJob;
 
@@ -4646,15 +4616,10 @@ public:
       if (inWait)
       {
          // Join the workers...
-         #ifdef HX_GC_PTHREADS
          sThreadJobDoneSleeping = true;
          while(sRunningThreads)
             WaitThreadLocked(sThreadJobDone);
          sThreadJobDoneSleeping = false;
-         #else
-         while(sRunningThreads)
-            sThreadJobDone.Wait();
-         #endif
 
          sAllThreads = 0;
          sgThreadPoolJob = tpjNone;
