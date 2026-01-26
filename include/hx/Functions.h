@@ -1,6 +1,5 @@
 #ifndef HX_FUNCTIONS_H
 #define HX_FUNCTIONS_H
-#include <hxcpp.h>
 
 namespace hx
 {
