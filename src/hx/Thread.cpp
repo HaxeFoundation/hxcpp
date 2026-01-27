@@ -616,9 +616,7 @@ void __hxcpp_condition_wait(Dynamic inCond)
 }
 bool __hxcpp_condition_timed_wait(Dynamic inCond, double timeout)
 {
-	auto condition = inCond.Cast<hx::thread::ConditionVariable>();
-
-	return condition->timedWait(timeout);
+	return hx::Throw(HX_CSTRING("Not Implemented"));
 }
 void __hxcpp_condition_signal(Dynamic inCond)
 {
