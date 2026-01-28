@@ -7,6 +7,7 @@
 #include <hx/Thread.h>
 #include <hx/Telemetry.h>
 #include <hx/OS.h>
+#include <mutex>
 
 
 namespace hx
@@ -62,23 +63,19 @@ public:
         Stash();
 
         // When a profiler exists, the profiler thread needs to exist
-        gThreadMutex.Lock();
+        std::lock_guard<std::recursive_mutex> lock(gThreadMutex);
    
         gThreadRefCount += 1;
         if (gThreadRefCount == 1) {
             HxCreateDetachedThread(ProfileMainLoop, 0);
         }
-
-        gThreadMutex.Unlock();
     }
 
     ~Telemetry()
     {
-        gThreadMutex.Lock();
+        std::lock_guard<std::recursive_mutex> lock(gThreadMutex);
 
         gThreadRefCount -= 1;
-
-        gThreadMutex.Unlock();
     }
 
     // todo
@@ -110,7 +107,7 @@ public:
       stash->gcoverhead = gcOverhead*1000000; // usec
       gcOverhead = 0;
 
-      alloc_mutex.Lock();
+      alloc_mutex.lock();
 
       if (_last_obj!=0) lookup_last_object_type();
 
@@ -122,7 +119,7 @@ public:
         allocation_data = new std::vector<int>();
       }
 
-      alloc_mutex.Unlock();
+      alloc_mutex.unlock();
 
       int i,size;
       stash->names = 0;
@@ -146,18 +143,19 @@ public:
         allocStacksStashed = allocStacks.size();
       }
 
-      gStashMutex.Lock();
-      stashed.push_back(*stash);
-      gStashMutex.Unlock();
+      {
+          std::lock_guard<std::recursive_mutex> lock(gStashMutex);
+
+          stashed.push_back(*stash);
+      }
 
       IgnoreAllocs(-1);
     }
 
     TelemetryFrame* Dump()
     {
-      gStashMutex.Lock();
+      std::lock_guard<std::recursive_mutex> lock(gStashMutex);
       if (stashed.size()<1) {
-        gStashMutex.Unlock();
         return 0;
       }
 
@@ -171,7 +169,6 @@ public:
       stashed.pop_front(); // Destroy item that was Dumped last call
 
       front = &stashed.front();
-      gStashMutex.Unlock();
 
       //printf(" -- dumped stash, allocs=%d, alloc[max]=%d\n", front->allocations->size(), front->allocations->size()>0 ? front->allocations->at(front->allocations->size()-1) : 0);
 
@@ -200,7 +197,7 @@ public:
       const char* type = "_uninitialized";
 
       int obj_id = __hxt_ptr_id(_last_obj);
-      alloc_mutex.Lock();
+      alloc_mutex.lock();
       std::map<void*, hx::Telemetry*>::iterator exist = alloc_map.find(_last_obj);
       if (exist != alloc_map.end() && _last_obj!=(NULL)) {
         type = "_unknown";
@@ -218,7 +215,7 @@ public:
           //printf("Updating last allocation %016lx type to %s\n", _last_obj, type);
         }
       }
-      alloc_mutex.Unlock();
+      alloc_mutex.unlock();
       allocation_data->at(_last_loc+2) = GetNameIdx(type);
       _last_obj = 0;
     }
@@ -255,7 +252,7 @@ public:
       double t0 = __hxcpp_time_stamp();
 
       Telemetry* telemetry = 0;
-      alloc_mutex.Lock();
+      alloc_mutex.lock();
       std::map<void*, hx::Telemetry*>::iterator iter = alloc_map.begin();
       while (iter != alloc_map.end()) {
         void* obj = iter->first;
@@ -272,7 +269,7 @@ public:
           iter++;
         }
       }
-      alloc_mutex.Unlock();
+      alloc_mutex.unlock();
 
       // Report overhead on one of the telemetry instances
       // TODO: something better?
@@ -338,19 +335,19 @@ private:
 
     std::vector<int> *allocation_data;
 
-    static  HxMutex gStashMutex;
-    static HxMutex gThreadMutex;
+    static std::recursive_mutex gStashMutex;
+    static std::recursive_mutex gThreadMutex;
     static int gThreadRefCount;
     static int gProfileClock;
 
-    static HxMutex alloc_mutex;
+    static std::recursive_mutex alloc_mutex;
     static std::map<void*, Telemetry*> alloc_map;
 };
-/* static */ HxMutex Telemetry::gStashMutex;
-/* static */ HxMutex Telemetry::gThreadMutex;
+/* static */ std::recursive_mutex Telemetry::gStashMutex;
+/* static */ std::recursive_mutex Telemetry::gThreadMutex;
 /* static */ int Telemetry::gThreadRefCount;
 /* static */ int Telemetry::gProfileClock;
-/* static */ HxMutex Telemetry::alloc_mutex;
+/* static */ std::recursive_mutex Telemetry::alloc_mutex;
 /* static */ std::map<void*, Telemetry*> Telemetry::alloc_map;
 
 
@@ -483,14 +480,14 @@ void hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
     // ExternalInterface.external_handler()), etc
 #ifndef HXCPP_PROFILE_EXTERNS
     if (stack->getCurrentStackFrame()->position->className==hx::EXTERN_CLASS_NAME) {
-      alloc_mutex.Unlock();
+      alloc_mutex.unlock();
       return;
     }
 #endif
 
     int obj_id = __hxt_ptr_id(obj);
 
-    alloc_mutex.Lock();
+    alloc_mutex.lock();
 
     // HXT debug: Check for id collision
 #ifdef HXCPP_TELEMETRY_DEBUG
@@ -524,7 +521,7 @@ void hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
 
     //printf("Tracking alloc %s at %016lx, id=%016lx, s=%d for telemetry %016lx, ts=%f\n", type, obj, obj_id, inSize, this, __hxcpp_time_stamp());
 
-    alloc_mutex.Unlock();
+    alloc_mutex.unlock();
 }
 
 void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
@@ -533,7 +530,7 @@ void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
     int old_obj_id = __hxt_ptr_id(old_obj);
     int new_obj_id = __hxt_ptr_id(new_obj);
 
-    alloc_mutex.Lock();
+    alloc_mutex.lock();
 
     // Only track reallocations of objects currently known to be allocated
     std::map<void*, hx::Telemetry*>::iterator exist = alloc_map.find(old_obj);
@@ -559,7 +556,7 @@ void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
       HXTReclaimInternal(old_obj); // count old as reclaimed
     } else {
       //printf("Not tracking re-alloc of untracked %016lx, id=%016lx\n", old_obj, old_obj_id);
-      alloc_mutex.Unlock();
+      alloc_mutex.unlock();
       return;
     }
 
@@ -568,7 +565,7 @@ void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
 
     //printf("Tracking re-alloc from %016lx, id=%016lx to %016lx, id=%016lx at %f\n", old_obj, old_obj_id, new_obj, new_obj_id, __hxcpp_time_stamp());
 
-    alloc_mutex.Unlock();
+    alloc_mutex.unlock();
 }
 
 } // end namespace hx
