@@ -75,6 +75,8 @@
   <depend name="${HXCPP}/include/hx/zip/Zip.hpp"/>
   <depend name="${HXCPP}/include/hx/zip/Compress.hpp"/>
   <depend name="${HXCPP}/include/hx/zip/Uncompress.hpp"/>
+  <depend name="${HXCPP}/include/hx/thread/RecursiveMutex.hpp"/>
+  <depend name="${HXCPP}/include/hx/thread/ConditionVariable.hpp"/>
   <section unless="HXCPP_LINK_NO_TOOL_DEPENDS" >
      <depend name="${HXCPP}/toolchain/haxe-target.xml" dateOnly="true" />
      <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml" dateOnly="true" />
@@ -205,6 +207,9 @@
   <file name = "src/cpp/encoding/Ascii.cpp"/>
   <file name = "src/cpp/encoding/Utf8.cpp"/>
   <file name = "src/cpp/encoding/Utf16.cpp"/>
+
+  <file name="${HXCPP}/src/hx/thread/RecursiveMutex.cpp"/>
+  <file name="${HXCPP}/src/hx/thread/ConditionVariable.cpp"/>
 
   <addTwice if="linux||android" />
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />

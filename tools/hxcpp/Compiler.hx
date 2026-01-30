@@ -85,10 +85,6 @@ class Compiler
       mAsmExe = inExe;
       mID = inID;
       mExt = ".o";
-      mPCHExt = ".pch";
-      mPCHCreate = "-Yc";
-      mPCHUse = "-Yu";
-      mPCHFilename = "/Fp";
       mCached = false;
       mRcFlags = [];
    }
@@ -222,13 +218,16 @@ class Compiler
       if (inFile.mGroup.isPrecompiled() && allowPch)
       {
          var pchDir = getPchDir(inFile.mGroup);
-         if (mPCHUse!="")
-         {
-            args.push(mPCHUse + inFile.mGroup.mPrecompiledHeader + ".h");
-            args.push(mPCHFilename + pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
+         switch (mPCH) {
+            case "msvc":
+               args.push(mPCHUse + inFile.mGroup.mPrecompiledHeader + ".h");
+               args.push(mPCHFilename + pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
+            case "gcc":
+               args.unshift("-I"+pchDir);
+            case "clang":
+               args.push("-include-pch");
+               args.push(pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
          }
-         else
-            args.unshift("-I"+pchDir);
       }
 
       return args;
@@ -442,7 +441,7 @@ class Compiler
       return obj_name;
    }
 
-   public function createCompilerVersion(inGroup:FileGroup)
+   public function createCompilerVersion()
    {
       if ( mCompilerVersion==null)
       {
@@ -517,7 +516,7 @@ class Compiler
 
    public function needsPchObj()
    {
-      return mPCH!="gcc";
+      return mPCH == "msvc";
    }
 
 /*
@@ -568,7 +567,7 @@ class Compiler
       if (inGroup.isCached() || inReuseIfPossible)
       {
           // No obj needed for gcc
-          var obj = mPCH=="gcc" ? null : PathManager.combine(dir, file + mExt);
+          var obj = mPCH=="msvc" ? PathManager.combine(dir, file + mExt) : null;
           if (FileSystem.exists(pch_name) && (obj==null || FileSystem.exists(obj)) )
              return obj;
       }
@@ -579,7 +578,7 @@ class Compiler
       //Log.info("", "Make pch dir " + dir );
       PathManager.mkdir(dir);
 
-      if (mPCH!="gcc")
+      if (mPCH == "msvc")
       {
          args.push( mPCHCreate + header + ".h" );
          var symbol = "link" + Md5.encode( PathManager.combine(dir, file + mExt) );
@@ -627,7 +626,7 @@ class Compiler
          //throw "Error creating pch: " + result + " - build cancelled";
       }
 
-      if (mPCH!="gcc")
+      if (mPCH == "msvc")
          return  PathManager.combine(dir, file + mExt);
       return null;
    }
@@ -635,11 +634,27 @@ class Compiler
    public function setPCH(inPCH:String)
    {
       mPCH = inPCH;
-      if (mPCH=="gcc")
-      {
-         mPCHExt = ".h.gch";
-         mPCHUse = "";
-         mPCHFilename = "";
+      createCompilerVersion();
+      static final regex = ~/clang/i;
+      if (inPCH != null && regex.match(mCompilerVersionString)) {
+         mPCH = "clang";
+      }
+      switch (mPCH) {
+         case "gcc":
+            mPCHExt = ".h.gch";
+            mPCHUse = "";
+            mPCHFilename = "";
+         case "clang":
+            mPCHExt = ".h.pch";
+            mPCHUse = "";
+            mPCHFilename = "";
+         case "msvc":
+            mPCHExt = ".pch";
+            mPCHCreate = "-Yc";
+            mPCHUse = "-Yu";
+            mPCHFilename = "/Fp";
+         default:
+            mPCH = null;
       }
    }
 
