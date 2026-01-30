@@ -1,10 +1,86 @@
 #include <hxcpp.h>
 #include <vector>
+#include <limits>
 #include <cpp/Pointer.h>
 
 #ifdef HXCPP_TELEMETRY
 extern void __hxt_new_array(void* obj, int size);
 #endif
+
+namespace
+{
+    template<class ELEM>
+    class SafeSorter
+    {
+        typedef
+#if (HXCPP_API_LEVEL>=500)
+            ::hx::Callable<int(Dynamic, Dynamic)>
+#else
+            Dynamic
+#endif
+            SorterFunc;
+
+        struct ArraySorter
+        {
+            ELEM* mArray;
+            SorterFunc mSorter;
+
+            ArraySorter(ELEM* inArray, SorterFunc inSorter) : mArray(inArray), mSorter(inSorter) {};
+
+            bool operator()(int inA, int inB)
+            {
+                return mSorter(mArray[inA], mArray[inB]) < 0;
+            }
+        };
+
+        template<class STORE>
+        static void SortImpl(ELEM* inArray, const int inLength, SorterFunc inSorter)
+        {
+            auto index = std::vector<STORE>(inLength);
+            for (auto i = 0; i < inLength; i++)
+            {
+                index[i] = static_cast<STORE>(i);
+            }
+
+            std::stable_sort(index.begin(), index.end(), ArraySorter(inArray, inSorter));
+
+            // Put the results back ...
+            for (int i = 0; i < inLength; i++)
+            {
+                int from = index[i];
+                while (from < i)
+                    from = index[from];
+                if (from != i)
+                {
+                    std::swap(inArray[i], inArray[from]);
+                    index[i] = from;
+                }
+            }
+        }
+
+    public:
+        static void Sort(ELEM* base, const int length, SorterFunc sorter)
+        {
+            if (length < 2)
+            {
+                return;
+            }
+
+            if (length <= std::numeric_limits<uint8_t>::max())
+            {
+                SortImpl<uint8_t>(base, length, sorter);
+            }
+            else if (length <= std::numeric_limits<uint16_t>::max())
+            {
+                SortImpl<uint16_t>(base, length, sorter);
+            }
+            else
+            {
+                SortImpl<uint32_t>(base, length, sorter);
+            }
+        }
+    };
+}
 
 using namespace hx;
 
@@ -492,9 +568,9 @@ String ArrayBase::joinArray(ArrayBase *inBase, String inSeparator)
 void ArrayBase::safeSort(DynamicSorterFunc inSorter, bool inIsString)
 {
    if (inIsString)
-       hx::SafeSorter<String>::Sort((String *)mBase, length,inSorter);
+       SafeSorter<String>::Sort((String *)mBase, length,inSorter);
    else
-       hx::SafeSorter<Dynamic>::Sort((Dynamic *)mBase, length,inSorter);
+       SafeSorter<Dynamic>::Sort((Dynamic *)mBase, length,inSorter);
 }
 
 
