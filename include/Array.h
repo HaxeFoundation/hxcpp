@@ -1504,40 +1504,110 @@ HX_ARRAY_FUNC(, void, resize, HX_ARRAY_ARG_LIST1(int), HX_ARRAY_FUNC_LIST1(int),
 template<class ELEM_>
 hx::Val Array_obj<ELEM_>::__Field(const String& inString, hx::PropertyAccess inCallProp)
 {
+#define ARRAY_RUN_FUNC(ret,func,dynamic_arg_list,arg_list) \
+    Dynamic __run(dynamic_arg_list) \
+    { \
+        ret mThis->__##func(arg_list); return Dynamic(); \
+    }
+
+#define DEFINE_ARRAY_FUNC(ret,func,array_list,run_func,ARG_C) \
+    struct Reflective_##func : public hx::Object \
+    { \
+       HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
+       bool __IsFunction() const { return true; } \
+       Array_obj<ELEM_> *mThis; \
+       Reflective_##func(Array_obj<ELEM_> *inThis) : mThis(inThis) { } \
+       String toString() const{ return HX_CSTRING(#func) ; } \
+       String __ToString() const{ return HX_CSTRING(#func) ; } \
+       int __GetType() const { return vtFunction; } \
+       void *__GetHandle() const { return mThis; } \
+       int __ArgCount() const { return ARG_C; } \
+       void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+       ARRAY_VISIT_FUNC \
+       Dynamic __Run(const Array<Dynamic> &inArgs) \
+       { \
+          ret mThis->__##func(array_list); return Dynamic(); \
+       } \
+       run_func \
+       int __Compare(const hx::Object *inRHS) const \
+       { \
+          if (!dynamic_cast<const Reflective_##func *>(inRHS)) return -1; \
+          return (mThis==inRHS->__GetHandle() ? 0 : -1); \
+       } \
+    };
+
+
+#define DEFINE_ARRAY_FUNC0(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST0,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0),0)
+#define DEFINE_ARRAY_FUNC1(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST1,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST1,HX_ARG_LIST1),1)
+#define DEFINE_ARRAY_FUNC2(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST2,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST2,HX_ARG_LIST2),2)
+#define DEFINE_ARRAY_FUNC3(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST3,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST3,HX_ARG_LIST3),3)
+#define DEFINE_ARRAY_FUNC4(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST4,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST4,HX_ARG_LIST4),4)
+
+    DEFINE_ARRAY_FUNC1(, __SetSize);
+    DEFINE_ARRAY_FUNC1(, __SetSizeExact);
+    DEFINE_ARRAY_FUNC2(, insert);
+    DEFINE_ARRAY_FUNC0(, reverse);
+    DEFINE_ARRAY_FUNC1(, sort);
+    DEFINE_ARRAY_FUNC1(, unshift);
+    DEFINE_ARRAY_FUNC4(, blit);
+    DEFINE_ARRAY_FUNC2(, zero);
+    DEFINE_ARRAY_FUNC1(, resize);
+    DEFINE_ARRAY_FUNC1(return, concat);
+    DEFINE_ARRAY_FUNC0(return, iterator);
+    DEFINE_ARRAY_FUNC0(return, keyValueIterator);
+    DEFINE_ARRAY_FUNC1(return, join);
+    DEFINE_ARRAY_FUNC0(return, pop);
+    DEFINE_ARRAY_FUNC0(return, copy);
+    DEFINE_ARRAY_FUNC1(return, push);
+    DEFINE_ARRAY_FUNC1(return, contains);
+    DEFINE_ARRAY_FUNC1(return, remove);
+    DEFINE_ARRAY_FUNC1(return, removeAt);
+    DEFINE_ARRAY_FUNC2(return, indexOf);
+    DEFINE_ARRAY_FUNC2(return, lastIndexOf);
+    DEFINE_ARRAY_FUNC0(return, shift);
+    DEFINE_ARRAY_FUNC2(return, slice);
+    DEFINE_ARRAY_FUNC2(return, splice);
+    DEFINE_ARRAY_FUNC0(return, toString);
+    DEFINE_ARRAY_FUNC1(return, map);
+    DEFINE_ARRAY_FUNC1(return, filter);
+    DEFINE_ARRAY_FUNC1(return, __unsafe_get);
+    DEFINE_ARRAY_FUNC2(return, __unsafe_set);
+    DEFINE_ARRAY_FUNC1(return, memcmp);
+
     if (inString == HX_CSTRING("length")) return (int)size();
-    if (inString == HX_CSTRING("concat")) return concat_dyn();
-    if (inString == HX_CSTRING("insert")) return insert_dyn();
-    if (inString == HX_CSTRING("copy")) return copy_dyn();
-    if (inString == HX_CSTRING("iterator")) return iterator_dyn();
-    if (inString == HX_CSTRING("keyValueIterator")) return keyValueIterator_dyn();
-    if (inString == HX_CSTRING("join")) return join_dyn();
-    if (inString == HX_CSTRING("pop")) return pop_dyn();
-    if (inString == HX_CSTRING("push")) return push_dyn();
-    if (inString == HX_CSTRING("contains")) return contains_dyn();
-    if (inString == HX_CSTRING("remove")) return remove_dyn();
-    if (inString == HX_CSTRING("removeAt")) return removeAt_dyn();
-    if (inString == HX_CSTRING("indexOf")) return indexOf_dyn();
-    if (inString == HX_CSTRING("lastIndexOf")) return lastIndexOf_dyn();
-    if (inString == HX_CSTRING("reverse")) return reverse_dyn();
-    if (inString == HX_CSTRING("shift")) return shift_dyn();
-    if (inString == HX_CSTRING("splice")) return splice_dyn();
-    if (inString == HX_CSTRING("slice")) return slice_dyn();
-    if (inString == HX_CSTRING("sort")) return sort_dyn();
-    if (inString == HX_CSTRING("toString")) return toString_dyn();
-    if (inString == HX_CSTRING("unshift")) return unshift_dyn();
-    if (inString == HX_CSTRING("filter")) return filter_dyn();
-    if (inString == HX_CSTRING("map")) return map_dyn<::Dynamic>();
-    if (inString == HX_CSTRING("__SetSize")) return __SetSize_dyn();
-    if (inString == HX_CSTRING("__SetSizeExact")) return __SetSizeExact_dyn();
-    if (inString == HX_CSTRING("__unsafe_get")) return __unsafe_get_dyn();
-    if (inString == HX_CSTRING("__unsafe_set")) return __unsafe_set_dyn();
-    if (inString == HX_CSTRING("blit")) return blit_dyn();
-    if (inString == HX_CSTRING("zero")) return zero_dyn();
-    if (inString == HX_CSTRING("memcmp")) return memcmp_dyn();
+    if (inString == HX_CSTRING("concat")) return new Reflective_concat(this);
+    if (inString == HX_CSTRING("insert")) return new Reflective_insert(this);
+    if (inString == HX_CSTRING("copy")) return new Reflective_copy(this);
+    if (inString == HX_CSTRING("iterator")) return new Reflective_iterator(this);
+    if (inString == HX_CSTRING("keyValueIterator")) return new Reflective_keyValueIterator(this);
+    if (inString == HX_CSTRING("join")) return new Reflective_join(this);
+    if (inString == HX_CSTRING("pop")) return new Reflective_pop(this);
+    if (inString == HX_CSTRING("push")) return new Reflective_push(this);
+    if (inString == HX_CSTRING("contains")) return new Reflective_contains(this);
+    if (inString == HX_CSTRING("remove")) return new Reflective_remove(this);
+    if (inString == HX_CSTRING("removeAt")) return new Reflective_removeAt(this);
+    if (inString == HX_CSTRING("indexOf")) return new Reflective_indexOf(this);
+    if (inString == HX_CSTRING("lastIndexOf")) return new Reflective_lastIndexOf(this);
+    if (inString == HX_CSTRING("reverse")) return new Reflective_reverse(this);
+    if (inString == HX_CSTRING("shift")) return new Reflective_shift(this);
+    if (inString == HX_CSTRING("splice")) return new Reflective_splice(this);
+    if (inString == HX_CSTRING("slice")) return new Reflective_slice(this);
+    if (inString == HX_CSTRING("sort")) return new Reflective_sort(this);
+    if (inString == HX_CSTRING("toString")) return new Reflective_toString(this);
+    if (inString == HX_CSTRING("unshift")) return new Reflective_unshift(this);
+    if (inString == HX_CSTRING("filter")) return new Reflective_filter(this);
+    if (inString == HX_CSTRING("map")) return new Reflective_map(this);
+    if (inString == HX_CSTRING("__SetSize")) return new Reflective___SetSize(this);
+    if (inString == HX_CSTRING("__SetSizeExact")) return new Reflective___SetSizeExact(this);
+    if (inString == HX_CSTRING("__unsafe_get")) return new Reflective___unsafe_get(this);
+    if (inString == HX_CSTRING("__unsafe_set")) return new Reflective___unsafe_set(this);
+    if (inString == HX_CSTRING("blit")) return new Reflective_blit(this);
+    if (inString == HX_CSTRING("zero")) return new Reflective_zero(this);
+    if (inString == HX_CSTRING("memcmp")) return new Reflective_memcmp(this);
     if (inString == HX_CSTRING("_hx_storeType")) return (int)getStoreType();
     if (inString == HX_CSTRING("_hx_elementSize")) return (int)GetElementSize();
     if (inString == HX_CSTRING("_hx_pointer")) return __pointerToBase();
-    if (inString == HX_CSTRING("resize")) return resize_dyn();
+    if (inString == HX_CSTRING("resize")) return new Reflective_resize(this);
     return null();
 }
 

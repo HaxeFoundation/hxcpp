@@ -47,6 +47,7 @@
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-Wno-overflow" />
+  <flag value="-Wno-inconsistent-missing-override"/>
   <cppflag value="-Wno-invalid-offsetof" />
   <flag value="-DHX_LINUX"/>
   <flag value="-DRASPBERRYPI=RASPBERRYPI" if="rpi"/>
