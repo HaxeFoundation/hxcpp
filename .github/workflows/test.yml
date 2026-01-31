@@ -221,3 +221,18 @@ jobs:
         run: haxe compile-cpp.hxml -D ${{ env.HXCPP_ARCH_FLAG }} -D no_http
       - name: run
         run: bin${{ inputs.sep }}cpp${{ inputs.sep }}TestMain-debug
+  cxx_standard:
+    runs-on: ${{ inputs.os }}
+    name: cxx_standard
+    defaults:
+      run:
+        working-directory: test/cxx_standard
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
+      - name: build
+        run: haxelib run hxcpp Build.xml
