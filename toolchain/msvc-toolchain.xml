@@ -70,6 +70,7 @@
   <flag value="-D${HXCPP_XP_DEFINE}" if="HXCPP_XP_DEFINE"/>
   <flag value="-GR"/>
   <flag value="/std:c++17" if="HXCPP_CPP17"/>
+  <flag value="/std:c++20" if="HXCPP_CPP20"/>
 
   <!-- standard optimization flags -->
   <flag value="-Od" if="debug" tag="optim-std" />
