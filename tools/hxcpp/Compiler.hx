@@ -27,6 +27,13 @@ private class FlagInfo
    }
 }
 
+enum Language {
+   C;
+   Cxx;
+   ObjC;
+   ObjCxx;
+}
+
 class Compiler
 {
    private var mFlags:Array<FlagInfo>;
@@ -127,15 +134,21 @@ class Compiler
 
    function addIdentity(ext:String,ioArgs:Array<String>)
    {
+      var lang = switch ext {
+         case "c": C;
+         case "m": ObjC;
+         case "mm": ObjCxx;
+         case "cpp", "c++", "cc", "cxx": Cxx;
+         default: null;
+      }
       if (mAddGCCIdentity)
       {
-         var identity = switch(ext)
+         var identity = switch (lang)
            {
-              case "c" : "c";
-              case "m" : "objective-c";
-              case "mm" : "objective-c++";
-              case "cpp" : "c++";
-              case "c++" : "c++";
+              case C : "c";
+              case ObjC : "objective-c";
+              case ObjCxx : "objective-c++";
+              case Cxx : "c++";
               default:"";
          }
          if (identity!="")
@@ -144,6 +157,49 @@ class Compiler
             ioArgs.push(identity);
          }
       }
+      return lang;
+   }
+
+   function addStandard(lang: Language, inFile: {
+		var mCStandard:Int;
+		var mCxxStandard:Int;
+		var mObjCStandard:Int;
+		var mObjCxxStandard:Int;
+   }, args:Array<String>) {
+		switch (lang) {
+			case C:
+				if (inFile.mCStandard != null) {
+					if (BuildTool.isMsvc()) {
+						if (inFile.mCStandard > 17) {
+							args.push('/std:clatest');
+						} else if (inFile.mCStandard >= 11) {
+							args.push('/std:c${inFile.mCStandard}');
+						}
+					} else {
+						args.push('-std=c${inFile.mCStandard}');
+					}
+				}
+			case ObjC:
+				if (inFile.mObjCStandard != null) {
+					args.push('-std=c${inFile.mObjCStandard}');
+				}
+			case ObjCxx:
+				if (inFile.mObjCxxStandard != null) {
+					args.push('-std=c++${inFile.mObjCxxStandard}');
+				}
+			case Cxx:
+				if (inFile.mCxxStandard != null) {
+					if (BuildTool.isMsvc()) {
+						if (inFile.mCxxStandard > 20) {
+							args.push('/std:c++latest');
+						} else if (inFile.mCxxStandard >= 14) {
+							args.push('/std:c++${inFile.mCxxStandard}');
+						}
+					} else {
+						args.push('-std=c++${inFile.mCxxStandard}');
+					}
+				}
+		}
    }
 
    function addOptimTags(tagFilter:Array<String>)
@@ -190,42 +246,10 @@ class Compiler
          Log.error("Unkown extension for " + inFile.mName);
 
 
-      addIdentity(ext,args);
-      switch (ext) {
-         case "c":
-            if(inFile.mCStandard != null) {
-               if(BuildTool.isMsvc()) {
-                  if (inFile.mCStandard > 17) {
-                     args.push('/std:clatest');
-                  } else if (inFile.mCStandard >= 11) {
-                     args.push('/std:c${inFile.mCStandard}');
-                  }
-               } else {
-                  args.push('-std=c${inFile.mCStandard}');
-               }
-            }
-         case "m":
-            if(inFile.mObjCStandard != null) {
-               args.push('-std=c${inFile.mObjCStandard}');
-            }
-         case "mm":
-            if(inFile.mObjCxxStandard != null) {
-               args.push('-std=c++${inFile.mObjCxxStandard}');
-            }
-         case "cpp", "c++", "cc":
-            if(inFile.mCxxStandard != null) {
-               if (BuildTool.isMsvc()) {
-                  if (inFile.mCxxStandard > 20) {
-                     args.push('/std:c++latest');
-                  } else if (inFile.mCStandard >= 14) {
-                     args.push('/std:c++${inFile.mCxxStandard}');
-                  }
-               } else {
-                  args.push('-std=c++${inFile.mCxxStandard}');
-               }
-            }
+      var lang = addIdentity(ext,args);
+      if (lang != null) {
+         addStandard(lang, inFile, args);
       }
-
       var allowPch = false;
 
       if (asm)
@@ -608,6 +632,7 @@ class Compiler
 
       args = args.concat( mPCHFlags );
 
+		addStandard(Cxx, inGroup, args);
 
       //Log.info("", "Make pch dir " + dir );
       PathManager.mkdir(dir);
