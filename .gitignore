@@ -29,6 +29,11 @@ hxcpp.n
 
 .vscode
 
+test/cxx_standard/main
+test/cxx_standard/main.hash
+test/cxx_standard/main.exe
+test/cxx_standard/main.exe.hash
+
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudio
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudio
 

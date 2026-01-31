@@ -12,9 +12,6 @@
               - you can also set the variable "android-19" directly
 -->
 
-<set name="HXCPP_CPP11" value="1" if="NDKV9+ || NDKV10+" unless="HXCPP_NO_CPP11" />
-
-
 <!-- Set architecture -->
 <section if="HXCPP_X86">
   <set name="ARCH" value="-x86" />
@@ -96,8 +93,6 @@
   <cppflag value="-frtti"/>
   <flag value="-D_LINUX_STDDEF_H "/> <!-- Avoid compiler including 2 version of file -->
   <flag value="-Wno-psabi" />
-  <cppflag value="-std=c++11" if="HXCPP_CPP11"/>
-  <flag value="-DHXCPP_CPP11" if="HXCPP_CPP11"/>
 
   <section unless="HXCPP_X86 || HXCPP_X86_64">
 
@@ -168,7 +163,6 @@
 
   <flag value="-frtti"/>
   <flag value="-nostdlib"/>
-  <flag value="-std=c++11" if="HXCPP_CPP11"/>
   <flag value="-Wl,-shared,-Bsymbolic"/>
   <section if="HXCPP_OPTIMIZE_FOR_SIZE || HXCPP_GC_SECTIONS" unless="debug">
     <flag value="-Wl,--gc-sections" />
@@ -218,7 +212,6 @@
 
   <flag value="-frtti"/>
   <flag value="-nostdlib"/>
-  <flag value="-std=c++11" if="HXCPP_CPP11"/>
   <flag value="-Wl,--no-undefined" unless="dll_import" />
   <flag value="-Wl,--unresolved-symbols=ignore-in-object-files" if="dll_import" />
   <section unless="HXCPP_ANDROID_NO_16K_PAGES">

@@ -114,6 +114,11 @@ class RunTests
       command("cpp64"+sep+"Test",[]);
    }
 
+   public static function cxx_standard() {
+      setDir("cxx_standard");
+      command("haxelib", ["run", "hxcpp", "Build.xml"]);
+   }
+
 
    public static function setDir(name:String)
    {
@@ -199,6 +204,7 @@ class RunTests
       run("std64", std64);
       run("native", native);
       run("debugger", debugger);
+      run("cxx_standard", cxx_standard);
 
       Sys.println("");
 
