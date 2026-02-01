@@ -7,7 +7,7 @@
 <include name="toolchain/gcc-toolchain.xml"/>
 <!--<path name="${DEVELOPER_DIR}/Platforms/WatchOS.platform/Developer/usr/bin" />-->
 
-<set name="OBJDBG" vlue="-dbg" if="debug" />
+<set name="OBJDBG" value="-dbg" if="debug" />
 
 <compiler id="WatchOS" exe="clang" >
   <exe name="xcrun --toolchain WatchOS clang++" />
@@ -19,7 +19,7 @@
     <flag value="armv7k" unless="HXCPP_ARM64_32"/>
     <flag value="arm64_32" if="HXCPP_ARM64_32"/>
   </section>
-  
+
 
   <pchflag value="-x" />
   <pchflag value="c++-header" />
