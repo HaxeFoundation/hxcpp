@@ -161,10 +161,10 @@ class Compiler
    }
 
    function addStandard(lang: Language, inFile: {
-		var mCStandard:Int;
-		var mCxxStandard:Int;
-		var mObjCStandard:Int;
-		var mObjCxxStandard:Int;
+		var mCStandard:Null<Int>;
+		var mCxxStandard:Null<Int>;
+		var mObjCStandard:Null<Int>;
+		var mObjCxxStandard:Null<Int>;
    }, args:Array<String>) {
 		switch (lang) {
 			case C:
