@@ -1,62 +1,10 @@
 #include <hxcpp.h>
 #include <array>
+#include <algorithm>
+#include <simdutf.h>
 
 using namespace cpp::marshal;
-
-namespace
-{
-	bool isSurrogate(char32_t codepoint)
-	{
-		return codepoint >= 0xd800 && codepoint < 0xe000;
-	}
-
-	bool isLowSurrogate(char32_t codepoint)
-	{
-		return codepoint >= 0xdc00 && codepoint < 0xe000;
-	}
-
-	bool isHighSurrogate(char32_t codepoint)
-	{
-		return codepoint >= 0xd800 && codepoint < 0xdc00;
-	}
-
-	bool isAsciiBuffer(const View<uint8_t>& buffer)
-	{
-		auto i = int64_t{ 0 };
-		while (i < buffer.length)
-		{
-			auto p = cpp::encoding::Utf16::codepoint(buffer.slice(i));
-
-			if (p > 127)
-			{
-				return false;
-			}
-
-			i += cpp::encoding::Utf16::getByteCount(p);
-		}
-
-		return true;
-	}
-
-	String toAsciiString(const View<uint8_t>& buffer)
-	{
-		auto bytes  = buffer.length / sizeof(char16_t);
-		auto chars  = View<char>(hx::InternalNew(bytes + 1, false), bytes * sizeof(char));
-		auto i      = int64_t{ 0 };
-		auto k      = int64_t{ 0 };
-
-		while (i < buffer.length)
-		{
-			auto p = cpp::encoding::Utf16::codepoint(buffer.slice(i));
-
-			chars[k++] = static_cast<char>(p);
-
-			i += cpp::encoding::Utf16::getByteCount(p);
-		}
-		
-		return String(chars.ptr.ptr, chars.length);
-	}
-}
+using namespace simdutf;
 
 bool cpp::encoding::Utf16::isEncoded(const String& string)
 {
@@ -76,30 +24,12 @@ int cpp::encoding::Utf16::getByteCount(const null&)
 
 int cpp::encoding::Utf16::getByteCount(const char32_t& codepoint)
 {
-	return codepoint <= 0xFFFF ? 2 : 4;
+	return getCharCount(codepoint) * sizeof(char16_t);
 }
 
 int64_t cpp::encoding::Utf16::getByteCount(const String& string)
 {
-	if (null() == string)
-	{
-		hx::NullReference("String", false);
-	}
-
-	if (string.isUTF16Encoded())
-	{
-		return string.length * sizeof(char16_t);
-	}
-	else
-	{
-		auto bytes = int64_t{ 0 };
-		for (auto i = 0; i < string.length; i++)
-		{
-			bytes += getByteCount(static_cast<char32_t>(string.raw_ptr()[i]));
-		}
-
-		return bytes;
-	}
+	return getCharCount(string) * sizeof(char16_t);
 }
 
 int cpp::encoding::Utf16::getCharCount(const null&)
@@ -110,12 +40,24 @@ int cpp::encoding::Utf16::getCharCount(const null&)
 
 int cpp::encoding::Utf16::getCharCount(const char32_t& codepoint)
 {
-	return getByteCount(codepoint) / sizeof(char16_t);
+	return utf16_length_from_utf32(&codepoint, 1);
 }
 
 int64_t cpp::encoding::Utf16::getCharCount(const String& string)
 {
-	return getByteCount(string) / sizeof(char16_t);
+	if (null() == string)
+	{
+		hx::NullReference("String", false);
+	}
+
+	if (string.isUTF16Encoded())
+	{
+		return string.length;
+	}
+	else
+	{
+		return utf16_length_from_latin1(string.length);
+	}
 }
 
 int cpp::encoding::Utf16::encode(const null&, const cpp::marshal::View<uint8_t>& buffer)
@@ -141,7 +83,6 @@ int64_t cpp::encoding::Utf16::encode(const String& string, const cpp::marshal::V
 		return hx::Throw(HX_CSTRING("Buffer too small"));
 	}
 
-#if defined(HX_SMART_STRINGS)
 	if (string.isUTF16Encoded())
 	{
 		auto src = cpp::marshal::View<uint8_t>(reinterpret_cast<uint8_t*>(const_cast<char16_t*>(string.raw_wptr())), string.length * sizeof(char16_t));
@@ -156,65 +97,24 @@ int64_t cpp::encoding::Utf16::encode(const String& string, const cpp::marshal::V
 		}
 	}
 	else
-#endif
 	{
-		auto bytes = int64_t{ 0 };
-		for (auto i = 0; i < string.length; i++)
-		{
-			bytes += getByteCount(static_cast<char32_t>(string.raw_ptr()[i]));
-		}
-
-		if (bytes > buffer.length)
+		if (getByteCount(string) > buffer.length)
 		{
 			return hx::Throw(HX_CSTRING("Buffer too small"));
 		}
 
-		auto i = int64_t{ 0 };
-		for (auto k = 0; k < string.length; k++)
-		{
-			i += encode(static_cast<char32_t>(string.raw_ptr()[k]), buffer.slice(i));
-		}
-
-		return bytes;
+		return convert_latin1_to_utf16(string.raw_ptr(), string.length, reinterpret_cast<char16_t*>(buffer.ptr.ptr)) * sizeof(char16_t);
 	}
 }
 
 int cpp::encoding::Utf16::encode(const char32_t& codepoint, const cpp::marshal::View<uint8_t>& buffer)
 {
-	if (codepoint < 0xD800)
+	if (getByteCount(codepoint) > buffer.length)
 	{
-		Marshal::writeUInt16(buffer, static_cast<char16_t>(codepoint));
-
-		return 2;
-	}
-	else if (codepoint < 0xE000)
-	{
-		// D800 - DFFF is invalid
-
-		return hx::Throw(HX_CSTRING("Invalid UTF16"));
-	}
-	else if (codepoint < 0x10000)
-	{
-		Marshal::writeUInt16(buffer, static_cast<char16_t>(codepoint));
-
-		return 2;
-	}
-	else if (codepoint < 0x110000)
-	{
-		auto staging = std::array<uint8_t, 4>();
-		auto fst     = View<uint8_t>(staging.data(), 2);
-		auto snd     = View<uint8_t>(staging.data() + 2, 2);
-		auto all     = View<uint8_t>(staging.data(), staging.size());
-
-		Marshal::writeUInt16(fst, 0xD800 + (((codepoint - 0x10000) >> 10) & 0x3FF));
-		Marshal::writeUInt16(snd, 0xDC00 + ((codepoint - 0x10000) & 0x3FF));
-
-		all.copyTo(buffer);
-
-		return 4;
+		return hx::Throw(HX_CSTRING("Buffer too small"));
 	}
 
-	return 0;
+	return convert_utf32_to_utf16(&codepoint, 1, reinterpret_cast<char16_t*>(buffer.ptr.ptr)) * sizeof(char16_t);
 }
 
 String cpp::encoding::Utf16::decode(const cpp::marshal::View<uint8_t>& buffer)
@@ -224,56 +124,43 @@ String cpp::encoding::Utf16::decode(const cpp::marshal::View<uint8_t>& buffer)
 		return String::emptyString;
 	}
 
-	if (isAsciiBuffer(buffer))
+	auto chars = buffer.reinterpret<char16_t>();
+
+	if (validate_utf16_as_ascii(chars.ptr.ptr, chars.length))
 	{
-		return toAsciiString(buffer);
+		auto backing = static_cast<char*>(hx::NewGCPrivate(0, chars.length + sizeof(char)));
+		auto written = convert_valid_utf16_to_latin1(chars.ptr.ptr, chars.length, backing);
+
+		return String(backing, written);
 	}
 
-#if defined(HX_SMART_STRINGS)
-	auto i = int64_t{ 0 };
-    while (i < buffer.length)
-    {
-		auto p = codepoint(buffer.slice(i));
-
-		i += getByteCount(p);
-    }
-
-	auto chars   = i / sizeof(char16_t);
-	auto backing = View<char16_t>(::String::allocChar16Ptr(chars), chars);
-	auto output  = backing.reinterpret<uint8_t>();
-	auto k       = int64_t{ 0 };
-
-	i = 0;
-	while (i < buffer.length)
+	if (validate_utf16(chars.ptr.ptr, chars.length))
 	{
-		auto p = codepoint(buffer.slice(i));
+		auto backing = String::allocChar16Ptr(chars.length);
 
-		i += getByteCount(p);
-		k += encode(p, output.slice(k));
+		std::memcpy(backing, chars.ptr.ptr, chars.length * sizeof(char16_t));
+
+		return String(backing, chars.length);
 	}
-
-	return String(backing.ptr.ptr, chars);
-#else
-	return hx::Throw(HX_CSTRING("Not Implemented : UTF16 decode when HX_SMART_STRINGS is not defined"));
-#endif
+	
+	return hx::Throw(HX_CSTRING("Buffer does not contain valid Utf16 data"));
 }
 
 char32_t cpp::encoding::Utf16::codepoint(const cpp::marshal::View<uint8_t>& buffer)
 {
-	auto first = static_cast<char16_t>(Marshal::readUInt16(buffer));
+	auto output = std::array<char32_t, 8>();
+#if defined(HXCPP_BIG_ENDIAN)
+	auto read = convert_utf16be_to_utf32(reinterpret_cast<char16_t*>(buffer.ptr.ptr), std::min(int64_t{ 4 }, buffer.length), output.data());
+#else
+	auto read = convert_utf16le_to_utf32(reinterpret_cast<char16_t*>(buffer.ptr.ptr), std::min(int64_t{ 4 }, buffer.length), output.data());
+#endif
 
-	if (0xD800 <= first && first < 0xDc00)
+	if (0 == read)
 	{
-		auto second = static_cast<char16_t>(Marshal::readUInt16(buffer.slice(2)));
-		if (0xDC00 <= second && second < 0xE000)
-		{
-			return static_cast<char32_t>((((first - 0xD800) << 10) | (second - 0xDC00)) + 0x10000);
-		}
-
-		return int{ hx::Throw(HX_CSTRING("Invalid UTF16")) };
+		return int{ hx::Throw(HX_CSTRING("Failed to read codepoint")) };
 	}
 	else
 	{
-		return static_cast<char32_t>(first);
+		return output[0];
 	}
 }
