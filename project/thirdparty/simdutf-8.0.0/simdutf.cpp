@@ -1,4 +1,3 @@
-#include <hxcpp.h>
 /* auto-generated on 2026-01-13 09:03:21 +0100. Do not edit! */
 /* begin file src/simdutf.cpp */
 #include "simdutf.h"

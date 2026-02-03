@@ -160,6 +160,18 @@
   <cache value="1" project="hxcpp-tracy" asLibrary="true" />
 </files>
 
+<files id="simdutf" dir="${HXCPP}" tags="haxe">
+  <depend files="hxcpp-depends"/>
+  <depend name="${HXCPP}/project/thirdparty/simdutf-8.0.0/simdutf.h"/>
+  <options name="Options.txt"/>
+
+  <compilerflag value="-I${HXCPP}/project/thirdparty/simdutf-8.0.0/"/>
+
+  <file name="project/thirdparty/simdutf-8.0.0/simdutf.cpp"/>
+
+  <cache value="1" project="hxcpp-simdutf" asLibrary="true" />
+</files>
+
 <files id="runtime" dir="${HXCPP}" tags="haxe" >
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
@@ -169,6 +181,7 @@
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
 
   <compilerflag value="-DHX_UNDEFINE_H" />
+  <compilerflag value="-I${HXCPP}/project/thirdparty/simdutf-8.0.0/"/>
 
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" />
 
@@ -208,8 +221,8 @@
   <file name = "src/cpp/encoding/Utf8.cpp"/>
   <file name = "src/cpp/encoding/Utf16.cpp"/>
 
-  <file name="${HXCPP}/src/hx/thread/RecursiveMutex.cpp"/>
-  <file name="${HXCPP}/src/hx/thread/ConditionVariable.cpp"/>
+  <file name="src/hx/thread/RecursiveMutex.cpp"/>
+  <file name="src/hx/thread/ConditionVariable.cpp"/>
 
   <addTwice if="linux||android" />
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />
@@ -271,6 +284,7 @@
   <files id="__resources__" />
   <files id="__externs__" />
   <files id="runtime" unless="dll_import" />
+  <files id="simdutf" />
   <files id="cppia" if="scriptable" />
   <files id="tracy" if="HXCPP_TRACY" />
   <files id="rc" unless="static_link" />
