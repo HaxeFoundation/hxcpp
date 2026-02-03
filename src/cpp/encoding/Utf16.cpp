@@ -83,6 +83,7 @@ int64_t cpp::encoding::Utf16::encode(const String& string, const cpp::marshal::V
 		return hx::Throw(HX_CSTRING("Buffer too small"));
 	}
 
+#if defined(HX_SMART_STRINGS)
 	if (string.isUTF16Encoded())
 	{
 		auto src = cpp::marshal::View<uint8_t>(reinterpret_cast<uint8_t*>(const_cast<char16_t*>(string.raw_wptr())), string.length * sizeof(char16_t));
@@ -96,6 +97,7 @@ int64_t cpp::encoding::Utf16::encode(const String& string, const cpp::marshal::V
 			return hx::Throw(HX_CSTRING("Buffer too small"));
 		}
 	}
+#endif
 	else
 	{
 		if (getByteCount(string) > buffer.length)
@@ -128,7 +130,7 @@ String cpp::encoding::Utf16::decode(const cpp::marshal::View<uint8_t>& buffer)
 
 	if (validate_utf16_as_ascii(chars.ptr.ptr, chars.length))
 	{
-		auto backing = static_cast<char*>(hx::NewGCPrivate(0, chars.length + sizeof(char)));
+		auto backing = hx::NewString(chars.length);
 		auto written = convert_valid_utf16_to_latin1(chars.ptr.ptr, chars.length, backing);
 
 		return String(backing, written);
@@ -136,11 +138,18 @@ String cpp::encoding::Utf16::decode(const cpp::marshal::View<uint8_t>& buffer)
 
 	if (validate_utf16(chars.ptr.ptr, chars.length))
 	{
+#if defined(HX_SMART_STRINGS)
 		auto backing = String::allocChar16Ptr(chars.length);
+		auto written = chars.length;
 
 		std::memcpy(backing, chars.ptr.ptr, chars.length * sizeof(char16_t));
+#else
+		auto size = utf8_length_from_utf16(chars.ptr.ptr, chars.length);
+		auto backing = hx::NewString(size);
+		auto written = convert_valid_utf16_to_utf8(chars.ptr.ptr, chars.length, backing);
+#endif
 
-		return String(backing, chars.length);
+		return String(backing, static_cast<int>(written));
 	}
 	
 	return hx::Throw(HX_CSTRING("Buffer does not contain valid Utf16 data"));

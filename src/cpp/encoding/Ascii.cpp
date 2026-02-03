@@ -47,7 +47,7 @@ String cpp::encoding::Ascii::decode(View<uint8_t> view)
 
 	if (validate_ascii(reinterpret_cast<char*>(view.ptr.ptr), view.length))
 	{
-		auto backing = hx::NewGCPrivate(0, view.length + sizeof(char));
+		auto backing = hx::NewString(view.length);
 
 		std::memcpy(backing, view.ptr.ptr, view.length);
 
