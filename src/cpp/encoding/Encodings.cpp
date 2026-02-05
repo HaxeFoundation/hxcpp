@@ -224,6 +224,53 @@ int64_t cpp::encoding::Utf8::encode(const String& string, const cpp::marshal::Vi
 #endif
 }
 
+Array<uint8_t> cpp::encoding::Utf8::encode(const String& string)
+{
+    if (null() == string)
+    {
+        hx::NullReference("String", false);
+    }
+
+    if (0 == string.length)
+    {
+        return 0;
+    }
+
+    if (string.isAsciiEncoded())
+    {
+        Array<uint8_t> out(string.length, 0);
+
+        View<uint8_t> src(reinterpret_cast<uint8_t*>(const_cast<char*>(string.raw_ptr())), string.length);
+        View<uint8_t> buffer(out->Pointer(), out->length);
+
+        src.copyTo(buffer);
+
+        return out;
+    }
+
+#if defined(HX_SMART_STRINGS)
+    Array<uint8_t> out(getByteCount(string), 0);
+    View<uint8_t> buffer(out->Pointer(), out->length);
+
+    auto initialPtr = buffer.ptr.ptr;
+    auto source     = View<char16_t>(string.raw_wptr(), string.length).reinterpret<uint8_t>();
+    auto i          = int64_t{ 0 };
+    auto k          = int64_t{ 0 };
+
+    while (i < source.length)
+    {
+        auto p = Utf16::codepoint(source.slice(i));
+
+        i += Utf16::getByteCount(p);
+        k += encode(p, buffer.slice(k));
+    }
+
+    return out;
+#else
+    return hx::Throw(HX_CSTRING("Unexpected encoding error"));
+#endif
+}
+
 int cpp::encoding::Utf8::encode(const char32_t& codepoint, const cpp::marshal::View<uint8_t>& buffer)
 {
     if (codepoint <= 0x7F)
