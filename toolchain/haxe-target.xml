@@ -83,7 +83,7 @@
      <depend name="${HXCPP}/hxcpp.n" ifExists="${HXCPP}/hxcpp.n"  dateOnly="true" />
   </section>
 </files>
- 
+
 
 
 <!-- Additional dependencies for haxe target -->
@@ -190,7 +190,7 @@
     <file name = "src/hx/TelemetryTracy.cpp" if="HXCPP_TRACY"/>
     <file name = "src/hx/Telemetry.cpp" unless="HXCPP_TRACY"/>
   </section>
-  
+
   <file name = "src/hx/Profiler.cpp" if="HXCPP_PROFILER" />
   <file name = "src/hx/Thread.cpp"/>
   <file name = "src/hx/RunLibs.cpp" if="static_link||dll_link"/>
@@ -204,9 +204,7 @@
   <file name = "src/Math.cpp"/>
   <file name = "src/String.cpp" tags="haxe,hxstring" />
 
-  <file name = "src/cpp/encoding/Ascii.cpp"/>
-  <file name = "src/cpp/encoding/Utf8.cpp"/>
-  <file name = "src/cpp/encoding/Utf16.cpp"/>
+  <file name = "src/cpp/encoding/Encodings.cpp" />
 
   <file name="${HXCPP}/src/hx/thread/RecursiveMutex.cpp"/>
   <file name="${HXCPP}/src/hx/thread/ConditionVariable.cpp"/>
@@ -280,5 +278,3 @@
 
 
 </xml>
-
-
