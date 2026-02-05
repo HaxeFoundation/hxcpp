@@ -17,6 +17,7 @@ namespace cpp
             static int encode(const null&, const cpp::marshal::View<uint8_t>& buffer);
             static int encode(const char32_t& codepoint, const cpp::marshal::View<uint8_t>& buffer);
             static int64_t encode(const String& string, const cpp::marshal::View<uint8_t>& buffer);
+            static Array<uint8_t> encode(const String& string);
 
             static char32_t codepoint(const cpp::marshal::View<uint8_t>& buffer);
             static String decode(const cpp::marshal::View<uint8_t>& buffer);
