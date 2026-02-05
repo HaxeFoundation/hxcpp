@@ -687,7 +687,7 @@ String cpp::encoding::Utf16::decode(const cpp::marshal::View<uint8_t>& buffer)
 #endif
 }
 
-char32_t cpp::encoding::Utf16::codepoint(const cpp::marshal::View<uint8_t>& buffer)
+inline char32_t cpp::encoding::Utf16::codepoint(const cpp::marshal::View<uint8_t>& buffer)
 {
     auto first = static_cast<char16_t>(Marshal::readUInt16(buffer));
 
