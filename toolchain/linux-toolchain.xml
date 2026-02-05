@@ -36,6 +36,7 @@
 <compiler id="linux" exe="g++" if="linux">
   <exe name="${CXX}" if="CXX" />
   <flag value="-c"/>
+  <flag value="-flto" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
