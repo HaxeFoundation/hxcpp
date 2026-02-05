@@ -93,7 +93,7 @@ int cpp::encoding::Utf8::getByteCount(const null&)
     return 0;
 }
 
-int cpp::encoding::Utf8::getByteCount(const char32_t& codepoint)
+int cpp::encoding::Utf8::getByteCount(char32_t codepoint)
 {
     if (codepoint <= 0x7F)
     {
@@ -152,7 +152,7 @@ int cpp::encoding::Utf8::getCharCount(const null&)
     return 0;
 }
 
-int cpp::encoding::Utf8::getCharCount(const char32_t& codepoint)
+int cpp::encoding::Utf8::getCharCount(char32_t codepoint)
 {
     return getByteCount(codepoint) / sizeof(char);
 }
@@ -271,7 +271,7 @@ Array<uint8_t> cpp::encoding::Utf8::encode(const String& string)
 #endif
 }
 
-int cpp::encoding::Utf8::encode(const char32_t& codepoint, const cpp::marshal::View<uint8_t>& buffer)
+int cpp::encoding::Utf8::encode(char32_t codepoint, const cpp::marshal::View<uint8_t>& buffer)
 {
     if (codepoint <= 0x7F)
     {
@@ -494,7 +494,7 @@ int cpp::encoding::Utf16::getByteCount(const null&)
     return 0;
 }
 
-int cpp::encoding::Utf16::getByteCount(const char32_t& codepoint)
+int cpp::encoding::Utf16::getByteCount(char32_t codepoint)
 {
     return codepoint <= 0xFFFF ? 2 : 4;
 }
@@ -528,7 +528,7 @@ int cpp::encoding::Utf16::getCharCount(const null&)
     return 0;
 }
 
-int cpp::encoding::Utf16::getCharCount(const char32_t& codepoint)
+int cpp::encoding::Utf16::getCharCount(char32_t codepoint)
 {
     return getByteCount(codepoint) / sizeof(char16_t);
 }
@@ -599,7 +599,7 @@ int64_t cpp::encoding::Utf16::encode(const String& string, const cpp::marshal::V
     }
 }
 
-int cpp::encoding::Utf16::encode(const char32_t& codepoint, const cpp::marshal::View<uint8_t>& buffer)
+int cpp::encoding::Utf16::encode(char32_t codepoint, const cpp::marshal::View<uint8_t>& buffer)
 {
     if (codepoint < 0xD800)
     {
