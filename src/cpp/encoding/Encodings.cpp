@@ -249,7 +249,8 @@ Array<uint8_t> cpp::encoding::Utf8::encode(const String& string)
     }
 
 #if defined(HX_SMART_STRINGS)
-    Array<uint8_t> out(getByteCount(string), 0);
+    // estimate the utf8 length with an upper bound
+    Array<uint8_t> out(string.length * 3, 0);
     View<uint8_t> buffer(out->Pointer(), out->length);
 
     auto initialPtr = buffer.ptr.ptr;
@@ -264,6 +265,8 @@ Array<uint8_t> cpp::encoding::Utf8::encode(const String& string)
         i += Utf16::getByteCount(p);
         k += encode(p, buffer.slice(k));
     }
+
+    out->resize(i);
 
     return out;
 #else
