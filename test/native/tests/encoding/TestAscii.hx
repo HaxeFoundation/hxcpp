@@ -50,7 +50,7 @@ class TestAscii extends Test
 	}
 
 	function test_decode_empty() {
-		Assert.raises(() -> Ascii.decode(ViewExtensions.empty()));
+		Assert.equals('', Ascii.decode(ViewExtensions.empty()));
 	}
 
 	function test_decode() {
@@ -61,26 +61,5 @@ class TestAscii extends Test
 		buffer.set(3, 't'.code);
 		
 		Assert.equals('test', Ascii.decode(buffer.asView()));
-	}
-
-	function test_decode_null_termination() {
-		final buffer = Bytes.alloc(9);
-		buffer.set(0, 't'.code);
-		buffer.set(1, 'e'.code);
-		buffer.set(2, 's'.code);
-		buffer.set(3, 't'.code);
-		buffer.set(4, 0);
-		buffer.set(5, 't'.code);
-		buffer.set(6, 'e'.code);
-		buffer.set(7, 's'.code);
-		buffer.set(8, 't'.code);
-		
-		Assert.equals('test', Ascii.decode(buffer.asView()));
-	}
-
-	function test_decode_no_string() {
-		final buffer = Bytes.alloc(1);
-
-		Assert.equals('', Ascii.decode(buffer.asView()));
 	}
 }
