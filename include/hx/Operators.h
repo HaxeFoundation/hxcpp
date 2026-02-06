@@ -134,15 +134,14 @@ inline L& UShrEq(L &inLHS, R inRHS) { inLHS = hx::UShr(inLHS,inRHS); return inLH
 template<typename L, typename R>
 inline L& ModEq(L &inLHS, R inRHS) { inLHS = DoubleMod(inLHS,inRHS); return inLHS; }
 
-#if defined(__GNUC__) || defined(__SNC__)
 template<typename R>
-inline hx::FieldRef AddEq(hx::FieldRef inLHS, R inRHS) { inLHS = inLHS + inRHS; return inLHS; }
+inline hx::FieldRef AddEq(hx::FieldRef inLHS, R inRHS) { inLHS = inLHS + hx::Val{ inRHS }; return inLHS; }
 template<typename R>
-inline hx::FieldRef MultEq(hx::FieldRef inLHS, R inRHS) { inLHS = inLHS * inRHS; return inLHS; }
+inline hx::FieldRef MultEq(hx::FieldRef inLHS, R inRHS) { inLHS = inLHS * hx::Val{ inRHS }; return inLHS; }
 template<typename R>
 inline hx::FieldRef DivEq(hx::FieldRef inLHS, R inRHS) { inLHS = (double)inLHS / (double)inRHS; return inLHS; }
 template<typename R>
-inline hx::FieldRef SubEq(hx::FieldRef inLHS, R inRHS) { inLHS = inLHS - inRHS; return inLHS; }
+inline hx::FieldRef SubEq(hx::FieldRef inLHS, R inRHS) { inLHS = inLHS - hx::Val{ inRHS }; return inLHS; }
 template<typename R>
 inline hx::FieldRef AndEq(hx::FieldRef inLHS, R inRHS) { inLHS = (int)inLHS & (int)inRHS; return inLHS; }
 template<typename R>
@@ -160,7 +159,7 @@ inline hx::FieldRef ModEq(hx::FieldRef inLHS, R inRHS) { inLHS = DoubleMod(inLHS
 
 
 template<typename R>
-inline hx::IndexRef AddEq(hx::IndexRef inLHS, R inRHS) { inLHS = inLHS + inRHS; return inLHS; }
+inline hx::IndexRef AddEq(hx::IndexRef inLHS, R inRHS) { inLHS = inLHS + hx::Val{ inRHS }; return inLHS; }
 template<typename R>
 inline hx::IndexRef MultEq(hx::IndexRef inLHS, R inRHS) { inLHS = (double)inLHS * (double)inRHS; return inLHS; }
 template<typename R>
@@ -184,7 +183,6 @@ inline hx::IndexRef ModEq(hx::IndexRef inLHS, R inRHS) { inLHS = DoubleMod(inLHS
 
 
 
-#endif // __GNUC__ || __SNC__
 
 template<typename R,typename T>
 inline hx::__TArrayImplRef<T> AddEq(hx::__TArrayImplRef<T> ref, R inRHS)
