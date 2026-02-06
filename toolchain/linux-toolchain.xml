@@ -36,9 +36,10 @@
 <compiler id="linux" exe="g++" if="linux">
   <exe name="${CXX}" if="CXX" />
   <flag value="-c"/>
+  <flag value="-flto" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
-  <flag value="-g" if="debug"/>
+  <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
@@ -69,7 +70,7 @@
   <flag value="-m64" if="HXCPP_M64" unless="noM64" />
   <flag value="-Xlinker"/>
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
-  <flag value="-debug" if="debug"/>
+  <flag value="-debug" if="HXCPP_DEBUG_LINK" />
   <lib name="-ldl"/>
   <ext value=".dso"/>
   <outflag value="-o "/>
@@ -78,7 +79,7 @@
 <linker id="exe" exe="g++" if="linux">
   <exe name="${CXX}" if="CXX" />
   <fromfile value="" if="GCC_OLD" />
-  <flag value="-debug" if="debug"/>
+  <flag value="-debug" if="HXCPP_DEBUG_LINK" />
   <flag value="-rdynamic"/>
   <flag value="-m32" unless="noM32"/>
   <flag value="-m64" if="HXCPP_M64" unless="noM64" />
