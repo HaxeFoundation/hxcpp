@@ -7,6 +7,7 @@
 
 #ifdef NEKO_WINDOWS
 #   include <windows.h>
+#   include <io.h>
 #endif
 
 /**
@@ -146,7 +147,44 @@ int _hx_std_file_write( Dynamic handle, Array<unsigned char> s, int p, int n )
    if( p < 0 || len < 0 || p > buflen || p + len > buflen )
       return 0;
 
-   hx::EnterGCFreeZone();
+   hx::AutoGCFreeZone zone;
+#ifdef HX_WINDOWS
+   if (_isatty(_fileno(f->io))) {
+      fflush(f->io);
+      HANDLE win_handle = (HANDLE)_get_osfhandle(_fileno(f->io));
+      static const int MAX_BUFFER_SIZE = 8192;
+      wchar_t buf[MAX_BUFFER_SIZE / 2];
+      int result = MultiByteToWideChar(CP_UTF8, 0, (char *)&s[p], len, buf, MAX_BUFFER_SIZE / 2);
+      DWORD written = 0;
+      if(!WriteConsoleW(win_handle, buf, result, &written, NULL)) {
+         file_error("file_write", f->name);
+      }
+      if (written == result) {
+         return len;
+      } else {
+         auto first_code_unit_remaining = buf[written];
+         if (first_code_unit_remaining > 0xDCEE && first_code_unit_remaining <= 0xDFF) {
+            DWORD tmp;
+            WriteConsoleW(win_handle, &buf[written], 1, &tmp, NULL);
+            written += 1;
+         }
+         int count = 0;
+         for (int i = 0; i < written; i++) {
+            wchar_t ch = buf[i];
+            if (ch >= 0 && ch <= 0x7F) {
+               count += 1;
+            } else if (ch >= 0x0080 && ch <= 0x07FF) {
+               count += 2;
+            } else if (ch >= 0xDCEE && ch <= 0xDFF) {
+               count += 1;
+            } else {
+               count += 3;
+            }
+         }
+         return count;
+      }
+   }
+#endif
    while( len > 0 )
    {
       POSIX_LABEL(file_write_again);
@@ -159,7 +197,6 @@ int _hx_std_file_write( Dynamic handle, Array<unsigned char> s, int p, int n )
       p += d;
       len -= d;
    }
-   hx::ExitGCFreeZone();
    return n;
 }
 
