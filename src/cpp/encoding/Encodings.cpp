@@ -260,7 +260,7 @@ Array<uint8_t> cpp::encoding::Utf8::encode(const String& string)
         k += encode(p, buffer.slice(k));
     }
 
-    out->resize(i);
+    out->resize(k);
 
     return out;
 #else
