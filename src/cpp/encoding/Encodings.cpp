@@ -70,19 +70,13 @@ namespace
 {
     bool isAsciiUtf8Buffer(const View<uint8_t>& buffer)
     {
-        auto i = int64_t{ 0 };
-        while (i < buffer.length)
+        for (int64_t i = 0; i < buffer.length; i++)
         {
-            auto p = cpp::encoding::Utf8::codepoint(buffer.slice(i));
-
-            if (p > 127)
+            if (buffer[i] > 127)
             {
                 return false;
             }
-
-            i += cpp::encoding::Utf8::getByteCount(p);
         }
-
         return true;
     }
 }
