@@ -1,6 +1,8 @@
 #include <hxcpp.h>
+#include <simdutf.h>
 
 using namespace cpp::marshal;
+using namespace simdutf;
 
 bool cpp::encoding::Ascii::isEncoded(const String& string)
 {
@@ -40,27 +42,19 @@ String cpp::encoding::Ascii::decode(View<uint8_t> view)
 {
 	if (view.isEmpty())
 	{
-		return hx::Throw(HX_CSTRING("View is empty"));
-	}
-
-	auto bytes = int64_t{ 0 };
-	auto i     = int64_t{ 0 };
-	auto chars = view.reinterpret<char>();
-
-	while (i < chars.length && 0 != chars.ptr[i])
-	{
-		bytes += sizeof(char);
-		i++;
-	}
-
-	if (0 == bytes)
-	{
 		return String::emptyString;
 	}
 
-	auto backing = hx::NewGCPrivate(0, bytes + sizeof(char));
+	if (validate_ascii(reinterpret_cast<char*>(view.ptr.ptr), view.length))
+	{
+		auto backing = hx::NewString(view.length);
 
-	std::memcpy(backing, view.ptr.ptr, bytes);
+		std::memcpy(backing, view.ptr.ptr, view.length);
 
-	return String(static_cast<const char*>(backing), bytes / sizeof(char));
+		return String(static_cast<const char*>(backing), view.length);
+	}
+	else
+	{
+		return hx::Throw(HX_CSTRING("Buffer contained invalid ASCII data"));
+	}
 }
