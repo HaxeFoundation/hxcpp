@@ -185,6 +185,8 @@
   <file name = "src/hx/StdLibs.cpp" tags="haxe,static" />
   <file name = "src/hx/Debug.cpp"/>
   <file name = "src/hx/Debugger.cpp" if="HXCPP_DEBUGGER" />
+  <file name = "src/hx/FieldRef.cpp"/>
+  <file name = "src/hx/IndexRef.cpp"/>
 
   <section if="HXCPP_TELEMETRY">
     <file name = "src/hx/TelemetryTracy.cpp" if="HXCPP_TRACY"/>
