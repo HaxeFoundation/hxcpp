@@ -136,7 +136,7 @@ class BuildTool
       instance = this;
 
       m64 = mDefines.exists("HXCPP_M64");
-      m32 = mDefines.exists("HXCPP_M32");
+      m32 = mDefines.exists("HXCPP_M32") || mDefines.exists("HXCPP_X86");
       arm64 = mDefines.exists("HXCPP_ARM64");
       var otherArmArchitecture = mDefines.exists("HXCPP_ARMV6") || mDefines.exists("HXCPP_ARMV7") || mDefines.exists("HXCPP_ARMV7S");
       if (m64==m32 && !arm64 && !otherArmArchitecture)
@@ -165,11 +165,11 @@ class BuildTool
       Profile.setEntry("parse xml");
 
 
-      
+
       if (mDefines.exists("HXCPP_C_STANDARD")) {
          defaultCStandard = Std.parseInt(mDefines.get("HXCPP_C_STANDARD"));
       }
-      
+
       // Hxcpp requires C++11, so the default standard cannot be less than that
       if (mDefines.exists("HXCPP_CXX_STANDARD")) {
          defaultCxxStandard = Std.parseInt(mDefines.get("HXCPP_CXX_STANDARD"));
