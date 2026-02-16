@@ -3,7 +3,6 @@
 
 #define HX_TELEMETRY_VERSION 1
 
-#include <hxcpp.h>
 #include <vector>
 
 struct TelemetryFrame

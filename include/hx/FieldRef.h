@@ -21,92 +21,57 @@ namespace hx
 
 
 #define HX_FIELD_REF_MEM_OP(op,ret) \
-inline ret operator op (const FieldRef &inA) \
-  { return this->operator Dynamic() op inA.operator Dynamic(); } \
-inline ret operator op (const IndexRef &inA); \
-template<typename T> inline ret operator op (const T& inA) \
-   { return this->operator Dynamic() op inA; }
-
-#define HX_FIELD_REF_IMPL_MEM_OP(op,ret) \
-inline ret hx::FieldRef::operator op (const IndexRef &inA) \
-    { return this->operator Dynamic() op inA.operator Dynamic(); } \
+    ret operator op (const FieldRef& inA); \
+    ret operator op (const IndexRef& inA); \
+    ret operator op (const hx::Val& inA);
 
 class FieldRef
 {
 public:
-   explicit FieldRef(hx::Object *inObj,const String &inName) : mObject(inObj), mName(inName)
-   {
-   }
+    explicit FieldRef(hx::Object* inObj, const String& inName);
 
-   hx::Val operator=(const hx::Val &inRHS)
-   {
-      return mObject->__SetField(mName,inRHS, HX_PROP_DYNAMIC );
-   }
-   inline operator hx::Val() const { return mObject ? mObject->__Field(mName, HX_PROP_DYNAMIC) : null(); }
-   inline operator Dynamic() const { return mObject ? Dynamic(mObject->__Field(mName, HX_PROP_DYNAMIC)) : null(); }
-   inline operator double() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
-   inline operator float() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
-   inline operator int() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
-   inline operator cpp::UInt64() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
-   inline operator cpp::Int64() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
+    hx::Val operator=(const hx::Val& inRHS);
+    operator hx::Val();
+    operator Dynamic() const;
+    operator double() const;
+    operator float() const;
+    operator int() const;
+    operator cpp::UInt64() const;
+    operator cpp::Int64() const;
 
+    // post-increment
+    double operator++(int);
+    // pre-increment
+    double operator++();
+    // post-decrement
+    double operator--(int);
+    // pre-decrement
+    double operator--();
+    bool operator !();
+    int operator ~();
 
-   // post-increment
-   inline double operator++(int)
-   {
-      double d = mObject->__Field(mName, HX_PROP_DYNAMIC);
-      mObject->__SetField(mName,d+1, HX_PROP_DYNAMIC);
-      return d;
-   }
-   // pre-increment
-   inline double operator++()
-   {
-      double d = ((double)mObject->__Field(mName, HX_PROP_DYNAMIC)) + 1;
-      mObject->__SetField(mName,d, HX_PROP_DYNAMIC);
-      return d;
-   }
-   // post-decrement
-   inline double operator--(int)
-   {
-      double d = mObject->__Field(mName, HX_PROP_DYNAMIC);
-      mObject->__SetField(mName,d-1, HX_PROP_DYNAMIC);
-      return d;
-   }
-   // pre-decrement
-   inline double operator--()
-   {
-      double d = (double)(mObject->__Field(mName, HX_PROP_DYNAMIC)) - 1;
-      mObject->__SetField(mName,d,  HX_PROP_DYNAMIC);
-      return d;
-   }
-   bool operator !() { return ! ((int)(mObject->__Field(mName,  HX_PROP_DYNAMIC))); }
-   int operator ~() { return ~ ((int)mObject->__Field(mName,  HX_PROP_DYNAMIC)); }
+    bool operator==(const null&) const;
+    bool operator!=(const null&) const;
 
-   inline bool operator==(const null &) const { return !mObject; }
-   inline bool operator!=(const null &) const { return mObject; }
+    double operator -();
 
-   double operator -() { return - (double)(mObject->__Field(mName,  HX_PROP_DYNAMIC)); }
+    bool HasPointer() const;
 
-	bool HasPointer() const { return mObject; }
+    HX_FIELD_REF_MEM_OP(==,bool)
+    HX_FIELD_REF_MEM_OP(!=,bool)
+    HX_FIELD_REF_MEM_OP(<,bool)
+    HX_FIELD_REF_MEM_OP(<=,bool)
+    HX_FIELD_REF_MEM_OP(>,bool)
+    HX_FIELD_REF_MEM_OP(>=,bool)
 
+    HX_FIELD_REF_MEM_OP(+,Dynamic)
+    HX_FIELD_REF_MEM_OP(*,double)
+    HX_FIELD_REF_MEM_OP(/,double)
+    HX_FIELD_REF_MEM_OP(-,double)
+    HX_FIELD_REF_MEM_OP(%,double)
 
-   HX_FIELD_REF_MEM_OP(==,bool)
-   HX_FIELD_REF_MEM_OP(!=,bool)
-   HX_FIELD_REF_MEM_OP(<,bool)
-   HX_FIELD_REF_MEM_OP(<=,bool)
-   HX_FIELD_REF_MEM_OP(>,bool)
-   HX_FIELD_REF_MEM_OP(>=,bool)
-
-   HX_FIELD_REF_MEM_OP(+,Dynamic)
-   HX_FIELD_REF_MEM_OP(*,double)
-   HX_FIELD_REF_MEM_OP(/,double)
-   HX_FIELD_REF_MEM_OP(-,double)
-   HX_FIELD_REF_MEM_OP(%,double)
-
-
-
-   String  mName;
-   hx::Object *mObject;
+    String  mName;
+    hx::Object *mObject;
 };
 
 // We can define this one now...
@@ -141,81 +106,53 @@ HX_FIELD_REF_OP(%,double)
 //
 
 #define HX_INDEX_REF_MEM_OP(op,ret) \
-inline ret operator op (const IndexRef &inA) \
-    { return this->operator Dynamic() op inA.operator Dynamic(); } \
-inline ret operator op (const FieldRef &inA) \
-    { return this->operator Dynamic() op inA.operator Dynamic(); } \
-template<typename T> inline ret operator op (const T& inA) \
-   { return this->operator Dynamic() op inA; }
-
+    ret operator op (const IndexRef &inA); \
+    ret operator op (const FieldRef &inA); \
+    ret operator op (const hx::Val& inA);
 
 class IndexRef
 {
 public:
-   explicit IndexRef(hx::Object *inObj,int inIndex) : mObject(inObj), mIndex(inIndex)
-   {
-   }
+    explicit IndexRef(hx::Object* inObj, int inIndex);
 
-   Dynamic operator=(const Dynamic &inRHS)
-   {
-      return mObject->__SetItem(mIndex,inRHS);
-   }
-   inline operator Dynamic() const { return mObject->__GetItem(mIndex); }
-   inline operator double() const { return mObject->__GetItem(mIndex); }
-   inline operator int() const { return mObject->__GetItem(mIndex); }
+    Dynamic operator=(const Dynamic& inRHS);
+    operator Dynamic() const;
+    operator double() const;
+    operator int() const;
 
-   // post-increment
-   inline double operator++(int)
-   {
-      double d = mObject->__GetItem(mIndex)->__ToDouble();
-      mObject->__SetItem(mIndex,d+1);
-      return d;
-   }
-   // pre-increment
-   inline double operator++()
-   {
-      double d = mObject->__GetItem(mIndex)->__ToDouble() + 1;
-      mObject->__SetItem(mIndex,d);
-      return d;
-   }
-   // post-decrement
-   inline double operator--(int)
-   {
-      double d = mObject->__GetItem(mIndex)->__ToDouble();
-      mObject->__SetItem(mIndex,d-1);
-      return d;
-   }
-   // pre-decrement
-   inline double operator--()
-   {
-      double d = mObject->__GetItem(mIndex)->__ToDouble() - 1;
-      mObject->__SetItem(mIndex,d);
-      return d;
-   }
-   bool operator !() { return ! mObject->__GetItem(mIndex)->__ToInt(); }
-   int operator ~() { return ~ mObject->__GetItem(mIndex)->__ToInt(); }
-   double operator -() { return - mObject->__GetItem(mIndex)->__ToDouble(); }
+    // post-increment
+    double operator++(int);
+    // pre-increment
+    double operator++();
+    // post-decrement
+    double operator--(int);
+    // pre-decrement
+    double operator--();
 
-   inline bool operator==(const null &) const { return !mObject; }
-   inline bool operator!=(const null &) const { return mObject; }
+    bool operator !();
+    int operator ~();
+    double operator -();
 
-   HX_INDEX_REF_MEM_OP(==,bool)
-   HX_INDEX_REF_MEM_OP(!=,bool)
-   HX_INDEX_REF_MEM_OP(<,bool)
-   HX_INDEX_REF_MEM_OP(<=,bool)
-   HX_INDEX_REF_MEM_OP(>,bool)
-   HX_INDEX_REF_MEM_OP(>=,bool)
+    bool operator==(const null&) const;
+    bool operator!=(const null&) const;
 
-   HX_INDEX_REF_MEM_OP(+,Dynamic)
-   HX_INDEX_REF_MEM_OP(*,double)
-   HX_INDEX_REF_MEM_OP(/,double)
-   HX_INDEX_REF_MEM_OP(-,double)
-   HX_INDEX_REF_MEM_OP(%,double)
+    HX_INDEX_REF_MEM_OP(== , bool)
+    HX_INDEX_REF_MEM_OP(!= , bool)
+    HX_INDEX_REF_MEM_OP(< , bool)
+    HX_INDEX_REF_MEM_OP(<= , bool)
+    HX_INDEX_REF_MEM_OP(> , bool)
+    HX_INDEX_REF_MEM_OP(>= , bool)
 
-	bool HasPointer() const { return mObject; }
+    HX_INDEX_REF_MEM_OP(+, Dynamic)
+    HX_INDEX_REF_MEM_OP(*, double)
+    HX_INDEX_REF_MEM_OP(/ , double)
+    HX_INDEX_REF_MEM_OP(-, double)
+    HX_INDEX_REF_MEM_OP(%, double)
 
-   int mIndex;
-   hx::Object *mObject;
+    bool HasPointer() const;
+
+    int mIndex;
+    hx::Object *mObject;
 };
 
 // We can define this one now...
@@ -242,20 +179,6 @@ HX_INDEX_REF_OP(/,double)
 HX_INDEX_REF_OP(-,double)
 HX_INDEX_REF_OP(%,double)
 
-
-// Implement once IndexRef has been defined.
-HX_FIELD_REF_IMPL_MEM_OP(==,bool)
-HX_FIELD_REF_IMPL_MEM_OP(!=,bool)
-HX_FIELD_REF_IMPL_MEM_OP(<,bool)
-HX_FIELD_REF_IMPL_MEM_OP(<=,bool)
-HX_FIELD_REF_IMPL_MEM_OP(>,bool)
-HX_FIELD_REF_IMPL_MEM_OP(>=,bool)
-
-HX_FIELD_REF_IMPL_MEM_OP(+,Dynamic)
-HX_FIELD_REF_IMPL_MEM_OP(*,double)
-HX_FIELD_REF_IMPL_MEM_OP(/,double)
-HX_FIELD_REF_IMPL_MEM_OP(-,double)
-HX_FIELD_REF_IMPL_MEM_OP(%,double)
 
 // Disambiguate Dynamic operators...
 
