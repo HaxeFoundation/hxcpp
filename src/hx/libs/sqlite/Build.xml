@@ -10,7 +10,9 @@
   <cache value="true" asLibrary="true" />
 
   <compilerflag value="-I${SQLITE_DIR}"/>
-
+  <compilerflag value="-DSQLITE_ENABLE_FTS5"  if="HXCPP_SQLITE_FTS5"/>
+  <compilerflag value="-DSQLITE_ENABLE_JSON1" if="HXCPP_SQLITE_JSON1"/>
+  
   <file name="Sqlite.cpp"/>
 
   <depend name="${SQLITE_DIR}/sqlite3.h" />
@@ -23,3 +25,5 @@
 </target>
 
 </xml>
+
+
