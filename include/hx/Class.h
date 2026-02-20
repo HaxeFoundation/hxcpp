@@ -283,7 +283,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void RegisterVTableOffset(int inOffset);
 { \
    CLASS *dummy = (CLASS *)0; \
    INTERFACE *intf = dummy; \
-   hx::RegisterVTableOffset( (int)( (size_t)((char *)intf - (char *)dummy)) ); \
+   ::hx::RegisterVTableOffset( (int)( (size_t)((char *)intf - (char *)dummy)) ); \
 }
 
 

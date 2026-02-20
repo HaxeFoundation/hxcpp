@@ -314,9 +314,9 @@ enum PropertyAccessMode
    paccAlways  = 2,
 };
 typedef PropertyAccessMode PropertyAccess;
-#define HX_PROP_NEVER  hx::paccNever
-#define HX_PROP_DYNAMIC hx::paccDynamic
-#define HX_PROP_ALWAYS hx::paccAlways
+#define HX_PROP_NEVER ::hx::paccNever
+#define HX_PROP_DYNAMIC ::hx::paccDynamic
+#define HX_PROP_ALWAYS ::hx::paccAlways
 
 } // end namespace hx
 

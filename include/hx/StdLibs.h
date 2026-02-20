@@ -158,11 +158,11 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_utf8_string_to_char_bytes(String &i
 #ifdef HXCPP_GC_GENERATIONAL
    #define HX_MAP_THIS this, h
    #define HX_MAP_THIS_ this,
-   #define HX_MAP_THIS_ARG hx::Object *owner, Dynamic &ioHash
+   #define HX_MAP_THIS_ARG ::hx::Object *owner, ::Dynamic &ioHash
 #else
    #define HX_MAP_THIS h
-   #define HX_MAP_THIS_ 
-   #define HX_MAP_THIS_ARG Dynamic &ioHash
+   #define HX_MAP_THIS_
+   #define HX_MAP_THIS_ARG ::Dynamic &ioHash
 #endif
 
 // --- HashRoot ---------------------------------------------------------------------
