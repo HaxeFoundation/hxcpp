@@ -1378,7 +1378,7 @@ cpp::VirtualArray Array_obj<ELEM_>::map(MappingFunc inFunc)
 
 #ifdef HXCPP_VISIT_ALLOCS
 #define ARRAY_VISIT_FUNC \
-    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); }
+    void __Visit(::hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); }
 #else
 #define ARRAY_VISIT_FUNC
 #endif
@@ -1413,8 +1413,8 @@ namespace hx
     { \
         struct _hx_array_##name final : public ::hx::AutoCallable_obj<value(args_list)> \
         { \
-            Array<ELEM_> mThis; \
-            _hx_array_##name(Array<ELEM_> inThis) : mThis(inThis) \
+            ::Array<ELEM_> mThis; \
+            _hx_array_##name(::Array<ELEM_> inThis) : mThis(inThis) \
             { \
                 HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
             } \
@@ -1423,13 +1423,13 @@ namespace hx
                 ret mThis->name(args_call); \
             } \
             void *__GetHandle() const override { return mThis.GetPtr(); } \
-            void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+            void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
             ARRAY_VISIT_FUNC \
             int __Compare(const ::hx::Object* inRhs) const override \
             { \
                 auto casted = dynamic_cast<const _hx_array_##name *>(inRhs); \
                 if (!casted) return 1; \
-                if (!hx::IsPointerEq(mThis, casted->mThis)) return -1; \
+                if (!::hx::IsPointerEq(mThis, casted->mThis)) return -1; \
                 return 0; \
             } \
         }; \
@@ -1505,31 +1505,31 @@ template<class ELEM_>
 hx::Val Array_obj<ELEM_>::__Field(const String& inString, hx::PropertyAccess inCallProp)
 {
 #define ARRAY_RUN_FUNC(ret,func,dynamic_arg_list,arg_list) \
-    Dynamic __run(dynamic_arg_list) \
+    ::Dynamic __run(dynamic_arg_list) \
     { \
-        ret mThis->__##func(arg_list); return Dynamic(); \
+        ret mThis->__##func(arg_list); return ::Dynamic(); \
     }
 
 #define DEFINE_ARRAY_FUNC(ret,func,array_list,run_func,ARG_C) \
-    struct Reflective_##func : public hx::Object \
+    struct Reflective_##func : public ::hx::Object \
     { \
-       HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
+       HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdClosure }; \
        bool __IsFunction() const { return true; } \
-       Array_obj<ELEM_> *mThis; \
-       Reflective_##func(Array_obj<ELEM_> *inThis) : mThis(inThis) { } \
-       String toString() const{ return HX_CSTRING(#func) ; } \
-       String __ToString() const{ return HX_CSTRING(#func) ; } \
+       ::Array_obj<ELEM_> *mThis; \
+       Reflective_##func(::Array_obj<ELEM_> *inThis) : mThis(inThis) { } \
+       ::String toString() const{ return HX_CSTRING(#func) ; } \
+       ::String __ToString() const{ return HX_CSTRING(#func) ; } \
        int __GetType() const { return vtFunction; } \
        void *__GetHandle() const { return mThis; } \
        int __ArgCount() const { return ARG_C; } \
-       void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+       void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
        ARRAY_VISIT_FUNC \
-       Dynamic __Run(const Array<Dynamic> &inArgs) \
+       ::Dynamic __Run(const ::Array<::Dynamic> &inArgs) \
        { \
-          ret mThis->__##func(array_list); return Dynamic(); \
+          ret mThis->__##func(array_list); return ::Dynamic(); \
        } \
        run_func \
-       int __Compare(const hx::Object *inRHS) const \
+       int __Compare(const ::hx::Object *inRHS) const \
        { \
           if (!dynamic_cast<const Reflective_##func *>(inRHS)) return -1; \
           return (mThis==inRHS->__GetHandle() ? 0 : -1); \

@@ -13,6 +13,8 @@ import neko.io.File;
 import neko.io.FileOutput;
 #end
 
+using StringTools;
+
 class GenMacro
 {
    static var warning =
@@ -40,7 +42,7 @@ class GenMacro
          {
             arr_list.push( "inArgs[" + (arg-1) + "]");
             arg_list.push( "inArg" + (arg-1));
-            dynamic_arg_list.push("const Dynamic &inArg" + (arg-1) );
+            dynamic_arg_list.push("const ::Dynamic &inArg" + (arg-1) );
             dynamic_adds.push( "->init(" + (arg-1) + ",inArg" + (arg-1) + ")" );
          }
 
@@ -96,9 +98,9 @@ class GenMacro
       Reflect.setField(context, "hxNS", " ::hx::");
 
       var fixed = File.getContent("MacrosFixed.h");
-      fixed = fixed.split("").join("");
+      fixed = fixed.replace("\r", "");
       var fileContents:String = File.getContent("Macros.tpl");
-      fileContents = fileContents.split("").join("");
+      fileContents = fileContents.replace("\r", "");
 
       var template:Template = new Template(fileContents);
       var result:String = template.execute(context);
@@ -109,7 +111,7 @@ class GenMacro
       fileOutput.close();
 
       var fileContents:String = File.getContent("MacrosJumbo.tpl");
-      fileContents = fileContents.split("").join("");
+      fileContents = fileContents.replace("\r", "");
       var template:Template = new Template(fileContents);
       Reflect.setField(context, "LOCALS", jumboLocals);
       var result:String = template.execute(context);
@@ -121,7 +123,7 @@ class GenMacro
 
 
       var fileContents:String = File.getContent("DynamicImpl.tpl");
-      fileContents = fileContents.split("").join("");
+      fileContents = fileContents.replace("\r", "");
       var template:Template = new Template(fileContents);
       var result:String = template.execute(context);
       var fileOutput:FileOutput = File.write("DynamicImpl.h", true);
