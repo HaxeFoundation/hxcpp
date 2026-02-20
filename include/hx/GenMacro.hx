@@ -96,9 +96,9 @@ class GenMacro
       Reflect.setField(context, "hxNS", " ::hx::");
 
       var fixed = File.getContent("MacrosFixed.h");
-      fixed = fixed.split("").join("");
+      fixed = fixed.split("\r").join("");
       var fileContents:String = File.getContent("Macros.tpl");
-      fileContents = fileContents.split("").join("");
+      fileContents = fileContents.split("\r").join("");
 
       var template:Template = new Template(fileContents);
       var result:String = template.execute(context);
@@ -109,7 +109,7 @@ class GenMacro
       fileOutput.close();
 
       var fileContents:String = File.getContent("MacrosJumbo.tpl");
-      fileContents = fileContents.split("").join("");
+      fileContents = fileContents.split("\r").join("");
       var template:Template = new Template(fileContents);
       Reflect.setField(context, "LOCALS", jumboLocals);
       var result:String = template.execute(context);
@@ -121,7 +121,7 @@ class GenMacro
 
 
       var fileContents:String = File.getContent("DynamicImpl.tpl");
-      fileContents = fileContents.split("").join("");
+      fileContents = fileContents.split("\r").join("");
       var template:Template = new Template(fileContents);
       var result:String = template.execute(context);
       var fileOutput:FileOutput = File.write("DynamicImpl.h", true);
