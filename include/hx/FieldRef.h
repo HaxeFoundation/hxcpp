@@ -28,7 +28,7 @@ template<typename T> inline ret operator op (const T& inA) \
    { return this->operator ::Dynamic() op inA; }
 
 #define HX_FIELD_REF_IMPL_MEM_OP(op,ret) \
-inline ret ::hx::FieldRef::operator op (const IndexRef &inA) \
+inline ret FieldRef::operator op (const IndexRef &inA) \
     { return this->operator ::Dynamic() op inA.operator ::Dynamic(); } \
 
 class FieldRef

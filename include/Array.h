@@ -1409,7 +1409,7 @@ namespace hx
 
 #define HX_ARRAY_FUNC(ret, value, name, args_list, func_list, args_call) \
     template<class ELEM_> \
-    ::hx::Callable<value(args_list)> ::Array_obj<ELEM_>::name##_dyn() \
+    ::hx::Callable<value(args_list)> Array_obj<ELEM_>::name##_dyn() \
     { \
         struct _hx_array_##name final : public ::hx::AutoCallable_obj<value(args_list)> \
         { \

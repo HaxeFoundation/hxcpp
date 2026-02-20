@@ -15,7 +15,7 @@ jobs:
     - run: |
         # macros in public headers must use the global namespace to qualify types
         ! pcre2grep --buffer-size=1M --recursive --multiline --line-number --include='.*\.h$' \
-          '#define\s+(?:.*\\\r?\n)*.*?\K(?<!:)\b(Enum|String|StringOffset|Array|ArrayClassID|Array_obj|Math|Math_obj|Void|null|Dynamic|hx::|cpp::)\b' \
+          '#define\s+(?:.*\\\r?\n)*.*?\K(?<!:)\b(Enum|String|StringOffset|Array|ArrayClassID|Math|Math_obj|Void|null|Dynamic|hx::|cpp::)\b' \
           include
       name: Check public headers
 
