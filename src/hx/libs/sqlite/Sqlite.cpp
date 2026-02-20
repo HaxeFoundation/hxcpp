@@ -87,7 +87,9 @@ struct result : public hx::Object
          if( ncols == 0 )
             count = sqlite3_changes(db);
 
+         __hxcpp_enter_gc_free_zone();
          bool err = sqlite3_finalize(r) != SQLITE_OK;
+         __hxcpp_exit_gc_free_zone();
          db = 0;
          r = 0;
 
@@ -134,7 +136,10 @@ struct database : public hx::Object
             last = null();
          }
 
-         if( sqlite3_close(db) != SQLITE_OK )
+         __hxcpp_enter_gc_free_zone();
+         int err = sqlite3_close(db);
+         __hxcpp_exit_gc_free_zone();
+         if (err != SQLITE_OK)
          {
             if (inThrowError)
                hx::Throw(HX_CSTRING("Sqlite: could not close"));
@@ -194,9 +199,12 @@ result *getResult(Dynamic handle, bool inRequireStatement)
 **/
 Dynamic _hx_sqlite_connect(String filename)
 {
-   int err;
    sqlite3 *sqlDb = 0;
-   if( (err = sqlite3_open(filename.utf8_str(),&sqlDb)) != SQLITE_OK )
+   const char *filenameUtf8 = filename.utf8_str();
+   __hxcpp_enter_gc_free_zone();
+   int err = sqlite3_open(filenameUtf8,&sqlDb);
+   __hxcpp_exit_gc_free_zone();
+   if (err != SQLITE_OK)
       sqlite_error(sqlDb);
 
    database *db = new database();
@@ -237,14 +245,19 @@ Dynamic _hx_sqlite_request(Dynamic handle,String sql)
    const char * sqlStr = sql.utf8_str(0, true, &byteLength);
    sqlite3_stmt *statement = 0;
    const char *tl = 0;
-   if( sqlite3_prepare(db->db,sqlStr,byteLength,&statement,&tl) != SQLITE_OK )
+   __hxcpp_enter_gc_free_zone();
+   int err = sqlite3_prepare(db->db,sqlStr,byteLength,&statement,&tl);
+   __hxcpp_exit_gc_free_zone();
+   if (err != SQLITE_OK)
    {
       hx::Throw( HX_CSTRING("Sqlite error in ") + sql + HX_CSTRING(" : ") +
                   String(sqlite3_errmsg(db->db) ) );
    }
    if( *tl )
    {
+      __hxcpp_enter_gc_free_zone();
       sqlite3_finalize(statement);
+      __hxcpp_exit_gc_free_zone();
       hx::Throw(HX_CSTRING("Cannot execute several SQL requests at the same time"));
    }
 
@@ -296,7 +309,10 @@ Dynamic _hx_sqlite_result_next(Dynamic handle)
    if( r->done )
       return null();
 
-   switch( sqlite3_step(r->r) )
+   __hxcpp_enter_gc_free_zone();
+   int step = sqlite3_step(r->r);
+   __hxcpp_exit_gc_free_zone();
+   switch(step)
    {
       case SQLITE_ROW:
       {
