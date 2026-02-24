@@ -15,4 +15,18 @@ class ReturnExpressions {
 		}
 		return Error("Host method executed after return");
 	}
+
+	@:analyzer(ignore)
+	static function returnAsCallHaxeArg() {
+		new Common().instanceIncrementCount(return);
+	}
+
+	public static function testHostArgReturn() {
+		Common.count = 0;
+		returnAsCallHaxeArg();
+		if (Common.count == 0) {
+			return Ok;
+		}
+		return Error("Host method executed after return");
+	}
 }

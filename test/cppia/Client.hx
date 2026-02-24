@@ -217,6 +217,13 @@ class Client
          default:
       }
 
+		switch ReturnExpressions.testHostArgReturn() {
+			case Error(message):
+				Common.status = 'Failed test for argument return stopping argument evaluation: ' + message;
+				return;
+			default:
+		}
+
       // regression test for #926
       var x:Dynamic = 3;
       x *= 5;

@@ -13,6 +13,12 @@ class Common
 		return count++;
 	}
 
+   public function new() {}
+
    public function dummyMethod() {}
    public function dummyMethodArg(_) {}
+
+	public function instanceIncrementCount(_) {
+      count++;
+   }
 }
