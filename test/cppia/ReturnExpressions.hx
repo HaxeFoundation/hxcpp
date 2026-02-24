@@ -29,4 +29,20 @@ class ReturnExpressions {
 		}
 		return Error("Host method executed after return");
 	}
+
+	@:analyzer(ignore)
+	static function returnAsFunction() {
+		// if return is not handled, there is no function to run so this will
+		// give a null function exception
+		(cast return : (Int) -> Void)(Common.incrementCount());
+	}
+
+	public static function testFuncReturn() {
+		Common.count = 0;
+		returnAsFunction();
+		if (Common.count == 0) {
+			return Ok;
+		}
+		return Error("Host method executed after return");
+	}
 }

@@ -224,6 +224,13 @@ class Client
 			default:
 		}
 
+		switch ReturnExpressions.testFuncReturn() {
+			case Error(message):
+				Common.status = 'Failed test for function value return stopping evaluation: ' + message;
+				return;
+			default:
+		}
+
       // regression test for #926
       var x:Dynamic = 3;
       x *= 5;
