@@ -503,7 +503,7 @@ public:
    }
 
    template<typename T>
-	inline static AutoCast ofArray(::Array<T> array)  { return AutoCast(&array[0]); }
+	inline static AutoCast ofArray(::Array<T> array)  { return AutoCast(array->Pointer()); }
 	inline static AutoCast ofArray(Dynamic inVal)
    {
       if (inVal==null() || !inVal->__IsArray())
