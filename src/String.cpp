@@ -2402,6 +2402,11 @@ hx::Val String::__Field(const String &inString, hx::PropertyAccess inCallProp)
    return null();
 }
 
+bool String::__GetStatic(const ::String &inName, Dynamic &outValue, ::hx::PropertyAccess inCallProp)
+{
+   if (HX_FIELD_EQ(inName,"fromCharCode")) { outValue = fromCharCode_dyn(); return true; }
+	return false;
+}
 
 static String sStringStatics[] = {
    HX_CSTRING("fromCharCode"),
@@ -2632,4 +2637,6 @@ void String::__boot()
    Static(__StringClass) = hx::_hx_RegisterClass(HX_CSTRING("String"),TCanCast<StringData>,sStringStatics, sStringFields,
            &CreateEmptyString, &CreateString, 0, 0, 0
     );
+   __StringClass->mGetStaticField = &String::__GetStatic;
+   __StringClass->mSetStaticField = &::hx::Class_obj::SetNoStaticField;
 }
