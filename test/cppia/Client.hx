@@ -224,6 +224,13 @@ class Client
 			default:
 		}
 
+		switch ReturnExpressions.testClientThisReturn() {
+			case Error(message):
+				Common.status = 'Failed test for client this return stopping evaluation: ' + message;
+				return;
+			default:
+		}
+
 		switch ReturnExpressions.testFuncReturn() {
 			case Error(message):
 				Common.status = 'Failed test for function value return stopping evaluation: ' + message;

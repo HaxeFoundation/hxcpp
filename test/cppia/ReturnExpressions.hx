@@ -45,4 +45,22 @@ class ReturnExpressions {
 		}
 		return Error("Host method executed after return");
 	}
+
+	function vtableMethod(_) {}
+
+	@:analyzer(ignore)
+	public static function returnAsClientThis() {
+		// if return is not handled, there is no instance to run the method with
+		// so this will give a null function exception
+		(cast return:ReturnExpressions).vtableMethod(Common.incrementCount());
+	}
+
+	public static function testClientThisReturn() {
+		Common.count = 0;
+		returnAsClientThis();
+		if (Common.count == 0) {
+			return Ok;
+		}
+		return Error("Host method executed after return");
+	}
 }
