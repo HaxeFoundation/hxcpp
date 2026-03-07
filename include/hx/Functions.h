@@ -1,6 +1,8 @@
 #ifndef HX_FUNCTIONS_H
 #define HX_FUNCTIONS_H
 
+#include <typeindex>
+
 namespace hx
 {
    struct HXCPP_EXTERN_CLASS_ATTRIBUTES LocalFunc : public hx::Object
@@ -27,11 +29,16 @@ namespace hx
     template<typename T1>
     bool IsNotNull(const T1& v1);
 
+    struct HXCPP_EXTERN_CLASS_ATTRIBUTES ErasedCallable_obj : public hx::Object
+    {
+        virtual std::type_index callableId() const = 0;
+    };
+
     template<class TReturn, class... TArgs>
     class HXCPP_EXTERN_CLASS_ATTRIBUTES Callable_obj;
 
     template<class TReturn, class... TArgs>
-    class HXCPP_EXTERN_CLASS_ATTRIBUTES Callable_obj<TReturn(TArgs...)> : public hx::Object
+    class HXCPP_EXTERN_CLASS_ATTRIBUTES Callable_obj<TReturn(TArgs...)> : public ErasedCallable_obj
     {
     public:
         HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdClosure };
@@ -49,6 +56,22 @@ namespace hx
         Dynamic __Run(const Array<Dynamic>& inArgs) override = 0;
 
         virtual TReturn HX_LOCAL_RUN(TArgs... args) = 0;
+
+        virtual std::type_index callableId() const
+        {
+            return std::type_index{ typeid(Callable_obj<TReturn(TArgs...)>) };
+        }
+
+        virtual int __Compare(const ::hx::Object* other) const override
+        {
+            auto otherCallable = dynamic_cast<const ErasedCallable_obj*>(other);
+            if (nullptr == otherCallable)
+            {
+                return -1;
+            }
+
+            return callableId() == otherCallable->callableId() ? 0 : -1;
+        }
     };
 
     template<class TReturn, class... TArgs>
