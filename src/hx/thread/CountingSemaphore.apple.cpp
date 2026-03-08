@@ -23,7 +23,7 @@ void hx::thread::CountingSemaphore_obj::acquire()
 {
 	hx::AutoGCFreeZone zone;
 
-	if (0 != (dispatch_semaphore_wait(impl->semaphore, DISPATCH_TIME_FOREVER)))
+	if (0 != dispatch_semaphore_wait(impl->semaphore, DISPATCH_TIME_FOREVER))
 	{
 		hx::Throw(HX_CSTRING("Failed to wait for semaphore"));
 	}
@@ -39,7 +39,7 @@ bool hx::thread::CountingSemaphore_obj::tryAcquire(Null<double> timeout)
 	hx::AutoGCFreeZone zone;
 
 	return
-		(0 = dispatch_semaphore_wait(
+		(0 == dispatch_semaphore_wait(
 			impl->semaphore,
 			dispatch_time(DISPATCH_TIME_NOW, static_cast<int64_t>(timeout.Default(0)) * 1000 * 1000 * 1000)));
 }
