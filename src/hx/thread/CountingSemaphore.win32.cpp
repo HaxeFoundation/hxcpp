@@ -34,6 +34,8 @@ void hx::thread::CountingSemaphore_obj::acquire()
 		hx::ExitGCFreeZone();
 		hx::Throw(HX_CSTRING("Failed to wait for semaphore"));
 	}
+
+	hx::ExitGCFreeZone();
 }
 
 void hx::thread::CountingSemaphore_obj::release()
