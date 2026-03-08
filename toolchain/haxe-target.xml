@@ -208,8 +208,21 @@
   <file name = "src/cpp/encoding/Utf8.cpp"/>
   <file name = "src/cpp/encoding/Utf16.cpp"/>
 
-  <file name="${HXCPP}/src/hx/thread/RecursiveMutex.cpp"/>
-  <file name="${HXCPP}/src/hx/thread/ConditionVariable.cpp"/>
+  <file name="src/hx/thread/RecursiveMutex.cpp"/>
+  <file name="src/hx/thread/ConditionVariable.cpp"/>
+  
+  <section if="windows">
+    <file name="src/hx/thread/CountingSemaphore.win32.cpp"/>
+  </section>
+  <section if="apple">
+    <file name="src/hx/thread/CountingSemaphore.apple.cpp"/>
+  </section>
+  <section if="linux||android">
+    <file name="src/hx/thread/CountingSemaphore.posix.cpp"/>
+  </section>
+  <section unless="windows||apple||linux||android">
+    <file name="src/hx/thread/CountingSemaphore.unsupported.cpp"/>
+  </section>
 
   <addTwice if="linux||android" />
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />
