@@ -27,10 +27,11 @@ hx::thread::CountingSemaphore_obj::CountingSemaphore_obj(int value) : impl(new I
 
 void hx::thread::CountingSemaphore_obj::acquire()
 {
-	hx::AutoGCFreeZone zone;
+	hx::EnterGCFreeZone();
 
 	if (NO_ERROR != WaitForSingleObject(impl->semaphore, INFINITE))
 	{
+		hx::ExitGCFreeZone();
 		hx::Throw(HX_CSTRING("Failed to wait for semaphore"));
 	}
 }

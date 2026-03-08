@@ -32,6 +32,7 @@ void hx::thread::CountingSemaphore_obj::acquire()
 
 	if (0 != sem_wait(&impl->semaphore))
 	{
+		hx::ExitGCFreeZone();
 		hx::Throw(HX_CSTRING("Failed to wait on semaphore"));
 	}
 

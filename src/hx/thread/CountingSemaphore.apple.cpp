@@ -21,12 +21,15 @@ hx::thread::CountingSemaphore_obj::CountingSemaphore_obj(int value) : impl(new I
 
 void hx::thread::CountingSemaphore_obj::acquire()
 {
-	hx::AutoGCFreeZone zone;
+	hx::EnterGCFreeZone();
 
 	if (0 != dispatch_semaphore_wait(impl->semaphore, DISPATCH_TIME_FOREVER))
 	{
+		hx::ExitGCFreeZone();
 		hx::Throw(HX_CSTRING("Failed to wait for semaphore"));
 	}
+
+	hx::ExitGCFreeZone();
 }
 
 void hx::thread::CountingSemaphore_obj::release()
