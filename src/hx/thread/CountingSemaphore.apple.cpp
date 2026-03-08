@@ -1,5 +1,6 @@
 #include <hxcpp.h>
 #include <dispatch/dispatch.h>
+#include <hx/thread/CountingSemaphore.hpp>
 
 struct hx::thread::CountingSemaphore_obj::Impl
 {
