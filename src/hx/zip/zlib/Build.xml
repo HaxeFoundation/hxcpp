@@ -6,6 +6,7 @@
 
   <files id="zlib_sources">
     <cache value="true" asLibrary="true" />
+    <addTwice value="1" /> <!-- Linux can have issues with library ordering -->
 
     <compilerflag value="-I${ZLIB_DIR}"/>
     <compilerflag value="-DSTDC" unless="windows" />
@@ -36,6 +37,7 @@
     <depend name="${this_dir}/ZLibUncompress.hpp"/>
 
     <cache value="true" asLibrary="true" />
+    <addTwice value="1" />
 
     <compilerflag value="-I${ZLIB_DIR}"/>
     <compilerflag value="-I${this_dir}"/>
