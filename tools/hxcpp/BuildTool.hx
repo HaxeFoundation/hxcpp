@@ -1017,10 +1017,25 @@ class BuildTool
          defaultObjCxxStandard = 11;
       }
 
-      group.mCStandard = inXML.has.c_standard ? Std.parseInt(substitute(inXML.att.c_standard)) : defaultCStandard;
-      group.mObjCStandard = inXML.has.objc_standard ? Std.parseInt(substitute(inXML.att.objc_standard)) : defaultObjCStandard != null ? defaultObjCStandard : group.mCStandard;
-      group.mCxxStandard = inXML.has.cxx_standard ? Std.parseInt(substitute(inXML.att.cxx_standard)) : defaultCxxStandard;
-      group.mObjCxxStandard = inXML.has.objcxx_standard ? Std.parseInt(substitute(inXML.att.objcxx_standard)) : defaultObjCxxStandard != null ? defaultObjCxxStandard : group.mCxxStandard;
+      if (inXML.has.c_standard)
+         group.mCStandard = Std.parseInt(substitute(inXML.att.c_standard));
+      else if (group.mCStandard == null)
+         group.mCStandard = defaultCStandard;
+
+      if (inXML.has.objc_standard)
+         group.mObjCStandard = Std.parseInt(substitute(inXML.att.objc_standard));
+      else if (group.mObjCStandard == null)
+         group.mObjCStandard = defaultObjCStandard != null ? defaultObjCStandard : group.mCStandard;
+
+      if (inXML.has.cxx_standard)
+         group.mCxxStandard = Std.parseInt(substitute(inXML.att.cxx_standard));
+      else if (group.mCxxStandard == null)
+         group.mCxxStandard = defaultCxxStandard;
+
+      if (inXML.has.objcxx_standard)
+         group.mObjCxxStandard = Std.parseInt(substitute(inXML.att.objcxx_standard));
+      else if (group.mObjCxxStandard == null)
+         group.mObjCxxStandard = defaultObjCxxStandard != null ? defaultObjCxxStandard : group.mCxxStandard;
 
       for(el in inXML.elements)
       {
