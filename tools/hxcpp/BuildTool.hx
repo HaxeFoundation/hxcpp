@@ -164,44 +164,7 @@ class BuildTool
 
       Profile.setEntry("parse xml");
 
-
-
-      if (mDefines.exists("HXCPP_C_STANDARD")) {
-         defaultCStandard = Std.parseInt(mDefines.get("HXCPP_C_STANDARD"));
-      }
-
-      // Hxcpp requires C++11, so the default standard cannot be less than that
-      if (mDefines.exists("HXCPP_CXX_STANDARD")) {
-         defaultCxxStandard = Std.parseInt(mDefines.get("HXCPP_CXX_STANDARD"));
-         if (defaultCxxStandard < 11) {
-            Log.warn('Increasing default C++ standard to C++11 instead of C++${defaultCxxStandard}');
-            defaultCxxStandard = 11;
-         }
-      } else if(mDefines.exists("HXCPP_CPP17")) {
-         defaultCxxStandard = 17;
-      } else if (mDefines.exists("HXCPP_CPP14")) {
-         defaultCxxStandard = 14;
-      } else {
-         defaultCxxStandard = 11;
-      }
-
-      if (mDefines.exists("HXCPP_OBJC_STANDARD")) {
-         defaultObjCStandard = Std.parseInt(mDefines.get("HXCPP_OBJC_STANDARD"));
-      }
-
-      if (mDefines.exists("HXCPP_OBJCXX_STANDARD")) {
-         defaultObjCxxStandard = Std.parseInt(mDefines.get("HXCPP_OBJCXX_STANDARD"));
-         if (defaultObjCxxStandard < 11) {
-				Log.warn('Increasing default Obj-C++ standard to Obj-C++11 instead of Obj-C++${defaultObjCxxStandard}');
-            defaultObjCxxStandard = 11;
-         }
-      } else {
-         defaultObjCxxStandard = 11;
-      }
-
       include("toolchain/setup.xml");
-
-
 
       if (mDefines.exists("toolchain"))
       {
@@ -1020,6 +983,39 @@ class BuildTool
 
       if (inTags!=null)
          group.mTags = inTags;
+
+      if (mDefines.exists("HXCPP_C_STANDARD")) {
+         defaultCStandard = Std.parseInt(mDefines.get("HXCPP_C_STANDARD"));
+      }
+
+      // Hxcpp requires C++11, so the default standard cannot be less than that
+      if (mDefines.exists("HXCPP_CXX_STANDARD")) {
+         defaultCxxStandard = Std.parseInt(mDefines.get("HXCPP_CXX_STANDARD"));
+         if (defaultCxxStandard < 11) {
+            Log.warn('Increasing default C++ standard to C++11 instead of C++${defaultCxxStandard}');
+            defaultCxxStandard = 11;
+         }
+      } else if(mDefines.exists("HXCPP_CPP17")) {
+         defaultCxxStandard = 17;
+      } else if (mDefines.exists("HXCPP_CPP14")) {
+         defaultCxxStandard = 14;
+      } else {
+         defaultCxxStandard = 11;
+      }
+
+      if (mDefines.exists("HXCPP_OBJC_STANDARD")) {
+         defaultObjCStandard = Std.parseInt(mDefines.get("HXCPP_OBJC_STANDARD"));
+      }
+
+      if (mDefines.exists("HXCPP_OBJCXX_STANDARD")) {
+         defaultObjCxxStandard = Std.parseInt(mDefines.get("HXCPP_OBJCXX_STANDARD"));
+         if (defaultObjCxxStandard < 11) {
+            Log.warn('Increasing default Obj-C++ standard to Obj-C++11 instead of Obj-C++${defaultObjCxxStandard}');
+            defaultObjCxxStandard = 11;
+         }
+      } else {
+         defaultObjCxxStandard = 11;
+      }
 
       group.mCStandard = inXML.has.c_standard ? Std.parseInt(substitute(inXML.att.c_standard)) : defaultCStandard;
       group.mObjCStandard = inXML.has.objc_standard ? Std.parseInt(substitute(inXML.att.objc_standard)) : defaultObjCStandard != null ? defaultObjCStandard : group.mCStandard;
