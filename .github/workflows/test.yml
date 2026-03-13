@@ -233,4 +233,9 @@ jobs:
           haxe: ${{ inputs.haxe }}
       - name: test c/cxx_standard attributes
         working-directory: test/cxx_standard
-        run: haxelib run hxcpp Build.xml
+        shell: bash
+        run: |
+          for xml in *.xml; do
+            haxelib run hxcpp $xml
+            haxelib run hxcpp $xml clean
+          done
