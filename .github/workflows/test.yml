@@ -174,10 +174,10 @@ jobs:
             sudo systemctl start mariadb
             sudo mariadb -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
         - name: build
-          run: haxe compile${{ inputs.arch }}.hxml ${{ env.HAXE_TARGET_FLAG }}
+          run: haxe compile-generic.hxml --cpp bin -D ${{ env.HXCPP_ARCH_FLAG }} ${{ env.HAXE_TARGET_FLAG }}
         - name: run
           if: inputs.execute
-          run: ${{ inputs.arch == 'Arm64' && 'arm64' || format('cpp{0}', inputs.arch) }}${{ inputs.sep }}Test
+          run: bin${{ inputs.sep }}Test
 
   cppia:
     strategy:
