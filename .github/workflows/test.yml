@@ -257,6 +257,6 @@ jobs:
         shell: bash
         run: |
           for xml in *.xml; do
-            haxelib run hxcpp $xml ${{ env.HXCPP_TARGET_FLAG }}
+            haxelib run hxcpp $xml -D${{ env.HXCPP_ARCH_FLAG }} ${{ env.HXCPP_TARGET_FLAG }}
             haxelib run hxcpp $xml clean
           done
