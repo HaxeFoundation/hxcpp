@@ -7,7 +7,7 @@ namespace hx
 {
    struct HXCPP_EXTERN_CLASS_ATTRIBUTES LocalFunc : public hx::Object
    {
-      int __GetType() const { return vtFunction; }
+      int __GetType() const HXCPP_OVERRIDE { return vtFunction; }
       inline void DoMarkThis(hx::MarkContext *__inCtx) { }
 #ifdef HXCPP_VISIT_ALLOCS
       inline void DoVisitThis(hx::VisitContext *__inCtx) { }
@@ -17,7 +17,7 @@ namespace hx
    struct HXCPP_EXTERN_CLASS_ATTRIBUTES LocalThisFunc : public LocalFunc
    {
       Dynamic __this;
-		void __SetThis(Dynamic inThis) { __this = inThis; }
+      void __SetThis(Dynamic inThis) HXCPP_OVERRIDE { __this = inThis; }
       inline void DoMarkThis(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); }
 #ifdef HXCPP_VISIT_ALLOCS
       inline void DoVisitThis(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(__this); }
@@ -57,12 +57,12 @@ namespace hx
 
         virtual TReturn HX_LOCAL_RUN(TArgs... args) = 0;
 
-        virtual std::type_index callableId() const
+        std::type_index callableId() const override
         {
             return std::type_index{ typeid(Callable_obj<TReturn(TArgs...)>) };
         }
 
-        virtual int __Compare(const ::hx::Object* other) const override
+        int __Compare(const ::hx::Object* other) const override
         {
             auto otherCallable = dynamic_cast<const ErasedCallable_obj*>(other);
             if (nullptr == otherCallable)

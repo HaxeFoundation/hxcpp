@@ -38,7 +38,7 @@ struct CMemberFunction::ARG:: : public hx::Object
       mThis = inObj;
       mFunction = inFunction;
    }
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE
    {
       const CMemberFunction::ARG:: *other = dynamic_cast<const CMemberFunction::ARG:: *>(inRHS);
       if (!other)
@@ -46,15 +46,15 @@ struct CMemberFunction::ARG:: : public hx::Object
       return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
-   int __GetType() const { return vtFunction; } 
-   int __ArgCount() const { return ::ARG::; } 
-   ::String __ToString() const{ return String(mName); } 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mThis,"CMemberFunction::ARG::.this"); } 
+   int __GetType() const HXCPP_OVERRIDE { return vtFunction; } 
+   int __ArgCount() const HXCPP_OVERRIDE { return ::ARG::; } 
+   ::String __ToString() const HXCPP_OVERRIDE { return String(mName); } 
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER_NAME(mThis,"CMemberFunction::ARG::.this"); } 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(mThis); } 
    #endif
-   void *__GetHandle() const { return mThis.GetPtr(); } 
-   Dynamic __Run(const Array<Dynamic> &inArgs) 
+   void *__GetHandle() const HXCPP_OVERRIDE { return mThis.GetPtr(); } 
+   Dynamic __Run(const Array<Dynamic> &inArgs) HXCPP_OVERRIDE
    { 
       ::if (ARG>0)::
       return mFunction(mThis.GetPtr(), ::ARR_LIST::);
@@ -63,7 +63,7 @@ struct CMemberFunction::ARG:: : public hx::Object
       ::end::
    } 
 #if (HXCPP_API_LEVEL<500)
-   Dynamic __run(::DYNAMIC_ARG_LIST::) 
+   Dynamic __run(::DYNAMIC_ARG_LIST::) HXCPP_OVERRIDE
    { 
       ::if (ARG>0)::
       return mFunction(mThis.GetPtr(), ::ARG_LIST::);
@@ -89,7 +89,7 @@ struct CStaticFunction::ARG:: : public hx::Object
       mName = inName;
       mFunction = inFunction;
    }
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE
    {
       const CStaticFunction::ARG:: *other = dynamic_cast<const CStaticFunction::ARG:: *>(inRHS);
       if (!other)
@@ -97,15 +97,15 @@ struct CStaticFunction::ARG:: : public hx::Object
       return mName==other->mName && mFunction==other->mFunction && mName==other->mName ? 0 : -1;
    }
 
-   int __GetType() const { return vtFunction; } 
-   int __ArgCount() const { return ::ARG::; } 
-   ::String __ToString() const{ return String(mName); } 
-   Dynamic __Run(const Array<Dynamic> &inArgs) 
+   int __GetType() const HXCPP_OVERRIDE { return vtFunction; } 
+   int __ArgCount() const HXCPP_OVERRIDE { return ::ARG::; } 
+   ::String __ToString() const HXCPP_OVERRIDE { return String(mName); } 
+   Dynamic __Run(const Array<Dynamic> &inArgs) HXCPP_OVERRIDE
    { 
       return mFunction(::ARR_LIST::);
    } 
 #if (HXCPP_API_LEVEL<500)
-   Dynamic __run(::DYNAMIC_ARG_LIST::) 
+   Dynamic __run(::DYNAMIC_ARG_LIST::) HXCPP_OVERRIDE
    { 
       return mFunction(::ARG_LIST::);
    } 
@@ -148,7 +148,7 @@ struct CMemberFunctionVar : public hx::Object
       mName = inName;
       N = inN;
    }
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE
    {
       const CMemberFunctionVar *other = dynamic_cast<const CMemberFunctionVar *>(inRHS);
       if (!other)
@@ -157,15 +157,15 @@ struct CMemberFunctionVar : public hx::Object
    }
 
 
-   int __GetType() const { return vtFunction; } 
-   int __ArgCount() const { return N; } 
-   ::String __ToString() const{ return String(mName); } 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mThis,"CMemberFunctionVar.this"); } 
+   int __GetType() const HXCPP_OVERRIDE { return vtFunction; } 
+   int __ArgCount() const HXCPP_OVERRIDE { return N; } 
+   ::String __ToString() const HXCPP_OVERRIDE { return String(mName); } 
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER_NAME(mThis,"CMemberFunctionVar.this"); } 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(mThis); } 
    #endif
-   void *__GetHandle() const { return mThis.GetPtr(); } 
-   Dynamic __Run(const Array<Dynamic> &inArgs) 
+   void *__GetHandle() const HXCPP_OVERRIDE { return mThis.GetPtr(); } 
+   Dynamic __Run(const Array<Dynamic> &inArgs) HXCPP_OVERRIDE
    { 
       return mFunction(mThis.GetPtr(), inArgs);
    } 
@@ -187,7 +187,7 @@ struct CStaticFunctionVar : public hx::Object
       mName = inName;
       N = inN;
    }
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE
    {
       const CStaticFunctionVar *other = dynamic_cast<const CStaticFunctionVar *>(inRHS);
       if (!other)
@@ -196,10 +196,10 @@ struct CStaticFunctionVar : public hx::Object
    }
 
 
-   int __GetType() const { return vtFunction; } 
-   int __ArgCount() const { return N; } 
-   ::String __ToString() const { return String(mName); } 
-   Dynamic __Run(const Array<Dynamic> &inArgs) 
+   int __GetType() const HXCPP_OVERRIDE { return vtFunction; } 
+   int __ArgCount() const HXCPP_OVERRIDE { return N; } 
+   ::String __ToString() const HXCPP_OVERRIDE { return String(mName); } 
+   Dynamic __Run(const Array<Dynamic> &inArgs) HXCPP_OVERRIDE
    { 
       return mFunction(inArgs);
    } 

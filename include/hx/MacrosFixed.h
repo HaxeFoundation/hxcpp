@@ -44,19 +44,19 @@ static  ::Dynamic Create##enum_obj(::String inName,::hx::DynamicArray inArgs) \
 
 // ---- Fields ----------------------
 
-#define HX_IS_INSTANCE_OF bool _hx_isInstanceOf(int inClassId) { return inClassId==1 || inClassId==(int)_hx_ClassId; }
+#define HX_IS_INSTANCE_OF bool _hx_isInstanceOf(int inClassId) HXCPP_OVERRIDE { return inClassId==1 || inClassId==(int)_hx_ClassId; }
 
 #define HX_DO_RTTI_ALL \
    static ::hx::ObjectPtr< ::hx::Class_obj> __mClass; \
-   ::hx::ObjectPtr< ::hx::Class_obj > __GetClass() const { return __mClass; } \
+   ::hx::ObjectPtr< ::hx::Class_obj > __GetClass() const HXCPP_OVERRIDE { return __mClass; } \
    inline static ::hx::ObjectPtr< ::hx::Class_obj> &__SGetClass() { return __mClass; } \
    inline operator super *() { return this; }
 
 #define HX_DO_RTTI \
    HX_DO_RTTI_ALL \
-    ::hx::Val __Field(const ::String &inString, ::hx::PropertyAccess inCallProp); \
-    ::hx::Val __SetField(const ::String &inString,const  ::hx::Val &inValue, ::hx::PropertyAccess inCallProp); \
-   void __GetFields(::Array< ::String> &outFields);
+    ::hx::Val __Field(const ::String &inString, ::hx::PropertyAccess inCallProp) HXCPP_OVERRIDE; \
+    ::hx::Val __SetField(const ::String &inString,const  ::hx::Val &inValue, ::hx::PropertyAccess inCallProp) HXCPP_OVERRIDE; \
+   void __GetFields(::Array< ::String> &outFields) HXCPP_OVERRIDE;
 
 #define HX_DO_INTERFACE_RTTI \
    static ::hx::ObjectPtr< ::hx::Class_obj> __mClass; \
@@ -64,14 +64,14 @@ static  ::Dynamic Create##enum_obj(::String inName,::hx::DynamicArray inArgs) \
 	static void __register();
 
 #define HX_DO_ENUM_RTTI_INTERNAL \
-    ::hx::Val __Field(const ::String &inString, ::hx::PropertyAccess inCallProp); \
+    ::hx::Val __Field(const ::String &inString, ::hx::PropertyAccess inCallProp) HXCPP_OVERRIDE; \
    static int __FindIndex(::String inName); \
    static int __FindArgCount(::String inName);
 
 #define HX_DO_ENUM_RTTI \
    HX_DO_ENUM_RTTI_INTERNAL \
    static ::hx::ObjectPtr< ::hx::Class_obj> __mClass; \
-   ::hx::ObjectPtr< ::hx::Class_obj > __GetClass() const { return __mClass; } \
+   ::hx::ObjectPtr< ::hx::Class_obj > __GetClass() const HXCPP_OVERRIDE { return __mClass; } \
    static ::hx::ObjectPtr< ::hx::Class_obj> &__SGetClass() { return __mClass; }
 
 
