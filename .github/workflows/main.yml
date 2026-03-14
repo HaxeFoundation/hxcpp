@@ -102,3 +102,35 @@ jobs:
       sep: /
       ext: .dso
       os: ubuntu-latest
+
+  AndroidX86_64:
+    strategy:
+      fail-fast: false
+      matrix:
+        haxe: [ 4.3.7, latest ]
+    uses: ./.github/workflows/test.yml
+    name: Test Android (x86_64)
+    with:
+      haxe: ${{ matrix.haxe  }}
+      arch: 64
+      sep: /
+      ext: .dso
+      os: ubuntu-latest
+      target_flag: android
+      execute: false
+
+  AndroidArm64:
+    strategy:
+      fail-fast: false
+      matrix:
+        haxe: [ 4.3.7, latest ]
+    uses: ./.github/workflows/test.yml
+    name: Test Android (Arm64)
+    with:
+      haxe: ${{ matrix.haxe  }}
+      arch: Arm64
+      sep: /
+      ext: .dso
+      os: ubuntu-latest
+      target_flag: android
+      execute: false
