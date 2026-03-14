@@ -25,7 +25,10 @@ on:
         default: true
 
 env:
-  HXCPP_ARCH_FLAG: ${{ inputs.arch == 'Arm64' && 'HXCPP_ARM64' || format('HXCPP_M{0}', inputs.arch) }}
+  HXCPP_ARCH_FLAG: ${{ inputs.arch == 'Arm64' && 'HXCPP_ARM64' ||
+      inputs.target_flag == 'android' && inputs.arch == 64 && 'HXCPP_X86_64'||
+      format('HXCPP_M{0}', inputs.arch)
+    }}
   HAXE_TARGET_FLAG: ${{ inputs.target_flag && format('-D {0}', inputs.target_flag) || '' }}
   HXCPP_TARGET_FLAG: ${{ inputs.target_flag && format('-D{0}', inputs.target_flag) || '' }}
 
