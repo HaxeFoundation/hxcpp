@@ -47,18 +47,18 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
       static hx::ObjectPtr<hx::Class_obj> &__SGetClass();
 
 
-      String toString();
+      String toString() HXCPP_OVERRIDE;
 
       EnumBase_obj() : index(-1) { }
       EnumBase_obj(const null &inNull) : index(-1) { }
-      int __GetType() const { return vtEnum; }
+      int __GetType() const HXCPP_OVERRIDE { return vtEnum; }
       static Dynamic __CreateEmpty();
       static Dynamic __Create(DynamicArray inArgs);
       static void __boot();
 
-      void __Mark(hx::MarkContext *__inCtx);
+      void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE;
       #ifdef HXCPP_VISIT_ALLOCS
-      void __Visit(hx::VisitContext *__inCtx);
+      void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE;
       #endif
 
       static hx::ObjectPtr<EnumBase_obj> Resolve(String inName);
@@ -98,7 +98,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
       inline ::Dynamic _hx_getParamI(int inId) { return _hx_getFixed()[inId]; }
       inline int _hx_getParamCount() { return mFixedFields; }
       // Alias for _hx_getParamI
-      Dynamic __GetItem(int inIndex) const;
+      Dynamic __GetItem(int inIndex) const HXCPP_OVERRIDE;
 
       // For legacy
       inline String __Tag() const { return _hx_tag; }
@@ -108,7 +108,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
       int _hx_getIndex() const { return index; }
 
 
-      int __Compare(const hx::Object *inRHS) const;
+      int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE;
 
       virtual String GetEnumName( ) const { return HX_CSTRING("Enum"); }
 };

@@ -128,9 +128,9 @@ public:
 
    hxSehException(int inCode) : code(inCode) { }
 
-   String __ToString() const { return  HX_CSTRING("hxSehException"); }
+   String __ToString() const HXCPP_OVERRIDE { return  HX_CSTRING("hxSehException"); }
 
-   int __GetType() const { return vtObject; }
+   int __GetType() const HXCPP_OVERRIDE { return vtObject; }
 };
 
 static hx::Object *sException = new hxSehException(1);

@@ -12,13 +12,13 @@ struct StringExpr : public CppiaExpr
    {
       strVal = inThis;
    }
-   ExprType getType() { return etString; }
-   CppiaExpr *link(CppiaModule &inData)
+   ExprType getType() HXCPP_OVERRIDE { return etString; }
+   CppiaExpr *link(CppiaModule &inData) HXCPP_OVERRIDE
    {
       strVal = strVal->link(inData);
       return this;
    }
-   hx::Object *runObject(CppiaCtx *ctx)
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       return Dynamic(runString(ctx)).mPtr;
    }
@@ -35,14 +35,14 @@ struct SubStrExpr : public StringExpr
       a0 = inA0;
       a1 = inA1;
    }
-   const char *getName() { return "SubStrExpr"; }
-   CppiaExpr *link(CppiaModule &inData)
+   const char *getName() HXCPP_OVERRIDE { return "SubStrExpr"; }
+   CppiaExpr *link(CppiaModule &inData) HXCPP_OVERRIDE
    {
       a0 = a0->link(inData);
       a1 = a1->link(inData);
       return StringExpr::link(inData);
    }
-   String runString(CppiaCtx *ctx)
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       String val = strVal->runString(ctx);
       BCR_CHECK;
@@ -64,7 +64,7 @@ struct SubStrExpr : public StringExpr
    {
       *ioValue = ioValue->substring(start, Dynamic(end));
    }
-   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType) HXCPP_OVERRIDE
    {
       JitTemp ioValue(compiler,jtString);
       JitTemp startVal(compiler,jtInt);
@@ -86,13 +86,13 @@ struct StringIteratorExpr : public StringExpr
    StringIteratorExpr(CppiaExpr *inSrc, CppiaExpr *inThis) : StringExpr(inSrc,inThis)
    {
    }
-   const char *getName() { return "StringIteratorExpr"; }
+   const char *getName() HXCPP_OVERRIDE { return "StringIteratorExpr"; }
 
-   ExprType getType() { return etObject; }
+   ExprType getType() HXCPP_OVERRIDE { return etObject; }
 
-   String runString(CppiaCtx *ctx) { return Dynamic(runObject(ctx)); }
-   int runInt(CppiaCtx *ctx) { return 0; }
-   hx::Object *runObject(CppiaCtx *ctx)
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE { return Dynamic(runObject(ctx)); }
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE { return 0; }
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       String val = strVal->runString(ctx);
       BCR_CHECK;
@@ -105,7 +105,7 @@ struct StringIteratorExpr : public StringExpr
       return ( KEYS ? inValue->keyValueIterator() : inValue->iterator() ).mPtr;
    }
 
-   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType) HXCPP_OVERRIDE
    {
       JitTemp value(compiler,jtString);
       strVal->genCode(compiler, value, etString);
@@ -121,9 +121,9 @@ struct StringIteratorExpr : public StringExpr
 template<bool UPPER>
 struct ToCaseExpr : public StringExpr
 {
-   const char *getName() { return "ToCaseExpr"; }
+   const char *getName() HXCPP_OVERRIDE { return "ToCaseExpr"; }
    ToCaseExpr(CppiaExpr *inSrc, CppiaExpr *inThis ) : StringExpr(inSrc,inThis) { }
-   String runString(CppiaCtx *ctx)
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       String val = strVal->runString(ctx);
       BCR_CHECK;
@@ -141,7 +141,7 @@ struct ToCaseExpr : public StringExpr
          *ioVal = ioVal->toLowerCase();
    }
 
-   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType) HXCPP_OVERRIDE
    {
       if (destType==etString)
       {
@@ -168,15 +168,15 @@ struct CharAtExpr : public StringExpr
    {
       a0 = inIndex;
    }
-   CppiaExpr *link(CppiaModule &inData)
+   CppiaExpr *link(CppiaModule &inData) HXCPP_OVERRIDE
    {
       a0 = a0->link(inData);
       return StringExpr::link(inData);
    }
-   const char *getName() { return "CharAtExpr"; }
-   ExprType getType() { return CODE ? (AS_INT ? etInt : etObject) : etString; }
+   const char *getName() HXCPP_OVERRIDE { return "CharAtExpr"; }
+   ExprType getType() HXCPP_OVERRIDE { return CODE ? (AS_INT ? etInt : etObject) : etString; }
 
-   String runString(CppiaCtx *ctx)
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       String val = strVal->runString(ctx);
       BCR_CHECK;
@@ -184,7 +184,7 @@ struct CharAtExpr : public StringExpr
       BCR_CHECK;
       return val.charAt(idx);
    }
-   int runInt(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       //printf("Char code at %d INT\n", CODE);
       String val = strVal->runString(ctx);
@@ -197,7 +197,7 @@ struct CharAtExpr : public StringExpr
       else
          return val.charCodeAt(idx);
    }
-   hx::Object *runObject(CppiaCtx *ctx)
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       String val = strVal->runString(ctx);
       BCR_CHECK;
@@ -229,7 +229,7 @@ struct CharAtExpr : public StringExpr
       *ioValue = ioValue->charAt(inIndex);
    }
 
-   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType) HXCPP_OVERRIDE
    {
       JitTemp value(compiler,jtString);
       strVal->genCode(compiler, value, etString);
@@ -284,16 +284,16 @@ struct SplitExpr : public CppiaExpr
       strVal = inThis;
       a0 = inDelim;
    }
-   const char *getName() { return "SplitExpr"; }
-   CppiaExpr *link(CppiaModule &inData)
+   const char *getName() HXCPP_OVERRIDE { return "SplitExpr"; }
+   CppiaExpr *link(CppiaModule &inData) HXCPP_OVERRIDE
    {
       strVal = strVal->link(inData);
       a0 = a0->link(inData);
       return this;
    }
-   ExprType getType() { return etObject; }
+   ExprType getType() HXCPP_OVERRIDE { return etObject; }
 
-   hx::Object *runObject(CppiaCtx *ctx)
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       String val = strVal->runString(ctx);
       BCR_CHECK;
@@ -308,7 +308,7 @@ struct SplitExpr : public CppiaExpr
    {
       return (inValue->split(*sep)).mPtr;
    }
-   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType) HXCPP_OVERRIDE
    {
       JitTemp value(compiler,jtString);
       JitTemp sep(compiler,jtString);
@@ -338,20 +338,20 @@ struct IndexOfExpr : public CppiaExpr
       sought = inSought;
       start = inStart;
    }
-   const char *getName() { return "IndexOfExpr"; }
-   ExprType getType() { return etInt; }
-   CppiaExpr *link(CppiaModule &inData)
+   const char *getName() HXCPP_OVERRIDE { return "IndexOfExpr"; }
+   ExprType getType() HXCPP_OVERRIDE { return etInt; }
+   CppiaExpr *link(CppiaModule &inData) HXCPP_OVERRIDE
    {
       strVal = strVal->link(inData);
       sought = sought->link(inData);
       start = start->link(inData);
       return this;
    }
-   Float runFloat(CppiaCtx *ctx)
+   Float runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       return runInt(ctx);
    }
-   int runInt(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       String val = strVal->runString(ctx);
       BCR_CHECK;
@@ -364,7 +364,7 @@ struct IndexOfExpr : public CppiaExpr
       else
          return val.indexOf(s,first);
    }
-   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx)).mPtr; }
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE { return Dynamic(runInt(ctx)).mPtr; }
 
 
    #ifdef CPPIA_JIT
@@ -376,7 +376,7 @@ struct IndexOfExpr : public CppiaExpr
    {
       return ioValue->lastIndexOf(*sought, Dynamic(first));
    }
-   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType) HXCPP_OVERRIDE
    {
       JitTemp value(compiler,jtString);
       JitTemp soughtTemp(compiler,jtString);

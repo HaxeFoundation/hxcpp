@@ -53,7 +53,7 @@ struct Deque : public Array_obj<Dynamic>
 	}
 
    #ifdef HXCPP_VISIT_ALLOCS
-  	void __Visit(hx::VisitContext *__inCtx)
+	void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
 	{
 		Array_obj<Dynamic>::__Visit(__inCtx);
 		mFinalizer->Visit(__inCtx);
@@ -218,7 +218,7 @@ public:
 	{
 		return mDeque->PopFront(inBlocked);
 	}
-	String toString()
+	String toString() HXCPP_OVERRIDE
 	{
 		return String(GetThreadNumber());
 	}
@@ -227,7 +227,7 @@ public:
    }
 	Dynamic GetTLS(int inID) { return mTLS[inID]; }
 
-	void __Mark(hx::MarkContext *__inCtx)
+	void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE
 	{
 		HX_MARK_MEMBER(mFunction);
 		HX_MARK_MEMBER(mTLS);
@@ -235,7 +235,7 @@ public:
 			HX_MARK_OBJECT(mDeque);
 	}
    #ifdef HXCPP_VISIT_ALLOCS
-  	void __Visit(hx::VisitContext *__inCtx)
+  	void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
 	{
 		HX_VISIT_MEMBER(mFunction);
 		HX_VISIT_MEMBER(mTLS);
@@ -538,7 +538,7 @@ public:
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdLock };
 
    #ifdef HXCPP_VISIT_ALLOCS
-	void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
+	void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { mFinalizer->Visit(__inCtx); }
    #endif
 
 	hx::InternalFinalizer *mFinalizer;

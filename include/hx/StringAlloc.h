@@ -30,7 +30,7 @@ class StringAlloc : public IStringAlloc
          if (heap)
             free(heap);
       }
-      void *allocBytes(size_t inBytes)
+      void *allocBytes(size_t inBytes) HXCPP_OVERRIDE
       {
          if (inBytes<=STACK)
             return buffer;

@@ -259,32 +259,32 @@ public:
       }
    }
 
-   int  getBaseSize()
+   int  getBaseSize() HXCPP_OVERRIDE
    {
       return baseFrameSize;
    }
 
-   void setLineOffset( int inOffset )
+   void setLineOffset( int inOffset ) HXCPP_OVERRIDE
    {
       lineOffset = inOffset;
    }
-   int  getLineOffset( )
+   int  getLineOffset( ) HXCPP_OVERRIDE
    {
       return lineOffset;
    }
 
 
 
-   int getCurrentFrameSize()
+   int getCurrentFrameSize() HXCPP_OVERRIDE
    {
       return frameSize;
    }
-   void restoreFrameSize(int inSize)
+   void restoreFrameSize(int inSize) HXCPP_OVERRIDE
    {
       frameSize = inSize;
    }
 
-   void addFrame(ExprType inType)
+   void addFrame(ExprType inType) HXCPP_OVERRIDE
    {
       frameSize += getJitTypeSize( getJitType(inType) );
       if (frameSize>maxFrameSize)
@@ -292,7 +292,7 @@ public:
    }
 
 
-   void beginGeneration(int inArgs)
+   void beginGeneration(int inArgs) HXCPP_OVERRIDE
    {
       compiler = sljit_create_compiler(NULL);
 
@@ -335,7 +335,7 @@ public:
       catching = 0;
    }
 
-   CppiaFunc finishGeneration()
+   CppiaFunc finishGeneration() HXCPP_OVERRIDE
    {
       for(int i=0;i<uncaught.size();i++)
          comeFrom(uncaught[i]);
@@ -352,7 +352,7 @@ public:
    }
 
 
-   int  allocTempSize(int size)
+   int  allocTempSize(int size) HXCPP_OVERRIDE
    {
       int result = localSize;
       localSize += size;
@@ -361,45 +361,45 @@ public:
       return result;
    }
 
-   void freeTempSize(int inSize)
+   void freeTempSize(int inSize) HXCPP_OVERRIDE
    {
       localSize -= inSize;
    }
 
 
-   int  allocTemp(JitType inType)
+   int  allocTemp(JitType inType) HXCPP_OVERRIDE
    {
       return allocTempSize(getJitTypeSize(inType));
    }
 
-   void freeTemp(JitType inType)
+   void freeTemp(JitType inType) HXCPP_OVERRIDE
    {
       freeTempSize( getJitTypeSize(inType) );
    }
 
-   LabelId setContinuePos(LabelId inNewPos)
+   LabelId setContinuePos(LabelId inNewPos) HXCPP_OVERRIDE
    {
       LabelId oldPos = continuePos;
       continuePos = inNewPos;
       return oldPos;
    }
 
-   void  addContinue()
+   void  addContinue() HXCPP_OVERRIDE
    {
       jump(continuePos);
    }
 
-   void addBreak()
+   void addBreak() HXCPP_OVERRIDE
    {
       allBreaks.push( jump(0) );
    }
 
-   void swapBreakList(QuickVec<JumpId> &ioBreakList)
+   void swapBreakList(QuickVec<JumpId> &ioBreakList) HXCPP_OVERRIDE
    {
       allBreaks.swap(ioBreakList);
    }
-   
-   void setBreakTarget()
+
+   void setBreakTarget() HXCPP_OVERRIDE
    {
       for(int i=0;i<allBreaks.size();i++)
          comeFrom(allBreaks[i]);
@@ -407,22 +407,22 @@ public:
    }
 
 
-   void setFunctionDebug()
+   void setFunctionDebug() HXCPP_OVERRIDE
    {
    }
 
-   void setLineDebug()
+   void setLineDebug() HXCPP_OVERRIDE
    {
    }
 
-   void setOnReturn( OnReturnFunc inFunc, int inStackSize )
+   void setOnReturn( OnReturnFunc inFunc, int inStackSize ) HXCPP_OVERRIDE
    {
       onReturn = inFunc;
       onReturnStackSize = inStackSize;
    }
 
    // Scriptable?
-   void addReturn()
+   void addReturn() HXCPP_OVERRIDE
    {
       if (onReturn)
          onReturn(this, onReturnStackSize);
@@ -439,7 +439,7 @@ public:
          sljit_emit_ijump(compiler, SLJIT_CALL0+inArgs, t, getData(inVal));
    }
 
-   JumpId jump(LabelId inTo=0)
+   JumpId jump(LabelId inTo=0) HXCPP_OVERRIDE
    {
       if (compiler)
       {
@@ -452,14 +452,14 @@ public:
       return 0;
    }
 
-   void jump(const JitVal &inWhere)
+   void jump(const JitVal &inWhere) HXCPP_OVERRIDE
    {
       sljit_sw t = getTarget(inWhere);
       if (compiler)
          sljit_emit_ijump(compiler, SLJIT_JUMP, t, getData(inWhere) );
    }
 
-   JumpId compare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump)
+   JumpId compare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump) HXCPP_OVERRIDE
    {
       sljit_sw t0 = getTarget(v0);
       sljit_sw t1 = getTarget(v1);
@@ -474,7 +474,7 @@ public:
    }
 
 
-   JumpId fcompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump,bool inReverse)
+   JumpId fcompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump,bool inReverse) HXCPP_OVERRIDE
    {
       sljit_sw t0 = getTarget(v0);
       sljit_sw t1 = getTarget(v1);
@@ -529,7 +529,7 @@ public:
    }
 
 
-   JumpId scompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump)
+   JumpId scompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump) HXCPP_OVERRIDE
    {
       switch(condition)
       {
@@ -546,7 +546,7 @@ public:
    }
 
    // Link
-   void  comeFrom(JumpId inJump)
+   void  comeFrom(JumpId inJump) HXCPP_OVERRIDE
    {
       if (compiler)
       {
@@ -554,7 +554,7 @@ public:
          sljit_set_label(inJump, label);
       }
    }
-   LabelId addLabel()
+   LabelId addLabel() HXCPP_OVERRIDE
    {
       if (compiler)
          return sljit_emit_label(compiler);
@@ -562,12 +562,12 @@ public:
    }
 
 
-   JitVal  addLocal(const char *inName, JitType inType)
+   JitVal  addLocal(const char *inName, JitType inType) HXCPP_OVERRIDE
    {
       return JitVal();
    }
 
-   JitVal  functionArg(int inIndex)
+   JitVal  functionArg(int inIndex) HXCPP_OVERRIDE
    {
       return JitVal();
    }
@@ -610,12 +610,12 @@ public:
    }
 
 
-   void setError(const char *inError)
+   void setError(const char *inError) HXCPP_OVERRIDE
    {
       throw inError;
    }
 
-   void crash()
+   void crash() HXCPP_OVERRIDE
    {
       if (compiler)
          sljit_emit_op0(compiler, SLJIT_BREAKPOINT);
@@ -748,7 +748,7 @@ public:
 
 
    // May required indirect offsets
-   void move(const JitVal &inDest, const JitVal &inSrc)
+   void move(const JitVal &inDest, const JitVal &inSrc) HXCPP_OVERRIDE
    {
       // TODO - better equality test
       if (inDest==inSrc || !inDest.valid())
@@ -805,7 +805,7 @@ public:
    }
 
 
-   void setMaxPointer()
+   void setMaxPointer() HXCPP_OVERRIDE
    {
       add( sJitCtxPointer, sJitFrame, maxFrameSize );
    }
@@ -823,7 +823,7 @@ public:
    }
 
 
-   void convert(const JitVal &inSrc, ExprType inSrcType, const JitVal &inTarget, ExprType inToType, bool asBool=false)
+   void convert(const JitVal &inSrc, ExprType inSrcType, const JitVal &inTarget, ExprType inToType, bool asBool=false) HXCPP_OVERRIDE
    {
       if (!inTarget.valid())
          return;
@@ -997,7 +997,7 @@ public:
    }
 
 
-   void genVariantValueTemp0(int inOffset, const JitVal &inDest, ExprType destType)
+   void genVariantValueTemp0(int inOffset, const JitVal &inDest, ExprType destType) HXCPP_OVERRIDE
    {
       std::vector<JumpId> jumpDone;
 
@@ -1080,7 +1080,7 @@ public:
 
 
 
-   void convertResult(ExprType inSrcType, const JitVal &inTarget, ExprType inToType)
+   void convertResult(ExprType inSrcType, const JitVal &inTarget, ExprType inToType) HXCPP_OVERRIDE
    {
       if (inSrcType!=etVoid && inSrcType!=etNull && inToType!=etVoid && inToType!=etNull)
       {
@@ -1089,7 +1089,7 @@ public:
    }
 
 
-   void convertReturnReg(ExprType inSrcType, const JitVal &inTarget, ExprType inToType, bool asBool = false)
+   void convertReturnReg(ExprType inSrcType, const JitVal &inTarget, ExprType inToType, bool asBool = false) HXCPP_OVERRIDE
    {
       if (inSrcType!=etVoid && inSrcType!=etNull && inToType!=etVoid && inToType!=etNull)
       {
@@ -1097,7 +1097,7 @@ public:
       }
    }
 
-   void returnNull(const JitVal &inTarget, ExprType inToType)
+   void returnNull(const JitVal &inTarget, ExprType inToType) HXCPP_OVERRIDE
    {
       switch(inToType)
       {
@@ -1124,19 +1124,19 @@ public:
    }
 
 
-   void traceObject(const char *inLabel, const JitVal &inObj)
+   void traceObject(const char *inLabel, const JitVal &inObj) HXCPP_OVERRIDE
    {
       callNative( (void *)my_trace_obj_func, JitVal((void *)inLabel), inObj);
    }
-   void tracePointer(const char *inLabel, const JitVal &inPtr)
+   void tracePointer(const char *inLabel, const JitVal &inPtr) HXCPP_OVERRIDE
    {
       callNative( (void *)my_trace_ptr_func, JitVal((void *)inLabel), inPtr);
    }
-   void traceInt(const char *inLabel, const JitVal &inValue)
+   void traceInt(const char *inLabel, const JitVal &inValue) HXCPP_OVERRIDE
    {
       callNative( (void *)my_trace_int_func, JitVal((void *)inLabel), inValue);
    }
-   void traceFloat(const char *inLabel, const JitVal &inValue)
+   void traceFloat(const char *inLabel, const JitVal &inValue) HXCPP_OVERRIDE
    {
       if (isMemoryVal(inValue))
       {
@@ -1152,20 +1152,20 @@ public:
       }
    }
 
-   void trace(const char *inText)
+   void trace(const char *inText) HXCPP_OVERRIDE
    {
       callNative( (void *)my_trace_func, JitVal( (void *)inText ));
    }
-   void traceStrings(const char *inS0,const char *inS1)
+   void traceStrings(const char *inS0,const char *inS1) HXCPP_OVERRIDE
    {
       callNative( (void *)my_trace_strings, JitVal( (void *)inS0 ), JitVal( (void *)inS1 ));
    }
-   void traceString(const char *inLabel, const JitVal &inValue)
+   void traceString(const char *inLabel, const JitVal &inValue) HXCPP_OVERRIDE
    {
       callNative( (void *)my_trace_string, JitVal( (void *)inLabel ), inValue );
    }
 
-   void negate(const JitVal &inDest, const JitVal &inSrc)
+   void negate(const JitVal &inDest, const JitVal &inSrc) HXCPP_OVERRIDE
    {
       if (inSrc.type==jtFloat)
       {
@@ -1178,7 +1178,7 @@ public:
    }
 
 
-   void add(const JitVal &inDest, const JitVal &v0, const JitVal &v1 )
+   void add(const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) HXCPP_OVERRIDE
    {
       if (v0.type==jtFloat)
       {
@@ -1203,12 +1203,12 @@ public:
    }
 
 
-   void bitNot(const JitVal &inDest, const JitVal &v0)
+   void bitNot(const JitVal &inDest, const JitVal &v0) HXCPP_OVERRIDE
    {
       emit_op1(SLJIT_NOT32, inDest, v0);
    }
 
-   void bitOp(BitOp inOp, const JitVal &inDest, const JitVal &v0, const JitVal &v1 )
+   void bitOp(BitOp inOp, const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) HXCPP_OVERRIDE
    {
       switch(inOp)
       {
@@ -1233,7 +1233,7 @@ public:
       }
    }
 
-   void mult(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat )
+   void mult(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) HXCPP_OVERRIDE
    {
       sljit_s32 tDest = getTarget(inDest);
       sljit_s32 t0 = getTarget(v0);
@@ -1264,7 +1264,7 @@ public:
       }
    }
 
-   void sub(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat )
+   void sub(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) HXCPP_OVERRIDE
    {
       sljit_s32 tDest = getTarget(inDest);
       sljit_s32 t0 = getTarget(v0);
@@ -1294,12 +1294,12 @@ public:
 
    }
 
-   void fdiv(const JitVal &inDest, const JitVal &v0, const JitVal &v1)
+   void fdiv(const JitVal &inDest, const JitVal &v0, const JitVal &v1) HXCPP_OVERRIDE
    {
       emit_fop2(SLJIT_DIV_F64, inDest, v0, v1 );
    }
 
-   void divmod()
+   void divmod() HXCPP_OVERRIDE
    {
       if (sJitTemp1.reg0>=maxTempCount)
          maxTempCount = sJitTemp1.reg0;
@@ -1308,13 +1308,13 @@ public:
    }
 
 
-   void call(const JitVal &func,const JitVal &inArg0)
+   void call(const JitVal &func,const JitVal &inArg0) HXCPP_OVERRIDE
    {
       move(sJitArg0,inArg0);
       emit_ijump(func,1);
    }
 
-   void callNative(void *func)
+   void callNative(void *func) HXCPP_OVERRIDE
    {
       makesNativeCalls = true;
       if (maxTempCount<1)
@@ -1324,7 +1324,7 @@ public:
          sljit_emit_ijump(compiler, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
       }
    }
-   void callNative(void *func, const JitVal &inArg0)
+   void callNative(void *func, const JitVal &inArg0) HXCPP_OVERRIDE
    {
       makesNativeCalls = true;
       if (maxTempCount<1)
@@ -1352,7 +1352,7 @@ public:
       if (restoreLocal>=0)
          localSize = restoreLocal;
    }
-   void callNative(void *func, const JitVal &inArg0, const JitVal &inArg1)
+   void callNative(void *func, const JitVal &inArg0, const JitVal &inArg1) HXCPP_OVERRIDE
    {
       makesNativeCalls = true;
       if (maxTempCount<2)
@@ -1370,7 +1370,7 @@ public:
             {
                setError("Passing string value in register error");
             }
- 
+
             restoreLocal = localSize;
             JitLocalPos temp(allocTemp(jtFloat),jtFloat);
             move( temp, inArg0 );
@@ -1413,7 +1413,7 @@ public:
 
    }
 
-   void callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, const JitVal &inArg2)
+   void callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, const JitVal &inArg2) HXCPP_OVERRIDE
    {
       makesNativeCalls = true;
       if (maxTempCount<3)
@@ -1430,7 +1430,7 @@ public:
             {
                setError("Passing string value in register error");
             }
- 
+
             restoreLocal = localSize;
             JitLocalPos temp(allocTemp(jtFloat),jtFloat);
             move( temp, inArg0 );
@@ -1494,7 +1494,7 @@ public:
          localSize = restoreLocal;
    }
 
-   void checkException()
+   void checkException() HXCPP_OVERRIDE
    {
       JumpId onException = compare( cmpP_NOT_ZERO,sJitCtx.star(jtPointer, offsetof(hx::StackContext,exception)),(void *)0, 0 );
       if (catching)
@@ -1505,7 +1505,7 @@ public:
    }
 
 
-   void addThrow()
+   void addThrow() HXCPP_OVERRIDE
    {
       if (catching)
          catching->push_back( jump() );
@@ -1513,13 +1513,13 @@ public:
          uncaught.push( jump() );
    }
 
-   ThrowList *pushCatching(ThrowList *inList)
+   ThrowList *pushCatching(ThrowList *inList) HXCPP_OVERRIDE
    {
       ThrowList *oldList = catching;
       catching = inList;
       return oldList;
    }
-   void popCatching(ThrowList *inList)
+   void popCatching(ThrowList *inList) HXCPP_OVERRIDE
    {
       catching = inList;
    }

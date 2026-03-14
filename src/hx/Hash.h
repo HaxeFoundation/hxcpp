@@ -353,7 +353,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    bool TIsWeakRefValid(String &key) { return IsWeakRefValid(key.raw_ptr()); }
 
 
-   void updateAfterGc()
+   void updateAfterGc() HXCPP_OVERRIDE
    {
       if (Element::WeakKeys && Element::ManageKeys)
       {
@@ -451,7 +451,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       HX_OBJ_WB_GET(this, bucket);
    }
 
-   bool remove(Key inKey)
+   bool remove(Key inKey) HXCPP_OVERRIDE
    {
       if (!bucket)
          return false;
@@ -511,10 +511,10 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       return 0;
    }
 
-   bool exists(Key inKey) { return find( HashCalcHash(inKey), inKey ); }
+   bool exists(Key inKey) HXCPP_OVERRIDE { return find( HashCalcHash(inKey), inKey ); }
 
 
-   HashBase<Key> *convertStore(HashStore inStore)
+   HashBase<Key> *convertStore(HashStore inStore) HXCPP_OVERRIDE
    {
       switch(inStore)
       {
@@ -545,11 +545,11 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       return true;
    }
 
-   bool query(Key inKey,int &outValue) { return TQuery(inKey,outValue); }
-   bool query(Key inKey,::String &outValue) { return TQuery(inKey,outValue); }
-   bool query(Key inKey,Float &outValue) { return TQuery(inKey,outValue); }
-   bool query(Key inKey,Dynamic &outValue) { return TQuery(inKey,outValue); }
-   bool query(Key inKey,cpp::Int64 &outValue) { return TQuery(inKey, outValue); }
+   bool query(Key inKey,int &outValue) HXCPP_OVERRIDE { return TQuery(inKey,outValue); }
+   bool query(Key inKey,::String &outValue) HXCPP_OVERRIDE { return TQuery(inKey,outValue); }
+   bool query(Key inKey,Float &outValue) HXCPP_OVERRIDE { return TQuery(inKey,outValue); }
+   bool query(Key inKey,Dynamic &outValue) HXCPP_OVERRIDE { return TQuery(inKey,outValue); }
+   bool query(Key inKey,cpp::Int64 &outValue) HXCPP_OVERRIDE { return TQuery(inKey, outValue); }
 
 
    Value get(Key inKey)
@@ -616,14 +616,14 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       #endif
    }
 
-   void set(Key inKey, const int &inValue) { TSet(inKey, inValue); }
-   void set(Key inKey, const ::String &inValue)  { TSet(inKey, inValue); }
-   void set(Key inKey, const Float &inValue)  { TSet(inKey, inValue); }
-   void set(Key inKey, const Dynamic &inValue)  { TSet(inKey, inValue); }
+   void set(Key inKey, const int &inValue) HXCPP_OVERRIDE { TSet(inKey, inValue); }
+   void set(Key inKey, const ::String &inValue) HXCPP_OVERRIDE { TSet(inKey, inValue); }
+   void set(Key inKey, const Float &inValue) HXCPP_OVERRIDE { TSet(inKey, inValue); }
+   void set(Key inKey, const Dynamic &inValue) HXCPP_OVERRIDE { TSet(inKey, inValue); }
    void set(Key inKey, const null &inValue)  { TSet(inKey, inValue);  }
-   void set(Key inKey, const cpp::Int64 &inValue) { TSet(inKey, inValue); }
+   void set(Key inKey, const cpp::Int64 &inValue) HXCPP_OVERRIDE { TSet(inKey, inValue); }
 
-   void clear()
+   void clear() HXCPP_OVERRIDE
    {
       bucket = 0;
       size = 0;
@@ -691,7 +691,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
          array->push(elem->key);
       }
    };
-   Array<Key> keys()
+   Array<Key> keys() HXCPP_OVERRIDE
    {
       KeyBuilder builder(getSize());
       iterate(builder);
@@ -713,7 +713,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
          array->push(elem->value);
       }
    };
-   Dynamic values()
+   Dynamic values() HXCPP_OVERRIDE
    {
       ValueBuilder builder(getSize());
       iterate(builder);
@@ -760,7 +760,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       }
    };
 
-   String toString()
+   String toString() HXCPP_OVERRIDE
    {
       StringBuilder builder(getSize());
       iterate(builder);
@@ -768,7 +768,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    }
 
 
-   String toStringRaw()
+   String toStringRaw() HXCPP_OVERRIDE
    {
       StringBuilder builder(getSize(),true);
       iterate(builder);
@@ -792,7 +792,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       }
    };
 
-   void __Mark(hx::MarkContext *__inCtx)
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_MARK_ARRAY(bucket);
 
@@ -802,7 +802,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
 #ifdef HXCPP_VISIT_ALLOCS
 
-   void __Visit(hx::VisitContext *__inCtx)
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
    {
       //printf(" visit hash %p\n", this);
       HX_VISIT_ARRAY(bucket);

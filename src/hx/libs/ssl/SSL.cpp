@@ -73,7 +73,7 @@ struct sslctx : public hx::Object
 		((sslctx *)(obj.mPtr))->destroy();
 	}
 
-	String toString() { return HX_CSTRING("sslctx"); }
+	String toString() HXCPP_OVERRIDE { return HX_CSTRING("sslctx"); }
 };
 
 struct sslconf : public hx::Object
@@ -104,7 +104,7 @@ struct sslconf : public hx::Object
 		((sslconf *)(obj.mPtr))->destroy();
 	}
 
-	String toString() { return HX_CSTRING("sslconfig"); }
+	String toString() HXCPP_OVERRIDE { return HX_CSTRING("sslconfig"); }
 };
 
 struct sslcert : public hx::Object
@@ -144,7 +144,7 @@ struct sslcert : public hx::Object
 		((sslcert *)(obj.mPtr))->destroy();
 	}
 
-	String toString() { return HX_CSTRING("sslcert"); }
+	String toString() HXCPP_OVERRIDE { return HX_CSTRING("sslcert"); }
 };
 
 struct sslpkey : public hx::Object
@@ -175,7 +175,7 @@ struct sslpkey : public hx::Object
 		((sslpkey *)(obj.mPtr))->destroy();
 	}
 
-	String toString() { return HX_CSTRING("sslpkey"); }
+	String toString() HXCPP_OVERRIDE { return HX_CSTRING("sslpkey"); }
 };
 
 static mbedtls_entropy_context entropy;

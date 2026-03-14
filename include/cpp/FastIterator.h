@@ -7,7 +7,7 @@ namespace cpp
 class HXCPP_EXTERN_CLASS_ATTRIBUTES IteratorBase : public hx::Object
 {
 public:
-   hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp);
+   hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp) HXCPP_OVERRIDE;
    virtual bool hasNext() = 0;
    virtual Dynamic _dynamicNext() = 0;
 
@@ -26,10 +26,10 @@ template<typename T>
 class HXCPP_EXTERN_CLASS_ATTRIBUTES FastIterator_obj : public IteratorBase
 {
 public:
-   virtual bool hasNext() = 0;
+   bool hasNext() HXCPP_OVERRIDE = 0;
    virtual T next() = 0;
 
-   virtual Dynamic _dynamicNext() { return next(); }
+   Dynamic _dynamicNext() HXCPP_OVERRIDE { return next(); }
 };
 
 
@@ -84,15 +84,15 @@ public:
 
    StringIterator(const String &inValue) : value(inValue), pos(0) { }
 
-   bool hasNext() { return pos<value.length; }
-   void __Mark(hx::MarkContext *__inCtx)
+   bool hasNext() HXCPP_OVERRIDE { return pos<value.length; }
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE
    {
       cpp::FastIterator_obj<T>::__Mark(__inCtx);
       HX_MARK_MEMBER_NAME(value,"value");
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
    {
       cpp::FastIterator_obj<T>::__Visit(__inCtx);
       HX_VISIT_MEMBER_NAME(value,"value");

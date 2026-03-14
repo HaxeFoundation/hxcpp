@@ -49,16 +49,16 @@ public:
    }
 
 
-   virtual int __GetType() const { return mType; }
-   virtual hx::ObjectPtr<hx::Class_obj> __GetClass() const { return 0; }
+   int __GetType() const HXCPP_OVERRIDE { return mType; }
+   hx::ObjectPtr<hx::Class_obj> __GetClass() const HXCPP_OVERRIDE { return 0; }
    virtual bool __IsClass(hx::Class inClass ) const { return false; }
 
-   virtual void *__GetHandle() const
+   void *__GetHandle() const HXCPP_OVERRIDE
    {
       return mHandle;
    }
 
-   void __Mark(hx::MarkContext *__inCtx)
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_MARK_MEMBER(_hxcpp_toString);
       if (mMarkSize>=sizeof(void *) && mHandle)
@@ -68,7 +68,7 @@ public:
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_VISIT_MEMBER(_hxcpp_toString);
       if (mFinalizer)
@@ -100,7 +100,7 @@ public:
       mHandle = 0;
    }
 
-   String toString()
+   String toString() HXCPP_OVERRIDE
    {
       if (_hxcpp_toString.mPtr)
          return _hxcpp_toString( Dynamic(this) );
@@ -115,14 +115,14 @@ public:
              HX_CSTRING(")");
    }
 
-   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp)
+   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp) HXCPP_OVERRIDE
    {
       if (inString==HX_CSTRING("_hxcpp_toString")) return _hxcpp_toString;
       if (inString==HX_CSTRING("_hxcpp_kind")) return __hxcpp_get_kind(this);
       return hx::Object::__Field(inString, inCallProp);
    }
 
-   hx::Val __SetField(const String &inName,const hx::Val &inValue, hx::PropertyAccess inCallProp)
+   hx::Val __SetField(const String &inName,const hx::Val &inValue, hx::PropertyAccess inCallProp) HXCPP_OVERRIDE
    {
       if (inName==HX_CSTRING("_hxcpp_toString"))
       {
