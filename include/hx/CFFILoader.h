@@ -127,7 +127,7 @@ extern "C" ret name def_args;
    struct DynAlloc : public hx::IStringAlloc
    {
       #define WANT_DYNALLOC_ALLOC_BYTES
-      void *allocBytes(size_t n);
+      void *allocBytes(size_t n) HXCPP_OVERRIDE;
    };
 
 
