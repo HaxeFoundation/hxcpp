@@ -90,17 +90,15 @@
   #else
      #define HXCPP_EXTERN_CLASS_ATTRIBUTES
   #endif
-  #define HXCPP_CPLUSPLUS _MSVC_LANG
 #else
   #if defined(HXCPP_DLL_EXPORT)
      #define HXCPP_EXTERN_CLASS_ATTRIBUTES __attribute__((visibility("default")))
   #else
      #define HXCPP_EXTERN_CLASS_ATTRIBUTES
   #endif
-  #define HXCPP_CPLUSPLUS __cplusplus
 #endif
 
-#if HXCPP_CPLUSPLUS >= 201103L
+#if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSVC_LANG >= 201103L)
   #define HXCPP_OVERRIDE override
 #else
   #define HXCPP_OVERRIDE
