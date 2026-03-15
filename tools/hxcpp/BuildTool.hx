@@ -1632,15 +1632,16 @@ class BuildTool
 
       if (args.length>0 && args[0].endsWith(".cppia"))
       {
-         var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
-         if (binDir==null)
+         var hostName = isWindows ? "Windows" : isMac ? "Mac" : isLinux ? "Linux" : null;
+         if (hostName==null)
             Log.error("Cppia is not supported on this host.");
-         var arch = getArch();
-         var binDir = isWindows ? (isWindowsArm ? "WindowsArm64" : "Windows64" ) :
-                       isMac ? "Mac64" :
-                       isLinux ? ("Linux64") :
-                       null;
-         var exe = '$HXCPP/bin/$binDir/Cppia' + (isWindows ? ".exe" : "");
+         var archSuffix = switch getArch() {
+            case 'arm64': 'Arm64';
+            case 'm64': '64';
+            case 'm32': '';
+            case _: return Log.error("Unsupported host architecture");
+         };
+         var exe = '$HXCPP/bin/$hostName$archSuffix/Cppia' + (isWindows ? ".exe" : "");
          if (!isWindows)
          {
             var phase = "find";
@@ -2140,7 +2141,7 @@ class BuildTool
                defines.set("HXCPP_ARM64","1");
                m64 = true;
             }
-            defines.set("BINDIR", m64 ? "Linux64":"Linux");
+            defines.set("BINDIR", arm64 ? "LinuxArm64" : m64 ? "Linux64":"Linux");
          }
       }
       else if ( (new EReg("mac","i")).match(os) )
@@ -2153,7 +2154,7 @@ class BuildTool
             defines.set("linux","linux");
             defines.set("toolchain","linux");
             defines.set("xcompile","1");
-            defines.set("BINDIR", m64 ? "Linux64":"Linux");
+            defines.set("BINDIR", arm64 ? "LinuxArm64" : m64 ? "Linux64":"Linux");
          }
          else
          {
