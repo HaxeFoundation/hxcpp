@@ -75,6 +75,7 @@
   <flag value="-Wno-invalid-offsetof" />
   <flag value="-Wno-return-type-c-linkage" />
   <flag value="-Wno-parentheses" />
+  <flag value="-Wno-inconsistent-missing-override"/>
   
 </compiler>
 
