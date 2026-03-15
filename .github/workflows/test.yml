@@ -17,9 +17,20 @@ on:
       os:
         required: true
         type: string
+      target_flag:
+        type: string
+        default: ''
+      execute:
+        type: boolean
+        default: true
 
 env:
-  HXCPP_ARCH_FLAG: ${{ inputs.arch == 'Arm64' && 'HXCPP_ARM64' || format('HXCPP_M{0}', inputs.arch) }}
+  HXCPP_ARCH_FLAG: ${{ inputs.arch == 'Arm64' && 'HXCPP_ARM64' ||
+      inputs.target_flag == 'android' && inputs.arch == 64 && 'HXCPP_X86_64'||
+      format('HXCPP_M{0}', inputs.arch)
+    }}
+  HAXE_TARGET_FLAG: ${{ inputs.target_flag && format('-D {0}', inputs.target_flag) || '' }}
+  HXCPP_TARGET_FLAG: ${{ inputs.target_flag && format('-D{0}', inputs.target_flag) || '' }}
 
 jobs:
   haxe:
@@ -36,8 +47,9 @@ jobs:
         with:
           haxe: ${{ inputs.haxe }}
       - name: build
-        run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
+        run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }} ${{ env.HAXE_TARGET_FLAG }}
       - name: run
+        if: inputs.execute
         run: bin${{ inputs.sep }}TestMain
 
   cffi:
@@ -55,21 +67,24 @@ jobs:
           haxe: ${{ inputs.haxe }}
       - name: build project
         working-directory: test/cffi/project
-        run: haxelib run hxcpp build.xml -Ddebug -D${{ env.HXCPP_ARCH_FLAG }}
+        run: haxelib run hxcpp build.xml -Ddebug -D${{ env.HXCPP_ARCH_FLAG }} ${{ env.HXCPP_TARGET_FLAG }}
       - name: build
-        run: haxe compile.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }}
+        run: haxe compile.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }} ${{ env.HAXE_TARGET_FLAG }}
       - name: build (utf8)
-        run: haxe compile-utf8.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }}
+        run: haxe compile-utf8.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }} ${{ env.HAXE_TARGET_FLAG }}
       - name: build (neko)
-        run: haxe compile-neko.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }}
+        run: haxe compile-neko.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }} ${{ env.HAXE_TARGET_FLAG }}
       - name: copy
+        if: inputs.execute
         run: cp project/ndll/*/prime${{ inputs.ext }} bin/neko/prime.ndll
       - name: run
+        if: inputs.execute
         run: bin${{ inputs.sep }}cpp${{ inputs.sep }}TestMain-debug
       - name: run (utf8)
+        if: inputs.execute
         run: bin${{ inputs.sep }}cpp-utf8${{ inputs.sep }}TestMain-debug
       - name: run (neko)
-        if: inputs.arch == '64'
+        if: inputs.execute && inputs.arch == '64'
         working-directory: test/cffi/bin/neko
         run: neko TestMain.n
 
@@ -94,8 +109,9 @@ jobs:
         with:
           haxe: ${{ inputs.haxe }}
       - name: build
-        run: haxe compile.hxml ${{ matrix.suffix }} -D ${{ env.HXCPP_ARCH_FLAG }}
+        run: haxe compile.hxml ${{ matrix.suffix }} -D ${{ env.HXCPP_ARCH_FLAG }} ${{ env.HAXE_TARGET_FLAG }}
       - name: run
+        if: inputs.execute
         run: bin${{ inputs.sep }}TestMain${{ matrix.suffix }}
 
   debugger:
@@ -112,8 +128,9 @@ jobs:
         with:
           haxe: ${{ inputs.haxe }}
       - name: build
-        run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
+        run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }} ${{ env.HAXE_TARGET_FLAG }}
       - name: run
+        if: inputs.execute
         run: bin${{ inputs.sep }}App-debug
 
   native:
@@ -130,8 +147,9 @@ jobs:
           with:
             haxe: ${{ inputs.haxe }}
         - name: build
-          run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
+          run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }} ${{ env.HAXE_TARGET_FLAG }}
         - name: run
+          if: inputs.execute
           run: bin${{ inputs.sep }}Native
 
   std:
@@ -148,7 +166,7 @@ jobs:
           with:
             haxe: ${{ inputs.haxe }}
         - name: setup mariadb
-          if: runner.os == 'Linux'
+          if: runner.os == 'Linux' && inputs.execute
           run: |
             set -ex
             sudo apt-get update -qqy
@@ -156,9 +174,10 @@ jobs:
             sudo systemctl start mariadb
             sudo mariadb -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
         - name: build
-          run: haxe compile${{ inputs.arch }}.hxml
+          run: haxe compile-generic.hxml --cpp bin -D ${{ env.HXCPP_ARCH_FLAG }} ${{ env.HAXE_TARGET_FLAG }}
         - name: run
-          run: ${{ inputs.arch == 'Arm64' && 'arm64' || format('cpp{0}', inputs.arch) }}${{ inputs.sep }}Test
+          if: inputs.execute
+          run: bin${{ inputs.sep }}Test
 
   cppia:
     strategy:
@@ -181,10 +200,11 @@ jobs:
         with:
           haxe: ${{ inputs.haxe }}
       - name: build host
-        run: haxe compile-host.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
+        run: haxe compile-host.hxml -D ${{ env.HXCPP_ARCH_FLAG }} ${{ env.HAXE_TARGET_FLAG }}
       - name: build client
-        run: haxe compile-client.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
+        run: haxe compile-client.hxml -D ${{ env.HXCPP_ARCH_FLAG }} ${{ env.HAXE_TARGET_FLAG }}
       - name: run
+        if: inputs.execute
         run: bin${{ inputs.sep }}CppiaHost bin${{ inputs.sep }}client.cppia ${{ matrix.suffix }}
 
   suite:
@@ -218,8 +238,9 @@ jobs:
         # haxe 4 tests don't build with latest utest
         if: inputs.haxe != 'latest'
       - name: build
-        run: haxe compile-cpp.hxml -D ${{ env.HXCPP_ARCH_FLAG }} -D no_http
+        run: haxe compile-cpp.hxml -D ${{ env.HXCPP_ARCH_FLAG }} -D no_http ${{ env.HAXE_TARGET_FLAG }}
       - name: run
+        if: inputs.execute
         run: bin${{ inputs.sep }}cpp${{ inputs.sep }}TestMain-debug
   build_tool:
     runs-on: ${{ inputs.os }}
@@ -236,6 +257,6 @@ jobs:
         shell: bash
         run: |
           for xml in *.xml; do
-            haxelib run hxcpp $xml
+            haxelib run hxcpp $xml -D${{ env.HXCPP_ARCH_FLAG }} ${{ env.HXCPP_TARGET_FLAG }}
             haxelib run hxcpp $xml clean
           done
