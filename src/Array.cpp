@@ -513,7 +513,7 @@ struct ArrayBase_##func : public hx::Object \
    bool __IsFunction() const { return true; } \
    ArrayBase *mThis; \
    ArrayBase_##func(ArrayBase *inThis) : mThis(inThis) { } \
-   String toString() const { return HX_CSTRING(#func) ; } \
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING(#func) ; } \
    String __ToString() const HXCPP_OVERRIDE { return HX_CSTRING(#func) ; } \
    int __GetType() const HXCPP_OVERRIDE { return vtFunction; } \
    void *__GetHandle() const HXCPP_OVERRIDE { return mThis; } \
@@ -881,7 +881,7 @@ struct VirtualArray_##func : public hx::Object \
    VirtualArray_##func(VirtualArray inThis) : mThis(inThis) { \
       HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
    } \
-   String toString() const{ return HX_CSTRING(#func) ; } \
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING(#func) ; } \
    String __ToString() const HXCPP_OVERRIDE { return HX_CSTRING(#func) ; } \
    int __GetType() const HXCPP_OVERRIDE { return vtFunction; } \
    void *__GetHandle() const HXCPP_OVERRIDE { return mThis.mPtr; } \
