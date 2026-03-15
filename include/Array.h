@@ -1517,7 +1517,7 @@ hx::Val Array_obj<ELEM_>::__Field(const String& inString, hx::PropertyAccess inC
        bool __IsFunction() const { return true; } \
        ::Array_obj<ELEM_> *mThis; \
        Reflective_##func(::Array_obj<ELEM_> *inThis) : mThis(inThis) { } \
-       ::String toString() const { return HX_CSTRING(#func) ; } \
+       ::String toString() override { return HX_CSTRING(#func) ; } \
        ::String __ToString() const override { return HX_CSTRING(#func) ; } \
        int __GetType() const override { return vtFunction; } \
        void *__GetHandle() const override { return mThis; } \

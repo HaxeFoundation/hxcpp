@@ -2348,7 +2348,7 @@ String &String::operator+=(const String &inRHS)
        __String_##func(const String &inThis) : mThis(inThis) { \
           HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
        } \
-       String toString() const { return HX_CSTRING(#func); } \
+       String toString() HXCPP_OVERRIDE { return HX_CSTRING(#func); } \
        String __ToString() const HXCPP_OVERRIDE { return HX_CSTRING(#func); } \
        int __GetType() const HXCPP_OVERRIDE { return vtFunction; } \
        void *__GetHandle() const HXCPP_OVERRIDE { return const_cast<char *>(mThis.raw_ptr()); } \
