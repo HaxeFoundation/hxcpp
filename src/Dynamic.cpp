@@ -46,7 +46,7 @@ class IntData : public hx::Object
 public:
    enum { _hx_ClassId = hx::clsIdInt };
 
-   bool _hx_isInstanceOf(int inClassId)
+   bool _hx_isInstanceOf(int inClassId) HXCPP_OVERRIDE
    {
       return inClassId==1 || inClassId==(int)_hx_ClassId || inClassId==(int)hx::clsIdFloat;
    }
@@ -56,17 +56,17 @@ public:
       { return hx::Object::operator new(inSize,inAlloc,inName); }
    IntData(int inValue=0) : mValue(inValue) {};
 
-   hx::Class __GetClass() const { return __IntClass; }
+   hx::Class __GetClass() const HXCPP_OVERRIDE { return __IntClass; }
 
-   virtual int __GetType() const { return vtInt; }
+   int __GetType() const HXCPP_OVERRIDE { return vtInt; }
 
-   String toString() { return String(mValue); }
-   String __ToString() const { return String(mValue); }
-   double __ToDouble() const { return mValue; }
-   int __ToInt() const { return mValue; }
-   cpp::Int64 __ToInt64() const { return mValue; }
+   String toString() HXCPP_OVERRIDE { return String(mValue); }
+   String __ToString() const HXCPP_OVERRIDE { return String(mValue); }
+   double __ToDouble() const HXCPP_OVERRIDE { return mValue; }
+   int __ToInt() const HXCPP_OVERRIDE { return mValue; }
+   cpp::Int64 __ToInt64() const HXCPP_OVERRIDE { return mValue; }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE
    {
       double diff = mValue - inRHS->__ToDouble();
       return diff < 0 ? -1 : diff==0 ? 0 : 1;
@@ -86,16 +86,16 @@ public:
       { return hx::Object::operator new(inSize,inAlloc,"Bool"); }
    BoolData(bool inValue=false) : mValue(inValue) {};
 
-   hx::Class __GetClass() const { return __BoolClass; }
+   hx::Class __GetClass() const HXCPP_OVERRIDE { return __BoolClass; }
 
-   virtual int __GetType() const { return vtBool; }
+   int __GetType() const HXCPP_OVERRIDE { return vtBool; }
 
-   String __ToString() const { return mValue ? HX_CSTRING("true") : HX_CSTRING("false"); }
-   String toString() { return mValue ? HX_CSTRING("true") : HX_CSTRING("false"); }
-   double __ToDouble() const { return mValue; }
-   int __ToInt() const { return mValue; }
+   String __ToString() const  HXCPP_OVERRIDE { return mValue ? HX_CSTRING("true") : HX_CSTRING("false"); }
+   String toString() HXCPP_OVERRIDE { return mValue ? HX_CSTRING("true") : HX_CSTRING("false"); }
+   double __ToDouble() const HXCPP_OVERRIDE { return mValue; }
+   int __ToInt() const HXCPP_OVERRIDE { return mValue; }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE
    {
       double diff = (double)mValue - inRHS->__ToDouble();
       return diff < 0 ? -1 : diff==0 ? 0 : 1;
@@ -116,16 +116,16 @@ public:
       { return hx::Object::operator new(inSize,inAlloc,inName); }
    DoubleData(double inValue=0) : mValue(inValue) {};
 
-   hx::Class __GetClass() const { return __FloatClass; }
+   hx::Class __GetClass() const HXCPP_OVERRIDE { return __FloatClass; }
 
-   virtual int __GetType() const { return vtFloat; }
-   String toString() { return String(mValue); }
-   String __ToString() const { return String(mValue); }
-   double __ToDouble() const { return mValue; }
-   int __ToInt() const { return (int)mValue; }
-   cpp::Int64 __ToInt64() const { return mValue; }
+   int __GetType() const HXCPP_OVERRIDE { return vtFloat; }
+   String toString() HXCPP_OVERRIDE { return String(mValue); }
+   String __ToString() const HXCPP_OVERRIDE { return String(mValue); }
+   double __ToDouble() const HXCPP_OVERRIDE { return mValue; }
+   int __ToInt() const HXCPP_OVERRIDE { return (int)mValue; }
+   cpp::Int64 __ToInt64() const HXCPP_OVERRIDE { return mValue; }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE
    {
       double rval = inRHS->__ToDouble();
       if (rval==mValue)
@@ -148,26 +148,26 @@ public:
       { return hx::Object::operator new(inSize,inAlloc,inName); }
    Int64Data(cpp::Int64 inValue=0) : mValue(inValue) {};
 
-   hx::Class __GetClass() const { return __Int64Class; }
+   hx::Class __GetClass() const HXCPP_OVERRIDE { return __Int64Class; }
 
-   virtual int __GetType() const { return vtInt64; }
-   String toString() { return String(mValue); }
-   String __ToString() const { return String(mValue); }
-   double __ToDouble() const { return mValue; }
-   int __ToInt() const { return (int)mValue; }
-   cpp::Int64 __ToInt64() const { return mValue; }
-   void __GetFields(Array<String> &outFields)
+   int __GetType() const HXCPP_OVERRIDE { return vtInt64; }
+   String toString() HXCPP_OVERRIDE { return String(mValue); }
+   String __ToString() const HXCPP_OVERRIDE { return String(mValue); }
+   double __ToDouble() const HXCPP_OVERRIDE { return mValue; }
+   int __ToInt() const HXCPP_OVERRIDE { return (int)mValue; }
+   cpp::Int64 __ToInt64() const HXCPP_OVERRIDE { return mValue; }
+   void __GetFields(Array<String>& outFields) HXCPP_OVERRIDE
    {
       outFields->push( HX_HCSTRING("hi","\x01","\x5b","\x00","\x00") );
       outFields->push( HX_HCSTRING("lo","\x83","\x5e","\x00","\x00") );
    }
-   hx::Val __Field(const String &inName, hx::PropertyAccess inCallProp)
+   hx::Val __Field(const String &inName, hx::PropertyAccess inCallProp) HXCPP_OVERRIDE
    {
       if (HX_FIELD_EQ(inName,"hi") ) { return hx::Val( (int)(mValue>>32)); }
       if (HX_FIELD_EQ(inName,"lo") ) { return hx::Val( (int)(mValue&0xffffffff)); }
       return hx::Object::__Field(inName,inCallProp);
    }
-   hx::Val __SetField(const String &inName,const hx::Val &inValue, hx::PropertyAccess inCallProp)
+   hx::Val __SetField(const String &inName,const hx::Val &inValue, hx::PropertyAccess inCallProp) HXCPP_OVERRIDE
    {
       if (HX_FIELD_EQ(inName,"hi") )
       {
@@ -182,7 +182,7 @@ public:
       return hx::Object::__SetField(inName,inValue,inCallProp);
    }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE
    {
       double rval = inRHS->__ToInt64();
       if (rval==mValue)
@@ -209,20 +209,20 @@ public:
 
     HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdPointer };
 
-   hx::Class __GetClass() const { return __PointerClass; }
+   hx::Class __GetClass() const HXCPP_OVERRIDE { return __PointerClass; }
 
    // k_cpp_pointer
-   int __GetType() const { return vtAbstractBase + 2; }
-   void * __GetHandle() const { return mValue; }
-   String toString()
+   int __GetType() const HXCPP_OVERRIDE { return vtAbstractBase + 2; }
+   void * __GetHandle() const HXCPP_OVERRIDE { return mValue; }
+   String toString() HXCPP_OVERRIDE
    {
       char buf[100];
       snprintf(buf,sizeof(buf),"Pointer(%p)", mValue);
       return String(buf);
    }
-   String __ToString() const { return String(mValue); }
+   String __ToString() const HXCPP_OVERRIDE { return String(mValue); }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE
    {
       void *r = inRHS==0 ? 0 : inRHS->__GetHandle();
       return mValue < r ? -1 : mValue==r ? 0 : 1;
@@ -250,29 +250,29 @@ public:
 
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdStruct };
 
-   hx::Class __GetClass() const { return __PointerClass; }
+   hx::Class __GetClass() const HXCPP_OVERRIDE { return __PointerClass; }
 
    // k_cpp_struct
-   int __GetType() const { return vtAbstractBase + 3; }
-   void * __GetHandle() const { return mValue; }
-   String toString()
+   int __GetType() const HXCPP_OVERRIDE { return vtAbstractBase + 3; }
+   void * __GetHandle() const HXCPP_OVERRIDE { return mValue; }
+   String toString() HXCPP_OVERRIDE
    {
       return __ToString();
    }
-   String __ToString() const
+   String __ToString() const HXCPP_OVERRIDE
    {
       String result;
       mHandler(cpp::dhoToString, mValue, 0, &result );
       return result;
    }
-   const char *__CStr() const
+   const char *__CStr() const HXCPP_OVERRIDE
    {
       const char *result = "unknown";
       mHandler(cpp::dhoGetClassName, mValue, 0, &result );
       return result;
    }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE
    {
       if (!inRHS)
          return 1;
@@ -288,15 +288,15 @@ public:
       return 0;
    }
 
-   int __length() const { return mLength; }
+   int __length() const HXCPP_OVERRIDE { return mLength; }
 
-   void __Mark(hx::MarkContext *__inCtx)
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_MARK_ARRAY(mValue);
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_VISIT_ARRAY(mValue);
    }

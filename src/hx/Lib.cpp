@@ -132,45 +132,45 @@ public:
      functionName = ("extern::cffi "+mName).makePermanent().raw_ptr();
    }
 
-   virtual int __GetType() const { return vtFunction; }
-   String __ToString() const { return mName; }
+   int __GetType() const HXCPP_OVERRIDE { return vtFunction; }
+   String __ToString() const HXCPP_OVERRIDE { return mName; }
 #if (HXCPP_API_LEVEL<500)
-   Dynamic __run()
+   Dynamic __run() HXCPP_OVERRIDE
    {
        HX_STACK_FRAME(hx::EXTERN_CLASS_NAME, "cffi", 0, functionName, __FILE__, __LINE__, 0);
        if (mArgCount != 0) throw HX_INVALID_ARG_COUNT;
        if (mProc == 0) hx::Throw(HX_NULL_FUNCTION_POINTER);
        return ((prim_0)mProc)();
    }
-   Dynamic __run(D a)
+   Dynamic __run(D a) HXCPP_OVERRIDE
    {
        HX_STACK_FRAME(hx::EXTERN_CLASS_NAME, "cffi", 0, functionName, __FILE__, __LINE__, 0);
        if (mArgCount != 1) throw HX_INVALID_ARG_COUNT;
        if (mProc == 0) hx::Throw(HX_NULL_FUNCTION_POINTER);
        return ((prim_1)mProc)(a.GetPtr());
    }
-   Dynamic __run(D a, D b)
+   Dynamic __run(D a, D b) HXCPP_OVERRIDE
    {
        HX_STACK_FRAME(hx::EXTERN_CLASS_NAME, "cffi", 0, functionName, __FILE__, __LINE__, 0);
        if (mArgCount != 2) throw HX_INVALID_ARG_COUNT;
        if (mProc == 0) hx::Throw(HX_NULL_FUNCTION_POINTER);
        return ((prim_2)mProc)(a.GetPtr(), b.GetPtr());
    }
-   Dynamic __run(D a, D b, D c)
+   Dynamic __run(D a, D b, D c) HXCPP_OVERRIDE
    {
        HX_STACK_FRAME(hx::EXTERN_CLASS_NAME, "cffi", 0, functionName, __FILE__, __LINE__, 0);
        if (mArgCount != 3) throw HX_INVALID_ARG_COUNT;
        if (mProc == 0) hx::Throw(HX_NULL_FUNCTION_POINTER);
        return ((prim_3)mProc)(a.GetPtr(), b.GetPtr(), c.GetPtr());
    }
-   Dynamic __run(D a, D b, D c, D d)
+   Dynamic __run(D a, D b, D c, D d) HXCPP_OVERRIDE
    {
        HX_STACK_FRAME(hx::EXTERN_CLASS_NAME, "cffi", 0, functionName, __FILE__, __LINE__, 0);
        if (mArgCount != 4) throw HX_INVALID_ARG_COUNT;
        if (mProc == 0) hx::Throw(HX_NULL_FUNCTION_POINTER);
        return ((prim_4)mProc)(a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr());
    }
-   Dynamic __run(D a, D b, D c, D d, D e)
+   Dynamic __run(D a, D b, D c, D d, D e) HXCPP_OVERRIDE
    {
        HX_STACK_FRAME(hx::EXTERN_CLASS_NAME, "cffi", 0, functionName, __FILE__, __LINE__, 0);
        if (mArgCount != 5) throw HX_INVALID_ARG_COUNT;
@@ -178,7 +178,7 @@ public:
        return ((prim_5)mProc)(a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr());
    }
 
-   Dynamic __Run(const Array<Dynamic>& inArgs)
+   Dynamic __Run(const Array<Dynamic>& inArgs) HXCPP_OVERRIDE
    {
        HX_STACK_FRAME(hx::EXTERN_CLASS_NAME, "cffi", 0, functionName, __FILE__, __LINE__, 0);
        if (mArgCount != -1 && mArgCount != inArgs->length)
@@ -225,7 +225,7 @@ public:
        }
    }
 #endif
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE
    {
       const ExternalPrimitive *other = dynamic_cast<const ExternalPrimitive *>(inRHS);
       if (!other)

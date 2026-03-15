@@ -12,9 +12,9 @@ class CppiaEnumBase : public EnumBase_obj
 public:
    CppiaEnumBase(CppiaClassInfo *inInfo) { classInfo = inInfo; }
 
-   ::hx::ObjectPtr<hx::Class_obj > __GetClass() const;
-	::String GetEnumName( ) const;
-	::String __ToString() const;
+   ::hx::ObjectPtr<hx::Class_obj > __GetClass() const HXCPP_OVERRIDE;
+   ::String GetEnumName() const HXCPP_OVERRIDE;
+   ::String __ToString() const HXCPP_OVERRIDE;
 };
 
 
@@ -140,15 +140,15 @@ public:
    {
    }
 
-   Dynamic __Run(const Array<Dynamic> &inArgs)
+   Dynamic __Run(const Array<Dynamic> &inArgs) HXCPP_OVERRIDE
    {
       return constructor.create(inArgs);
    }
 
-   int __GetType() const { return vtFunction; }
-   int __ArgCount() const { return constructor.args.size(); }
+   int __GetType() const HXCPP_OVERRIDE { return vtFunction; }
+   int __ArgCount() const HXCPP_OVERRIDE { return constructor.args.size(); }
 
-   String toString() { return HX_CSTRING("#function(") + constructor.name + HX_CSTRING(")"); }
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING("#function(") + constructor.name + HX_CSTRING(")"); }
 };
 
 
@@ -205,8 +205,8 @@ struct EnumField : public CppiaDynamicExpr
       }
    }
 
-   const char *getName() { return "EnumField"; }
-   CppiaExpr *link(CppiaModule &inModule)
+   const char *getName() HXCPP_OVERRIDE { return "EnumField"; }
+   CppiaExpr *link(CppiaModule &inModule) HXCPP_OVERRIDE
    {
       TypeData *type = inModule.types[enumId];
       if (type->cppiaClass)
@@ -242,7 +242,7 @@ struct EnumField : public CppiaDynamicExpr
       return enumValue.mPtr;
    }
 
-   hx::Object *runObject(CppiaCtx *ctx)
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       int s = args.size();
       if (s==0)
@@ -258,14 +258,14 @@ struct EnumField : public CppiaDynamicExpr
       return value ? value->create(dynArgs) : enumClass->ConstructEnum(enumName,dynArgs).mPtr;
    }
 
-   void mark(hx::MarkContext *__inCtx)
+   void mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_MARK_MEMBER(enumName);
       HX_MARK_MEMBER(enumClass);
       HX_MARK_MEMBER(enumValue);
    }
 #ifdef HXCPP_VISIT_ALLOCS
-   void visit(hx::VisitContext *__inCtx)
+   void visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_VISIT_MEMBER(enumName);
       HX_VISIT_MEMBER(enumClass);
@@ -275,7 +275,7 @@ struct EnumField : public CppiaDynamicExpr
 
 
    #ifdef CPPIA_JIT
-   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType) HXCPP_OVERRIDE
    {
       int s = args.size();
       if (s==0)
@@ -1586,12 +1586,12 @@ public:
       info = inInfo;
    }
 
-   Array<String> GetClassFields()
+   Array<String> GetClassFields() HXCPP_OVERRIDE
    {
       return info->GetClassFields();
    }
 
-   Array<String> GetInstanceFields()
+   Array<String> GetInstanceFields() HXCPP_OVERRIDE
    {
       Array<String> members = mSuper ? (*mSuper)->GetInstanceFields() : Array_obj<String>::__new(0,0);
 
@@ -1644,23 +1644,23 @@ public:
    }
 
 
-   Dynamic ConstructEmpty()
+   Dynamic ConstructEmpty() HXCPP_OVERRIDE
    {
       if (info->isEnum)
          return Dynamic();
 
       Expressions none;
       return info->createInstance(CppiaCtx::getCurrent(),none,false);
-   } 
+   }
 
-   Dynamic ConstructArgs(hx::DynamicArray inArgs)
+   Dynamic ConstructArgs(hx::DynamicArray inArgs) HXCPP_OVERRIDE
    {
       return info->createInstance(CppiaCtx::getCurrent(),inArgs);
    }
 
-   bool __IsEnum() { return info->isEnum; }
+   bool __IsEnum() HXCPP_OVERRIDE { return info->isEnum; }
 
-   Dynamic ConstructEnum(String inName,hx::DynamicArray inArgs)
+   Dynamic ConstructEnum(String inName, hx::DynamicArray inArgs) HXCPP_OVERRIDE
    {
       if (!info->isEnum)
          return Dynamic();
@@ -1669,7 +1669,7 @@ public:
 	   return info->enumConstructors[index]->create(inArgs);
    }
 
-   bool VCanCast(hx::Object *inPtr)
+   bool VCanCast(hx::Object *inPtr) HXCPP_OVERRIDE
    {
       if (!inPtr)
          return false;
@@ -1702,19 +1702,19 @@ public:
    }
 
 
-   hx::Val __Field(const String &inName,hx::PropertyAccess inCallProp)
+   hx::Val __Field(const String &inName,hx::PropertyAccess inCallProp) HXCPP_OVERRIDE
    {
       if (inName==HX_CSTRING("__meta__"))
          return __meta__;
       return info->getStaticValue(inName,inCallProp);
    }
 
-   hx::Val __SetField(const String &inName,const hx::Val &inValue ,hx::PropertyAccess inCallProp)
+   hx::Val __SetField(const String &inName,const hx::Val &inValue ,hx::PropertyAccess inCallProp) HXCPP_OVERRIDE
    {
       return info->setStaticValue(inName,inValue,inCallProp);
    }
 
-   bool __HasField(const String &inName)
+   bool __HasField(const String &inName) HXCPP_OVERRIDE
    {
       if (inName==HX_CSTRING("__meta__"))
          return __meta__!=null();

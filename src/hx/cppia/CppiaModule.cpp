@@ -291,13 +291,13 @@ public:
    {
       delete ((CppiaObject *)inObj)->cppia;
    }
-   void __Mark(hx::MarkContext *ctx) { cppia->mark(ctx); }
+   void __Mark(hx::MarkContext *ctx) HXCPP_OVERRIDE { cppia->mark(ctx); }
 #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *ctx) { cppia->visit(ctx); }
+   void __Visit(hx::VisitContext *ctx) HXCPP_OVERRIDE { cppia->visit(ctx); }
 #endif
 
 
-   void boot()
+   void boot() HXCPP_OVERRIDE
    {
       if (booted)
          return;
@@ -317,7 +317,7 @@ public:
    }
 
 
-   void run()
+   void run() HXCPP_OVERRIDE
    {
       if (!booted)
          boot();
@@ -344,7 +344,7 @@ public:
       }
    }
 
-   ::hx::Class resolveClass( ::String inName)
+   ::hx::Class resolveClass( ::String inName) HXCPP_OVERRIDE
    {
       CppiaClassInfo *info = cppia->findClass(inName);
       if (info)

@@ -163,9 +163,9 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       : ArrayBuiltinBase(inSrc,inThisExpr,ioExpressions)
    {
    }
-   const char *getName() { return gArrayFuncNames[FUNC]; }
+   const char *getName() HXCPP_OVERRIDE { return gArrayFuncNames[FUNC]; }
 
-   int  runInt(CppiaCtx *ctx)
+   int  runInt(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       if (FUNC==afPush)
       {
@@ -215,13 +215,13 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       return Dynamic( runObject(ctx) );
    }
 
-   Float runFloat(CppiaCtx *ctx)
+   Float runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       return runInt(ctx);
    }
 
 
-   ::String    runString(CppiaCtx *ctx)
+   ::String    runString(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       if (FUNC==afJoin)
       {
@@ -243,7 +243,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       return obj ? obj->toString() : ::String();
    }
 
-   hx::Object *runObject(CppiaCtx *ctx)
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       if (FUNC==afPush || FUNC==afContains || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
          return Dynamic(runInt(ctx)).mPtr;
@@ -404,7 +404,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 
       return 0;
    }
-   void runVoid(CppiaCtx *ctx)
+   void runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       if (FUNC==afSort)
       {
@@ -475,7 +475,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       }
    }
 
-   CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue)
+   CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue) HXCPP_OVERRIDE
    {
       if (FUNC==af__get)
       {
@@ -532,7 +532,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       return 0;
    }
 
-   CppiaExpr   *makeCrement(CrementOp inOp)
+   CppiaExpr   *makeCrement(CrementOp inOp) HXCPP_OVERRIDE
    {
       if (FUNC==af__get)
       {
@@ -589,9 +589,9 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 
       return etObject;
    }
-   ExprType getType() { return inlineGetType(); }
+   ExprType getType() HXCPP_OVERRIDE { return inlineGetType(); }
 
-   bool isBoolInt() { return FUNC==afRemove || FUNC==afContains; }
+   bool isBoolInt() HXCPP_OVERRIDE { return FUNC==afRemove || FUNC==afContains; }
 
 
    #ifdef CPPIA_JIT
@@ -622,7 +622,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
    }
 
 
-   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType) HXCPP_OVERRIDE
    {
       JitTemp thisVal(compiler,etObject);
       if (FUNC!=afBlit)

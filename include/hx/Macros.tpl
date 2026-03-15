@@ -121,8 +121,8 @@ static ::NS::Dynamic __##class##func(const ::NS::Array< ::NS::Dynamic> &inArgs) 
     #define HX_DYNAMIC_CALL(ret,func,array_args,dyn_arg_list,arg_list)
 #else
     #define HX_DYNAMIC_CALL(ret,func,array_args,dyn_arg_list,arg_list) \
-        ::NS::Dynamic __Run(const ::NS::Array< ::NS::Dynamic> &inArgs) { ret func( array_args ); return ::NS::null();} \
-        ::NS::Dynamic __run(dyn_arg_list) { ret func( arg_list ); return ::NS::null();}
+        ::NS::Dynamic __Run(const ::NS::Array< ::NS::Dynamic> &inArgs) HXCPP_OVERRIDE { ret func( array_args ); return ::NS::null();} \
+        ::NS::Dynamic __run(dyn_arg_list) HXCPP_OVERRIDE { ret func( arg_list ); return ::NS::null();}
 #endif
 
 ::foreach PARAMS::
@@ -134,23 +134,23 @@ static ::NS::Dynamic __##class##func(const ::NS::Array< ::NS::Dynamic> &inArgs) 
        struct name : public ::hxNS::Object { \
        ::hxNS::ObjectPtr<t0> __this; \
        name(::hxNS::ObjectPtr<t0> __0 = ::NS::null()) : __this(__0) {} \
-       void __Mark(::hxNS::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); } \
-       void __Visit(::hxNS::VisitContext *__inCtx) { HX_VISIT_MEMBER(__this); }
+       void __Mark(::hxNS::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER(__this); } \
+       void __Visit(::hxNS::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(__this); }
 #else
     #define HX_BEGIN_DEFAULT_FUNC(name,t0) \
 	    namespace { \
-       struct name : public ::hxNS::Object { int __GetType() const { return vtFunction; } \
+       struct name : public ::hxNS::Object { int __GetType() const HXCPP_OVERRIDE { return vtFunction; } \
        HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hxNS::clsIdClosure }; \
        ::hxNS::ObjectPtr<t0> __this; \
        name(::hxNS::ObjectPtr<t0> __0 = ::NS::null()) : __this(__0) {} \
-       void __Mark(::hxNS::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); } \
-       void __Visit(::hxNS::VisitContext *__inCtx) { HX_VISIT_MEMBER(__this); }
+       void __Mark(::hxNS::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER(__this); } \
+       void __Visit(::hxNS::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(__this); }
 #endif
 
 #define HX_END_DEFAULT_FUNC \
 }
 
-#define HXARGC(x) int __ArgCount() const { return x; }
+#define HXARGC(x) int __ArgCount() const HXCPP_OVERRIDE { return x; }
 
 #if (HXCPP_API_LEVEL>=500)
     #define HX_BEGIN_LOCAL_FUNC_S0(SUPER,name) \
@@ -161,15 +161,15 @@ static ::NS::Dynamic __##class##func(const ::NS::Array< ::NS::Dynamic> &inArgs) 
     #define HX_BEGIN_LOCAL_FUNC_S::ARG::(SUPER,name,::TYPE_ARGS::) \
        struct name : public SUPER { \
        ::TYPE_DECL::; \
-       void __Mark(::hxNS::MarkContext *__inCtx) { ::MARKS:: } \
-       void __Visit(::hxNS::VisitContext *__inCtx) { ::VISITS:: } \
+       void __Mark(::hxNS::MarkContext *__inCtx) override { ::MARKS:: } \
+       void __Visit(::hxNS::VisitContext *__inCtx) override { ::VISITS:: } \
        name(::CONSTRUCT_ARGS::) : ::CONSTRUCT_VARS:: {}::end::
 #else
     #define HX_BEGIN_LOCAL_FUNC_S0(SUPER,name) \
        struct name : public SUPER { \
        HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hxNS::clsIdClosure }; \
-       void __Mark(::hxNS::MarkContext *__inCtx) { DoMarkThis(__inCtx); } \
-       void __Visit(::hxNS::VisitContext *__inCtx) { DoVisitThis(__inCtx); } \
+       void __Mark(::hxNS::MarkContext *__inCtx) HXCPP_OVERRIDE { DoMarkThis(__inCtx); } \
+       void __Visit(::hxNS::VisitContext *__inCtx) HXCPP_OVERRIDE { DoVisitThis(__inCtx); } \
        name() {}
 
     ::foreach LOCALS::
@@ -177,8 +177,8 @@ static ::NS::Dynamic __##class##func(const ::NS::Array< ::NS::Dynamic> &inArgs) 
        struct name : public SUPER { \
        HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hxNS::clsIdClosure }; \
        ::TYPE_DECL::; \
-       void __Mark(::hxNS::MarkContext *__inCtx) { DoMarkThis(__inCtx); ::MARKS:: } \
-       void __Visit(::hxNS::VisitContext *__inCtx) { DoVisitThis(__inCtx); ::VISITS:: } \
+       void __Mark(::hxNS::MarkContext *__inCtx) HXCPP_OVERRIDE { DoMarkThis(__inCtx); ::MARKS:: } \
+       void __Visit(::hxNS::VisitContext *__inCtx) HXCPP_OVERRIDE { DoVisitThis(__inCtx); ::VISITS:: } \
        name(::CONSTRUCT_ARGS::) : ::CONSTRUCT_VARS:: {}::end::
 #endif
 
