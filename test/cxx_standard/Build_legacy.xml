@@ -6,7 +6,7 @@
 		<file name="main.cpp" />
 	</files>
 
-	<target id="default" tool="linker" toolid="exe" output="main">
+	<target id="default" tool="linker" toolid="dll" output="main">
 		<files id="test"/>
 	</target>
 </xml>

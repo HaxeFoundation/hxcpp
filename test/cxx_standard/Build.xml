@@ -7,9 +7,7 @@
 		<file name="c17.c" c_standard="17" />
 	</files>
 
-	<set name="EXESUFFIX" value=".exe" if="windows" />
-
-	<target id="default" tool="linker" toolid="exe" output="main${EXESUFFIX}">
+	<target id="default" tool="linker" toolid="dll" output="main">
 		<files id="test"/>
 	</target>
 </xml>
