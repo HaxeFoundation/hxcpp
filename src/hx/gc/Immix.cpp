@@ -2421,7 +2421,7 @@ class WeakRef;
 typedef hx::QuickVec<WeakRef *> WeakRefs;
 
 FILE_SCOPE std::mutex *sFinalizerLock = 0;
-HX_IMMORTAL(WeakRefs, sWeakRefs);
+HX_IMMORTAL_FILE_SCOPE(WeakRefs, sWeakRefs);
 
 class WeakRef : public hx::Object
 {
@@ -2454,26 +2454,26 @@ typedef hx::QuickVec<InternalFinalizer *> FinalizerList;
 FILE_SCOPE FinalizerList *sgFinalizers = 0;
 
 typedef std::unordered_map<hx::Object *,hx::finalizer> FinalizerMap;
-HX_IMMORTAL(FinalizerMap, sFinalizerMap);
+HX_IMMORTAL_FILE_SCOPE(FinalizerMap, sFinalizerMap);
 
 typedef void (*HaxeFinalizer)(Dynamic);
 typedef std::unordered_map<hx::Object *,HaxeFinalizer> HaxeFinalizerMap;
-HX_IMMORTAL(HaxeFinalizerMap, sHaxeFinalizerMap);
+HX_IMMORTAL_FILE_SCOPE(HaxeFinalizerMap, sHaxeFinalizerMap);
 
 HX_IMMORTAL_GLOBAL(hx::QuickVec<int>, sFreeObjectIds);
 typedef std::unordered_map<hx::Object *,int> ObjectIdMap;
 typedef hx::QuickVec<hx::Object *> IdObjectMap;
-HX_IMMORTAL(ObjectIdMap, sObjectIdMap);
-HX_IMMORTAL(IdObjectMap, sIdObjectMap);
+HX_IMMORTAL_FILE_SCOPE(ObjectIdMap, sObjectIdMap);
+HX_IMMORTAL_FILE_SCOPE(IdObjectMap, sIdObjectMap);
 
 typedef std::unordered_set<hx::Object *> MakeZombieSet;
-HX_IMMORTAL(MakeZombieSet, sMakeZombieSet);
+HX_IMMORTAL_FILE_SCOPE(MakeZombieSet, sMakeZombieSet);
 
 typedef hx::QuickVec<hx::Object *> ZombieList;
-HX_IMMORTAL(ZombieList, sZombieList);
+HX_IMMORTAL_FILE_SCOPE(ZombieList, sZombieList);
 
 typedef hx::QuickVec<hx::HashRoot *> WeakHashList;
-HX_IMMORTAL(WeakHashList, sWeakHashList);
+HX_IMMORTAL_FILE_SCOPE(WeakHashList, sWeakHashList);
 
 
 InternalFinalizer::InternalFinalizer(hx::Object *inObj, finalizer inFinalizer)
@@ -2601,7 +2601,7 @@ struct Finalizable
    }
 };
 typedef hx::QuickVec< Finalizable > FinalizableList;
-HX_IMMORTAL(FinalizableList, sFinalizableList);
+HX_IMMORTAL_FILE_SCOPE(FinalizableList, sFinalizableList);
 
 
 static double tFinalizers;
