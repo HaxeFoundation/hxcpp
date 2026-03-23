@@ -2166,6 +2166,53 @@ class BuildTool
       }
    }
 
+   function getBestAppleSdkVersion(defines:Hash<String>, platform:String, defineName:String)
+   {
+      var dev_path = '${defines.get("DEVELOPER_DIR")}/Platforms/${platform}.platform/Developer/SDKs/';
+      if (FileSystem.exists(dev_path))
+      {
+         var best="0.0";
+         var files = FileSystem.readDirectory(dev_path);
+         var extract_version = new EReg('^${platform}(.*).sdk$', "");
+         for(file in files)
+         {
+            if (extract_version.match(file))
+            {
+               var ver = extract_version.matched(1);
+               var split_ver = ver.split(".");
+               var major_ver = Std.parseFloat(split_ver[0]);
+               var minor_ver = Std.parseFloat(split_ver[1]);
+               if (Math.isNaN(major_ver) || Math.isNaN(minor_ver))
+               {
+                  // if version is the wrong format, skip it
+                  continue;
+               }
+               var split_best = best.split(".");
+               var major_best = Std.parseFloat(split_best[0]);
+               var minor_best = Std.parseFloat(split_best[1]);
+               if (Math.isNaN(major_best) || Math.isNaN(minor_best))
+               {
+                  // shouldn't happen, but just to be safe
+                  best = ver;
+               }
+               else if (major_ver > major_best)
+               {
+                  // prefer higher major version
+                  best = ver;
+               }
+               else if (major_ver == major_best && minor_ver > minor_best)
+               {
+                  // if major versions are equal, prefer higher minor version
+                  best = ver;
+               }
+            }
+         }
+         if (best!="0.0")
+            defines.set(defineName, best);
+         else
+            Log.v('Could not find ${defineName}!');
+      }
+   }
 
 
    function setupAppleDirectories(defines:Hash<String>)
@@ -2185,118 +2232,22 @@ class BuildTool
 
       if (defines.exists("iphone") && !defines.exists("IPHONE_VER"))
       {
-         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/iPhoneOS.platform/Developer/SDKs/";
-         if (FileSystem.exists(dev_path))
-         {
-            var best="0.0";
-            var files = FileSystem.readDirectory(dev_path);
-            var extract_version = ~/^iPhoneOS(.*).sdk$/;
-            for(file in files)
-            {
-               if (extract_version.match(file))
-               {
-                  var ver = extract_version.matched(1);
-                  if (Std.parseFloat (ver)>Std.parseFloat (best))
-                     best = ver;
-               }
-            }
-            if (best!="0.0")
-               defines.set("IPHONE_VER",best);
-         }
+         getBestAppleSdkVersion(defines, "iPhoneOS", "IPHONE_VER");
       }
 
       if (defines.exists("appletv") && !defines.exists("TVOS_VER"))
       {
-         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/AppleTVOS.platform/Developer/SDKs/";
-         if (FileSystem.exists(dev_path))
-         {
-            var best="0.0";
-            var files = FileSystem.readDirectory(dev_path);
-            var extract_version = ~/^AppleTVOS(.*).sdk$/;
-            for(file in files)
-            {
-               if (extract_version.match(file))
-               {
-                  var ver = extract_version.matched(1);
-                  if (Std.parseFloat (ver)>Std.parseFloat (best))
-                     best = ver;
-               }
-            }
-            if (best!="0.0")
-               defines.set("TVOS_VER",best);
-         }
+         getBestAppleSdkVersion(defines, "AppleTVOS", "TVOS_VER");
       }
-
 
       if (defines.exists("applewatch") && !defines.exists("WATCHOS_VER"))
       {
-         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/WatchOS.platform/Developer/SDKs/";
-         if (FileSystem.exists(dev_path))
-         {
-            var best="0.0";
-            var files = FileSystem.readDirectory(dev_path);
-            var extract_version = ~/^WatchOS(.*).sdk$/;
-            for(file in files)
-            {
-               if (extract_version.match(file))
-               {
-                  var ver = extract_version.matched(1);
-                  if (Std.parseFloat (ver)>Std.parseFloat (best))
-                     best = ver;
-               }
-            }
-            if (best!="0.0")
-               defines.set("WATCHOS_VER",best);
-         }
+         getBestAppleSdkVersion(defines, "WatchOS", "WATCHOS_VER");
       }
-
 
       if (defines.exists("macos") && !defines.exists("MACOSX_VER"))
       {
-         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/";
-         if (FileSystem.exists(dev_path))
-         {
-            var best="0.0";
-            var files = FileSystem.readDirectory(dev_path);
-            var extract_version = ~/^MacOSX(.*).sdk$/;
-            for(file in files)
-            {
-               if (extract_version.match(file))
-               {
-                  var ver = extract_version.matched(1);
-                  var split_ver = ver.split(".");
-                  var major_ver = Std.parseFloat(split_ver[0]);
-                  var minor_ver = Std.parseFloat(split_ver[1]);
-                  if (Math.isNaN(major_ver) || Math.isNaN(minor_ver))
-                  {
-                     // if version is the wrong format, skip it
-                     continue;
-                  }
-                  var split_best = best.split(".");
-                  var major_best = Std.parseFloat(split_best[0]);
-                  var minor_best = Std.parseFloat(split_best[1]);
-                  if (Math.isNaN(major_best) || Math.isNaN(minor_best))
-                  {
-                     // shouldn't happen, but just to be safe
-                     best = ver;
-                  }
-                  else if (major_ver > major_best)
-                  {
-                     // prefer higher major version
-                     best = ver;
-                  }
-                  else if (major_ver == major_best && minor_ver > minor_best)
-                  {
-                     // if major versions are equal, prefer higher minor version
-                     best = ver;
-                  }
-               }
-            }
-            if (best!="0.0")
-               defines.set("MACOSX_VER",best);
-            else
-               Log.v("Could not find MACOSX_VER!");
-         }
+         getBestAppleSdkVersion(defines, "MacOSX", "MACOSX_VER");
       }
 
       if (!FileSystem.exists(defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/"))
