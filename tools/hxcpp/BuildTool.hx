@@ -2171,44 +2171,28 @@ class BuildTool
       var dev_path = '${defines.get("DEVELOPER_DIR")}/Platforms/${platform}.platform/Developer/SDKs/';
       if (FileSystem.exists(dev_path))
       {
-         var best="0.0";
+         var best = { major: 0, minor: 0 };
          var files = FileSystem.readDirectory(dev_path);
-         var extract_version = new EReg('^${platform}(.*).sdk$', "");
+         var extract_version = ~/^([a-zA-Z]+)(\d+)\.(\d+)\.sdk$/;
          for(file in files)
          {
             if (extract_version.match(file))
             {
-               var ver = extract_version.matched(1);
-               var split_ver = ver.split(".");
-               var major_ver = Std.parseFloat(split_ver[0]);
-               var minor_ver = Std.parseFloat(split_ver[1]);
-               if (Math.isNaN(major_ver) || Math.isNaN(minor_ver))
+               var sdkPlatform = extract_version.matched(1);
+               var major = Std.parseInt(extract_version.matched(2));
+               var minor = Std.parseInt(extract_version.matched(3));
+               if (sdkPlatform != platform || major == null || minor == null)
                {
-                  // if version is the wrong format, skip it
                   continue;
                }
-               var split_best = best.split(".");
-               var major_best = Std.parseFloat(split_best[0]);
-               var minor_best = Std.parseFloat(split_best[1]);
-               if (Math.isNaN(major_best) || Math.isNaN(minor_best))
+               if (major > best.major || (major == best.major && minor > best.minor))
                {
-                  // shouldn't happen, but just to be safe
-                  best = ver;
-               }
-               else if (major_ver > major_best)
-               {
-                  // prefer higher major version
-                  best = ver;
-               }
-               else if (major_ver == major_best && minor_ver > minor_best)
-               {
-                  // if major versions are equal, prefer higher minor version
-                  best = ver;
+                  best = {major: major, minor: minor};
                }
             }
          }
-         if (best!="0.0")
-            defines.set(defineName, best);
+         if (best.major != 0)
+            defines.set(defineName, '${best.major}.${best.minor}');
          else
             Log.v('Could not find ${defineName}!');
       }
