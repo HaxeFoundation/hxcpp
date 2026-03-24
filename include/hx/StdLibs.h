@@ -501,13 +501,13 @@ struct AtomicObject: hx::Object {
 
   AtomicObject(Dynamic val) { aPtr = val.mPtr; }
 
-  void __Mark(hx::MarkContext *__inCtx) {
+  void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE {
     Dynamic ptr = load();
     HX_MARK_MEMBER(ptr);
   }
 
 #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) {
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE {
      hx::Object *obj = aPtr.load();
      HX_VISIT_MEMBER(obj);
      aPtr.store(obj);

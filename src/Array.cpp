@@ -501,7 +501,7 @@ void ArrayBase::safeSort(DynamicSorterFunc inSorter, bool inIsString)
 
 #if (HXCPP_API_LEVEL<500)
     #define ARRAY_RUN_FUNC(ret,func,dynamic_arg_list,arg_list) \
-        Dynamic __run(dynamic_arg_list) \
+        Dynamic __run(dynamic_arg_list) HXCPP_OVERRIDE \
         { \
             ret mThis->__##func(arg_list); return Dynamic(); \
         }
@@ -513,19 +513,19 @@ struct ArrayBase_##func : public hx::Object \
    bool __IsFunction() const { return true; } \
    ArrayBase *mThis; \
    ArrayBase_##func(ArrayBase *inThis) : mThis(inThis) { } \
-   String toString() const{ return HX_CSTRING(#func) ; } \
-   String __ToString() const{ return HX_CSTRING(#func) ; } \
-   int __GetType() const { return vtFunction; } \
-   void *__GetHandle() const { return mThis; } \
-   int __ArgCount() const { return ARG_C; } \
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING(#func) ; } \
+   String __ToString() const HXCPP_OVERRIDE { return HX_CSTRING(#func) ; } \
+   int __GetType() const HXCPP_OVERRIDE { return vtFunction; } \
+   void *__GetHandle() const HXCPP_OVERRIDE { return mThis; } \
+   int __ArgCount() const HXCPP_OVERRIDE { return ARG_C; } \
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER(mThis); } \
    ARRAY_VISIT_FUNC \
-   Dynamic __Run(const Array<Dynamic> &inArgs) \
+   Dynamic __Run(const Array<Dynamic> &inArgs) HXCPP_OVERRIDE \
    { \
       ret mThis->__##func(array_list); return Dynamic(); \
    } \
    run_func \
-   int __Compare(const hx::Object *inRHS) const \
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE \
    { \
       if (!dynamic_cast<const ArrayBase_##func *>(inRHS)) return -1; \
       return (mThis==inRHS->__GetHandle() ? 0 : -1); \
@@ -715,7 +715,7 @@ namespace cpp
             }
 
 #ifdef HXCPP_VISIT_ALLOCS
-            void __Visit(hx::VisitContext* __inCtx)
+            void __Visit(hx::VisitContext* __inCtx) override
             {
                 HX_VISIT_MEMBER(__this);
             }
@@ -752,7 +752,7 @@ namespace cpp
             }
 
 #ifdef HXCPP_VISIT_ALLOCS
-            void __Visit(hx::VisitContext* __inCtx)
+            void __Visit(hx::VisitContext* __inCtx) override
             {
                 HX_VISIT_MEMBER(__this);
             }
@@ -822,7 +822,7 @@ namespace cpp
                 ret mThis->name(args_call); \
             } \
             void* __GetHandle() const override { return mThis.GetPtr(); } \
-            void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+            void __Mark(hx::MarkContext *__inCtx) override { HX_MARK_MEMBER(mThis); } \
             ARRAY_VISIT_FUNC \
             int __Compare(const ::hx::Object* inRhs) const override \
             { \
@@ -867,7 +867,7 @@ namespace cpp
 
 #else
 #define VARRAY_RUN_FUNC(ret,func,dynamic_arg_list,arg_list) \
-    Dynamic __run(dynamic_arg_list) \
+    Dynamic __run(dynamic_arg_list) HXCPP_OVERRIDE \
     { \
         ret mThis->func(arg_list); return Dynamic(); \
     }
@@ -881,15 +881,15 @@ struct VirtualArray_##func : public hx::Object \
    VirtualArray_##func(VirtualArray inThis) : mThis(inThis) { \
       HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
    } \
-   String toString() const{ return HX_CSTRING(#func) ; } \
-   String __ToString() const{ return HX_CSTRING(#func) ; } \
-   int __GetType() const { return vtFunction; } \
-   void *__GetHandle() const { return mThis.mPtr; } \
-   int __ArgCount() const { return ARG_C; } \
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING(#func) ; } \
+   String __ToString() const HXCPP_OVERRIDE { return HX_CSTRING(#func) ; } \
+   int __GetType() const HXCPP_OVERRIDE { return vtFunction; } \
+   void *__GetHandle() const HXCPP_OVERRIDE { return mThis.mPtr; } \
+   int __ArgCount() const HXCPP_OVERRIDE { return ARG_C; } \
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER(mThis); } \
    ARRAY_VISIT_FUNC \
    run_func \
-   Dynamic __Run(const Array<Dynamic> &inArgs) \
+   Dynamic __Run(const Array<Dynamic> &inArgs) HXCPP_OVERRIDE \
    { \
       ret mThis->func(array_list); return Dynamic(); \
    } \
@@ -1253,8 +1253,8 @@ class EmptyIterator : public IteratorBase
 public:
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdArrayIterator }; \
 
-   bool hasNext() { return false; }
-   Dynamic _dynamicNext() { return null(); }
+   bool hasNext() HXCPP_OVERRIDE { return false; }
+   Dynamic _dynamicNext() HXCPP_OVERRIDE { return null(); }
 };
 
 

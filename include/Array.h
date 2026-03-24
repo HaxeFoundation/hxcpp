@@ -152,18 +152,18 @@ public:
    ArrayIterator(Array<FROM> inArray) : mArray(inArray), mIdx(0) { }
 
    // Fast versions ...
-   bool hasNext()  { return mIdx < mArray->length; }
+   bool hasNext() HXCPP_OVERRIDE { return mIdx < mArray->length; }
 
    inline TO toTo(const Dynamic &inD) { return inD.StaticCast<TO>(); }
 
    template<typename T>
    inline TO toTo(T inT) { return inT; }
 
-   TO next() { return toTo(mArray->__get(mIdx++)); }
+   TO next() HXCPP_OVERRIDE { return toTo(mArray->__get(mIdx++)); }
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mArray,"mArray"); }
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER_NAME(mArray,"mArray"); }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER_NAME(mArray,"mArray"); }
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER_NAME(mArray,"mArray"); }
    #endif
 
    int      mIdx;
@@ -179,7 +179,7 @@ public:
 
    ArrayKeyValueIterator(Array<FROM> inArray) : mArray(inArray), mIdx(0) { }
 
-   bool hasNext()  { return mIdx < mArray->length; }
+   bool hasNext() HXCPP_OVERRIDE { return mIdx < mArray->length; }
 
    inline TO toTo(const Dynamic &inD) { return inD.StaticCast<TO>(); }
 
@@ -187,11 +187,11 @@ public:
    inline TO toTo(T inT) { return inT; }
 
 
-   Dynamic next();
+   Dynamic next() HXCPP_OVERRIDE;
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mArray,"mArray"); }
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER_NAME(mArray,"mArray"); }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER_NAME(mArray,"mArray"); }
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER_NAME(mArray,"mArray"); }
    #endif
 
    int      mIdx;
@@ -265,14 +265,14 @@ public:
    inline char * getBase() const { return mBase; }
 
 
-   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp) { return null(); }
+   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp) HXCPP_OVERRIDE { return null(); }
 
    static hx::Class __mClass;
    static hx::Class &__SGetClass() { return __mClass; }
-   hx::Class __GetClass() const { return __mClass; }
-   String toString();
-   String __ToString() const;
-   int __Compare(const hx::Object *inRHS) const;
+   hx::Class __GetClass() const HXCPP_OVERRIDE { return __mClass; }
+   String toString() HXCPP_OVERRIDE;
+   String __ToString() const HXCPP_OVERRIDE;
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE;
 
 
    void setData(void *inData, int inElements)
@@ -291,14 +291,14 @@ public:
    }
 
 
-   int __GetType() const { return vtArray; }
+   int __GetType() const HXCPP_OVERRIDE { return vtArray; }
 
    inline size_t size() const { return length; }
-   inline int __length() const { return (int)length; }
+   inline int __length() const HXCPP_OVERRIDE { return (int)length; }
 
    virtual String ItemString(int inI)  = 0;
 
-   const char * __CStr() const { return mBase; }
+   const char * __CStr() const HXCPP_OVERRIDE { return mBase; }
    inline const char *GetBase() const { return mBase; }
    inline char *GetBase() { return mBase; }
 
@@ -344,7 +344,7 @@ public:
    hx::Val __pointerToBase();
    hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp) override = 0;
 #else
-   hx::Val __Field(const String& inString, hx::PropertyAccess inCallProp);
+   hx::Val __Field(const String& inString, hx::PropertyAccess inCallProp) HXCPP_OVERRIDE;
 #endif
 
    inline void ____SetSize(int len)  { resize(len); } 
@@ -641,15 +641,15 @@ public:
    hx::Val __Field(const String& inString, hx::PropertyAccess inCallProp) override;
 #endif
 
-   bool _hx_isInstanceOf(int inClassId)
+   bool _hx_isInstanceOf(int inClassId) HXCPP_OVERRIDE
    {
       return inClassId==1 || inClassId==(int)hx::clsIdArrayBase || inClassId==(int)_hx_ClassId;
    }
 
-   virtual bool AllocAtomic() const { return !hx::ContainsPointers<ELEM_>(); }
+   bool AllocAtomic() const HXCPP_OVERRIDE { return !hx::ContainsPointers<ELEM_>(); }
 
-   virtual Dynamic __GetItem(int inIndex) const { return __get(inIndex); }
-   virtual Dynamic __SetItem(int inIndex,Dynamic inValue)
+   Dynamic __GetItem(int inIndex) const HXCPP_OVERRIDE { return __get(inIndex); }
+   Dynamic __SetItem(int inIndex, Dynamic inValue) HXCPP_OVERRIDE
    {
       ELEM_ &elem = Item(inIndex);
       elem = inValue;
@@ -709,7 +709,7 @@ public:
    }
 
 
-   void __Mark(hx::MarkContext *__inCtx)
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE
    {
       if (mAlloc>0) hx::MarkAlloc((void *)mBase, __inCtx );
       if (length && hx::ContainsPointers<ELEM_>())
@@ -720,7 +720,7 @@ public:
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
    {
       if (mAlloc>0) __inCtx->visitAlloc((void **)&mBase);
       if (hx::ContainsPointers<ELEM_>())
@@ -736,9 +736,9 @@ public:
 
    inline Array<ELEM_> __SetSizeExact(int inLen);
 
-   int GetElementSize() const { return sizeof(ELEM_); }
+   int GetElementSize() const HXCPP_OVERRIDE { return sizeof(ELEM_); }
 
-   String ItemString(int inI)
+   String ItemString(int inI) HXCPP_OVERRIDE
    {
       String result(__get(inI));
       if (result==null()) return HX_CSTRING("null");
@@ -991,8 +991,8 @@ public:
 
    template<typename TO>
    Dynamic keyValueIteratorFast() { return new hx::ArrayKeyValueIterator<ELEM_,TO>(this); }
-   
-   virtual hx::ArrayStore getStoreType() const
+
+   hx::ArrayStore getStoreType() const HXCPP_OVERRIDE
    {
       return (hx::ArrayStore) hx::ArrayTraits<ELEM_>::StoreType;
    }
@@ -1006,49 +1006,49 @@ public:
 
 
    // Dynamic interface
-   virtual hx::ArrayBase *__concat(const cpp::VirtualArray &a0) { return concat(a0).mPtr; }
-   virtual hx::ArrayBase *__copy() { return copy().mPtr; }
-   virtual void __insert(int inIndex,const Dynamic &a1) { insert(inIndex,a1);}
-   virtual Dynamic __iterator() { return iterator(); }
-   virtual Dynamic __keyValueIterator() { return keyValueIterator(); }
-   virtual ::String __join(::String a0) { return join(a0); }
-   virtual Dynamic __pop() { return pop(); }
-   virtual int __push(const Dynamic &a0) { return push(a0);}
-   virtual bool __contains(const Dynamic &a0) { return contains(a0); }
-   virtual bool __remove(const Dynamic &a0) { return remove(a0); }
-   virtual bool __removeAt(int inIndex) { return removeAt(inIndex); }
-   virtual int __indexOf(const Dynamic &a0,const Dynamic &a1) { return indexOf(a0, a1); }
-   virtual int __lastIndexOf(const Dynamic &a0,const Dynamic &a1) { return lastIndexOf(a0, a1); }
-   virtual void __reverse() { reverse(); }
-   virtual Dynamic __shift() { return shift(); }
-   virtual hx::ArrayBase *__slice(const Dynamic &a0,const Dynamic &a1) { return slice(a0,a1).mPtr; }
-   virtual hx::ArrayBase *__splice(const Dynamic &a0,const Dynamic &a1) { return splice(a0,a1).mPtr; }
-   virtual void __sort(const DynamicSorterFunc& a0) override { sort(a0); }
-   virtual ::String __toString() { return toString(); }
-   virtual void  __unshift(const Dynamic &a0) { unshift(a0); }
+   hx::ArrayBase* __concat(const cpp::VirtualArray& a0) HXCPP_OVERRIDE { return concat(a0).mPtr; }
+   hx::ArrayBase *__copy() HXCPP_OVERRIDE { return copy().mPtr; }
+   void __insert(int inIndex,const Dynamic &a1) HXCPP_OVERRIDE { insert(inIndex,a1);}
+   Dynamic __iterator() HXCPP_OVERRIDE { return iterator(); }
+   Dynamic __keyValueIterator() HXCPP_OVERRIDE { return keyValueIterator(); }
+   ::String __join(::String a0) HXCPP_OVERRIDE { return join(a0); }
+   Dynamic __pop() HXCPP_OVERRIDE { return pop(); }
+   int __push(const Dynamic &a0) HXCPP_OVERRIDE { return push(a0);}
+   bool __contains(const Dynamic &a0) HXCPP_OVERRIDE { return contains(a0); }
+   bool __remove(const Dynamic &a0) HXCPP_OVERRIDE { return remove(a0); }
+   bool __removeAt(int inIndex) HXCPP_OVERRIDE { return removeAt(inIndex); }
+   int __indexOf(const Dynamic &a0,const Dynamic &a1) HXCPP_OVERRIDE { return indexOf(a0, a1); }
+   int __lastIndexOf(const Dynamic &a0,const Dynamic &a1) HXCPP_OVERRIDE { return lastIndexOf(a0, a1); }
+   void __reverse() HXCPP_OVERRIDE { reverse(); }
+   Dynamic __shift() HXCPP_OVERRIDE { return shift(); }
+   hx::ArrayBase *__slice(const Dynamic &a0,const Dynamic &a1) HXCPP_OVERRIDE { return slice(a0,a1).mPtr; }
+   hx::ArrayBase *__splice(const Dynamic &a0,const Dynamic &a1) HXCPP_OVERRIDE { return splice(a0,a1).mPtr; }
+   void __sort(const DynamicSorterFunc& a0) HXCPP_OVERRIDE { sort(a0); }
+   ::String __toString() HXCPP_OVERRIDE { return toString(); }
+   void  __unshift(const Dynamic &a0) HXCPP_OVERRIDE { unshift(a0); }
 #if (HXCPP_API_LEVEL>=500)
-   virtual cpp::VirtualArray_obj* __map(const DynamicMappingFunc& func) { return cpp::VirtualArray(map<Dynamic>(func)).mPtr; }
+   cpp::VirtualArray_obj* __map(const DynamicMappingFunc& func) override { return cpp::VirtualArray(map<Dynamic>(func)).mPtr; }
 #else
-   virtual cpp::VirtualArray_obj* __map(const DynamicMappingFunc& func) { return map(func).mPtr; }
+   cpp::VirtualArray_obj* __map(const DynamicMappingFunc& func) HXCPP_OVERRIDE { return map(func).mPtr; }
 #endif
-   virtual void __resize(int inLen) { resize(inLen); }
+   void __resize(int inLen) HXCPP_OVERRIDE { resize(inLen); }
 
-   virtual hx::ArrayBase *__filter(const DynamicFilterFunc &func) override { return filter(func).mPtr; }
-   virtual void __blit(int inDestElement,const cpp::VirtualArray &inSourceArray,int inSourceElement,int inElementCount)
+   hx::ArrayBase *__filter(const DynamicFilterFunc &func) HXCPP_OVERRIDE { return filter(func).mPtr; }
+   void __blit(int inDestElement,const cpp::VirtualArray &inSourceArray,int inSourceElement,int inElementCount) HXCPP_OVERRIDE
    {
       blit(inDestElement,inSourceArray,inSourceElement,inElementCount);
    }
-   virtual int __memcmp(const cpp::VirtualArray &a0) { return memcmp(a0); }
-   virtual void __qsort(DynamicSorterFunc inCompare) override { this->qsort(inCompare); };
+   int __memcmp(const cpp::VirtualArray &a0) HXCPP_OVERRIDE { return memcmp(a0); }
+   void __qsort(DynamicSorterFunc inCompare) HXCPP_OVERRIDE { this->qsort(inCompare); };
 
-   virtual void set(int inIndex, const cpp::Variant &inValue) {
+   void set(int inIndex, const cpp::Variant &inValue) HXCPP_OVERRIDE {
       ELEM_ &elem = Item(inIndex);
       elem = ELEM_(inValue);
       if (hx::ContainsPointers<ELEM_>()) {
          HX_OBJ_WB_GET(this, hx::PointerOf(elem));
       }
    }
-   virtual void setUnsafe(int inIndex, const cpp::Variant &inValue) {
+   void setUnsafe(int inIndex, const cpp::Variant& inValue) HXCPP_OVERRIDE {
       ELEM_ &elem = *(ELEM_ *)(mBase + inIndex*sizeof(ELEM_));
       elem = ELEM_(inValue);
       if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this,hx::PointerOf(elem)); }
@@ -1378,7 +1378,7 @@ cpp::VirtualArray Array_obj<ELEM_>::map(MappingFunc inFunc)
 
 #ifdef HXCPP_VISIT_ALLOCS
 #define ARRAY_VISIT_FUNC \
-    void __Visit(::hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); }
+    void __Visit(::hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(mThis); }
 #else
 #define ARRAY_VISIT_FUNC
 #endif
@@ -1423,7 +1423,7 @@ namespace hx
                 ret mThis->name(args_call); \
             } \
             void *__GetHandle() const override { return mThis.GetPtr(); } \
-            void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+            void __Mark(::hx::MarkContext *__inCtx) override { HX_MARK_MEMBER(mThis); } \
             ARRAY_VISIT_FUNC \
             int __Compare(const ::hx::Object* inRhs) const override \
             { \
@@ -1472,7 +1472,7 @@ template<class TO>
         {
             return mThis->map(inArg0);
         }
-        void __Mark(hx::MarkContext* __inCtx)
+        void __Mark(hx::MarkContext* __inCtx) override
         {
             hx::MarkMember(mThis, __inCtx);
         }
@@ -1517,19 +1517,19 @@ hx::Val Array_obj<ELEM_>::__Field(const String& inString, hx::PropertyAccess inC
        bool __IsFunction() const { return true; } \
        ::Array_obj<ELEM_> *mThis; \
        Reflective_##func(::Array_obj<ELEM_> *inThis) : mThis(inThis) { } \
-       ::String toString() const{ return HX_CSTRING(#func) ; } \
-       ::String __ToString() const{ return HX_CSTRING(#func) ; } \
-       int __GetType() const { return vtFunction; } \
-       void *__GetHandle() const { return mThis; } \
-       int __ArgCount() const { return ARG_C; } \
-       void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+       ::String toString() override { return HX_CSTRING(#func) ; } \
+       ::String __ToString() const override { return HX_CSTRING(#func) ; } \
+       int __GetType() const override { return vtFunction; } \
+       void *__GetHandle() const override { return mThis; } \
+       int __ArgCount() const override { return ARG_C; } \
+       void __Mark(::hx::MarkContext *__inCtx) override { HX_MARK_MEMBER(mThis); } \
        ARRAY_VISIT_FUNC \
-       ::Dynamic __Run(const ::Array<::Dynamic> &inArgs) \
+       ::Dynamic __Run(const ::Array<::Dynamic> &inArgs) override \
        { \
           ret mThis->__##func(array_list); return ::Dynamic(); \
        } \
        run_func \
-       int __Compare(const ::hx::Object *inRHS) const \
+       int __Compare(const ::hx::Object *inRHS) const override \
        { \
           if (!dynamic_cast<const Reflective_##func *>(inRHS)) return -1; \
           return (mThis==inRHS->__GetHandle() ? 0 : -1); \

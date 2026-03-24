@@ -125,7 +125,7 @@ public:
              #endif
              );
 
-   String __ToString() const;
+   String __ToString() const HXCPP_OVERRIDE;
 
    void MarkStatics(hx::MarkContext *__inCtx);
 
@@ -136,22 +136,22 @@ public:
    static ::Array< ::String > dupFunctions(String inStatics[]);
 
    // the "Class class"
-   hx::Class              __GetClass() const;
+   hx::Class              __GetClass() const HXCPP_OVERRIDE;
    static hx::Class      & __SGetClass();
 	static void       __boot();
 
-   hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp);
+   hx::Val __Field(const String &inString,hx::PropertyAccess inCallProp) HXCPP_OVERRIDE;
 
-   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp);
+   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp) HXCPP_OVERRIDE;
 
-   bool __HasField(const String &inString);
+   bool __HasField(const String &inString) HXCPP_OVERRIDE;
 
    virtual Dynamic ConstructEmpty();
    virtual Dynamic ConstructArgs(hx::DynamicArray inArgs);
    virtual Dynamic ConstructEnum(String inName,hx::DynamicArray inArgs);
    virtual bool VCanCast(hx::Object *inPtr) { return false; }
 
-   int __GetType() const { return vtObject; }
+   int __GetType() const HXCPP_OVERRIDE { return vtObject; }
 
    virtual bool __IsEnum();
 
