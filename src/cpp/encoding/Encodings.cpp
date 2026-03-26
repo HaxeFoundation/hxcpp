@@ -329,34 +329,18 @@ String cpp::encoding::Utf8::decode(const cpp::marshal::View<uint8_t>& buffer)
         return String::emptyString;
     }
 
-#if defined(HX_SMART_STRINGS)
-    auto chars = int64_t{ 0 };
-    auto i     = int64_t{ 0 };
-    bool isAscii = true;
-
-    while (i < buffer.length)
-    {
-        auto p = codepoint(buffer.slice(i));
-
-        if (p > 127)
-        {
-            isAscii = false;
-        }
-
-        i     += getByteCount(p);
-        chars += Utf16::getCharCount(p);
-    }
-
-    if (isAscii)
+    if (isAsciiUtf8Buffer(buffer))
     {
         return Ascii::decode(buffer);
     }
+#if defined(HX_SMART_STRINGS)
+    auto estimated_length = buffer.length;
 
-    auto backing = View<char16_t>(::String::allocChar16Ptr(chars), chars);
-    auto output  = backing.reinterpret<uint8_t>();
-    auto k       = int64_t{ 0 };
+    auto temp   = ::String::allocChar16Ptr(estimated_length);
+    auto output = View<char16_t>(temp, estimated_length).reinterpret<uint8_t>();
+    int64_t k   = 0;
+    int64_t i   = 0;
 
-    i = 0;
     while (i < buffer.length)
     {
         auto p = codepoint(buffer.slice(i));
@@ -365,13 +349,13 @@ String cpp::encoding::Utf8::decode(const cpp::marshal::View<uint8_t>& buffer)
         k += Utf16::encode(p, output.slice(k));
     }
 
-    return String(backing.ptr.ptr, chars);
-#else
-    if (isAsciiUtf8Buffer(buffer))
-    {
-        return Ascii::decode(buffer);
-    }
+    auto chars = static_cast<int>(k / sizeof(char16_t));
+    auto exact = ::String::allocChar16Ptr(chars);
 
+    std::memcpy(exact, temp, k);
+
+    return String(exact, chars);
+#else
     auto backing = View<char>(hx::InternalNew(buffer.length, false), buffer.length);
 
     std::memcpy(backing.ptr.ptr, buffer.ptr.ptr, buffer.length);
