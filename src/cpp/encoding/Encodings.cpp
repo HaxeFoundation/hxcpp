@@ -334,9 +334,9 @@ String cpp::encoding::Utf8::decode(const cpp::marshal::View<uint8_t>& buffer)
         return Ascii::decode(buffer);
     }
 #if defined(HX_SMART_STRINGS)
-    auto estimated_length = buffer.length;
+    auto estimated_length = buffer.length * sizeof(char16_t);
 
-    auto temp   = ::String::allocChar16Ptr(estimated_length);
+    auto temp   = ::hx::InternalNew(estimated_length, false);
     auto output = View<char16_t>(temp, estimated_length).reinterpret<uint8_t>();
     int64_t k   = 0;
     int64_t i   = 0;
@@ -350,9 +350,10 @@ String cpp::encoding::Utf8::decode(const cpp::marshal::View<uint8_t>& buffer)
     }
 
     auto chars = static_cast<int>(k / sizeof(char16_t));
-    auto exact = ::String::allocChar16Ptr(chars);
 
-    std::memcpy(exact, temp, k);
+    auto exact = static_cast<char16_t*>(::hx::InternalRealloc(estimated_length, temp, k + sizeof(char16_t)));
+    ((unsigned int*)exact)[-1] |= HX_GC_STRING_CHAR16_T;
+    exact[chars] = 0;
 
     return String(exact, chars);
 #else
