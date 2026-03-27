@@ -9,7 +9,7 @@
 	<depend name="${this_dir}/Build.xml" dateOnly="true" />
 	<cache value="true" asLibrary="true" />
 
-	<include name="${HXCPP}/project/thirdparty/mbedtls-flags.xml" />
+	<include name="${HXCPP}/project/thirdparty/mbedtls-flags.xml" unless="HXCPP_NO_VENDORED" />
 
 	<file name="${this_dir}/SSL.cpp"/>
 </files>
@@ -17,7 +17,13 @@
 <target id="haxe">
 	<!-- the order is important, mbedtls needs to come after hxcpp_ssl -->
 	<files id="hxcpp_ssl" />
-	<files id="mbedtls" />
+	<files id="mbedtls" unless="HXCPP_NO_VENDORED" />
+
+	<section if="HXCPP_NO_VENDORED" unless="static_link">
+		<lib name="-lmbedx509" />
+		<lib name="-lmbedtls" />
+		<lib name="-lmbedcrypto" />
+	</section>
 
 	<lib name="advapi32.lib" if="windows" unless="static_link" />
 	<lib name="crypt32.lib" if="windows" unless="static_link" />
