@@ -14,8 +14,11 @@ typedef int SOCKET;
 #include <hxcpp.h>
 #include <hx/OS.h>
 
-#if defined(NEKO_MAC) && !defined(IPHONE) && !defined(APPLETV)
+#if defined(NEKO_MAC) || defined(IPHONE) || defined(APPLETV)
 #include <Security/Security.h>
+#endif
+#if defined(IPHONE) || defined(APPLETV)
+#include <CoreFoundation/CoreFoundation.h>
 #endif
 
 typedef size_t socket_int;
@@ -439,6 +442,37 @@ static int verify_callback(void* param, mbedtls_x509_crt *crt, int depth, uint32
 	CertCloseStore(store, 0);
 	return 0;
 }
+#elif defined(IPHONE) || defined(APPLETV)
+static int verify_callback(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *flags) {
+	// use mbedtls validate the chain structure and we validate with the iOS system trust store to replace the missing CA bundle
+	if (depth != 0) {
+		*flags = 0;
+		return 0;
+	}
+
+	CFDataRef derData = CFDataCreate(NULL, crt->raw.p, crt->raw.len);
+	if (!derData) return 0;
+
+	SecCertificateRef secCert = SecCertificateCreateWithData(NULL, derData);
+	CFRelease(derData);
+	if (!secCert) return 0;
+
+	SecPolicyRef policy = SecPolicyCreateSSL(true, NULL);
+	CFArrayRef certs = CFArrayCreate(NULL, (const void **)&secCert, 1, &kCFTypeArrayCallBacks);
+	SecTrustRef trust = NULL;
+	SecTrustCreateWithCertificates(certs, policy, &trust);
+	CFRelease(certs);
+	CFRelease(policy);
+	CFRelease(secCert);
+
+	CFErrorRef err = NULL;
+	bool trusted = SecTrustEvaluateWithError(trust, &err);
+	CFRelease(trust);
+	if (err) CFRelease(err);
+
+	if (trusted) *flags = 0;
+	return 0;
+}
 #endif
 
 Dynamic _hx_ssl_conf_new( bool server ) {
@@ -451,7 +485,7 @@ Dynamic _hx_ssl_conf_new( bool server ) {
 		conf->destroy();
 		ssl_error( ret );
 	}
-#ifdef NEKO_WINDOWS
+#if defined(NEKO_WINDOWS) || defined(IPHONE) || defined(APPLETV)
 	mbedtls_ssl_conf_verify(conf->c, verify_callback, NULL);
 #endif
 	mbedtls_ssl_conf_rng( conf->c, mbedtls_ctr_drbg_random, &ctr_drbg );
@@ -583,6 +617,10 @@ Dynamic _hx_ssl_cert_load_defaults(){
 	CFRelease(keychain);
 	if( chain != NULL )
 		return chain;
+#elif defined(IPHONE) || defined(APPLETV) // SystemRootCertificates.keychain doesn't exist on iOS and tvOS so i use a cool workaround
+    sslcert *chain = new sslcert();
+    chain->create(NULL); // creates a ssl cert with only the default ones that iOS or tvOS trust in the os
+    return chain;
 #endif
 	return null();
 }
