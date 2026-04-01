@@ -2083,7 +2083,7 @@ class BuildTool
             // Choose between MSVC and MINGW
             var useMsvc = true;
 
-            if (defines.exists("mingw") || defines.exists("HXCPP_MINGW") || defines.exists("minimingw"))
+            if (defines.exists("mingw") || defines.exists("HXCPP_MINGW"))
                useMsvc = false;
             else if ( defines.exists("winrt") || defines.exists("HXCPP_MSVC_VER"))
                useMsvc = true;
