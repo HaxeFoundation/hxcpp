@@ -213,6 +213,17 @@ class TestPtr extends Test
 
    static function notProcAddress(module:String, func:String) return null;
 
+   // See: https://github.com/HaxeFoundation/hxcpp/issues/1028
+   public function testOfEmptyArray() {
+      var empty:Array<Dynamic> = [];
+      cpp.Pointer.ofArray( empty );
+      Assert.equals( 0, empty.length );
+
+      var emptyInt:Array<Int> = [];
+      cpp.Pointer.ofArray( emptyInt );
+      Assert.equals( 0, emptyInt.length );
+   }
+
    public function testArrayAccess() {
       var array = [ 0.0, 1.1, 2.2, 3.3 ];
       var ptr = cpp.Pointer.arrayElem(array, 0);
