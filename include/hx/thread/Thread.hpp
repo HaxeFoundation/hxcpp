@@ -12,7 +12,14 @@ namespace hx
 	{
 		struct Thread_obj : public hx::Object
 		{
-			static Thread create(Callable<void(void)> job);
+			using CreateFunction =
+#if (HXCPP_API_LEVEL >= 500)
+				Callable<void(void)>;
+#else
+				Dynamic;
+#endif
+
+			static Thread create(CreateFunction);
 			static Thread current();
 			static int id();
 

@@ -36,7 +36,7 @@ namespace
 
 	std::atomic_int nextThreadnumber(0);
 
-	void run(hx::thread::ThreadImpl thread, hx::Callable<void(void)> job, hx::thread::CountingSemaphore semaphore)
+	void run(hx::thread::ThreadImpl thread, hx::thread::Thread_obj::CreateFunction job, hx::thread::CountingSemaphore semaphore)
 	{
 		// info[1] will the the "top of stack" - values under this
 		// (ie info[0] and other stack values) will be in the GC conservative range
@@ -59,7 +59,7 @@ namespace
 	}
 }
 
-hx::thread::Thread hx::thread::Thread_obj::create(Callable<void(void)> job)
+hx::thread::Thread hx::thread::Thread_obj::create(CreateFunction job)
 {
 #ifdef EMSCRIPTEN
 	return hx::Throw(HX_CSTRING("Threads are not supported on Emscripten"));
