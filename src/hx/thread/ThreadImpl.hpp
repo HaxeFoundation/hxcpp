@@ -29,14 +29,15 @@ namespace hx
 				std::unique_ptr<std::thread> thread;
 				std::thread::native_handle_type handle;
 
-				Native(std::thread* _thread);
 				Native();
+				Native(Thread_obj::CreateFunction _job, ThreadImpl _thread, CountingSemaphore _semaphore);
 			};
 
 			Native* native;
 			const int id;
 
 			ThreadImpl_obj(const int _id);
+			ThreadImpl_obj(const int _id, Thread_obj::CreateFunction _run, CountingSemaphore _semaphore);
 
 			String getName() override;
 			void setName(const String& name) override;

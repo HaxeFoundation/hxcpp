@@ -43,8 +43,12 @@ namespace
 		// 
 		// I'm assuming the array of two elements is some trick to ensure it's on the stack.
 		// Maybe we could use OS specific functions to get the stack range?
-		//
-		tls.set(new hx::Object* { thread.GetPtr() });
+
+		auto root = new hx::Object* { thread.GetPtr() };
+
+		hx::GCAddRoot(root);
+
+		tls.set(root);
 
 		auto info = std::array<hx::thread::ThreadImpl_obj*, 2>{ thread.GetPtr(), nullptr };
 
@@ -66,10 +70,8 @@ hx::thread::Thread hx::thread::Thread_obj::create(CreateFunction job)
 #else
 
 	auto semaphore = new hx::thread::CountingSemaphore_obj(0);
-	auto obj       = new ThreadImpl_obj(nextThreadnumber++);
-	auto native    = new ThreadImpl_obj::Native(new std::thread(run, obj, job, semaphore));
-
-	obj->native = native;
+	auto obj       = new ThreadImpl_obj(nextThreadnumber++, job, semaphore);
+	//auto native    = new ThreadImpl_obj::Native(new std::thread(run, obj, job, semaphore));
 
 	hx::GCSetFinalizer(obj, ThreadImpl_obj::finalise);
 	hx::GCPrepareMultiThreaded();
@@ -96,10 +98,10 @@ hx::thread::Thread hx::thread::Thread_obj::current()
 		// The C++ std has no way of getting the native handle of the current thread, so we need to use OS specific
 		// apis to get that so we can get and set thread names.
 		info = new ThreadImpl_obj(nextThreadnumber++);
-		info->native = new ThreadImpl_obj::Native();
 
 		auto root = new hx::Object* { info };
 
+		hx::GCSetFinalizer(info, ThreadImpl_obj::finalise);
 		hx::GCAddRoot(root);
 
 		tls.set(root);
@@ -124,11 +126,23 @@ int hx::thread::Thread_obj::id()
 
 hx::thread::ThreadImpl_obj::ThreadImpl_obj(const int _id)
 	: id(_id)
-	, native()
+	, native(new Native())
 	, scratch(std::numeric_limits<uint16_t>::max(), std::numeric_limits<uint16_t>::max())
 	, slots(0, 0) { }
 
-hx::thread::ThreadImpl_obj::Native::Native(std::thread* _thread) : thread(_thread), handle(thread->native_handle()) {}
+hx::thread::ThreadImpl_obj::ThreadImpl_obj(const int _id, Thread_obj::CreateFunction _job, CountingSemaphore _semaphore)
+	: id(_id)
+	, native(new Native(_job, this, _semaphore))
+	, scratch(std::numeric_limits<uint16_t>::max(), std::numeric_limits<uint16_t>::max())
+	, slots(0, 0)
+{
+}
+
+hx::thread::ThreadImpl_obj::Native::Native(Thread_obj::CreateFunction _job, ThreadImpl _thread, CountingSemaphore _semaphore)
+	: thread(new std::thread(run, _thread, _job, _semaphore))
+	, handle(thread->native_handle())
+{
+}
 
 Dynamic hx::thread::ThreadImpl_obj::getSlot(const int id)
 {
