@@ -1261,12 +1261,7 @@ void __hxcpp_dbg_setEventNotificationHandler(Dynamic handler)
     if (hx::g_eventNotificationHandler != null()) {
         GCRemoveRoot(&(hx::g_eventNotificationHandler.mPtr));
          }
-    hx::g_debugThreadNumber =
-#if (HXCPP_API_LEVEL>=500)
-        hx::thread::Thread_obj::id();
-#else
-        __hxcpp_GetCurrentThreadNumber();
-#endif
+    hx::g_debugThreadNumber = hx::thread::Thread_obj::id();
     hx::g_eventNotificationHandler = handler;
     GCAddRoot(&(hx::g_eventNotificationHandler.mPtr));
       }
@@ -1281,12 +1276,7 @@ void __hxcpp_dbg_enableCurrentThreadDebugging(bool enable)
 
 int __hxcpp_dbg_getCurrentThreadNumber()
 {
-    return
-#if (HXCPP_API_LEVEL>=500)
-        hx::thread::Thread_obj::id();
-#else
-        __hxcpp_GetCurrentThreadNumber();
-#endif
+    return hx::thread::Thread_obj::id();
 }
  
 

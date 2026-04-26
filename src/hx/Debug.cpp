@@ -245,12 +245,7 @@ StackContext::~StackContext()
 void StackContext::onThreadAttach()
 {
    #ifdef HXCPP_STACK_IDS
-    mThreadId =
-#if (HXCPP_API_LEVEL>=500)
-        hx::thread::Thread_obj::id();
-#else
-        __hxcpp_GetCurrentThreadNumber();
-#endif
+    mThreadId = hx::thread::Thread_obj::id();
 
    {
        std::lock_guard<std::mutex> guard(sStackMapMutex);
