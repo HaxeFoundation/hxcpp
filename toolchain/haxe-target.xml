@@ -77,6 +77,9 @@
   <depend name="${HXCPP}/include/hx/zip/Uncompress.hpp"/>
   <depend name="${HXCPP}/include/hx/thread/RecursiveMutex.hpp"/>
   <depend name="${HXCPP}/include/hx/thread/ConditionVariable.hpp"/>
+  <depend name="${HXCPP}/include/hx/thread/CountingSemaphore.hpp"/>
+  <depend name="${HXCPP}/include/hx/thread/Thread.hpp"/>
+  <depend name="${HXCPP}/include/hx/thread/ThreadLocal.hpp"/>
   <section unless="HXCPP_LINK_NO_TOOL_DEPENDS" >
      <depend name="${HXCPP}/toolchain/haxe-target.xml" dateOnly="true" />
      <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml" dateOnly="true" />
@@ -166,6 +169,7 @@
   <depend name="${HXCPP}/src/hx/Hash.h"/>
   <depend name="${HXCPP}/src/hx/Unicase.h"/>
   <depend name="${HXCPP}/src/hx/gc/GcRegCapture.h"/>
+  <depend name="${HXCPP}/src/hx/thread/ThreadImpl.hpp"/>
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
 
   <compilerflag value="-DHX_UNDEFINE_H" />
@@ -210,9 +214,15 @@
 
   <file name="src/hx/thread/RecursiveMutex.cpp"/>
   <file name="src/hx/thread/ConditionVariable.cpp"/>
+  <file name="src/hx/thread/ThreadImpl.cpp"/>
+  <file name="src/hx/thread/ThreadLocal.cpp"/>
   
   <section if="windows">
     <file name="src/hx/thread/CountingSemaphore.win32.cpp"/>
+    <file name="src/hx/thread/ThreadImpl.win32.cpp"/>
+  </section>
+  <section unless="windows">
+    <file name="src/hx/thread/ThreadImpl.noop.cpp"/>
   </section>
   <section if="apple">
     <file name="src/hx/thread/CountingSemaphore.apple.cpp"/>

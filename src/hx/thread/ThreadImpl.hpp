@@ -1,0 +1,57 @@
+#pragma once
+
+#ifndef HXCPP_H
+#include <hxcpp.h>
+#endif
+
+#include <hx/thread/Thread.hpp>
+#include <hx/thread/CountingSemaphore.hpp>
+#include <array>
+#include <thread>
+
+HX_DECLARE_CLASS2(hx, thread, ThreadImpl)
+
+namespace hx
+{
+	namespace thread
+	{
+		class ThreadImpl_obj final : public Thread_obj
+		{
+			int cursor;
+			Array<uint8_t> scratch;
+			Array<Dynamic> slots;
+
+		public:
+			friend class Scratch;
+
+			struct Native
+			{
+				std::unique_ptr<std::thread> thread;
+				std::thread::native_handle_type handle;
+
+				Native(std::thread* _thread);
+				Native();
+			};
+
+			Native* native;
+			const int id;
+
+			ThreadImpl_obj(const int _id);
+
+			String getName() override;
+			void setName(const String& name) override;
+
+			Dynamic getSlot(const int id);
+			void setSlot(const int id, const Dynamic& obj);
+
+			String toString() override;
+
+			void __Mark(HX_MARK_PARAMS) override;
+#ifdef HXCPP_VISIT_ALLOCS
+			void __Visit(HX_VISIT_PARAMS) override;
+#endif
+
+			static void finalise(hx::Object* obj);
+		};
+	}
+}

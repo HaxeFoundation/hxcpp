@@ -3,6 +3,7 @@
 #include <hx/GC.h>
 #include <hx/Memory.h>
 #include <hx/Thread.h>
+#include <hx/thread/Thread.hpp>
 #include "../Hash.h"
 #include "GcRegCapture.h"
 #include <hx/Unordered.h>
@@ -6574,7 +6575,7 @@ void InitAlloc()
    ExitGCFreeZone();
 
    // Setup main thread ...
-   __hxcpp_thread_current();
+   hx::thread::Thread_obj::current();
 
    gMainThreadContext->onThreadAttach();
 }

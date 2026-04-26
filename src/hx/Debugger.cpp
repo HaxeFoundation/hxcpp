@@ -7,6 +7,7 @@
 #include <hx/Thread.h>
 #include <hx/OS.h>
 #include <hx/QuickVec.h>
+#include <hx/thread/Thread.hpp>
 #include <mutex>
 
 // Newer versions of haxe compiler will set these too (or might be null for haxe 3.0)
@@ -1260,7 +1261,12 @@ void __hxcpp_dbg_setEventNotificationHandler(Dynamic handler)
     if (hx::g_eventNotificationHandler != null()) {
         GCRemoveRoot(&(hx::g_eventNotificationHandler.mPtr));
          }
-    hx::g_debugThreadNumber = __hxcpp_GetCurrentThreadNumber();
+    hx::g_debugThreadNumber =
+#if (HXCPP_API_LEVEL>=500)
+        hx::thread::Thread_obj::id();
+#else
+        __hxcpp_GetCurrentThreadNumber();
+#endif
     hx::g_eventNotificationHandler = handler;
     GCAddRoot(&(hx::g_eventNotificationHandler.mPtr));
       }
@@ -1275,7 +1281,12 @@ void __hxcpp_dbg_enableCurrentThreadDebugging(bool enable)
 
 int __hxcpp_dbg_getCurrentThreadNumber()
 {
-    return __hxcpp_GetCurrentThreadNumber();
+    return
+#if (HXCPP_API_LEVEL>=500)
+        hx::thread::Thread_obj::id();
+#else
+        __hxcpp_GetCurrentThreadNumber();
+#endif
 }
  
 
