@@ -61,6 +61,10 @@ namespace
 
 hx::thread::Thread hx::thread::Thread_obj::create(Callable<void(void)> job)
 {
+#ifdef EMSCRIPTEN
+	return hx::Throw(HX_CSTRING("Threads are not supported on Emscripten"));
+#else
+
 	auto semaphore = new hx::thread::CountingSemaphore_obj(0);
 	auto obj       = new ThreadImpl_obj(nextThreadnumber++);
 	auto native    = new ThreadImpl_obj::Native(new std::thread(run, obj, job, semaphore));
@@ -73,6 +77,7 @@ hx::thread::Thread hx::thread::Thread_obj::create(Callable<void(void)> job)
 	semaphore->acquire();
 
 	return hx::thread::Thread{ obj };
+#endif
 }
 
 String hx::thread::ThreadImpl_obj::toString()
