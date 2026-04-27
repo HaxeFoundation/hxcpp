@@ -71,7 +71,6 @@ hx::thread::Thread hx::thread::Thread_obj::create(CreateFunction job)
 
 	auto semaphore = new hx::thread::CountingSemaphore_obj(0);
 	auto obj       = new ThreadImpl_obj(nextThreadnumber++, job, semaphore);
-	//auto native    = new ThreadImpl_obj::Native(new std::thread(run, obj, job, semaphore));
 
 	hx::GCSetFinalizer(obj, ThreadImpl_obj::finalise);
 	hx::GCPrepareMultiThreaded();
@@ -139,9 +138,16 @@ hx::thread::ThreadImpl_obj::ThreadImpl_obj(const int _id, Thread_obj::CreateFunc
 }
 
 hx::thread::ThreadImpl_obj::Native::Native(Thread_obj::CreateFunction _job, ThreadImpl _thread, CountingSemaphore _semaphore)
-	: thread(new std::thread(run, _thread, _job, _semaphore))
-	, handle(thread->native_handle())
+	: thread(run, _thread, _job, _semaphore)
+	, handle(thread.native_handle())
 {
+	// Only Windows implements thread name getting and setting currently, and this requires the thread to be attached.
+	// Threads are normally only detached once the thread object is finalised and this was causing the 32bit linux tests to hit OS resource limits.
+	// This does feel like a bit of a bodge and something which will actually need to be addressed to add name setting on Linux.
+
+#ifndef HX_WINDOWS
+	thread.detach();
+#endif
 }
 
 Dynamic hx::thread::ThreadImpl_obj::getSlot(const int id)
@@ -173,9 +179,9 @@ void hx::thread::ThreadImpl_obj::finalise(hx::Object* obj)
 	auto thread = reinterpret_cast<ThreadImpl_obj*>(obj);
 	auto native = std::unique_ptr<ThreadImpl_obj::Native>{ thread->native };
 
-	if (native->thread)
+	if (native->thread.joinable())
 	{
-		native->thread->detach();
+		native->thread.detach();
 	}
 }
 

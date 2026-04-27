@@ -26,7 +26,7 @@ namespace hx
 
 			struct Native
 			{
-				std::unique_ptr<std::thread> thread;
+				std::thread thread;
 				std::thread::native_handle_type handle;
 
 				Native();
