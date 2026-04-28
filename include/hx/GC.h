@@ -329,7 +329,7 @@ namespace hx
 
 
 
-class StackContext;
+struct StackContext;
 
 EXTERN_FAST_TLS_DATA(StackContext, tlsStackContext);
 
@@ -360,7 +360,7 @@ public:
 
 
 
-   // These allocate the function using the garbage-colleced malloc
+   // These allocate the function using the garbage-collected malloc
    inline static void *alloc(ImmixAllocator *alloc, size_t inSize, bool inContainer, const char *inName )
    {
       #ifdef HXCPP_GC_NURSERY
@@ -406,7 +406,7 @@ public:
             // Ensure odd alignment in 8 bytes
             start += 4 - (start & 4);
          #endif
-         int end = start + sizeof(int) + inSize;
+         int end = start + (int)(sizeof(int) + inSize);
 
          if ( end <= alloc->spaceEnd )
          {
@@ -420,11 +420,11 @@ public:
 
             if (inContainer)
                *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                            (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
+                            ((int)inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
                             hx::gMarkIDWithContainer;
             else
                *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                            (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
+                            ((int)inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
                             hx::gMarkID;
 
             #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
@@ -439,7 +439,7 @@ public:
          }
 
          // Fall back to external method
-         void *result = alloc->CallAlloc(inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0);
+         void *result = alloc->CallAlloc((int)inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0);
 
          #ifdef HXCPP_TELEMETRY
             __hxt_gc_new((hx::StackContext *)alloc,result, inSize, inName);

@@ -103,9 +103,9 @@ struct CompareTraits<double>
 {
    enum { type = (int)CompareAsDouble };
 
-   inline static int toInt(double inValue) { return inValue; }
+   inline static int toInt(double inValue) { return (int)inValue; }
    inline static double toDouble(double inValue) { return inValue; }
-   inline static cpp::Int64 toInt64(double inValue) { return inValue; }
+   inline static cpp::Int64 toInt64(double inValue) { return (cpp::Int64)inValue; }
    inline static String toString(double inValue) { return String(); }
    inline static hx::Object *toObject(double inValue) { return 0; }
 
@@ -122,7 +122,7 @@ struct CompareTraits<cpp::Int64>
    enum { type = (int)CompareAsInt64 };
 
    inline static int toInt(cpp::Int64 inValue) { return (int)inValue; }
-   inline static double toDouble(cpp::Int64 inValue) { return inValue; }
+   inline static double toDouble(cpp::Int64 inValue) { return (double)inValue; }
    inline static cpp::Int64 toInt64(cpp::Int64 inValue) { return inValue; }
    inline static String toString(cpp::Int64 inValue) { return String(); }
    inline static hx::Object *toObject(cpp::Int64 inValue) { return 0; }
@@ -137,7 +137,7 @@ struct CompareTraits<cpp::UInt64>
    enum { type = (int)CompareAsInt64 };
 
    inline static int toInt(cpp::UInt64 inValue) { return (int)inValue; }
-   inline static double toDouble(cpp::UInt64 inValue) { return inValue; }
+   inline static double toDouble(cpp::UInt64 inValue) { return (double)inValue; }
    // Return value is unsigned ...
    inline static cpp::UInt64 toInt64(cpp::UInt64 inValue) { return inValue; }
    inline static String toString(cpp::UInt64 inValue) { return String(); }

@@ -27,10 +27,10 @@ class FileGroup
    public var mNvcc:Bool;
    public var mAssembler:String;
    public var mObjPrefix:String;
-   public var mCStandard:Int;
-   public var mCxxStandard:Int;
-   public var mObjCStandard:Int;
-   public var mObjCxxStandard:Int;
+   public var mCStandard:Null<Int>;
+   public var mCxxStandard:Null<Int>;
+   public var mObjCStandard:Null<Int>;
+   public var mObjCxxStandard:Null<Int>;
    
    public function new(inDir:String,inId:String,inSetImportDir = false)
    {

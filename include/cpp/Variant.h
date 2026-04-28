@@ -102,7 +102,7 @@ namespace cpp
       inline operator double() const { return asDouble(); }
       inline operator int() const { return asInt(); }
       inline operator bool() const { return asInt(); }
-      inline operator float () const { return asDouble(); }
+      inline operator float () const { return (float)asDouble(); }
       inline operator unsigned int () const { return asInt(); }
       inline operator short () const { return asInt(); }
       inline operator unsigned short () const { return asInt(); }
@@ -345,7 +345,7 @@ namespace cpp
 
       switch(type)
       {
-         case typeDouble: return valDouble;
+         case typeDouble: return (int)valDouble;
          case typeInt64: return (int)valInt64;
          case typeBool: return valBool;
          case typeObject: return valObject ? valObject->__ToInt() : 0;
@@ -363,7 +363,7 @@ namespace cpp
 
       switch(type)
       {
-         case typeDouble: return valDouble;
+         case typeDouble: return (cpp::Int64)valDouble;
          case typeInt: return valInt;
          case typeBool: return valBool;
          case typeObject: return valObject ? valObject->__ToInt64() : 0;
@@ -381,7 +381,7 @@ namespace cpp
       else if (type==typeBool)
          return valBool ? 1.0 : 0.0;
       else if (type==typeInt64)
-         return valInt64;
+         return (double)valInt64;
       else if (type==typeObject)
          return valObject ? valObject->__ToDouble() : 0.0;
       return 0.0;

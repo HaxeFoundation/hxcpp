@@ -164,44 +164,7 @@ class BuildTool
 
       Profile.setEntry("parse xml");
 
-
-
-      if (mDefines.exists("HXCPP_C_STANDARD")) {
-         defaultCStandard = Std.parseInt(mDefines.get("HXCPP_C_STANDARD"));
-      }
-
-      // Hxcpp requires C++11, so the default standard cannot be less than that
-      if (mDefines.exists("HXCPP_CXX_STANDARD")) {
-         defaultCxxStandard = Std.parseInt(mDefines.get("HXCPP_CXX_STANDARD"));
-         if (defaultCxxStandard < 11) {
-            Log.warn('Increasing default C++ standard to C++11 instead of C++${defaultCxxStandard}');
-            defaultCxxStandard = 11;
-         }
-      } else if(mDefines.exists("HXCPP_CPP17")) {
-         defaultCxxStandard = 17;
-      } else if (mDefines.exists("HXCPP_CPP14")) {
-         defaultCxxStandard = 14;
-      } else {
-         defaultCxxStandard = 11;
-      }
-
-      if (mDefines.exists("HXCPP_OBJC_STANDARD")) {
-         defaultObjCStandard = Std.parseInt(mDefines.get("HXCPP_OBJC_STANDARD"));
-      }
-
-      if (mDefines.exists("HXCPP_OBJCXX_STANDARD")) {
-         defaultObjCxxStandard = Std.parseInt(mDefines.get("HXCPP_OBJCXX_STANDARD"));
-         if (defaultObjCxxStandard < 11) {
-				Log.warn('Increasing default Obj-C++ standard to Obj-C++11 instead of Obj-C++${defaultObjCxxStandard}');
-            defaultObjCxxStandard = 11;
-         }
-      } else {
-         defaultObjCxxStandard = 11;
-      }
-
       include("toolchain/setup.xml");
-
-
 
       if (mDefines.exists("toolchain"))
       {
@@ -341,8 +304,20 @@ class BuildTool
       }
 
       Profile.setEntry("build");
-      for(target in inTargets)
-         buildTarget(target,destination);
+      if (mDefines.exists("HXCPP_GENERATE_MSVC"))
+      {
+         // Calculate platform string
+         var platform = m64 ? "x64" : (arm64 ? "ARM64" : "Win32");
+
+         var gen = new GenMsvc(mDefines, mTargets, mCompiler, platform, defaultCxxStandard);
+         for(target in inTargets)
+            gen.generate(target);
+      }
+      else
+      {
+         for(target in inTargets)
+            buildTarget(target,destination);
+      }
 
       var linkOutputs = mDefines.get("HXCPP_LINK_OUTPUTS");
       if (linkOutputs!=null)
@@ -1021,10 +996,58 @@ class BuildTool
       if (inTags!=null)
          group.mTags = inTags;
 
-      group.mCStandard = inXML.has.c_standard ? Std.parseInt(substitute(inXML.att.c_standard)) : defaultCStandard;
-      group.mObjCStandard = inXML.has.objc_standard ? Std.parseInt(substitute(inXML.att.objc_standard)) : defaultObjCStandard != null ? defaultObjCStandard : group.mCStandard;
-      group.mCxxStandard = inXML.has.cxx_standard ? Std.parseInt(substitute(inXML.att.cxx_standard)) : defaultCxxStandard;
-      group.mObjCxxStandard = inXML.has.objcxx_standard ? Std.parseInt(substitute(inXML.att.objcxx_standard)) : defaultObjCxxStandard != null ? defaultObjCxxStandard : group.mCxxStandard;
+      if (mDefines.exists("HXCPP_C_STANDARD")) {
+         defaultCStandard = Std.parseInt(mDefines.get("HXCPP_C_STANDARD"));
+      }
+
+      // Hxcpp requires C++11, so the default standard cannot be less than that
+      if (mDefines.exists("HXCPP_CXX_STANDARD")) {
+         defaultCxxStandard = Std.parseInt(mDefines.get("HXCPP_CXX_STANDARD"));
+         if (defaultCxxStandard < 11) {
+            Log.warn('Increasing default C++ standard to C++11 instead of C++${defaultCxxStandard}');
+            defaultCxxStandard = 11;
+         }
+      } else if(mDefines.exists("HXCPP_CPP17")) {
+         defaultCxxStandard = 17;
+      } else if (mDefines.exists("HXCPP_CPP14")) {
+         defaultCxxStandard = 14;
+      } else {
+         defaultCxxStandard = 11;
+      }
+
+      if (mDefines.exists("HXCPP_OBJC_STANDARD")) {
+         defaultObjCStandard = Std.parseInt(mDefines.get("HXCPP_OBJC_STANDARD"));
+      }
+
+      if (mDefines.exists("HXCPP_OBJCXX_STANDARD")) {
+         defaultObjCxxStandard = Std.parseInt(mDefines.get("HXCPP_OBJCXX_STANDARD"));
+         if (defaultObjCxxStandard < 11) {
+            Log.warn('Increasing default Obj-C++ standard to Obj-C++11 instead of Obj-C++${defaultObjCxxStandard}');
+            defaultObjCxxStandard = 11;
+         }
+      } else {
+         defaultObjCxxStandard = 11;
+      }
+
+      if (inXML.has.c_standard)
+         group.mCStandard = Std.parseInt(substitute(inXML.att.c_standard));
+      else if (group.mCStandard == null)
+         group.mCStandard = defaultCStandard;
+
+      if (inXML.has.objc_standard)
+         group.mObjCStandard = Std.parseInt(substitute(inXML.att.objc_standard));
+      else if (group.mObjCStandard == null)
+         group.mObjCStandard = defaultObjCStandard != null ? defaultObjCStandard : group.mCStandard;
+
+      if (inXML.has.cxx_standard)
+         group.mCxxStandard = Std.parseInt(substitute(inXML.att.cxx_standard));
+      else if (group.mCxxStandard == null)
+         group.mCxxStandard = defaultCxxStandard;
+
+      if (inXML.has.objcxx_standard)
+         group.mObjCxxStandard = Std.parseInt(substitute(inXML.att.objcxx_standard));
+      else if (group.mObjCxxStandard == null)
+         group.mObjCxxStandard = defaultObjCxxStandard != null ? defaultObjCxxStandard : group.mCxxStandard;
 
       for(el in inXML.elements)
       {
@@ -1621,15 +1644,16 @@ class BuildTool
 
       if (args.length>0 && args[0].endsWith(".cppia"))
       {
-         var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
-         if (binDir==null)
+         var hostName = isWindows ? "Windows" : isMac ? "Mac" : isLinux ? "Linux" : null;
+         if (hostName==null)
             Log.error("Cppia is not supported on this host.");
-         var arch = getArch();
-         var binDir = isWindows ? (isWindowsArm ? "WindowsArm64" : "Windows64" ) :
-                       isMac ? "Mac64" :
-                       isLinux ? ("Linux64") :
-                       null;
-         var exe = '$HXCPP/bin/$binDir/Cppia' + (isWindows ? ".exe" : "");
+         var archSuffix = switch getArch() {
+            case 'arm64': 'Arm64';
+            case 'm64': '64';
+            case 'm32': '';
+            case _: return Log.error("Unsupported host architecture");
+         };
+         var exe = '$HXCPP/bin/$hostName$archSuffix/Cppia' + (isWindows ? ".exe" : "");
          if (!isWindows)
          {
             var phase = "find";
@@ -1876,7 +1900,6 @@ class BuildTool
          if (targets.length==0)
             targets.push("default");
 
-
          new BuildTool(makefile,defines,targets,include_path,dirtyList);
       }
    }
@@ -2060,7 +2083,7 @@ class BuildTool
             // Choose between MSVC and MINGW
             var useMsvc = true;
 
-            if (defines.exists("mingw") || defines.exists("HXCPP_MINGW") || defines.exists("minimingw"))
+            if (defines.exists("mingw") || defines.exists("HXCPP_MINGW"))
                useMsvc = false;
             else if ( defines.exists("winrt") || defines.exists("HXCPP_MSVC_VER"))
                useMsvc = true;
@@ -2129,7 +2152,7 @@ class BuildTool
                defines.set("HXCPP_ARM64","1");
                m64 = true;
             }
-            defines.set("BINDIR", m64 ? "Linux64":"Linux");
+            defines.set("BINDIR", arm64 ? "LinuxArm64" : m64 ? "Linux64":"Linux");
          }
       }
       else if ( (new EReg("mac","i")).match(os) )
@@ -2142,7 +2165,7 @@ class BuildTool
             defines.set("linux","linux");
             defines.set("toolchain","linux");
             defines.set("xcompile","1");
-            defines.set("BINDIR", m64 ? "Linux64":"Linux");
+            defines.set("BINDIR", arm64 ? "LinuxArm64" : m64 ? "Linux64":"Linux");
          }
          else
          {
@@ -2252,10 +2275,32 @@ class BuildTool
                if (extract_version.match(file))
                {
                   var ver = extract_version.matched(1);
-                  var split_best = best.split(".");
                   var split_ver = ver.split(".");
-                  if (Std.parseFloat(split_ver[0]) > Std.parseFloat(split_best[0]) || Std.parseFloat(split_ver[1]) > Std.parseFloat(split_best[1]))
+                  var major_ver = Std.parseFloat(split_ver[0]);
+                  var minor_ver = Std.parseFloat(split_ver[1]);
+                  if (Math.isNaN(major_ver) || Math.isNaN(minor_ver))
+                  {
+                     // if version is the wrong format, skip it
+                     continue;
+                  }
+                  var split_best = best.split(".");
+                  var major_best = Std.parseFloat(split_best[0]);
+                  var minor_best = Std.parseFloat(split_best[1]);
+                  if (Math.isNaN(major_best) || Math.isNaN(minor_best))
+                  {
+                     // shouldn't happen, but just to be safe
                      best = ver;
+                  }
+                  else if (major_ver > major_best)
+                  {
+                     // prefer higher major version
+                     best = ver;
+                  }
+                  else if (major_ver == major_best && minor_ver > minor_best)
+                  {
+                     // if major versions are equal, prefer higher minor version
+                     best = ver;
+                  }
                }
             }
             if (best!="0.0")
@@ -2414,7 +2459,7 @@ class BuildTool
    public function checkToolVersion(inVersion:String)
    {
       var ver = Std.parseInt(inVersion);
-      if (ver>7)
+      if (ver>8)
          Log.error("Your version of hxcpp.n is out-of-date.  Please update by compiling 'haxe compile.hxml' in hxcpp/tools/hxcpp.");
    }
 
