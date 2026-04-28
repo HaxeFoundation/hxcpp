@@ -37,6 +37,64 @@ double Math_obj::POSITIVE_INFINITY = std::numeric_limits<double>::infinity();
 #undef max
 #endif
 
+#if (HXCPP_API_LEVEL>=500)
+
+	#ifdef HXCPP_VISIT_ALLOCS
+	#define MATHS_VISIT_FUNC \
+		void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); }
+	#else
+		#define MATHS_VISIT_FUNC
+	#endif
+
+	#define HX_MATHS_ARG_LIST0
+	#define HX_MATHS_ARG_LIST1(arg0) arg0
+	#define HX_MATHS_ARG_LIST2(arg0, arg1) arg0, arg1
+
+	#define HX_MATHS_FUNC_LIST0
+	#define HX_MATHS_FUNC_LIST1(arg0) arg0 inArg0
+	#define HX_MATHS_FUNC_LIST2(arg0, arg1) arg0 inArg0, arg1 inArg1
+
+	#define HX_MATHS_FUNC(value, name, args_list, func_list, args_call) \
+		::hx::Callable<value(args_list)> Math_obj::name##_dyn() \
+		{ \
+			struct _hx_maths_##name final : public ::hx::AutoCallable_obj<value(args_list)> \
+			{ \
+				value HX_LOCAL_RUN(func_list) override \
+				{ \
+					return Math_obj::name(args_call); \
+				} \
+				int __Compare(const ::hx::Object* inRhs) const override \
+				{ \
+					return dynamic_cast<const _hx_maths_##name *>(inRhs) ? 0 : -1; \
+				} \
+			}; \
+			return new _hx_maths_##name(); \
+		}
+
+	HX_MATHS_FUNC(int, floor, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(int, ceil, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(int, round, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(double, ffloor, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(double, fceil, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(double, fround, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(double, random, HX_MATHS_ARG_LIST0, HX_MATHS_FUNC_LIST0, HX_ARG_LIST0);
+	HX_MATHS_FUNC(double, sqrt, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(double, cos, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(double, sin, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(double, tan, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(double, atan2, HX_MATHS_ARG_LIST2(double, double), HX_MATHS_FUNC_LIST2(double, double), HX_ARG_LIST2);
+	HX_MATHS_FUNC(double, abs, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(double, pow, HX_MATHS_ARG_LIST2(double, double), HX_MATHS_FUNC_LIST2(double, double), HX_ARG_LIST2);
+	HX_MATHS_FUNC(double, log, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(double, min, HX_MATHS_ARG_LIST2(double, double), HX_MATHS_FUNC_LIST2(double, double), HX_ARG_LIST2);
+	HX_MATHS_FUNC(double, max, HX_MATHS_ARG_LIST2(double, double), HX_MATHS_FUNC_LIST2(double, double), HX_ARG_LIST2);
+	HX_MATHS_FUNC(double, acos, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(double, asin, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(double, atan, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(double, exp, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(bool, isNaN, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+	HX_MATHS_FUNC(bool, isFinite, HX_MATHS_ARG_LIST1(double), HX_MATHS_FUNC_LIST1(double), HX_ARG_LIST1);
+#else
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,floor,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,ffloor,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,ceil,return);
@@ -60,6 +118,7 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,acos,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,exp,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,isNaN,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,isFinite,return);
+#endif
 
 hx::Val Math_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {

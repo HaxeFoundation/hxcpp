@@ -575,6 +575,9 @@ struct CppiaVar
 
 
 
+#if (HXCPP_API_LEVEL >= 500)
+# define NATIVE_CLASS_OVERRIDES_MARKED
+#endif
 
 class HaxeNativeClass
 {
@@ -596,6 +599,10 @@ public:
    static HaxeNativeClass *findClass(const std::string &inName);
    static HaxeNativeClass *hxObject();
    static void link();
+#ifndef NATIVE_CLASS_OVERRIDES_MARKED
+private:
+   void addVtableEntries( std::vector<std::string> &outVtable, hx::UnorderedSet<std::string> &outMethodsSet);
+#endif
 };
 
 class HaxeNativeInterface
@@ -835,7 +842,7 @@ struct BCRReturn
 
 
 #define BCR_CHECK if (ctx->breakContReturn || ctx->exception) return BCRReturn();
-#define BCR_CHECK_RET(x) if (ctx->breakContReturn) return x;
+#define BCR_CHECK_RET(x) if (ctx->breakContReturn || ctx->exception) return x;
 #define BCR_VCHECK if (ctx->breakContReturn || ctx->exception) return;
 
 
@@ -853,6 +860,15 @@ inline T &runValue(T& outValue, CppiaCtx *ctx, CppiaExpr *expr)
    expr->runVoid(ctx);
    return null();
 }
+
+#if (HXCPP_API_LEVEL>=500)
+template<typename... TArgs>
+inline hx::Callable<void(TArgs...)>& runValue(hx::Callable<void(TArgs...)>& outValue, CppiaCtx* ctx, CppiaExpr* expr)
+{
+   expr->runVoid(ctx);
+   return outValue = hx::Callable<void(TArgs...)>();
+}
+#endif
 
 template<> inline int &runValue(int& outValue, CppiaCtx *ctx, CppiaExpr *expr)
 {
@@ -1081,6 +1097,14 @@ struct NAME \
       Float f = value->runFloat(ctx); \
       BCR_CHECK_RET(ioVal); \
       ioVal  = left OP f; \
+      return ioVal; \
+   } \
+   inline static int &run(int &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
+   { \
+      int left = ioVal; \
+      int i = value->runInt(ctx); \
+      BCR_CHECK_RET(ioVal); \
+      ioVal  = left OP i; \
       return ioVal; \
    } \
    static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \

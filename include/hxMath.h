@@ -47,7 +47,31 @@ public:
    static bool isNaN(double inX);
    static bool isFinite(double inX);
 
-
+#if (HXCPP_API_LEVEL>=500)
+   static ::hx::Callable<int(double)> floor_dyn();
+   static ::hx::Callable<int(double)> ceil_dyn();
+   static ::hx::Callable<int(double)> round_dyn();
+   static ::hx::Callable<double(double)> ffloor_dyn();
+   static ::hx::Callable<double(double)> fceil_dyn();
+   static ::hx::Callable<double(double)> fround_dyn();
+   static ::hx::Callable<double()> random_dyn();
+   static ::hx::Callable<double(double)> sqrt_dyn();
+   static ::hx::Callable<double(double)> cos_dyn();
+   static ::hx::Callable<double(double)> sin_dyn();
+   static ::hx::Callable<double(double)> tan_dyn();
+   static ::hx::Callable<double(double, double)> atan2_dyn();
+   static ::hx::Callable<double(double)> abs_dyn();
+   static ::hx::Callable<double(double, double) > pow_dyn();
+   static ::hx::Callable<double(double)> log_dyn();
+   static ::hx::Callable<double(double, double)> min_dyn();
+   static ::hx::Callable<double(double, double)> max_dyn();
+   static ::hx::Callable<double(double)> atan_dyn();
+   static ::hx::Callable<double(double)> asin_dyn();
+   static ::hx::Callable<double(double)> acos_dyn();
+   static ::hx::Callable<double(double)> exp_dyn();
+   static ::hx::Callable<bool(double)> isNaN_dyn();
+   static ::hx::Callable<bool(double)> isFinite_dyn();
+#else
    static Dynamic floor_dyn();
    static Dynamic ceil_dyn();
    static Dynamic round_dyn();
@@ -71,6 +95,7 @@ public:
    static Dynamic exp_dyn();
    static Dynamic isNaN_dyn();
    static Dynamic isFinite_dyn();
+#endif
 
    static double NaN;
    static double PI;

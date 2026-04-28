@@ -30,6 +30,7 @@ typedef int64_t __int64;
 #include <stdio.h>
 #include <time.h>
 #include <clocale>
+#include <mutex>
 
 
 #ifdef HX_ANDROID
@@ -254,37 +255,21 @@ void __hxcpp_stdlibs_boot()
 #endif
 
    #if defined(_MSC_VER) && !defined(HX_WINRT)
-   HMODULE kernel32 = LoadLibraryA("kernel32");
-   if (kernel32)
-   {
-      typedef BOOL (WINAPI *AttachConsoleFunc)(DWORD);
-      typedef HWND (WINAPI *GetConsoleWindowFunc)(void);
-      AttachConsoleFunc attach = (AttachConsoleFunc)GetProcAddress(kernel32,"AttachConsole");
-      GetConsoleWindowFunc getConsole = (GetConsoleWindowFunc)GetProcAddress(kernel32,"GetConsoleWindow");
-      if (attach && getConsole)
-      {
-         if (!attach( /*ATTACH_PARENT_PROCESS*/ (DWORD)-1 ))
-         {
-            //printf("Could not attach to parent console : %d\n",GetLastError());
-         }
-         else if (getConsole())
-         {
-            if (_fileno(stdout) < 0 || _get_osfhandle(fileno(stdout)) < 0)
-               freopen("CONOUT$", "w", stdout);
-            if (_fileno(stderr) < 0 || _get_osfhandle(fileno(stderr)) < 0)
-               freopen("CONOUT$", "w", stderr);
-            if (_fileno(stdin) < 0 || _get_osfhandle(fileno(stdin)) < 0)
-               freopen("CONIN$", "r", stdin);
-         }
-      }
+   if (!AttachConsole(ATTACH_PARENT_PROCESS)) {
+
+   } else if (GetConsoleWindow()) {
+      if (_fileno(stdout) < 0 || _get_osfhandle(fileno(stdout)) < 0)
+         freopen("CONOUT$", "w", stdout);
+      if (_fileno(stderr) < 0 || _get_osfhandle(fileno(stderr)) < 0)
+         freopen("CONOUT$", "w", stderr);
+      if (_fileno(stdin) < 0 || _get_osfhandle(fileno(stdin)) < 0)
+         freopen("CONIN$", "r", stdin);
    }
    //_setmode(_fileno(stdout), 0x00040000); // _O_U8TEXT
    //_setmode(_fileno(stderr), 0x00040000); // _O_U8TEXT
    //_setmode(_fileno(stdin), 0x00040000); // _O_U8TEXT
    #endif
 
-   // This is necessary for UTF-8 output to work correctly.
-   setlocale(LC_ALL, "");
    setlocale(LC_NUMERIC, "C");
 
    // I think this does more harm than good.
@@ -295,12 +280,72 @@ void __hxcpp_stdlibs_boot()
    setbuf(stderr, 0);
 }
 
+#ifdef HX_WINDOWS
+void WriteConsoleAllW(HANDLE h, const wchar_t *str, DWORD length) {
+   DWORD total_written = 0;
+   DWORD remaining = length;
+   while (total_written < length) {
+      DWORD written;
+      if (!WriteConsoleW(h, str + total_written, remaining, &written, NULL))
+      {
+         return;
+      }
+      if (written == remaining) {
+         return;
+      }
+      total_written += written;
+      remaining -= written;
+   }
+}
+
+void WriteConsoleAllA(HANDLE h, const char *str, DWORD length) {
+   DWORD total_written = 0;
+   DWORD remaining = length;
+   while (total_written < length) {
+      DWORD written;
+      if (!WriteConsoleA(h, str + total_written, remaining, &written, NULL))
+      {
+         return;
+      }
+      if (written == remaining) {
+         return;
+      }
+      total_written += written;
+      remaining -= written;
+   }
+}
+#endif
+
 void __trace(Dynamic inObj, Dynamic info)
 {
    String text;
    if (inObj != null())
       text = inObj->toString();
 
+#ifdef HX_WINDOWS
+   HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+   DWORD mode;
+   if (GetConsoleMode(handle, &mode))
+   {
+      fflush(stdout);
+      String s;
+      if (info == null()) {
+         s = String("?? ") + text + String("\n");
+      } else {
+         String filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString();
+         int line = Dynamic((info)->__Field(HX_CSTRING("lineNumber"), HX_PROP_DYNAMIC))->__ToInt();
+         s = filename + String(":") + line + String(": ") + text + String("\n");
+      }
+      if (s.isUTF16Encoded())
+      {
+         WriteConsoleAllW(handle, s.__WCStr(), s.length);
+      } else {
+         // ascii
+         WriteConsoleAllA(handle, s.__CStr(), s.length);
+      }
+      return;
+   }
+#endif
 
    hx::strbuf convertBuf;
    if (info==null())
@@ -607,12 +652,34 @@ Array<String> __get_args()
 
 void __hxcpp_print_string(const String &inV)
 {
+#ifdef HX_WINDOWS
+   HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+   DWORD mode;
+   if (GetConsoleMode(handle, &mode) && inV.isUTF16Encoded())
+   {
+      fflush(stdout);
+      WriteConsoleAllW(handle, inV.__WCStr(), inV.length);
+      return;
+   }
+#endif
    hx::strbuf convertBuf;
    PRINTF("%s", inV.out_str(&convertBuf) );
 }
 
 void __hxcpp_println_string(const String &inV)
 {
+#ifdef HX_WINDOWS
+   HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+   DWORD mode;
+   if (GetConsoleMode(handle, &mode) && inV.isUTF16Encoded())
+   {
+      fflush(stdout);
+      WriteConsoleAllW(handle, inV.__WCStr(), inV.length);
+      fwrite("\n", 1, 1, stdout);
+      fflush(stdout);
+      return;
+   }
+#endif
    hx::strbuf convertBuf;
    PRINTF("%s\n", inV.out_str(&convertBuf));
    fflush(stdout);
@@ -742,6 +809,12 @@ struct VarArgFunc : public hx::Object
      HX_OBJ_WB_NEW_MARKED_OBJECT(this)
    }
 
+#if (HXCPP_API_LEVEL>=500)
+   VarArgFunc(::hx::Callable<::Dynamic(::cpp::VirtualArray)>& inFunc) : mRealFunc(inFunc) {
+       HX_OBJ_WB_NEW_MARKED_OBJECT(this)
+   }
+#endif
+
    int __GetType() const { return vtFunction; }
    ::String __ToString() const { return mRealFunc->__ToString() ; }
 
@@ -754,15 +827,22 @@ struct VarArgFunc : public hx::Object
    void *__GetHandle() const { return mRealFunc.GetPtr(); }
    Dynamic __Run(const Array<Dynamic> &inArgs)
    {
-      return mRealFunc->__run(inArgs);
+#if (HXCPP_API_LEVEL>=500)
+       return hx::invoker::invoke(mRealFunc.mPtr, inArgs);
+#else
+       return mRealFunc->__run(inArgs);
+#endif
    }
 
    Dynamic mRealFunc;
 };
 
 }
-
+#if (HXCPP_API_LEVEL>=500)
+Dynamic __hxcpp_create_var_args(::hx::Callable<::Dynamic(::cpp::VirtualArray)>& inArrayFunc)
+#else
 Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc)
+#endif
 {
    return Dynamic(new hx::VarArgFunc(inArrayFunc));
 }
@@ -774,7 +854,7 @@ Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc)
 
 
 
-static HxMutex sgFieldMapMutex;
+static std::mutex sgFieldMapMutex;
 
 typedef std::map<std::string,int> StringToField;
 
@@ -798,7 +878,7 @@ const String &__hxcpp_field_from_id( int f )
 
 int  __hxcpp_field_to_id( const char *inFieldName )
 {
-   AutoLock lock(sgFieldMapMutex);
+   std::lock_guard<std::mutex> lock(sgFieldMapMutex);
 
    if (!sgFieldToStringAlloc)
    {

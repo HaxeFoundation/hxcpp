@@ -76,11 +76,6 @@
 <set name="haxelink" value="dll" if="dll_import"/>
 <set name="haxelink" value="dll" if="dll_link"/>
 
-<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11 || HXCPP_CPP17" if="iphoneos"/>
-<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11 || HXCPP_CPP17" if="iphonesim"/>
-<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="appletvos"/>
-<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="appletvsim"/>
-
 <set name="DESTDIR" value="bin" />
 <set name="DESTDIR" value="lib" if="static_link" unless="HXCPP_IOS_STDCPP"/>
 <set name="NDLLDIR" value="ndll" />

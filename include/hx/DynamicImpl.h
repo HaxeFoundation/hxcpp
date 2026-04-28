@@ -48,12 +48,14 @@ struct CMemberFunction0 : public hx::Object
       return mFunction(mThis.GetPtr());
       
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run() 
    { 
       
       return mFunction(mThis.GetPtr());
       
    } 
+#endif
 }; 
 
 
@@ -86,10 +88,12 @@ struct CStaticFunction0 : public hx::Object
    { 
       return mFunction();
    } 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run() 
    { 
       return mFunction();
    } 
+#endif
 }; 
 
 
@@ -145,12 +149,14 @@ struct CMemberFunction1 : public hx::Object
       return mFunction(mThis.GetPtr(), inArgs[0]);
       
    } 
-   Dynamic __run(const Dynamic &inArg0) 
+#if (HXCPP_API_LEVEL<500)
+   Dynamic __run(const ::Dynamic &inArg0) 
    { 
       
       return mFunction(mThis.GetPtr(), inArg0);
       
    } 
+#endif
 }; 
 
 
@@ -183,10 +189,12 @@ struct CStaticFunction1 : public hx::Object
    { 
       return mFunction(inArgs[0]);
    } 
-   Dynamic __run(const Dynamic &inArg0) 
+#if (HXCPP_API_LEVEL<500)
+   Dynamic __run(const ::Dynamic &inArg0) 
    { 
       return mFunction(inArg0);
    } 
+#endif
 }; 
 
 
@@ -242,12 +250,14 @@ struct CMemberFunction2 : public hx::Object
       return mFunction(mThis.GetPtr(), inArgs[0],inArgs[1]);
       
    } 
-   Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1) 
+#if (HXCPP_API_LEVEL<500)
+   Dynamic __run(const ::Dynamic &inArg0,const ::Dynamic &inArg1) 
    { 
       
       return mFunction(mThis.GetPtr(), inArg0,inArg1);
       
    } 
+#endif
 }; 
 
 
@@ -280,10 +290,12 @@ struct CStaticFunction2 : public hx::Object
    { 
       return mFunction(inArgs[0],inArgs[1]);
    } 
-   Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1) 
+#if (HXCPP_API_LEVEL<500)
+   Dynamic __run(const ::Dynamic &inArg0,const ::Dynamic &inArg1) 
    { 
       return mFunction(inArg0,inArg1);
    } 
+#endif
 }; 
 
 
@@ -339,12 +351,14 @@ struct CMemberFunction3 : public hx::Object
       return mFunction(mThis.GetPtr(), inArgs[0],inArgs[1],inArgs[2]);
       
    } 
-   Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2) 
+#if (HXCPP_API_LEVEL<500)
+   Dynamic __run(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2) 
    { 
       
       return mFunction(mThis.GetPtr(), inArg0,inArg1,inArg2);
       
    } 
+#endif
 }; 
 
 
@@ -377,10 +391,12 @@ struct CStaticFunction3 : public hx::Object
    { 
       return mFunction(inArgs[0],inArgs[1],inArgs[2]);
    } 
-   Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2) 
+#if (HXCPP_API_LEVEL<500)
+   Dynamic __run(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2) 
    { 
       return mFunction(inArg0,inArg1,inArg2);
    } 
+#endif
 }; 
 
 
@@ -436,12 +452,14 @@ struct CMemberFunction4 : public hx::Object
       return mFunction(mThis.GetPtr(), inArgs[0],inArgs[1],inArgs[2],inArgs[3]);
       
    } 
-   Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3) 
+#if (HXCPP_API_LEVEL<500)
+   Dynamic __run(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3) 
    { 
       
       return mFunction(mThis.GetPtr(), inArg0,inArg1,inArg2,inArg3);
       
    } 
+#endif
 }; 
 
 
@@ -474,10 +492,12 @@ struct CStaticFunction4 : public hx::Object
    { 
       return mFunction(inArgs[0],inArgs[1],inArgs[2],inArgs[3]);
    } 
-   Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3) 
+#if (HXCPP_API_LEVEL<500)
+   Dynamic __run(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3) 
    { 
       return mFunction(inArg0,inArg1,inArg2,inArg3);
    } 
+#endif
 }; 
 
 
@@ -533,12 +553,14 @@ struct CMemberFunction5 : public hx::Object
       return mFunction(mThis.GetPtr(), inArgs[0],inArgs[1],inArgs[2],inArgs[3],inArgs[4]);
       
    } 
-   Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4) 
+#if (HXCPP_API_LEVEL<500)
+   Dynamic __run(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4) 
    { 
       
       return mFunction(mThis.GetPtr(), inArg0,inArg1,inArg2,inArg3,inArg4);
       
    } 
+#endif
 }; 
 
 
@@ -571,10 +593,12 @@ struct CStaticFunction5 : public hx::Object
    { 
       return mFunction(inArgs[0],inArgs[1],inArgs[2],inArgs[3],inArgs[4]);
    } 
-   Dynamic __run(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4) 
+#if (HXCPP_API_LEVEL<500)
+   Dynamic __run(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4) 
    { 
       return mFunction(inArg0,inArg1,inArg2,inArg3,inArg4);
    } 
+#endif
 }; 
 
 
@@ -590,7 +614,9 @@ Dynamic CreateStaticFunction5(const char *inName,StaticFunction5 inFunc)
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(6)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5));
@@ -598,17 +624,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(6)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(7)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6));
@@ -616,17 +645,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(7)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(8)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7));
@@ -634,17 +666,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(8)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(9)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8));
@@ -652,17 +687,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(9)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(10)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9));
@@ -670,17 +708,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(10)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(11)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10));
@@ -688,17 +729,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(11)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(12)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11));
@@ -706,17 +750,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(12)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(13)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12));
@@ -724,17 +771,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(13)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(14)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13));
@@ -742,17 +792,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(14)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(15)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14));
@@ -760,17 +813,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(15)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(16)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15));
@@ -778,17 +834,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(16)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(17)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16));
@@ -796,17 +855,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(17)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(18)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17));
@@ -814,17 +876,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(18)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(19)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18));
@@ -832,17 +897,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(19)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(20)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19));
@@ -850,17 +918,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(20)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19,const ::Dynamic &inArg20)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(21)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20));
@@ -868,17 +939,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19,const ::Dynamic &inArg20)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(21)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19,const ::Dynamic &inArg20,const ::Dynamic &inArg21)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(22)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21));
@@ -886,17 +960,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19,const ::Dynamic &inArg20,const ::Dynamic &inArg21)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(22)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19,const ::Dynamic &inArg20,const ::Dynamic &inArg21,const ::Dynamic &inArg22)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(23)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22));
@@ -904,17 +981,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19,const ::Dynamic &inArg20,const ::Dynamic &inArg21,const ::Dynamic &inArg22)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(23)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19,const ::Dynamic &inArg20,const ::Dynamic &inArg21,const ::Dynamic &inArg22,const ::Dynamic &inArg23)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(24)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22)->init(23,inArg23));
@@ -922,17 +1002,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19,const ::Dynamic &inArg20,const ::Dynamic &inArg21,const ::Dynamic &inArg22,const ::Dynamic &inArg23)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(24)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22)->init(23,inArg23));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19,const ::Dynamic &inArg20,const ::Dynamic &inArg21,const ::Dynamic &inArg22,const ::Dynamic &inArg23,const ::Dynamic &inArg24)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(25)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22)->init(23,inArg23)->init(24,inArg24));
@@ -940,17 +1023,20 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19,const ::Dynamic &inArg20,const ::Dynamic &inArg21,const ::Dynamic &inArg22,const ::Dynamic &inArg23,const ::Dynamic &inArg24)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(25)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22)->init(23,inArg23)->init(24,inArg24));
 }
 }
 
+#endif
 
 
  
-Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24,const Dynamic &inArg25)
+
+#if (HXCPP_API_LEVEL<500)
+Dynamic Dynamic::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19,const ::Dynamic &inArg20,const ::Dynamic &inArg21,const ::Dynamic &inArg22,const ::Dynamic &inArg23,const ::Dynamic &inArg24,const ::Dynamic &inArg25)
 {
    CheckFPtr();
    return mPtr->__Run(Array_obj<Dynamic>::__new(26)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22)->init(23,inArg23)->init(24,inArg24)->init(25,inArg25));
@@ -958,13 +1044,14 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
 
 namespace cpp
 {
-::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24,const Dynamic &inArg25)
+::Dynamic Variant::operator()(const ::Dynamic &inArg0,const ::Dynamic &inArg1,const ::Dynamic &inArg2,const ::Dynamic &inArg3,const ::Dynamic &inArg4,const ::Dynamic &inArg5,const ::Dynamic &inArg6,const ::Dynamic &inArg7,const ::Dynamic &inArg8,const ::Dynamic &inArg9,const ::Dynamic &inArg10,const ::Dynamic &inArg11,const ::Dynamic &inArg12,const ::Dynamic &inArg13,const ::Dynamic &inArg14,const ::Dynamic &inArg15,const ::Dynamic &inArg16,const ::Dynamic &inArg17,const ::Dynamic &inArg18,const ::Dynamic &inArg19,const ::Dynamic &inArg20,const ::Dynamic &inArg21,const ::Dynamic &inArg22,const ::Dynamic &inArg23,const ::Dynamic &inArg24,const ::Dynamic &inArg25)
 {
    if (isNull()) Dynamic::ThrowBadFunctionError();
    return valObject->__Run(Array_obj<Dynamic>::__new(26)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22)->init(23,inArg23)->init(24,inArg24)->init(25,inArg25));
 }
 }
 
+#endif
 
 
 

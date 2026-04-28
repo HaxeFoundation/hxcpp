@@ -1,7 +1,7 @@
 <xml>
 
 <!-- make sure hxcpp.n is up to date -->
-<pleaseUpdateHxcppTool version="7" />
+<pleaseUpdateHxcppTool version="8" />
 
 <pragma once="true" />
 
@@ -60,7 +60,23 @@
   <depend name="${HXCPP}/include/cpp/Int64.h"/>
   <depend name="${HXCPP}/include/cpp/Variant.h"/>
   <depend name="${HXCPP}/include/cpp/VirtualArray.h"/>
+  <depend name="${HXCPP}/include/cpp/marshal/Definitions.inc"/>
+  <depend name="${HXCPP}/include/cpp/marshal/Boxed.hpp"/>
+  <depend name="${HXCPP}/include/cpp/marshal/PointerType.hpp"/>
+  <depend name="${HXCPP}/include/cpp/marshal/PointerReference.hpp"/>
+  <depend name="${HXCPP}/include/cpp/marshal/ValueType.hpp"/>
+  <depend name="${HXCPP}/include/cpp/marshal/ValueReference.hpp"/>
+  <depend name="${HXCPP}/include/cpp/marshal/View.hpp"/>
+  <depend name="${HXCPP}/include/cpp/marshal/Marshal.hpp"/>
+  <depend name="${HXCPP}/include/cpp/encoding/Ascii.hpp"/>
+  <depend name="${HXCPP}/include/cpp/encoding/Utf8.hpp"/>
+  <depend name="${HXCPP}/include/cpp/encoding/Utf16.hpp"/>
   <depend name="${HXCPP}/include/hx/Scriptable.h"/>
+  <depend name="${HXCPP}/include/hx/zip/Zip.hpp"/>
+  <depend name="${HXCPP}/include/hx/zip/Compress.hpp"/>
+  <depend name="${HXCPP}/include/hx/zip/Uncompress.hpp"/>
+  <depend name="${HXCPP}/include/hx/thread/RecursiveMutex.hpp"/>
+  <depend name="${HXCPP}/include/hx/thread/ConditionVariable.hpp"/>
   <section unless="HXCPP_LINK_NO_TOOL_DEPENDS" >
      <depend name="${HXCPP}/toolchain/haxe-target.xml" dateOnly="true" />
      <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml" dateOnly="true" />
@@ -150,8 +166,6 @@
   <depend name="${HXCPP}/src/hx/Hash.h"/>
   <depend name="${HXCPP}/src/hx/Unicase.h"/>
   <depend name="${HXCPP}/src/hx/gc/GcRegCapture.h"/>
-  <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
-
   <compilerflag value="-DHX_UNDEFINE_H" />
 
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" />
@@ -187,6 +201,26 @@
   <file name = "src/Enum.cpp"/>
   <file name = "src/Math.cpp"/>
   <file name = "src/String.cpp" tags="haxe,hxstring" />
+
+  <file name = "src/cpp/encoding/Ascii.cpp"/>
+  <file name = "src/cpp/encoding/Utf8.cpp"/>
+  <file name = "src/cpp/encoding/Utf16.cpp"/>
+
+  <file name="src/hx/thread/RecursiveMutex.cpp"/>
+  <file name="src/hx/thread/ConditionVariable.cpp"/>
+  
+  <section if="windows">
+    <file name="src/hx/thread/CountingSemaphore.win32.cpp"/>
+  </section>
+  <section if="apple">
+    <file name="src/hx/thread/CountingSemaphore.apple.cpp"/>
+  </section>
+  <section if="linux||android">
+    <file name="src/hx/thread/CountingSemaphore.posix.cpp"/>
+  </section>
+  <section unless="windows||apple||linux||android">
+    <file name="src/hx/thread/CountingSemaphore.unsupported.cpp"/>
+  </section>
 
   <addTwice if="linux||android" />
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />

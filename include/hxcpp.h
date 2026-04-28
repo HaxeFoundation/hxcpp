@@ -68,11 +68,7 @@
    #define HXCPP_ALIGN_FLOAT
 #endif
 
-// Must allign allocs to 8 bytes to match floating point requirement?
-// Ints must br read on 4-byte boundary
-#if (!defined(HXCPP_ALIGN_FLOAT) && (defined(EMSCRIPTEN) || defined(GCW0)) )
-   #define HXCPP_ALIGN_ALLOC
-#endif
+#define HXCPP_ALIGN_ALLOC
 
 
 // Some compilers are over-enthusiastic about what they #define ...
@@ -253,12 +249,19 @@ namespace hx { class Object; }
 namespace hx { class FieldRef; }
 namespace hx { class IndexRef; }
 namespace hx { class NativeInterface; }
-namespace hx { class StackContext; }
+namespace hx { struct StackContext; }
 namespace hx { template<typename T> class Native; }
 namespace hx { template<typename O> class ObjectPtr; }
 namespace cpp { template<typename S,typename H> class Struct; }
 namespace cpp { template<typename T> class Pointer; }
 namespace cpp { template<typename T> class Function; }
+namespace cpp { namespace marshal { template<class T> class Boxed_obj; } }
+namespace cpp { namespace marshal { template<class T> using Boxed =::hx::ObjectPtr<Boxed_obj<T>>; } }
+namespace cpp { namespace marshal { template<class T> class ValueType; } }
+namespace cpp { namespace marshal { template<class T> class ValueReference; } }
+namespace cpp { namespace marshal { template<class T> class PointerType; } }
+namespace cpp { namespace marshal { template<class T> class PointerReference; } }
+namespace cpp { namespace marshal { template<class T> struct View; } }
 template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
 namespace hx {
@@ -311,9 +314,9 @@ enum PropertyAccessMode
    paccAlways  = 2,
 };
 typedef PropertyAccessMode PropertyAccess;
-#define HX_PROP_NEVER  hx::paccNever
-#define HX_PROP_DYNAMIC hx::paccDynamic
-#define HX_PROP_ALWAYS hx::paccAlways
+#define HX_PROP_NEVER ::hx::paccNever
+#define HX_PROP_DYNAMIC ::hx::paccDynamic
+#define HX_PROP_ALWAYS ::hx::paccAlways
 
 } // end namespace hx
 
@@ -336,6 +339,7 @@ typedef PropertyAccessMode PropertyAccess;
 #include <cpp/CppInt32__.h>
 // This needs to "see" other declarations ...
 #include <hx/GcTypeInference.h>
+#include <hx/Functions.h>
 #include <hx/FieldRef.h>
 #include "Array.h"
 #include <hx/Anon.h>
@@ -348,9 +352,22 @@ typedef PropertyAccessMode PropertyAccess;
 #endif
 #include <hx/StdLibs.h>
 #include <cpp/Pointer.h>
+#include <cpp/marshal/Boxed.hpp>
+#include <cpp/marshal/ValueType.hpp>
+#include <cpp/marshal/PointerType.hpp>
+#include <cpp/marshal/ValueReference.hpp>
+#include <cpp/marshal/PointerReference.hpp>
+#include <cpp/marshal/View.hpp>
+#include <cpp/marshal/Marshal.hpp>
+#include <cpp/marshal/RootHandle.hpp>
+#include <cpp/encoding/Ascii.hpp>
+#include <cpp/encoding/Utf8.hpp>
+#include <cpp/encoding/Utf16.hpp>
 #include <hx/Native.h>
 #include <hx/Operators.h>
-#include <hx/Functions.h>
+#if (HXCPP_API_LEVEL>=500)
+#include <hx/Invoker.h>
+#endif
 // second time ...
 #include <cpp/Variant.h>
 #include <hx/Debug.h>

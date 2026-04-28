@@ -61,7 +61,6 @@
   <flag value="-DHXCPP_ANDROID_PLATFORM=${HXCPP_ANDROID_PLATFORM}" />
 
   <!-- Options -->
-  <cppflag value="-std=c++17" if="HXCPP_CPP17" />
   <flag value="-flto" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
   <flag value="-fvisibility=hidden"/>
   <flag value="-ffunction-sections"/>
@@ -89,6 +88,15 @@
   <!-- Build time error, not run time -->
   <flag value="-Wl,--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
 
+  <!-- Disable 16KB page alignment workaround when explicitly requested -->
+  <section unless="HXCPP_ANDROID_NO_16K_PAGES">
+    <!-- Enable 16KB page size for NDK r27 and below -->
+    <flag value="-Wl,-z,max-page-size=16384" unless="NDKV28+" />
+
+    <!-- Extra 16KB alignment workaround for NDK r22 and below -->
+    <flag value="-Wl,-z,common-page-size=16384" unless="NDKV23+" />
+  </section>
+
   <flag value="-stdlib=libc++" unless="NDKV20+" />
   <flag value ="-static-libstdc++" />
   <!-- This shows the android link line, which may be so long that it breaks the tool
@@ -97,6 +105,7 @@
   -->
   <prefix value="lib"/>
   <lib name="-llog"/>
+  <ext value=".so"/>
     
 </linker>
     

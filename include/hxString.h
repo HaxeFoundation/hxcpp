@@ -46,6 +46,9 @@ public:
    static String create(const char16_t *inPtr,int inLen=-1);
    static String create(const char *inPtr,int inLen=-1);
 
+   static String create(const ::cpp::marshal::View<char>& buffer);
+   static String create(const ::cpp::marshal::View<char16_t>& buffer);
+
    // Uses non-gc memory and wont ever be collected
    static ::String createPermanent(const char *inUtf8, int inLen);
    const ::String &makePermanent() const;
@@ -145,8 +148,10 @@ public:
 
    ::String toString() { return *this; }
 
+
     ::String __URLEncode() const;
     ::String __URLDecode() const;
+
 
 
     ::String toUpperCase() const;
@@ -167,6 +172,9 @@ public:
    inline const char *out_str(hx::IStringAlloc *inBuffer = 0) const { return utf8_str(inBuffer,false); }
    const wchar_t *wchar_str(hx::IStringAlloc *inBuffer = 0) const;
    const char16_t *wc_str(hx::IStringAlloc *inBuffer = 0, int *outCharLength = 0) const;
+
+   bool wc_str(::cpp::marshal::View<char16_t> buffer, int* outCharLength = nullptr) const;
+   bool utf8_str(::cpp::marshal::View<char> buffer, int* outByteLength = nullptr) const;
 
    const char *__CStr() const { return utf8_str(); };
    const wchar_t *__WCStr() const { return wchar_str(0); }
@@ -323,7 +331,7 @@ public:
 
    inline int cca(int inPos) const
    {
-      if ((unsigned)inPos>=length) return 0;
+      if ( (inPos>=length) || (inPos<0) ) return 0;
       #ifdef HX_SMART_STRINGS
       if (isUTF16Encoded())
          return __w[inPos];
@@ -336,9 +344,21 @@ public:
 
    static char16_t *allocChar16Ptr(int len);
 
+#if (HXCPP_API_LEVEL>=500)
+   static ::hx::Callable<::String(int)> fromCharCode_dyn();
 
+   ::hx::Callable<::String(int)> charAt_dyn();
+   ::hx::Callable<::Dynamic(int)> charCodeAt_dyn();
+   ::hx::Callable<int(::String, ::Dynamic)> indexOf_dyn();
+   ::hx::Callable<int(::String, ::Dynamic)> lastIndexOf_dyn();
+   ::hx::Callable<::Array<::String>(::String)> split_dyn();
+   ::hx::Callable<::String(int, ::Dynamic)> substr_dyn();
+   ::hx::Callable<::String(int, ::Dynamic)> substring_dyn();
+   ::hx::Callable<::String()> toLowerCase_dyn();
+   ::hx::Callable<::String()> toString_dyn();
+   ::hx::Callable<::String()> toUpperCase_dyn();
+#else
    static  Dynamic fromCharCode_dyn();
-
 
    Dynamic charAt_dyn();
    Dynamic charCodeAt_dyn();
@@ -350,6 +370,7 @@ public:
    Dynamic toLowerCase_dyn();
    Dynamic toString_dyn();
    Dynamic toUpperCase_dyn();
+#endif
 
    // This is used by the string-wrapped-as-dynamic class
    hx::Val __Field(const ::String &inString, hx::PropertyAccess inCallProp);

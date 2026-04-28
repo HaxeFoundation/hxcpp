@@ -56,6 +56,13 @@ class RunTests
 
    }
 
+   public static function marshalling()
+   {
+      setDir("marshalling");
+
+      command("haxe", [ "build.hxml" ]);
+      command("bin" + sep + "Main-debug", []);
+   }
 
    public static function debugger()
    {
@@ -105,6 +112,11 @@ class RunTests
 
       command("haxe", ["compile64.hxml"] );
       command("cpp64"+sep+"Test",[]);
+   }
+
+   public static function cxx_standard() {
+      setDir("cxx_standard");
+      command("haxelib", ["run", "hxcpp", "Build.xml"]);
    }
 
 
@@ -192,6 +204,7 @@ class RunTests
       run("std64", std64);
       run("native", native);
       run("debugger", debugger);
+      run("cxx_standard", cxx_standard);
 
       Sys.println("");
 

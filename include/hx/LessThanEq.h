@@ -103,9 +103,9 @@ struct CompareTraits<double>
 {
    enum { type = (int)CompareAsDouble };
 
-   inline static int toInt(double inValue) { return inValue; }
+   inline static int toInt(double inValue) { return (int)inValue; }
    inline static double toDouble(double inValue) { return inValue; }
-   inline static cpp::Int64 toInt64(double inValue) { return inValue; }
+   inline static cpp::Int64 toInt64(double inValue) { return (cpp::Int64)inValue; }
    inline static String toString(double inValue) { return String(); }
    inline static hx::Object *toObject(double inValue) { return 0; }
 
@@ -122,7 +122,7 @@ struct CompareTraits<cpp::Int64>
    enum { type = (int)CompareAsInt64 };
 
    inline static int toInt(cpp::Int64 inValue) { return (int)inValue; }
-   inline static double toDouble(cpp::Int64 inValue) { return inValue; }
+   inline static double toDouble(cpp::Int64 inValue) { return (double)inValue; }
    inline static cpp::Int64 toInt64(cpp::Int64 inValue) { return inValue; }
    inline static String toString(cpp::Int64 inValue) { return String(); }
    inline static hx::Object *toObject(cpp::Int64 inValue) { return 0; }
@@ -137,7 +137,7 @@ struct CompareTraits<cpp::UInt64>
    enum { type = (int)CompareAsInt64 };
 
    inline static int toInt(cpp::UInt64 inValue) { return (int)inValue; }
-   inline static double toDouble(cpp::UInt64 inValue) { return inValue; }
+   inline static double toDouble(cpp::UInt64 inValue) { return (double)inValue; }
    // Return value is unsigned ...
    inline static cpp::UInt64 toInt64(cpp::UInt64 inValue) { return inValue; }
    inline static String toString(cpp::UInt64 inValue) { return String(); }
@@ -246,6 +246,33 @@ struct CompareTraits< T * >
    inline static bool isNull(T *inValue) { return !inValue; }
 };
 
+template <typename T>
+struct CompareTraits< cpp::marshal::ValueReference<T> >
+{
+    enum { type = (int)CompareAsDynamic };
+
+    inline static int toInt(Dynamic inValue) { return inValue; }
+    inline static double toDouble(Dynamic inValue) { return inValue; }
+    inline static cpp::Int64 toInt64(Dynamic inValue) { return inValue; }
+    inline static String toString(Dynamic inValue) { return inValue; }
+    inline static hx::Object* toObject(Dynamic inValue) { return inValue.mPtr; }
+    inline static int getDynamicCompareType(const ::Dynamic&) { return type; }
+    inline static bool isNull(const ::cpp::marshal::ValueReference<T>& ref) { return nullptr == ref.ptr; }
+};
+
+template <typename T>
+struct CompareTraits< cpp::marshal::PointerReference<T> >
+{
+    enum { type = (int)CompareAsDynamic };
+
+    inline static int toInt(Dynamic inValue) { return inValue; }
+    inline static double toDouble(Dynamic inValue) { return inValue; }
+    inline static cpp::Int64 toInt64(Dynamic inValue) { return inValue; }
+    inline static String toString(Dynamic inValue) { return inValue; }
+    inline static hx::Object* toObject(Dynamic inValue) { return inValue.mPtr; }
+    inline static int getDynamicCompareType(const ::Dynamic&) { return type; }
+    inline static bool isNull(const ::cpp::marshal::PointerReference<T>& ref) { return nullptr == ref.ptr || nullptr == *ref.ptr; }
+};
 
 template<typename T1>
 hx::Object *GetExistingObject(const T1 &v1)
@@ -411,7 +438,35 @@ template<typename T1, typename T2>
 bool IsEq(const T1 &v1, const T2 &v2) { return TestLessEq<false,true,T1,T2>(v1,v2); }
 
 template<typename T1, typename T2>
+bool IsEq(const ::cpp::marshal::ValueReference<T1>& v1, const ::cpp::marshal::ValueReference<T2>& v2) { return v1 == v2; }
+
+template<typename T1, typename T2>
+bool IsEq(const ::cpp::marshal::PointerReference<T1>& v1, const ::cpp::marshal::PointerReference<T2>& v2)
+{
+    if (nullptr == v1.ptr && nullptr == v2.ptr)
+    {
+        return true;
+    }
+    if (nullptr == v1.ptr && nullptr != v2.ptr)
+    {
+        return nullptr == *v2.ptr;
+    }
+    if (nullptr == v2.ptr && nullptr != v1.ptr)
+    {
+        return nullptr == *v1.ptr;
+    }
+
+    return *v1.ptr == *v2.ptr;
+}
+
+template<typename T1, typename T2>
 bool IsNotEq(const T1 &v1, const T2 &v2) { return TestLessEq<false,false,T1,T2>(v1,v2); }
+
+template<typename T1, typename T2>
+bool IsNotEq(const ::cpp::marshal::ValueReference<T1>& v1, const ::cpp::marshal::ValueReference<T2>& v2) { return v1 != v2; }
+
+template<typename T1, typename T2>
+bool IsNotEq(const ::cpp::marshal::PointerReference<T1>& v1, const ::cpp::marshal::PointerReference<T2>& v2) { return IsEq(v1, v2) == false; }
 
 template<typename T1, typename T2>
 bool IsLess(const T1 &v1, const T2 &v2) { return TestLessEq<true,false,T1,T2>(v1,v2); }

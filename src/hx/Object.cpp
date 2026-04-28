@@ -152,33 +152,35 @@ hx::Val Object::__SetField(const String &inField,const hx::Val &inValue, hx::Pro
    return null();
 }
 
+#if (HXCPP_API_LEVEL<500)
 Dynamic Object::__run()
 {
-   return __Run(Array_obj<Dynamic>::__new());
+    return __Run(Array_obj<Dynamic>::__new());
 }
 
 Dynamic Object::__run(D a)
 {
-   return __Run( Array_obj<Dynamic>::__new(0,1) << a );
+    return __Run(Array_obj<Dynamic>::__new(0, 1) << a);
 }
 
-Dynamic Object::__run(D a,D b)
+Dynamic Object::__run(D a, D b)
 {
-   return __Run( Array_obj<Dynamic>::__new(0,2) << a << b );
+    return __Run(Array_obj<Dynamic>::__new(0, 2) << a << b);
 }
 
-Dynamic Object::__run(D a,D b,D c)
+Dynamic Object::__run(D a, D b, D c)
 {
-   return __Run( Array_obj<Dynamic>::__new(0,3) << a << b << c);
+    return __Run(Array_obj<Dynamic>::__new(0, 3) << a << b << c);
 }
-Dynamic Object::__run(D a,D b,D c,D d)
+Dynamic Object::__run(D a, D b, D c, D d)
 {
-   return __Run( Array_obj<Dynamic>::__new(0,4) << a << b << c << d);
+    return __Run(Array_obj<Dynamic>::__new(0, 4) << a << b << c << d);
 }
-Dynamic Object::__run(D a,D b,D c,D d,D e)
+Dynamic Object::__run(D a, D b, D c, D d, D e)
 {
-   return __Run( Array_obj<Dynamic>::__new(0,5) << a << b << c << d << e);
+    return __Run(Array_obj<Dynamic>::__new(0, 5) << a << b << c << d << e);
 }
+#endif
 
 void Object::__GetFields(Array<String> &outFields)
 {

@@ -3,7 +3,7 @@
 #include <vector>
 #include <hx/Thread.h>
 #include <hx/OS.h>
-
+#include <mutex>
 
 
 #ifdef HX_WINRT
@@ -43,24 +43,21 @@ public:
         mDumpFile = inDumpFile;
 
         // When a profiler exists, the profiler thread needs to exist
-        gThreadMutex.Lock();
+
+        std::lock_guard<std::mutex> lock(gThreadMutex);
 
         gThreadRefCount += 1;
 
         if (gThreadRefCount == 1) {
             HxCreateDetachedThread(ProfileMainLoop, 0);
         }
-
-        gThreadMutex.Unlock();
     }
 
     ~Profiler()
     {
-        gThreadMutex.Lock();
+        std::lock_guard<std::mutex> lock(gThreadMutex);
 
         gThreadRefCount -= 1;
-
-        gThreadMutex.Unlock();
     }
 
    void sample(hx::StackContext *stack)
@@ -235,11 +232,11 @@ private:
     int mT0;
     std::map<const char *, ProfileEntry> mProfileStats;
 
-    static HxMutex gThreadMutex;
+    static std::mutex gThreadMutex;
     static int gThreadRefCount;
     static int gProfileClock;
 };
-/* static */ HxMutex Profiler::gThreadMutex;
+/* static */ std::mutex Profiler::gThreadMutex;
 /* static */ int Profiler::gThreadRefCount;
 /* static */ int Profiler::gProfileClock;
 

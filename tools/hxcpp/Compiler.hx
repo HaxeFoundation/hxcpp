@@ -27,6 +27,13 @@ private class FlagInfo
    }
 }
 
+enum Language {
+   C;
+   Cxx;
+   ObjC;
+   ObjCxx;
+}
+
 class Compiler
 {
    private var mFlags:Array<FlagInfo>;
@@ -85,10 +92,6 @@ class Compiler
       mAsmExe = inExe;
       mID = inID;
       mExt = ".o";
-      mPCHExt = ".pch";
-      mPCHCreate = "-Yc";
-      mPCHUse = "-Yu";
-      mPCHFilename = "/Fp";
       mCached = false;
       mRcFlags = [];
    }
@@ -131,15 +134,21 @@ class Compiler
 
    function addIdentity(ext:String,ioArgs:Array<String>)
    {
+      var lang = switch ext {
+         case "c": C;
+         case "m": ObjC;
+         case "mm": ObjCxx;
+         case "cpp", "c++", "cc", "cxx": Cxx;
+         default: null;
+      }
       if (mAddGCCIdentity)
       {
-         var identity = switch(ext)
+         var identity = switch (lang)
            {
-              case "c" : "c";
-              case "m" : "objective-c";
-              case "mm" : "objective-c++";
-              case "cpp" : "c++";
-              case "c++" : "c++";
+              case C : "c";
+              case ObjC : "objective-c";
+              case ObjCxx : "objective-c++";
+              case Cxx : "c++";
               default:"";
          }
          if (identity!="")
@@ -148,6 +157,49 @@ class Compiler
             ioArgs.push(identity);
          }
       }
+      return lang;
+   }
+
+   function addStandard(lang: Language, inFile: {
+		var mCStandard:Null<Int>;
+		var mCxxStandard:Null<Int>;
+		var mObjCStandard:Null<Int>;
+		var mObjCxxStandard:Null<Int>;
+   }, args:Array<String>) {
+		switch (lang) {
+			case C:
+				if (inFile.mCStandard != null) {
+					if (BuildTool.isMsvc()) {
+						if (inFile.mCStandard > 17) {
+							args.push('/std:clatest');
+						} else if (inFile.mCStandard >= 11) {
+							args.push('/std:c${inFile.mCStandard}');
+						}
+					} else {
+						args.push('-std=c${inFile.mCStandard}');
+					}
+				}
+			case ObjC:
+				if (inFile.mObjCStandard != null) {
+					args.push('-std=c${inFile.mObjCStandard}');
+				}
+			case ObjCxx:
+				if (inFile.mObjCxxStandard != null) {
+					args.push('-std=c++${inFile.mObjCxxStandard}');
+				}
+			case Cxx:
+				if (inFile.mCxxStandard != null) {
+					if (BuildTool.isMsvc()) {
+						if (inFile.mCxxStandard > 20) {
+							args.push('/std:c++latest');
+						} else if (inFile.mCxxStandard >= 14) {
+							args.push('/std:c++${inFile.mCxxStandard}');
+						}
+					} else {
+						args.push('-std=c++${inFile.mCxxStandard}');
+					}
+				}
+		}
    }
 
    function addOptimTags(tagFilter:Array<String>)
@@ -174,7 +226,7 @@ class Compiler
       return args;
    }
 
-   function getArgs(inFile:File)
+   public function getArgs(inFile:File)
    {
       var nvcc = inFile.isNvcc();
       var asm = inFile.isAsm();
@@ -194,8 +246,10 @@ class Compiler
          Log.error("Unkown extension for " + inFile.mName);
 
 
-      addIdentity(ext,args);
-
+      var lang = addIdentity(ext,args);
+      if (lang != null) {
+         addStandard(lang, inFile, args);
+      }
       var allowPch = false;
 
       if (asm)
@@ -222,13 +276,16 @@ class Compiler
       if (inFile.mGroup.isPrecompiled() && allowPch)
       {
          var pchDir = getPchDir(inFile.mGroup);
-         if (mPCHUse!="")
-         {
-            args.push(mPCHUse + inFile.mGroup.mPrecompiledHeader + ".h");
-            args.push(mPCHFilename + pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
+         switch (mPCH) {
+            case "msvc":
+               args.push(mPCHUse + inFile.mGroup.mPrecompiledHeader + ".h");
+               args.push(mPCHFilename + pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
+            case "gcc":
+               args.unshift("-I"+pchDir);
+            case "clang":
+               args.push("-include-pch");
+               args.push(pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
          }
-         else
-            args.unshift("-I"+pchDir);
       }
 
       return args;
@@ -442,7 +499,7 @@ class Compiler
       return obj_name;
    }
 
-   public function createCompilerVersion(inGroup:FileGroup)
+   public function createCompilerVersion()
    {
       if ( mCompilerVersion==null)
       {
@@ -517,7 +574,7 @@ class Compiler
 
    public function needsPchObj()
    {
-      return mPCH!="gcc";
+      return mPCH == "msvc";
    }
 
 /*
@@ -568,18 +625,19 @@ class Compiler
       if (inGroup.isCached() || inReuseIfPossible)
       {
           // No obj needed for gcc
-          var obj = mPCH=="gcc" ? null : PathManager.combine(dir, file + mExt);
+          var obj = mPCH=="msvc" ? PathManager.combine(dir, file + mExt) : null;
           if (FileSystem.exists(pch_name) && (obj==null || FileSystem.exists(obj)) )
              return obj;
       }
 
       args = args.concat( mPCHFlags );
 
+		addStandard(Cxx, inGroup, args);
 
       //Log.info("", "Make pch dir " + dir );
       PathManager.mkdir(dir);
 
-      if (mPCH!="gcc")
+      if (mPCH == "msvc")
       {
          args.push( mPCHCreate + header + ".h" );
          var symbol = "link" + Md5.encode( PathManager.combine(dir, file + mExt) );
@@ -627,7 +685,7 @@ class Compiler
          //throw "Error creating pch: " + result + " - build cancelled";
       }
 
-      if (mPCH!="gcc")
+      if (mPCH == "msvc")
          return  PathManager.combine(dir, file + mExt);
       return null;
    }
@@ -635,11 +693,27 @@ class Compiler
    public function setPCH(inPCH:String)
    {
       mPCH = inPCH;
-      if (mPCH=="gcc")
-      {
-         mPCHExt = ".h.gch";
-         mPCHUse = "";
-         mPCHFilename = "";
+      createCompilerVersion();
+      static final regex = ~/clang/i;
+      if (inPCH != null && regex.match(mCompilerVersionString)) {
+         mPCH = "clang";
+      }
+      switch (mPCH) {
+         case "gcc":
+            mPCHExt = ".h.gch";
+            mPCHUse = "";
+            mPCHFilename = "";
+         case "clang":
+            mPCHExt = ".h.pch";
+            mPCHUse = "";
+            mPCHFilename = "";
+         case "msvc":
+            mPCHExt = ".pch";
+            mPCHCreate = "-Yc";
+            mPCHUse = "-Yu";
+            mPCHFilename = "/Fp";
+         default:
+            mPCH = null;
       }
    }
 

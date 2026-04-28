@@ -23,6 +23,10 @@ template<typename T> inline void MarkMember(Array<T> &outT,hx::MarkContext *__in
 {
    HX_MARK_OBJECT(outT.mPtr);
 }
+template<typename TReturn, typename... TArgs> inline void MarkMember(Callable<TReturn(TArgs...)>& outT, hx::MarkContext* __inCtx)
+{
+    HX_MARK_OBJECT(outT.mPtr);
+}
 template<> inline void MarkMember<hx::Object *>(hx::Object *&outT,hx::MarkContext *__inCtx)
 {
    HX_MARK_OBJECT(outT);
@@ -113,6 +117,10 @@ template<> inline void VisitMember<hx::Object *>(hx::Object *&outT,hx::VisitCont
 template<typename T> inline void VisitMember(Array<T> &outT,hx::VisitContext *__inCtx)
 {
    HX_VISIT_OBJECT(outT.mPtr);
+}
+template<typename TReturn, typename... TArgs> inline void VisitMember(Callable<TReturn(TArgs...)>& outT, hx::VisitContext* __inCtx)
+{
+    HX_VISIT_OBJECT(outT.mPtr);
 }
 template<> inline void VisitMember(cpp::Variant &outT,hx::VisitContext *__inCtx)
 {

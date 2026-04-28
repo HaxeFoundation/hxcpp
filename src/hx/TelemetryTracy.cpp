@@ -1,8 +1,8 @@
 #include <hxcpp.h>
 #include <hx/TelemetryTracy.h>
-#include <hx/Thread.h>
 
 #include <vector>
+#include <mutex>
 
 namespace
 {
@@ -15,7 +15,7 @@ namespace
 
 	std::vector<hx::Telemetry*> created;
 	hx::QuickVec<void*> largeAllocs;
-	HxMutex largeAllocsLock;
+	std::mutex largeAllocsLock;
 
 	bool isLargeObject(void* ptr)
 	{
@@ -69,7 +69,7 @@ void __hxt_gc_alloc(void* obj, int inSize)
 	#ifdef HXCPP_TRACY_MEMORY
 		if (isLargeObject(obj))
 		{
-			AutoLock lock(largeAllocsLock);
+			std::lock_guard<std::mutex> lock(largeAllocsLock);
 
 			largeAllocs.push(obj);
 
@@ -86,7 +86,7 @@ void __hxt_gc_alloc(void* obj, int inSize)
 
 void __hxt_gc_free_large(void* obj)
 {
-	AutoLock lock(largeAllocsLock);
+	std::lock_guard<std::mutex> lock(largeAllocsLock);
 
 	for (auto i = 0; i < largeAllocs.size(); i++)
 	{

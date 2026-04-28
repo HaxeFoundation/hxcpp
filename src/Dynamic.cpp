@@ -123,7 +123,7 @@ public:
    String __ToString() const { return String(mValue); }
    double __ToDouble() const { return mValue; }
    int __ToInt() const { return (int)mValue; }
-   cpp::Int64 __ToInt64() const { return mValue; }
+   cpp::Int64 __ToInt64() const { return (cpp::Int64)mValue; }
 
    int __Compare(const hx::Object *inRHS) const
    {
@@ -153,7 +153,7 @@ public:
    virtual int __GetType() const { return vtInt64; }
    String toString() { return String(mValue); }
    String __ToString() const { return String(mValue); }
-   double __ToDouble() const { return mValue; }
+   double __ToDouble() const { return (double)mValue; }
    int __ToInt() const { return (int)mValue; }
    cpp::Int64 __ToInt64() const { return mValue; }
    void __GetFields(Array<String> &outFields)
@@ -397,7 +397,15 @@ Dynamic::Dynamic(signed char inVal)
    mPtr = fromInt(inVal);
 }
 
+Dynamic::Dynamic(char16_t inVal)
+{
+    mPtr = fromInt(inVal);
+}
 
+Dynamic::Dynamic(char32_t inVal)
+{
+    mPtr = fromInt(inVal);
+}
 
 Dynamic::Dynamic(double inVal)
 {
@@ -406,7 +414,7 @@ Dynamic::Dynamic(double inVal)
       int idx = inVal+1;
       mPtr = sConstDynamicInts[idx].mPtr;
       if (!mPtr)
-         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
+         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData((int)inVal);
    }
    else
       mPtr = (hx::Object *)new DoubleData(inVal);
@@ -415,12 +423,13 @@ Dynamic::Dynamic(double inVal)
 
 Dynamic::Dynamic(cpp::Int64 inVal)
 {
-   if ( (int)inVal==inVal && inVal>=-1 && inVal<256 )
+   int ival = (int)inVal;
+   if ( ival==inVal && ival>=-1 && ival<256 )
    {
-      int idx = inVal+1;
+      int idx = ival+1;
       mPtr = sConstDynamicInts[idx].mPtr;
       if (!mPtr)
-         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
+         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(ival);
    }
    else
       mPtr = (hx::Object *)new Int64Data(inVal);
@@ -493,6 +502,8 @@ DYN_OP_ADD(short)
 DYN_OP_ADD(unsigned short)
 DYN_OP_ADD(signed char)
 DYN_OP_ADD(unsigned char)
+DYN_OP_ADD(char16_t)
+DYN_OP_ADD(char32_t)
 DYN_OP_ADD(cpp::Int64)
 DYN_OP_ADD(cpp::UInt64)
 

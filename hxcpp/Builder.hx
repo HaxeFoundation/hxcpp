@@ -115,8 +115,12 @@ class Builder
                target = target.substr(7);
             }
             var staticFlags = isStatic ? ["-Dstatic_link"] : [];
+#if (hxcpp_api_level>=500)
+            staticFlags.push("-DHXCPP_CPP11");
+#else
             if (target=="ios" || target=="tvos")
                staticFlags = ["-DHXCPP_CPP11"];
+#end
 
             switch(target)
             {

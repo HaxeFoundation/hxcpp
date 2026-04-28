@@ -1,5 +1,7 @@
 #ifndef HX_ARRAY_H
 #define HX_ARRAY_H
+#include <limits>
+#include <vector>
 #include <cpp/FastIterator.h>
 
 // --- hx::ReturnNull ------------------------------------------------------
@@ -39,6 +41,8 @@ template<> struct ReturnNull<double> { typedef Dynamic type; };
 template<> struct ReturnNull<float> { typedef Dynamic type; };
 template<> struct ReturnNull<bool> { typedef Dynamic type; };
 template<> struct ReturnNull<char> { typedef Dynamic type; };
+template<> struct ReturnNull<char16_t> { typedef Dynamic type; };
+template<> struct ReturnNull<char32_t> { typedef Dynamic type; };
 template<> struct ReturnNull<signed char> { typedef Dynamic type; };
 template<> struct ReturnNull<unsigned char> { typedef Dynamic type; };
 template<> struct ReturnNull<short> { typedef Dynamic type; };
@@ -54,6 +58,78 @@ template<> struct ArrayTraits<double> { enum { StoreType = arrayFloat}; };
 template<> struct ArrayTraits<Dynamic> { enum { StoreType = arrayObject }; };
 template<> struct ArrayTraits<String> { enum { StoreType = arrayString }; };
 template<> struct ArrayTraits< ::cpp::Int64> { enum { StoreType = arrayInt64 }; };
+
+template<class ELEM>
+class SafeSorter
+{
+    typedef
+#if (HXCPP_API_LEVEL>=500)
+        ::hx::Callable<int(Dynamic, Dynamic)>
+#else
+        Dynamic
+#endif
+        SorterFunc;
+
+    struct ArraySorter
+    {
+        ELEM* mArray;
+        SorterFunc mSorter;
+
+        ArraySorter(ELEM* inArray, SorterFunc inSorter) : mArray(inArray), mSorter(inSorter) {};
+
+        bool operator()(int inA, int inB)
+        {
+            return mSorter(mArray[inA], mArray[inB]) < 0;
+        }
+    };
+
+    template<class STORE>
+    static void SortImpl(ELEM* inArray, const int inLength, SorterFunc inSorter)
+    {
+        auto index = std::vector<STORE>(inLength);
+        for (auto i = 0; i < inLength; i++)
+        {
+            index[i] = static_cast<STORE>(i);
+        }
+
+        std::stable_sort(index.begin(), index.end(), ArraySorter(inArray, inSorter));
+
+        // Put the results back ...
+        for (int i = 0; i < inLength; i++)
+        {
+            int from = index[i];
+            while (from < i)
+                from = index[from];
+            if (from != i)
+            {
+                std::swap(inArray[i], inArray[from]);
+                index[i] = from;
+            }
+        }
+    }
+
+public:
+    static void Sort(ELEM* base, const int length, SorterFunc sorter)
+    {
+        if (length < 2)
+        {
+            return;
+        }
+
+        if (length <= std::numeric_limits<uint8_t>::max())
+        {
+            SortImpl<uint8_t>(base, length, sorter);
+        }
+        else if (length <= std::numeric_limits<uint16_t>::max())
+        {
+            SortImpl<uint16_t>(base, length, sorter);
+        }
+        else
+        {
+            SortImpl<uint32_t>(base, length, sorter);
+        }
+    }
+};
 
 }
 
@@ -147,6 +223,30 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayCommon : public hx::Object
 class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayBase : public ArrayCommon
 {
 public:
+    typedef
+#if (HXCPP_API_LEVEL>=500)
+        ::hx::Callable<int(Dynamic, Dynamic)>
+#else
+        Dynamic
+#endif
+        DynamicSorterFunc;
+
+    typedef
+#if (HXCPP_API_LEVEL>=500)
+        ::hx::Callable<bool(Dynamic)>
+#else
+        Dynamic
+#endif
+        DynamicFilterFunc;
+
+    typedef
+#if (HXCPP_API_LEVEL>=500)
+        ::hx::Callable<Dynamic(Dynamic)>
+#else
+        Dynamic
+#endif
+        DynamicMappingFunc;
+
    ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic);
 
    // Defined later so we can use "Array"
@@ -225,7 +325,7 @@ public:
    Dynamic __unsafe_get(const Dynamic &i);
    Dynamic __unsafe_set(const Dynamic &i, const Dynamic &val);
 
-   void safeSort(Dynamic sorter, bool isString);
+   void safeSort(DynamicSorterFunc sorter, bool isString);
 
    inline void __unsafeStringReference(String inString)
    {
@@ -240,7 +340,12 @@ public:
 
 
    // Dynamic interface
-   hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp);
+#if (HXCPP_API_LEVEL>=500)
+   hx::Val __pointerToBase();
+   hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp) override = 0;
+#else
+   hx::Val __Field(const String& inString, hx::PropertyAccess inCallProp);
+#endif
 
    inline void ____SetSize(int len)  { resize(len); } 
    inline void ____SetSizeExact(int len)  { __SetSizeExact(len); } 
@@ -264,20 +369,21 @@ public:
    virtual Dynamic __shift() = 0;
    virtual hx::ArrayBase *__slice(const Dynamic &a0,const Dynamic &a1) = 0;
    virtual hx::ArrayBase *__splice(const Dynamic &a0,const Dynamic &a1) = 0;
-   virtual void __sort(const Dynamic &a0) = 0;
+   virtual void __sort(const DynamicSorterFunc& a0) = 0;
    virtual ::String __toString() = 0;
    virtual void  __unshift(const Dynamic &a0) = 0;
-   virtual cpp::VirtualArray_obj *__map(const Dynamic &func) = 0;
-   virtual hx::ArrayBase *__filter(const Dynamic &func) = 0;
+   virtual cpp::VirtualArray_obj *__map(const DynamicMappingFunc &func) = 0;
+   virtual hx::ArrayBase *__filter(const DynamicFilterFunc &func) = 0;
    virtual void __blit(int inDestElement,const cpp::VirtualArray &inSourceArray,int inSourceElement,int inElementCount) = 0;
    virtual int __memcmp(const cpp::VirtualArray &a0) = 0;
    inline void __zero(const Dynamic &a0,const Dynamic &a1)  { zero(a0,a1); }
-   virtual void __qsort(Dynamic inCompare) = 0;
+   virtual void __qsort(DynamicSorterFunc inCompare) = 0;
    virtual void __resize(int inLen) = 0;
 
    virtual void set(int inIdx, const cpp::Variant &inValue) = 0;
    virtual void setUnsafe(int inIdx, const cpp::Variant &inValue) = 0;
 
+#if (HXCPP_API_LEVEL<500)
    Dynamic concat_dyn();
    Dynamic copy_dyn();
    Dynamic insert_dyn();
@@ -308,6 +414,7 @@ public:
    Dynamic zero_dyn();
    Dynamic memcmp_dyn();
    Dynamic resize_dyn();
+#endif
 
    void Realloc(int inLen) const;
 
@@ -431,6 +538,8 @@ template<> struct ArrayClassId<unsigned char> { enum { id=hx::clsIdArrayByte }; 
 template<> struct ArrayClassId<signed char> { enum { id=hx::clsIdArrayByte }; };
 template<> struct ArrayClassId<unsigned short> { enum { id=hx::clsIdArrayShort }; };
 template<> struct ArrayClassId<signed short> { enum { id=hx::clsIdArrayShort }; };
+template<> struct ArrayClassId<char16_t> { enum { id = hx::clsIdArrayShort }; };
+template<> struct ArrayClassId<char32_t> { enum { id = hx::clsIdArrayInt }; };
 template<> struct ArrayClassId<unsigned int> { enum { id=hx::clsIdArrayInt }; };
 template<> struct ArrayClassId<signed int> { enum { id=hx::clsIdArrayInt }; };
 template<> struct ArrayClassId<float> { enum { id=hx::clsIdArrayFloat32 }; };
@@ -460,6 +569,29 @@ class Array_obj : public hx::ArrayBase
    typedef hx::ObjectPtr< Array_obj<ELEM_> > ObjPtr;
    typedef typename hx::ReturnNull<ELEM_>::type NullType;
 
+   typedef
+#if (HXCPP_API_LEVEL>=500)
+       ::hx::Callable<int(Elem, Elem)>
+#else
+       Dynamic
+#endif
+       SorterFunc;
+
+   typedef
+#if (HXCPP_API_LEVEL>=500)
+       ::hx::Callable<bool(Elem)>
+#else
+       Dynamic
+#endif
+       FilterFunc;
+
+#if (HXCPP_API_LEVEL>=500)
+   template<class TO>
+   using MappingFunc = ::hx::Callable<TO(Elem)>;
+#else
+   typedef Dynamic MappingFunc;
+#endif
+
 public:
    enum { _hx_ClassId = ArrayClassId<ELEM_>::id };
 
@@ -472,6 +604,42 @@ public:
    static Array<ELEM_> __new(int inSize=0,int inReserve=0);
    static Array<ELEM_> __newConstWrapper(ELEM_ *inData,int inSize);
    static Array<ELEM_> fromData(const ELEM_ *inData,int inCount);
+
+#if (HXCPP_API_LEVEL>=500)
+   ::hx::Callable<Array<ELEM_>(Array<ELEM_>)> concat_dyn();
+   ::hx::Callable<Array<ELEM_>()> copy_dyn();
+   ::hx::Callable<void(int, ELEM_)> insert_dyn();
+   ::hx::Callable<::Dynamic()> iterator_dyn();
+   ::hx::Callable<::Dynamic()> keyValueIterator_dyn();
+   ::hx::Callable<::String(::String)> join_dyn();
+   ::hx::Callable<::Dynamic()> pop_dyn();
+   ::hx::Callable<int(ELEM_)> push_dyn();
+   ::hx::Callable<bool(ELEM_)> contains_dyn();
+   ::hx::Callable<bool(ELEM_)> remove_dyn();
+   ::hx::Callable<bool(int)> removeAt_dyn();
+   ::hx::Callable<int(ELEM_, ::Dynamic)> indexOf_dyn();
+   ::hx::Callable<int(ELEM_, ::Dynamic)> lastIndexOf_dyn();
+   ::hx::Callable<void()> reverse_dyn();
+   ::hx::Callable<::Dynamic()> shift_dyn();
+   ::hx::Callable<Array<ELEM_>(int, ::Dynamic)> slice_dyn();
+   ::hx::Callable<Array<ELEM_>(int, int)> splice_dyn();
+   ::hx::Callable<void(SorterFunc)> sort_dyn();
+   ::hx::Callable<::String()> toString_dyn();
+   ::hx::Callable<void(ELEM_)> unshift_dyn();
+   template<class TO>
+   ::hx::Callable<Array<TO>(MappingFunc<TO>)> map_dyn();
+   ::hx::Callable<Array<ELEM_>(FilterFunc)> filter_dyn();
+   ::hx::Callable<void(int)> __SetSize_dyn();
+   ::hx::Callable<void(int)> __SetSizeExact_dyn();
+   ::hx::Callable<ELEM_& (int)> __unsafe_get_dyn();
+   ::hx::Callable<ELEM_& (int, ELEM_)> __unsafe_set_dyn();
+   ::hx::Callable<void(int, Array<ELEM_>, int, int)> blit_dyn();
+   ::hx::Callable<void(::Dynamic, ::Dynamic)> zero_dyn();
+   ::hx::Callable<void(Array<ELEM_>)> memcmp_dyn();
+   ::hx::Callable<void(int)> resize_dyn();
+
+   hx::Val __Field(const String& inString, hx::PropertyAccess inCallProp) override;
+#endif
 
    bool _hx_isInstanceOf(int inClassId)
    {
@@ -722,9 +890,13 @@ public:
    {
       hx::ArrayBase::Splice(0,inPos,len);
    }
-
-   cpp::VirtualArray map(Dynamic inFunc);
-   Array<ELEM_> filter(Dynamic inFunc);
+   #if (HXCPP_API_LEVEL>=500)
+   template<class TO>
+   Array<TO> map(MappingFunc<TO> inFunc);
+   #else
+   cpp::VirtualArray map(MappingFunc inFunc);
+   #endif
+   Array<ELEM_> filter(FilterFunc inFunc);
 
    void insert(int inPos, ELEM_ inValue)
    {
@@ -776,23 +948,27 @@ public:
 
    struct Sorter
    {
-      Sorter(Dynamic inFunc) : mFunc(inFunc) { }
+      Sorter(SorterFunc inFunc) : mFunc(inFunc) { }
 
       bool operator()(const ELEM_ &inA, const ELEM_ &inB)
       {
+#if (HXCPP_API_LEVEL>=500)
+          return mFunc(inA, inB) < 0;
+#else
          return mFunc( Dynamic(inA), Dynamic(inB))->__ToInt() < 0;
+#endif
       }
 
-      Dynamic mFunc;
+      SorterFunc mFunc;
    };
 
-   inline void qsort(Dynamic inSorter)
+   inline void qsort(SorterFunc inSorter)
    {
       ELEM_ *e = (ELEM_ *)mBase;
       std::sort(e, e+length, Sorter(inSorter) );
    }
 
-   void sort(Dynamic inSorter)
+   void sort(SorterFunc inSorter)
    {
       if ( (int)hx::ArrayTraits<ELEM_>::StoreType==(int)hx::arrayObject ||
           (int)hx::ArrayTraits<ELEM_>::StoreType==(int)hx::arrayString)
@@ -847,19 +1023,23 @@ public:
    virtual Dynamic __shift() { return shift(); }
    virtual hx::ArrayBase *__slice(const Dynamic &a0,const Dynamic &a1) { return slice(a0,a1).mPtr; }
    virtual hx::ArrayBase *__splice(const Dynamic &a0,const Dynamic &a1) { return splice(a0,a1).mPtr; }
-   virtual void __sort(const Dynamic &a0) { sort(a0); }
+   virtual void __sort(const DynamicSorterFunc& a0) override { sort(a0); }
    virtual ::String __toString() { return toString(); }
    virtual void  __unshift(const Dynamic &a0) { unshift(a0); }
-   virtual cpp::VirtualArray_obj *__map(const Dynamic &func) { return map(func).mPtr; }
+#if (HXCPP_API_LEVEL>=500)
+   virtual cpp::VirtualArray_obj* __map(const DynamicMappingFunc& func) { return cpp::VirtualArray(map<Dynamic>(func)).mPtr; }
+#else
+   virtual cpp::VirtualArray_obj* __map(const DynamicMappingFunc& func) { return map(func).mPtr; }
+#endif
    virtual void __resize(int inLen) { resize(inLen); }
 
-   virtual hx::ArrayBase *__filter(const Dynamic &func) { return filter(func).mPtr; }
+   virtual hx::ArrayBase *__filter(const DynamicFilterFunc &func) override { return filter(func).mPtr; }
    virtual void __blit(int inDestElement,const cpp::VirtualArray &inSourceArray,int inSourceElement,int inElementCount)
    {
       blit(inDestElement,inSourceArray,inSourceElement,inElementCount);
    }
    virtual int __memcmp(const cpp::VirtualArray &a0) { return memcmp(a0); }
-   virtual void __qsort(Dynamic inCompare) { this->qsort(inCompare); };
+   virtual void __qsort(DynamicSorterFunc inCompare) override { this->qsort(inCompare); };
 
    virtual void set(int inIndex, const cpp::Variant &inValue) {
       ELEM_ &elem = Item(inIndex);
@@ -1125,7 +1305,7 @@ Array<ELEM_> Array_obj<ELEM_>::splice(int inPos, int len)
 
 
 template<typename ELEM_>
-Array<ELEM_> Array_obj<ELEM_>::filter(Dynamic inFunc)
+Array<ELEM_> Array_obj<ELEM_>::filter(FilterFunc inFunc)
 {
    Array_obj *result = new Array_obj(0,0);
    for(int i=0;i<length;i++)
@@ -1174,13 +1354,264 @@ inline typename ARRAY::Elem _hx_array_unsafe_get(ARRAY inArray, int inIndex)
 #include "cpp/VirtualArray.h"
 #endif
 
+#if (HXCPP_API_LEVEL>=500)
 template<typename ELEM_>
-cpp::VirtualArray Array_obj<ELEM_>::map(Dynamic inFunc)
+template<class TO>
+Array<TO> Array_obj<ELEM_>::map(MappingFunc<TO> inFunc)
 {
-   cpp::VirtualArray result = cpp::VirtualArray_obj::__new(length,0);
+    auto result = Array_obj<TO>::__new(length, 0);
+    for (int i = 0; i < length; i++)
+        result->__unsafe_set(i, inFunc(__unsafe_get(i)));
+    return result;
+}
+#else
+template<typename ELEM_>
+cpp::VirtualArray Array_obj<ELEM_>::map(MappingFunc inFunc)
+{
+   cpp::VirtualArray result = cpp::VirtualArray_obj::__new(length, 0);
    for(int i=0;i<length;i++)
       result->__unsafe_set(i,inFunc(__unsafe_get(i)));
    return result;
 }
+
+#endif
+
+#ifdef HXCPP_VISIT_ALLOCS
+#define ARRAY_VISIT_FUNC \
+    void __Visit(::hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); }
+#else
+#define ARRAY_VISIT_FUNC
+#endif
+
+
+#if (HXCPP_API_LEVEL>=500)
+
+// For some reason this forward declared template type is needed for clang,
+// MSVC and GCC have no problem finding it when it used in the closures below.
+// Don't know who's "right" or "wrong".
+namespace hx
+{
+    template<typename T1, typename T2>
+    bool IsPointerEq(const T1& v1, const T2& v2);
+}
+
+#define HX_ARRAY_ARG_LIST0
+#define HX_ARRAY_ARG_LIST1(arg0) arg0
+#define HX_ARRAY_ARG_LIST2(arg0, arg1) arg0, arg1
+#define HX_ARRAY_ARG_LIST3(arg0, arg1, arg2) arg0, arg1, arg2
+#define HX_ARRAY_ARG_LIST4(arg0, arg1, arg2, arg3) arg0, arg1, arg2, arg3
+
+#define HX_ARRAY_FUNC_LIST0
+#define HX_ARRAY_FUNC_LIST1(arg0) arg0 inArg0
+#define HX_ARRAY_FUNC_LIST2(arg0, arg1) arg0 inArg0, arg1 inArg1
+#define HX_ARRAY_FUNC_LIST3(arg0, arg1, arg2) arg0 inArg0, arg1 inArg1, arg2 inArg2
+#define HX_ARRAY_FUNC_LIST4(arg0, arg1, arg2, arg3) arg0 inArg0, arg1 inArg1, arg2 inArg2, arg3 inArg3
+
+#define HX_ARRAY_FUNC(ret, value, name, args_list, func_list, args_call) \
+    template<class ELEM_> \
+    ::hx::Callable<value(args_list)> Array_obj<ELEM_>::name##_dyn() \
+    { \
+        struct _hx_array_##name final : public ::hx::AutoCallable_obj<value(args_list)> \
+        { \
+            ::Array<ELEM_> mThis; \
+            _hx_array_##name(::Array<ELEM_> inThis) : mThis(inThis) \
+            { \
+                HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
+            } \
+            value HX_LOCAL_RUN(func_list) override \
+            { \
+                ret mThis->name(args_call); \
+            } \
+            void *__GetHandle() const override { return mThis.GetPtr(); } \
+            void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+            ARRAY_VISIT_FUNC \
+            int __Compare(const ::hx::Object* inRhs) const override \
+            { \
+                auto casted = dynamic_cast<const _hx_array_##name *>(inRhs); \
+                if (!casted) return 1; \
+                if (!::hx::IsPointerEq(mThis, casted->mThis)) return -1; \
+                return 0; \
+            } \
+        }; \
+        return new _hx_array_##name(this); \
+    }
+
+HX_ARRAY_FUNC(return, Array<ELEM_>, concat, HX_ARRAY_ARG_LIST1(Array<ELEM_>), HX_ARRAY_FUNC_LIST1(Array<ELEM_>), HX_ARG_LIST1);
+HX_ARRAY_FUNC(return, Array<ELEM_>, copy, HX_ARRAY_ARG_LIST0, HX_ARRAY_FUNC_LIST0, HX_ARG_LIST0);
+HX_ARRAY_FUNC(, void, insert, HX_ARRAY_ARG_LIST2(int, ELEM_), HX_ARRAY_FUNC_LIST2(int, ELEM_), HX_ARG_LIST2);
+HX_ARRAY_FUNC(return, ::Dynamic, iterator, HX_ARRAY_ARG_LIST0, HX_ARRAY_FUNC_LIST0, HX_ARG_LIST0);
+HX_ARRAY_FUNC(return, ::Dynamic, keyValueIterator, HX_ARRAY_ARG_LIST0, HX_ARRAY_FUNC_LIST0, HX_ARG_LIST0);
+HX_ARRAY_FUNC(return, ::String, join, HX_ARRAY_ARG_LIST1(::String), HX_ARRAY_FUNC_LIST1(::String), HX_ARG_LIST1);
+HX_ARRAY_FUNC(return, ::Dynamic, pop, HX_ARRAY_ARG_LIST0, HX_ARRAY_FUNC_LIST0, HX_ARG_LIST0);
+HX_ARRAY_FUNC(return, int, push, HX_ARRAY_ARG_LIST1(ELEM_), HX_ARRAY_FUNC_LIST1(ELEM_), HX_ARG_LIST1);
+HX_ARRAY_FUNC(return, bool, contains, HX_ARRAY_ARG_LIST1(ELEM_), HX_ARRAY_FUNC_LIST1(ELEM_), HX_ARG_LIST1);
+HX_ARRAY_FUNC(return, bool, remove, HX_ARRAY_ARG_LIST1(ELEM_), HX_ARRAY_FUNC_LIST1(ELEM_), HX_ARG_LIST1);
+HX_ARRAY_FUNC(return, bool, removeAt, HX_ARRAY_ARG_LIST1(int), HX_ARRAY_FUNC_LIST1(int), HX_ARG_LIST1);
+HX_ARRAY_FUNC(return, int, indexOf, HX_ARRAY_ARG_LIST2(ELEM_, ::Dynamic), HX_ARRAY_FUNC_LIST2(ELEM_, ::Dynamic), HX_ARG_LIST2);
+HX_ARRAY_FUNC(return, int, lastIndexOf, HX_ARRAY_ARG_LIST2(ELEM_, ::Dynamic), HX_ARRAY_FUNC_LIST2(ELEM_, ::Dynamic), HX_ARG_LIST2);
+HX_ARRAY_FUNC(, void, reverse, HX_ARRAY_ARG_LIST0, HX_ARRAY_FUNC_LIST0, HX_ARG_LIST0);
+HX_ARRAY_FUNC(return, ::Dynamic, shift, HX_ARRAY_ARG_LIST0, HX_ARRAY_FUNC_LIST0, HX_ARG_LIST0);
+HX_ARRAY_FUNC(return, Array<ELEM_>, splice, HX_ARRAY_ARG_LIST2(int, int), HX_ARRAY_FUNC_LIST2(int, int), HX_ARG_LIST2);
+HX_ARRAY_FUNC(return, Array<ELEM_>, slice, HX_ARRAY_ARG_LIST2(int, ::Dynamic), HX_ARRAY_FUNC_LIST2(int, ::Dynamic), HX_ARG_LIST2);
+HX_ARRAY_FUNC(, void, sort, HX_ARRAY_ARG_LIST1(hx::Callable<int(ELEM_, ELEM_)>), HX_ARRAY_FUNC_LIST1(hx::Callable<int(ELEM_, ELEM_)>), HX_ARG_LIST1);
+HX_ARRAY_FUNC(return, ::String, toString, HX_ARRAY_ARG_LIST0, HX_ARRAY_FUNC_LIST0, HX_ARG_LIST0);
+HX_ARRAY_FUNC(, void, unshift, HX_ARRAY_ARG_LIST1(ELEM_), HX_ARRAY_FUNC_LIST1(ELEM_), HX_ARG_LIST1);
+HX_ARRAY_FUNC(return, Array<ELEM_>, filter, HX_ARRAY_ARG_LIST1(hx::Callable<bool(ELEM_)>), HX_ARRAY_FUNC_LIST1(hx::Callable<bool(ELEM_)>), HX_ARG_LIST1);
+template<class ELEM_>
+template<class TO>
+::hx::Callable<Array<TO>(::hx::Callable<TO(ELEM_)>)> Array_obj<ELEM_>::map_dyn()
+{
+    struct _hx_array_map final : public ::hx::AutoCallable_obj<Array<TO>(::hx::Callable<TO(ELEM_)>)>
+    {
+        Array<ELEM_> mThis;
+        _hx_array_map(Array<ELEM_> inThis) : mThis(inThis)
+        {
+            HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+        }
+        Array<TO> _hx_run(::hx::Callable<TO(ELEM_)> inArg0) override
+        {
+            return mThis->map(inArg0);
+        }
+        void __Mark(hx::MarkContext* __inCtx)
+        {
+            hx::MarkMember(mThis, __inCtx);
+        }
+        ARRAY_VISIT_FUNC
+        int __Compare(const ::hx::Object* inRhs) const override
+        {
+            auto casted = dynamic_cast<const _hx_array_map*>(inRhs);
+            if (!casted) return 1;
+            if (mThis != casted->mThis) return -1;
+            return 0;
+        }
+        void* __GetHandle() const override
+        {
+            return mThis.GetPtr();
+        }
+    };
+
+    return new _hx_array_map(this);
+}
+HX_ARRAY_FUNC(, void, __SetSize, HX_ARRAY_ARG_LIST1(int), HX_ARRAY_FUNC_LIST1(int), HX_ARG_LIST1);
+HX_ARRAY_FUNC(, void, __SetSizeExact, HX_ARRAY_ARG_LIST1(int), HX_ARRAY_FUNC_LIST1(int), HX_ARG_LIST1);
+HX_ARRAY_FUNC(return, ELEM_&, __unsafe_get, HX_ARRAY_ARG_LIST1(int), HX_ARRAY_FUNC_LIST1(int), HX_ARG_LIST1);
+HX_ARRAY_FUNC(return, ELEM_&, __unsafe_set, HX_ARRAY_ARG_LIST2(int, ELEM_), HX_ARRAY_FUNC_LIST2(int, ELEM_), HX_ARG_LIST2);
+HX_ARRAY_FUNC(, void, blit, HX_ARRAY_ARG_LIST4(int, Array<ELEM_>, int, int), HX_ARRAY_FUNC_LIST4(int, Array<ELEM_>, int, int), HX_ARG_LIST4);
+HX_ARRAY_FUNC(, void, zero, HX_ARRAY_ARG_LIST2(::Dynamic, ::Dynamic), HX_ARRAY_FUNC_LIST2(::Dynamic, ::Dynamic), HX_ARG_LIST2);
+HX_ARRAY_FUNC(, void, memcmp, HX_ARRAY_ARG_LIST1(Array<ELEM_>), HX_ARRAY_FUNC_LIST1(Array<ELEM_>), HX_ARG_LIST1);
+HX_ARRAY_FUNC(, void, resize, HX_ARRAY_ARG_LIST1(int), HX_ARRAY_FUNC_LIST1(int), HX_ARG_LIST1);
+
+template<class ELEM_>
+hx::Val Array_obj<ELEM_>::__Field(const String& inString, hx::PropertyAccess inCallProp)
+{
+#define ARRAY_RUN_FUNC(ret,func,dynamic_arg_list,arg_list) \
+    ::Dynamic __run(dynamic_arg_list) \
+    { \
+        ret mThis->__##func(arg_list); return ::Dynamic(); \
+    }
+
+#define DEFINE_ARRAY_FUNC(ret,func,array_list,run_func,ARG_C) \
+    struct Reflective_##func : public ::hx::Object \
+    { \
+       HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdClosure }; \
+       bool __IsFunction() const { return true; } \
+       ::Array_obj<ELEM_> *mThis; \
+       Reflective_##func(::Array_obj<ELEM_> *inThis) : mThis(inThis) { } \
+       ::String toString() const{ return HX_CSTRING(#func) ; } \
+       ::String __ToString() const{ return HX_CSTRING(#func) ; } \
+       int __GetType() const { return vtFunction; } \
+       void *__GetHandle() const { return mThis; } \
+       int __ArgCount() const { return ARG_C; } \
+       void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+       ARRAY_VISIT_FUNC \
+       ::Dynamic __Run(const ::Array<::Dynamic> &inArgs) \
+       { \
+          ret mThis->__##func(array_list); return ::Dynamic(); \
+       } \
+       run_func \
+       int __Compare(const ::hx::Object *inRHS) const \
+       { \
+          if (!dynamic_cast<const Reflective_##func *>(inRHS)) return -1; \
+          return (mThis==inRHS->__GetHandle() ? 0 : -1); \
+       } \
+    };
+
+
+#define DEFINE_ARRAY_FUNC0(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST0,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0),0)
+#define DEFINE_ARRAY_FUNC1(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST1,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST1,HX_ARG_LIST1),1)
+#define DEFINE_ARRAY_FUNC2(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST2,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST2,HX_ARG_LIST2),2)
+#define DEFINE_ARRAY_FUNC3(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST3,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST3,HX_ARG_LIST3),3)
+#define DEFINE_ARRAY_FUNC4(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST4,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST4,HX_ARG_LIST4),4)
+
+    DEFINE_ARRAY_FUNC1(, __SetSize);
+    DEFINE_ARRAY_FUNC1(, __SetSizeExact);
+    DEFINE_ARRAY_FUNC2(, insert);
+    DEFINE_ARRAY_FUNC0(, reverse);
+    DEFINE_ARRAY_FUNC1(, sort);
+    DEFINE_ARRAY_FUNC1(, unshift);
+    DEFINE_ARRAY_FUNC4(, blit);
+    DEFINE_ARRAY_FUNC2(, zero);
+    DEFINE_ARRAY_FUNC1(, resize);
+    DEFINE_ARRAY_FUNC1(return, concat);
+    DEFINE_ARRAY_FUNC0(return, iterator);
+    DEFINE_ARRAY_FUNC0(return, keyValueIterator);
+    DEFINE_ARRAY_FUNC1(return, join);
+    DEFINE_ARRAY_FUNC0(return, pop);
+    DEFINE_ARRAY_FUNC0(return, copy);
+    DEFINE_ARRAY_FUNC1(return, push);
+    DEFINE_ARRAY_FUNC1(return, contains);
+    DEFINE_ARRAY_FUNC1(return, remove);
+    DEFINE_ARRAY_FUNC1(return, removeAt);
+    DEFINE_ARRAY_FUNC2(return, indexOf);
+    DEFINE_ARRAY_FUNC2(return, lastIndexOf);
+    DEFINE_ARRAY_FUNC0(return, shift);
+    DEFINE_ARRAY_FUNC2(return, slice);
+    DEFINE_ARRAY_FUNC2(return, splice);
+    DEFINE_ARRAY_FUNC0(return, toString);
+    DEFINE_ARRAY_FUNC1(return, map);
+    DEFINE_ARRAY_FUNC1(return, filter);
+    DEFINE_ARRAY_FUNC1(return, __unsafe_get);
+    DEFINE_ARRAY_FUNC2(return, __unsafe_set);
+    DEFINE_ARRAY_FUNC1(return, memcmp);
+
+    if (inString == HX_CSTRING("length")) return (int)size();
+    if (inString == HX_CSTRING("concat")) return new Reflective_concat(this);
+    if (inString == HX_CSTRING("insert")) return new Reflective_insert(this);
+    if (inString == HX_CSTRING("copy")) return new Reflective_copy(this);
+    if (inString == HX_CSTRING("iterator")) return new Reflective_iterator(this);
+    if (inString == HX_CSTRING("keyValueIterator")) return new Reflective_keyValueIterator(this);
+    if (inString == HX_CSTRING("join")) return new Reflective_join(this);
+    if (inString == HX_CSTRING("pop")) return new Reflective_pop(this);
+    if (inString == HX_CSTRING("push")) return new Reflective_push(this);
+    if (inString == HX_CSTRING("contains")) return new Reflective_contains(this);
+    if (inString == HX_CSTRING("remove")) return new Reflective_remove(this);
+    if (inString == HX_CSTRING("removeAt")) return new Reflective_removeAt(this);
+    if (inString == HX_CSTRING("indexOf")) return new Reflective_indexOf(this);
+    if (inString == HX_CSTRING("lastIndexOf")) return new Reflective_lastIndexOf(this);
+    if (inString == HX_CSTRING("reverse")) return new Reflective_reverse(this);
+    if (inString == HX_CSTRING("shift")) return new Reflective_shift(this);
+    if (inString == HX_CSTRING("splice")) return new Reflective_splice(this);
+    if (inString == HX_CSTRING("slice")) return new Reflective_slice(this);
+    if (inString == HX_CSTRING("sort")) return new Reflective_sort(this);
+    if (inString == HX_CSTRING("toString")) return new Reflective_toString(this);
+    if (inString == HX_CSTRING("unshift")) return new Reflective_unshift(this);
+    if (inString == HX_CSTRING("filter")) return new Reflective_filter(this);
+    if (inString == HX_CSTRING("map")) return new Reflective_map(this);
+    if (inString == HX_CSTRING("__SetSize")) return new Reflective___SetSize(this);
+    if (inString == HX_CSTRING("__SetSizeExact")) return new Reflective___SetSizeExact(this);
+    if (inString == HX_CSTRING("__unsafe_get")) return new Reflective___unsafe_get(this);
+    if (inString == HX_CSTRING("__unsafe_set")) return new Reflective___unsafe_set(this);
+    if (inString == HX_CSTRING("blit")) return new Reflective_blit(this);
+    if (inString == HX_CSTRING("zero")) return new Reflective_zero(this);
+    if (inString == HX_CSTRING("memcmp")) return new Reflective_memcmp(this);
+    if (inString == HX_CSTRING("_hx_storeType")) return (int)getStoreType();
+    if (inString == HX_CSTRING("_hx_elementSize")) return (int)GetElementSize();
+    if (inString == HX_CSTRING("_hx_pointer")) return __pointerToBase();
+    if (inString == HX_CSTRING("resize")) return new Reflective_resize(this);
+    return null();
+}
+
+#endif
+
 
 #endif

@@ -131,11 +131,14 @@ public:
    // This allows 'StaticCast' to be used from arrays
    typedef Dynamic Ptr;
 
-   inline Struct( ) {  }
+   inline Struct( ) : value() {  }
    inline Struct( const T &inRHS ) : value(inRHS) {  }
    inline Struct( const null &) { value = T(); }
    inline Struct( const Reference<T> &);
    inline Struct( const Dynamic &inRHS) { fromDynamic(inRHS.mPtr); }
+
+   template<class... TArgs>
+   Struct(TArgs... args) : value(std::forward<TArgs>(args)...) {}
 
    inline Struct<T,HANDLER> &operator=( const T &inRHS ) { value = inRHS; return *this; }
    inline Struct<T,HANDLER> &operator=( const null & ) { value = T(); return *this; }
@@ -212,6 +215,7 @@ public:
       hx::Object *obj = inVariant.asObject();
       ptr = obj  ? (T*)inVariant.valObject->__GetHandle() : 0;
    }
+   inline Pointer(const ::cpp::marshal::PointerReference<T>);
 
    template<typename O>
    inline Pointer( const O *inValue ) : ptr( (T*) inValue) { }
@@ -509,6 +513,11 @@ public:
    }
 
 
+    template<typename T>
+    inline static Pointer<T> addressOf(const ::cpp::marshal::ValueReference<T>&);
+
+    template<typename T>
+    inline static Pointer<T*> addressOf(const ::cpp::marshal::PointerReference<T>&);
 
    template<typename T>
 	inline static Pointer<T> addressOf(T &value)  { return Pointer<T>(&value); }
