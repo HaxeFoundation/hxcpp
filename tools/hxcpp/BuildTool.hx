@@ -2105,7 +2105,7 @@ class BuildTool
             {
                defines.set("toolchain","msvc");
                if ( defines.exists("winrt") )
-                  defines.set("BINDIR",m64 ? "WinRT64":"WinRT");
+                  defines.set("BINDIR",arm64 ? "WinRTArm64" : m64 ? "WinRT64":"WinRT");
             }
             else
             {
