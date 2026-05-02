@@ -23,8 +23,13 @@
 	<lib name="crypt32.lib" if="windows" unless="static_link" />
 	<lib name="ws2_32.lib" if="windows" unless="static_link" />
 
-	<flag value="-framework" if="macos"/>
-	<flag value="Security" if="macos"/>
+	<section if="apple" unless="static_link">
+		<flag value="-framework" />
+		<flag value="Security" />
+
+		<flag value="-framework" unless="macos" />
+		<flag value="Security" unless="macos" />
+	</section>
 </target>
 
 </xml>
