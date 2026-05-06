@@ -3543,11 +3543,11 @@ public:
       #if defined(SHOW_MEM_EVENTS_VERBOSE) || defined(SHOW_FRAGMENTATION_BLOCKS)
       if (inJustBorrowing)
       {
-         GCLOG("Borrow Blocks %d = %d k\n", mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
+         GCLOG("Borrow Blocks %d = %d k\n", mAllBlocks.size(), (int)(GetWorkingMemory() >> 10));
       }
       else
       {
-         GCLOG("Blocks %d = %d k\n", mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
+         GCLOG("Blocks %d = %d k\n", mAllBlocks.size(), (int)(GetWorkingMemory() >> 10));
       }
       #endif
 
@@ -5235,7 +5235,7 @@ public:
       #endif
 
       // Large alloc target
-      int blockSize =  mAllBlocks.size()<<IMMIX_BLOCK_BITS;
+      size_t blockSize =  GetWorkingMemory();
       if (blockSize > mLargeAllocSpace)
          mLargeAllocSpace = blockSize;
       mLargeAllocForceRefresh = mLargeAllocated + mLargeAllocSpace;
