@@ -158,10 +158,10 @@ extern int gPauseForCollect;
 
 
 // Minimum total memory - used + buffer for new objects
-extern int sgMinimumWorkingMemory;
+extern size_t sgMinimumWorkingMemory;
 
 // Minimum free memory - not counting used memory
-extern int sgMinimumFreeSpace;
+extern size_t sgMinimumFreeSpace;
 
 // Also ensure that the free memory is larger than this amount of used memory
 extern int sgTargetFreeSpacePercentage;
