@@ -151,6 +151,7 @@ void ArrayBase::zero(Dynamic inFirst, Dynamic inCount)
 
 int ArrayBase::Memcmp(ArrayBase *inOther)
 {
+   if (length == 0 && inOther->length == 0) return 0;
    int bytesA = length * GetElementSize();
    int bytesB = inOther->length * inOther->GetElementSize();
    int common = bytesA<bytesB ? bytesA : bytesB;

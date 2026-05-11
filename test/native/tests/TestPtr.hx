@@ -333,6 +333,20 @@ class TestPtr extends Test
       Assert.equals(  0, a.memcmp(a) );
    }
 
+   public function testIssue933() : Void {
+        var a = haxe.io.Bytes.ofString(""); 
+        var b = haxe.io.Bytes.ofString(""); 
+        assertTrue( a.length == 0 );
+        assertTrue( b.length == 0 );
+        assertTrue( a.compare(b) == 0 );
+
+        // https://github.com/HaxeFoundation/hxcpp/issues/933
+        var foo = cpp.NativeArray.address(a.getData(), 0).constRaw;
+        assertTrue( a.length == 0 );
+        assertTrue( b.length == 0 );
+        assertTrue( a.compare(b) == 0 );  // issue 933 makes this fail (value is 1)
+   }
+
    public function testCapacity() {
       var a = [1,2,3];
       Assert.isTrue( a.capacity() < 1000 );
