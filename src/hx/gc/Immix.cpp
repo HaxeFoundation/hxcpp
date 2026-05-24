@@ -8,6 +8,7 @@
 #include "GcRegCapture.h"
 #include <hx/Unordered.h>
 #include <mutex>
+#include <thread>
 #include <condition_variable>
 
 #ifdef EMSCRIPTEN
