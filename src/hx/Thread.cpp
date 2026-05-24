@@ -156,11 +156,7 @@ Dynamic __hxcpp_deque_pop(Dynamic q,bool block)
 
 // --- Thread ----------------------------------------------------------
 
-#if (HXCPP_API_LEVEL>=500)
-Dynamic __hxcpp_thread_create(hx::Callable<void()> inStart)
-#else
 Dynamic __hxcpp_thread_create(Dynamic inStart)
-#endif
 {
 	return hx::thread::Thread_obj::create(inStart);
 }
