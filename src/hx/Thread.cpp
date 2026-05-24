@@ -406,6 +406,8 @@ int __hxcpp_GetCurrentThreadNumber()
 	return hx::thread::Thread_obj::id();
 }
 
+#endif
+
 // --- Atomic ---
 
 bool _hx_atomic_exchange_if(::cpp::Pointer<cpp::AtomicInt> inPtr, int test, int  newVal )
@@ -422,5 +424,3 @@ int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr )
 {
    return _hx_atomic_sub(inPtr, 1);
 }
-
-#endif
