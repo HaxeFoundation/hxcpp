@@ -1,5 +1,7 @@
 #include <hxcpp.h>
 
+#if (HXCPP_API_LEVEL<500)
+
 #include <hx/Thread.h>
 #include <time.h>
 #include <hx/thread/ConditionVariable.hpp>
@@ -421,4 +423,4 @@ int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr )
    return _hx_atomic_sub(inPtr, 1);
 }
 
-
+#endif
