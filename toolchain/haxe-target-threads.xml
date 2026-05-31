@@ -1,0 +1,30 @@
+﻿<xml>
+  <depend name="${HXCPP}/src/hx/thread/ThreadImpl.hpp"/>
+
+  <file name="src/hx/thread/RecursiveMutex.cpp"/>
+  <file name="src/hx/thread/ConditionVariable.cpp"/>
+  <file name="src/hx/thread/ThreadImpl.cpp"/>
+  <file name="src/hx/thread/ThreadLocal.cpp"/>
+  <file name="src/hx/thread/Scratch.cpp"/>
+
+  <section if="windows">
+    <file name="src/hx/thread/CountingSemaphore.win32.cpp"/>
+    <file name="src/hx/thread/ThreadImpl.win32.cpp"/>
+  </section>
+
+  <section if="apple">
+    <file name="src/hx/thread/CountingSemaphore.apple.cpp"/>
+    <file name="src/hx/thread/ThreadImpl.noop.cpp"/>
+  </section>
+
+  <section if="linux||android">
+    <file name="src/hx/thread/CountingSemaphore.posix.cpp"/>
+    <file name="src/hx/thread/ThreadImpl.noop.cpp"/>
+  </section>
+
+  <section unless="windows||apple||linux||android">
+    <file name="src/hx/thread/CountingSemaphore.unsupported.cpp"/>
+    <file name="src/hx/thread/ThreadImpl.noop.cpp"/>
+  </section>
+
+</xml>

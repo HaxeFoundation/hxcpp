@@ -299,15 +299,14 @@ double __hxcpp_time_stamp();
 
 // --- vm/threading --------------------------------------------------------------------
 
-#if (HXCPP_API_LEVEL>=500)
-Dynamic __hxcpp_thread_create(hx::Callable<void()> inFunc);
-#else
+#if (HXCPP_API_LEVEL<500)
+
 Dynamic __hxcpp_thread_create(Dynamic inFunc);
-#endif
+
 Dynamic __hxcpp_thread_current();
 void    __hxcpp_thread_send(Dynamic inThread, Dynamic inMessage);
 Dynamic __hxcpp_thread_read_message(bool inBlocked);
-bool __hxcpp_is_current_thread(hx::Object *inThread);
+bool __hxcpp_is_current_thread(hx::Object* inThread);
 
 Dynamic __hxcpp_mutex_create();
 void    __hxcpp_mutex_acquire(Dynamic);
@@ -324,21 +323,23 @@ void __hxcpp_condition_acquire(Dynamic);
 bool __hxcpp_condition_try_acquire(Dynamic);
 void __hxcpp_condition_release(Dynamic);
 void __hxcpp_condition_wait(Dynamic);
-bool __hxcpp_condition_timed_wait(Dynamic,double);
+bool __hxcpp_condition_timed_wait(Dynamic, double);
 void __hxcpp_condition_signal(Dynamic);
 void __hxcpp_condition_broadcast(Dynamic);
 
 Dynamic __hxcpp_lock_create();
-bool    __hxcpp_lock_wait(Dynamic inlock,double inTime);
+bool    __hxcpp_lock_wait(Dynamic inlock, double inTime);
 void    __hxcpp_lock_release(Dynamic inlock);
 
 Dynamic __hxcpp_deque_create();
-void    __hxcpp_deque_add(Dynamic q,Dynamic inVal);
-void    __hxcpp_deque_push(Dynamic q,Dynamic inVal);
-Dynamic __hxcpp_deque_pop(Dynamic q,bool block);
+void    __hxcpp_deque_add(Dynamic q, Dynamic inVal);
+void    __hxcpp_deque_push(Dynamic q, Dynamic inVal);
+Dynamic __hxcpp_deque_pop(Dynamic q, bool block);
 
 Dynamic __hxcpp_tls_get(int inID);
-void    __hxcpp_tls_set(int inID,Dynamic inVal);
+void    __hxcpp_tls_set(int inID, Dynamic inVal);
+
+#endif
 
 bool _hx_atomic_exchange_if(::cpp::Pointer<cpp::AtomicInt> inPtr, int test, int newVal  );
 int _hx_atomic_inc(::cpp::Pointer<cpp::AtomicInt> inPtr );

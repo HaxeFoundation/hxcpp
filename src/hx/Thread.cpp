@@ -1,5 +1,7 @@
 #include <hxcpp.h>
 
+#if (HXCPP_API_LEVEL<500)
+
 #include <hx/Thread.h>
 #include <time.h>
 #include <hx/thread/ConditionVariable.hpp>
@@ -154,11 +156,7 @@ Dynamic __hxcpp_deque_pop(Dynamic q,bool block)
 
 // --- Thread ----------------------------------------------------------
 
-#if (HXCPP_API_LEVEL>=500)
-Dynamic __hxcpp_thread_create(hx::Callable<void()> inStart)
-#else
 Dynamic __hxcpp_thread_create(Dynamic inStart)
-#endif
 {
 	return hx::thread::Thread_obj::create(inStart);
 }
@@ -404,6 +402,8 @@ int __hxcpp_GetCurrentThreadNumber()
 	return hx::thread::Thread_obj::id();
 }
 
+#endif
+
 // --- Atomic ---
 
 bool _hx_atomic_exchange_if(::cpp::Pointer<cpp::AtomicInt> inPtr, int test, int  newVal )
@@ -420,5 +420,3 @@ int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr )
 {
    return _hx_atomic_sub(inPtr, 1);
 }
-
-
