@@ -38,16 +38,22 @@
   <mmflag value="-fobjc-abi-version=2"/>
   <mmflag value="-fobjc-legacy-dispatch"/>
   <flag value="-Wno-unused-variable"/>
-  <flag value="-arch"/>
-  <flag value="i386" unless="HXCPP_M64"/>
-  <flag value="x86_64" if="HXCPP_M64"/>
+  <!-- ARM64 simulator (Apple Silicon): use -target for correct LC_BUILD_VERSION platform -->
+  <section if="HXCPP_ARM64">
+    <flag value="-target"/>
+    <flag value="arm64-apple-ios12.0-simulator" unless="HXCPP_IOS_MIN_VERSION"/>
+    <flag value="arm64-apple-ios${HXCPP_IOS_MIN_VERSION}-simulator" if="HXCPP_IOS_MIN_VERSION"/>
+  </section>
+  <!-- x86_64/i386 simulator: original flags -->
+  <section unless="HXCPP_ARM64">
+    <flag value="-arch"/>
+    <flag value="i386" unless="HXCPP_M64"/>
+    <flag value="x86_64" if="HXCPP_M64"/>
+    <flag value="-mios-simulator-version-min=9.0" unless="HXCPP_IOS_MIN_VERSION" />
+    <flag value="-mios-simulator-version-min=${HXCPP_IOS_MIN_VERSION}" if="HXCPP_IOS_MIN_VERSION" />
+  </section>
   <flag value="-isysroot"/>
   <flag value="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator${IPHONE_VER}.sdk"/>
-  <!-- Removed for iOS 8 -->
-  <!-- <flag value="-fvisibility=hidden"/> -->
-  <!-- <flag value="-miphoneos-version-min=${IPHONE_VER}"/> -->
-  <flag value="-miphoneos-version-min=9.0" unless="HXCPP_IOS_MIN_VERSION" />
-  <flag value="-miphoneos-version-min=${HXCPP_IOS_MIN_VERSION}" if="HXCPP_IOS_MIN_VERSION" />
   <flag value="-DIPHONE=IPHONE"/>
   <flag value="-DIPHONESIM=IPHONESIM"/>
   <flag value="-fobjc-arc" if="OBJC_ARC" />
@@ -69,7 +75,8 @@
 
   <outflag value="-o"/>
   <ext value=".o"/>
-  <objdir value="obj/iphonesim${OBJGCC}${OBJDBG}/" />
+  <objdir value="obj/iphonesim${OBJGCC}${OBJDBG}-64/" if="HXCPP_ARM64" />
+  <objdir value="obj/iphonesim${OBJGCC}${OBJDBG}/" unless="HXCPP_ARM64" />
 </compiler>
 
 <linker id="dll" exe="g++" >
@@ -77,8 +84,9 @@
   <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} clang++" />
   <flag value="-dynamiclib"/>
   <flag value="-arch"/>
-  <flag value="i386" unless="HXCPP_M64"/>
-  <flag value="x86_64" if="HXCPP_M64"/>
+  <flag value="i386" unless="HXCPP_M64 || HXCPP_ARM64"/>
+  <flag value="x86_64" if="HXCPP_M64" unless="HXCPP_ARM64"/>
+  <flag value="arm64" if="HXCPP_ARM64"/>
   <flag value="-isysroot"/>
   <flag value="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator${IPHONE_VER}.sdk"/>
   <flag value="-Wl,-undefined,dynamic_lookup"/>
