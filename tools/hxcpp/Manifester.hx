@@ -19,6 +19,7 @@ class Manifester
       args = args.concat(mFlags);
 
       //only windows for now
+      mOutPre = "-outputresource:";
       mOutPost = isExe ? ";1" : ";2";
 
       var result = ProcessManager.runCommand("", mExe, args.concat([manifestName,mOutPre + binName + mOutPost]) );
