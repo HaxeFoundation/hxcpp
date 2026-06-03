@@ -6,7 +6,8 @@
 		</section>
 	</files>
 
-	<target id="default" tool="linker" toolid="exe" output="main">
+	<target id="default" tool="linker" toolid="dll" output="main">
+		<outdir name="bin" />
 		<files id="test"/>
 	</target>
 </xml>
