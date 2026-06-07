@@ -1,5 +1,0 @@
-<project name="hxcpp" url="http://gamehaxe.com/" license="BSD">
-    <user name="gamehaxe"/>
-    <description>Hxcpp is the runtime support for the c++ backend of the haxe compiler.  This release constains the headers, libraries and support code required to generate a fully compiled executable from haxe code.</description>
-<version name="3.1.0">See Changes.txt</version>
-</project>
