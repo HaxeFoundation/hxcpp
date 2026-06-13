@@ -36,7 +36,7 @@ namespace hx { template<class TReturn, class... TArgs> class Callable; }
 	HX_NULL_COMPARE_OP(>=,type,false)
 
 #define HX_COMPARE_NULL_OP(op,type,value) \
-	   inline bool operator op (type inLHS, const null &) { return value; }
+	   inline bool operator op (type inLHS, const ::null &) { return value; }
 
 #define HX_COMPARE_NULL_OPS(type) \
 	HX_COMPARE_NULL_OP(<,type,false) \
@@ -54,14 +54,14 @@ namespace hx { template<class TReturn, class... TArgs> class Callable; }
 
 
 #define HX_NULL_ARITHMETIC_OP(op) \
-template<typename T> inline null operator op (T t) const \
-   { return hx::NullArithmetic(#op); } \
-inline null operator op (const null &) const \
-   { return hx::NullArithmetic(#op); }
+template<typename T> inline ::null operator op (T t) const \
+   { return ::hx::NullArithmetic(#op); } \
+inline ::null operator op (const ::null &) const \
+   { return ::hx::NullArithmetic(#op); }
 
 #define HX_ARITHMETIC_NULL_OP(op) \
-template<typename T> inline null operator op (const T &, const null &) \
-   { return hx::NullArithmetic(#op); }
+template<typename T> inline ::null operator op (const T &, const ::null &) \
+   { return ::hx::NullArithmetic(#op); }
 
 
 class null

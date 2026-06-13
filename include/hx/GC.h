@@ -287,7 +287,7 @@ namespace hx
 
 #define HX_USE_INLINE_IMMIX_OPERATOR_NEW
 
-//#define HX_STACK_CTX ::hx::ImmixAllocator *_hx_stack_ctx =  hx::gMultiThreadMode ? hx::tlsImmixAllocator : hx::gMainThreadAlloc;
+//#define HX_STACK_CTX ::hx::ImmixAllocator *_hx_stack_ctx =  ::hx::gMultiThreadMode ? ::hx::tlsImmixAllocator : ::hx::gMainThreadAlloc;
 
 
 // Each line ast 128 bytes (2^7)
@@ -322,14 +322,14 @@ namespace hx
 
 // The gPauseForCollect bits will turn spaceEnd negative, and so force the slow path
 #ifndef HXCPP_SINGLE_THREADED_APP
-   #define WITH_PAUSE_FOR_COLLECT_FLAG | hx::gPauseForCollect
+   #define WITH_PAUSE_FOR_COLLECT_FLAG | ::hx::gPauseForCollect
 #else
    #define WITH_PAUSE_FOR_COLLECT_FLAG
 #endif
 
 
 
-class StackContext;
+struct StackContext;
 
 EXTERN_FAST_TLS_DATA(StackContext, tlsStackContext);
 
@@ -360,7 +360,7 @@ public:
 
 
 
-   // These allocate the function using the garbage-colleced malloc
+   // These allocate the function using the garbage-collected malloc
    inline static void *alloc(ImmixAllocator *alloc, size_t inSize, bool inContainer, const char *inName )
    {
       #ifdef HXCPP_GC_NURSERY
@@ -406,7 +406,7 @@ public:
             // Ensure odd alignment in 8 bytes
             start += 4 - (start & 4);
          #endif
-         int end = start + sizeof(int) + inSize;
+         int end = start + (int)(sizeof(int) + inSize);
 
          if ( end <= alloc->spaceEnd )
          {
@@ -420,11 +420,11 @@ public:
 
             if (inContainer)
                *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                            (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
+                            ((int)inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
                             hx::gMarkIDWithContainer;
             else
                *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                            (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
+                            ((int)inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
                             hx::gMarkID;
 
             #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
@@ -439,7 +439,7 @@ public:
          }
 
          // Fall back to external method
-         void *result = alloc->CallAlloc(inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0);
+         void *result = alloc->CallAlloc((int)inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0);
 
          #ifdef HXCPP_TELEMETRY
             __hxt_gc_new((hx::StackContext *)alloc,result, inSize, inName);
@@ -457,19 +457,19 @@ typedef ImmixAllocator Ctx;
 #ifdef HXCPP_GC_GENERATIONAL
   #define HX_OBJ_WB_CTX(obj,value,ctx) { \
         unsigned char &mark =  ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]; \
-        if (mark == hx::gByteMarkID && value && !((unsigned char *)(value))[ HX_ENDIAN_MARK_ID_BYTE  ] ) { \
+        if (mark == ::hx::gByteMarkID && value && !((unsigned char *)(value))[ HX_ENDIAN_MARK_ID_BYTE  ] ) { \
             mark|=HX_GC_REMEMBERED; \
             ctx->pushReferrer(obj); \
      } }
   #define HX_OBJ_WB_PESSIMISTIC_CTX(obj,ctx) { \
      unsigned char &mark =  ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]; \
-     if (mark == hx::gByteMarkID)  { \
+     if (mark == ::hx::gByteMarkID)  { \
         mark|=HX_GC_REMEMBERED; \
         ctx->pushReferrer(obj); \
      } }
   // I'm not sure if this will ever trigger...
   #define HX_OBJ_WB_NEW_MARKED_OBJECT(obj) { \
-     if (((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]==hx::gByteMarkID) hx::NewMarkedObject(obj); \
+     if (((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]==::hx::gByteMarkID) ::hx::NewMarkedObject(obj); \
   }
 #else
   #define HX_OBJ_WB_CTX(obj,value,ctx)
@@ -523,12 +523,12 @@ inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
 
 #define HX_MARK_ARG __inCtx
 //#define HX_MARK_ADD_ARG ,__inCtx
-#define HX_MARK_PARAMS hx::MarkContext *__inCtx
-//#define HX_MARK_ADD_PARAMS ,hx::MarkContext *__inCtx
+#define HX_MARK_PARAMS ::hx::MarkContext *__inCtx
+//#define HX_MARK_ADD_PARAMS ,::hx::MarkContext *__inCtx
 
 #ifdef HXCPP_VISIT_ALLOCS
 #define HX_VISIT_ARG __inCtx
-#define HX_VISIT_PARAMS hx::VisitContext *__inCtx
+#define HX_VISIT_PARAMS ::hx::VisitContext *__inCtx
 #else
 #define HX_VISIT_ARG
 #define HX_VISIT_PARAMS
@@ -544,40 +544,40 @@ inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
 
 #ifdef HXCPP_DEBUG
 
-#define HX_MARK_MEMBER_NAME(x,name) { hx::MarkSetMember(name, __inCtx); hx::MarkMember(x, __inCtx ); }
-#define HX_MARK_BEGIN_CLASS(x) hx::MarkPushClass(#x, __inCtx );
-#define HX_MARK_END_CLASS() hx::MarkPopClass(__inCtx );
-#define HX_MARK_MEMBER(x) { hx::MarkSetMember(0, __inCtx); hx::MarkMember(x, __inCtx ); }
-#define HX_MARK_MEMBER_ARRAY(x,len) { hx::MarkSetMember(0, __inCtx); hx::MarkMemberArray(x, len, __inCtx ); }
+#define HX_MARK_MEMBER_NAME(x,name) { ::hx::MarkSetMember(name, __inCtx); ::hx::MarkMember(x, __inCtx ); }
+#define HX_MARK_BEGIN_CLASS(x) ::hx::MarkPushClass(#x, __inCtx );
+#define HX_MARK_END_CLASS() ::hx::MarkPopClass(__inCtx );
+#define HX_MARK_MEMBER(x) { ::hx::MarkSetMember(0, __inCtx); ::hx::MarkMember(x, __inCtx ); }
+#define HX_MARK_MEMBER_ARRAY(x,len) { ::hx::MarkSetMember(0, __inCtx); ::hx::MarkMemberArray(x, len, __inCtx ); }
 
 #else
 
-#define HX_MARK_MEMBER_NAME(x,name) hx::MarkMember(x, __inCtx )
+#define HX_MARK_MEMBER_NAME(x,name) ::hx::MarkMember(x, __inCtx )
 #define HX_MARK_BEGIN_CLASS(x)
 #define HX_MARK_END_CLASS()
-#define HX_MARK_MEMBER(x) hx::MarkMember(x, __inCtx )
-#define HX_MARK_MEMBER_ARRAY(x,len) hx::MarkMemberArray(x, len, __inCtx )
+#define HX_MARK_MEMBER(x) ::hx::MarkMember(x, __inCtx )
+#define HX_MARK_MEMBER_ARRAY(x,len) ::hx::MarkMemberArray(x, len, __inCtx )
 
 #endif
 
-#define HX_MARK_OBJECT(ioPtr) if (ioPtr) hx::MarkObjectAlloc(ioPtr, __inCtx );
+#define HX_MARK_OBJECT(ioPtr) if (ioPtr) ::hx::MarkObjectAlloc(ioPtr, __inCtx );
 
 
 
 
 #define HX_MARK_STRING(ioPtr) \
-   if (ioPtr) hx::MarkAlloc((void *)ioPtr, __inCtx );
+   if (ioPtr) ::hx::MarkAlloc((void *)ioPtr, __inCtx );
 
-#define HX_MARK_ARRAY(ioPtr) { if (ioPtr) hx::MarkAlloc((void *)ioPtr, __inCtx ); }
-
-
+#define HX_MARK_ARRAY(ioPtr) { if (ioPtr) ::hx::MarkAlloc((void *)ioPtr, __inCtx ); }
 
 
-#define HX_VISIT_MEMBER_NAME(x,name) hx::VisitMember(x, __inCtx )
-#define HX_VISIT_MEMBER(x) hx::VisitMember(x, __inCtx )
+
+
+#define HX_VISIT_MEMBER_NAME(x,name) ::hx::VisitMember(x, __inCtx )
+#define HX_VISIT_MEMBER(x) ::hx::VisitMember(x, __inCtx )
 
 #define HX_VISIT_OBJECT(ioPtr) \
-  { if (ioPtr && !(((unsigned char *)ioPtr)[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT) ) __inCtx->visitObject( (hx::Object **)&ioPtr); }
+  { if (ioPtr && !(((unsigned char *)ioPtr)[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT) ) __inCtx->visitObject( (::hx::Object **)&ioPtr); }
 
 #define HX_VISIT_STRING(ioPtr) \
    if (ioPtr && !(((unsigned char *)ioPtr)[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT) ) __inCtx->visitAlloc((void **)&ioPtr);

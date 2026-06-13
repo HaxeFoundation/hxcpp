@@ -1,0 +1,15 @@
+<xml>
+	<files id="test" cxx_standard="17">
+		<compilerflag value="/Zc:__cplusplus" if="isMsvc" />
+		<file name="main.cpp" />
+		<file name="cxx14.cpp" cxx_standard="14" />
+		<file name="c11.c" c_standard="11" />
+		<file name="c17.c" c_standard="17" />
+	</files>
+
+	<set name="EXESUFFIX" value=".exe" if="windows" />
+
+	<target id="default" tool="linker" toolid="exe" output="main${EXESUFFIX}">
+		<files id="test"/>
+	</target>
+</xml>

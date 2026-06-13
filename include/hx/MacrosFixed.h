@@ -56,7 +56,7 @@ static  ::Dynamic Create##enum_obj(::String inName,::hx::DynamicArray inArgs) \
    HX_DO_RTTI_ALL \
     ::hx::Val __Field(const ::String &inString, ::hx::PropertyAccess inCallProp); \
     ::hx::Val __SetField(const ::String &inString,const  ::hx::Val &inValue, ::hx::PropertyAccess inCallProp); \
-   void __GetFields(Array< ::String> &outFields);
+   void __GetFields(::Array< ::String> &outFields);
 
 #define HX_DO_INTERFACE_RTTI \
    static ::hx::ObjectPtr< ::hx::Class_obj> __mClass; \
@@ -77,7 +77,7 @@ static  ::Dynamic Create##enum_obj(::String inName,::hx::DynamicArray inArgs) \
 
 #define HX_DECLARE_IMPLEMENT_DYNAMIC   ::Dynamic __mDynamicFields; \
      ::Dynamic *__GetFieldMap() { return &__mDynamicFields; } \
-    bool __HasField(const String &inString) \
+    bool __HasField(const ::String &inString) \
       { return ::hx::FieldMapHas(&__mDynamicFields,inString) || super::__HasField(inString); }
 
 

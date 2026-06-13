@@ -175,8 +175,8 @@ namespace hx
       T operator->() { return ptr; }
    };
 
-   #define HX_NATIVE_IMPLEMENTATION hx::Object *__GetRealObject() { return this; }
-   #define HX_EXTERN_NATIVE_IMPLEMENTATION hx::Object *__GetRealObject() { return 0; }
+   #define HX_NATIVE_IMPLEMENTATION ::hx::Object *__GetRealObject() { return this; }
+   #define HX_EXTERN_NATIVE_IMPLEMENTATION ::hx::Object *__GetRealObject() { return 0; }
 }
 
 #endif

@@ -1,30 +1,14 @@
 #include <hxcpp.h>
 
+#if (HXCPP_API_LEVEL<500)
+
 #include <hx/Thread.h>
 #include <time.h>
 #include <hx/thread/ConditionVariable.hpp>
 #include <hx/thread/RecursiveMutex.hpp>
+#include <hx/thread/CountingSemaphore.hpp>
+#include "thread/ThreadImpl.hpp"
 #include <atomic>
-
-DECLARE_TLS_DATA(class hxThreadInfo, tlsCurrentThread);
-
-// Thread number 0 is reserved for the main thread
-static std::atomic_int g_nextThreadNumber(1);
-
-
-// How to manage hxThreadInfo references for non haxe threads (main, extenal)?
-// HXCPP_THREAD_INFO_PTHREAD - use pthread api
-// HXCPP_THREAD_INFO_LOCAL - use thread_local storage
-// HXCPP_THREAD_INFO_SINGLETON - use one structure for all threads. Not ideal.
-
-#if __cplusplus > 199711L && !defined(__BORLANDC__)
-   #define HXCPP_THREAD_INFO_LOCAL
-#elif defined (HXCPP_PTHREADS)
-   #define HXCPP_THREAD_INFO_PTHREAD
-#else
-   #define HXCPP_THREAD_INFO_SINGLETON
-#endif
-
 
 // --- Deque ----------------------------------------------------------
 
@@ -170,264 +154,44 @@ Dynamic __hxcpp_deque_pop(Dynamic q,bool block)
 	return d->PopFront(block);
 }
 
-
-
 // --- Thread ----------------------------------------------------------
 
-class hxThreadInfo : public hx::Object
-{
-public:
-	typedef
-#if (HXCPP_API_LEVEL>=500)
-		hx::Callable<void()>
-#else
-		Dynamic
-#endif
-		ThreadFuncType;
-
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdThreadInfo };
-
-	hxThreadInfo(ThreadFuncType inFunction, int inThreadNumber)
-        : mFunction(inFunction), mThreadNumber(inThreadNumber), mTLS(0,0)
-	{
-		mSemaphore = new HxSemaphore;
-		mDeque = Deque::Create();
-      HX_OBJ_WB_NEW_MARKED_OBJECT(this);
-	}
-	hxThreadInfo()
-	{
-		mSemaphore = 0;
-		mDeque = Deque::Create();
-      HX_OBJ_WB_NEW_MARKED_OBJECT(this);
-	}
-    int GetThreadNumber() const
-    {
-        return mThreadNumber;
-    }
-	void CleanSemaphore()
-	{
-		delete mSemaphore;
-		mSemaphore = 0;
-	}
-	void Send(Dynamic inMessage)
-	{
-		mDeque->PushBack(inMessage);
-	}
-	Dynamic ReadMessage(bool inBlocked)
-	{
-		return mDeque->PopFront(inBlocked);
-	}
-	String toString()
-	{
-		return String(GetThreadNumber());
-	}
-	void SetTLS(int inID,Dynamic inVal) {
-      mTLS->__SetItem(inID,inVal);
-   }
-	Dynamic GetTLS(int inID) { return mTLS[inID]; }
-
-	void __Mark(hx::MarkContext *__inCtx)
-	{
-		HX_MARK_MEMBER(mFunction);
-		HX_MARK_MEMBER(mTLS);
-		if (mDeque)
-			HX_MARK_OBJECT(mDeque);
-	}
-   #ifdef HXCPP_VISIT_ALLOCS
-  	void __Visit(hx::VisitContext *__inCtx)
-	{
-		HX_VISIT_MEMBER(mFunction);
-		HX_VISIT_MEMBER(mTLS);
-		if (mDeque)
-			HX_VISIT_OBJECT(mDeque);
-	}
-   #endif
-
-
-	Array<Dynamic> mTLS;
-	HxSemaphore *mSemaphore;
-	ThreadFuncType mFunction;
-   int mThreadNumber;
-	Deque   *mDeque;
-};
-
-
-THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
-{
-   // info[1] will the the "top of stack" - values under this
-   //  (ie info[0] and other stack values) will be in the GC conservative range
-	hxThreadInfo *info[2];
-   info[0] = (hxThreadInfo *)inInfo;
-   info[1] = 0;
-
-	tlsCurrentThread = info[0];
-
-	hx::SetTopOfStack((int *)&info[1], true);
-
-	// Release the creation function
-	info[0]->mSemaphore->Set();
-
-    // Call the debugger function to annouce that a thread has been created
-    //__hxcpp_dbg_threadCreatedOrTerminated(info[0]->GetThreadNumber(), true);
-
-	if ( info[0]->mFunction.GetPtr() )
-	{
-		// Try ... catch
-		info[0]->mFunction();
-	}
-
-    // Call the debugger function to annouce that a thread has terminated
-    //__hxcpp_dbg_threadCreatedOrTerminated(info[0]->GetThreadNumber(), false);
-
-	hx::UnregisterCurrentThread();
-
-	tlsCurrentThread = 0;
-
-	THREAD_FUNC_RET
-}
-
-
-#if (HXCPP_API_LEVEL>=500)
-Dynamic __hxcpp_thread_create(hx::Callable<void()> inStart)
-#else
 Dynamic __hxcpp_thread_create(Dynamic inStart)
-#endif
 {
-    #ifdef EMSCRIPTEN
-    return hx::Throw( HX_CSTRING("Threads are not supported on Emscripten") );
-    #else
-    int threadNumber = g_nextThreadNumber++;
-
-	hxThreadInfo *info = new hxThreadInfo(inStart, threadNumber);
-
-	hx::GCPrepareMultiThreaded();
-	hx::EnterGCFreeZone();
-
-    bool ok = HxCreateDetachedThread(hxThreadFunc, info);
-    if (ok)
-    {
-       info->mSemaphore->Wait();
-    }
-
-    hx::ExitGCFreeZone();
-    info->CleanSemaphore();
-
-    if (!ok)
-       throw Dynamic( HX_CSTRING("Could not create thread") );
-    return info;
-    #endif
-}
-
-#ifdef HXCPP_THREAD_INFO_PTHREAD
-static pthread_key_t externThreadInfoKey;;
-static pthread_once_t key_once = PTHREAD_ONCE_INIT;
-static void destroyThreadInfo(void *i)
-{
-   hx::Object **threadRoot = (hx::Object **)i;
-   hx::GCRemoveRoot(threadRoot);
-   delete threadRoot;
-}
-static void make_key()
-{
-   pthread_key_create(&externThreadInfoKey, destroyThreadInfo);
-}
-#elif defined(HXCPP_THREAD_INFO_LOCAL)
-struct ThreadInfoHolder
-{
-   hx::Object **threadRoot;
-   ThreadInfoHolder() : threadRoot(0) { }
-   ~ThreadInfoHolder()
-   {
-      if (threadRoot)
-      {
-         hx::GCRemoveRoot(threadRoot);
-         delete threadRoot;
-      }
-   }
-   void set(hx::Object **info) { threadRoot = info; }
-   hxThreadInfo *get() { return threadRoot ? (hxThreadInfo *)*threadRoot : nullptr; }
-   
-};
-static thread_local ThreadInfoHolder threadHolder;
-#else
-static hx::Object **sMainThreadInfoRoot = 0;
-#endif
-
-static hxThreadInfo *GetCurrentInfo(bool createNew = true)
-{
-	hxThreadInfo *info = tlsCurrentThread;
-	if (!info)
-   {
-      #ifdef HXCPP_THREAD_INFO_PTHREAD
-      pthread_once(&key_once, make_key);
-      hxThreadInfo **pp = (hxThreadInfo **)pthread_getspecific(externThreadInfoKey);
-      if (pp)
-         info = *pp;
-      #elif defined(HXCPP_THREAD_INFO_LOCAL)
-      info = threadHolder.get();
-      #else
-      if (sMainThreadInfoRoot)
-      info = (hxThreadInfo *)*sMainThreadInfoRoot;
-      #endif
-   }
-
-	if (!info && createNew)
-	{
-      // New, non-haxe thread - might be the first thread, or might be a new
-      //  foreign thread.
-		info = new hxThreadInfo(null(), 0);
-      hx::Object **threadRoot = new hx::Object *;
-      *threadRoot = info; 
-		hx::GCAddRoot(threadRoot);
-      #ifdef HXCPP_THREAD_INFO_PTHREAD
-      pthread_setspecific(externThreadInfoKey, threadRoot);
-      #elif defined(HXCPP_THREAD_INFO_LOCAL)
-      threadHolder.set(threadRoot);
-      #else
-      sMainThreadInfoRoot = threadRoot;
-      #endif
-	}
-	return info;
+	return hx::thread::Thread_obj::create(inStart);
 }
 
 Dynamic __hxcpp_thread_current()
 {
-	return GetCurrentInfo();
+	return hx::thread::Thread_obj::current();
 }
 
 void __hxcpp_thread_send(Dynamic inThread, Dynamic inMessage)
 {
-	hxThreadInfo *info = dynamic_cast<hxThreadInfo *>(inThread.mPtr);
-	if (!info)
-		throw HX_INVALID_OBJECT;
-	info->Send(inMessage);
+	hx::Throw(HX_CSTRING("Not Implemented"));
 }
 
 Dynamic __hxcpp_thread_read_message(bool inBlocked)
 {
-	hxThreadInfo *info = GetCurrentInfo();
-	return info->ReadMessage(inBlocked);
+	return hx::Throw(HX_CSTRING("Not Implemented"));
 }
 
 bool __hxcpp_is_current_thread(hx::Object *inThread)
 {
-   hxThreadInfo *info = tlsCurrentThread;
-   return info==inThread;
+   return inThread == hx::thread::Thread_obj::current();
 }
 
 // --- TLS ------------------------------------------------------------
 
 Dynamic __hxcpp_tls_get(int inID)
 {
-	return GetCurrentInfo()->GetTLS(inID);
+	return reinterpret_cast<hx::thread::ThreadImpl_obj*>(hx::thread::Thread_obj::current().GetPtr())->getSlot(inID);
 }
 
 void __hxcpp_tls_set(int inID,Dynamic inVal)
 {
-	GetCurrentInfo()->SetTLS(inID,inVal);
+	reinterpret_cast<hx::thread::ThreadImpl_obj*>(hx::thread::Thread_obj::current().GetPtr())->setSlot(inID, inVal);
 }
-
-
 
 // --- Mutex ------------------------------------------------------------
 
@@ -454,137 +218,28 @@ void __hxcpp_mutex_release(Dynamic inMutex)
 	mutex->release();
 }
 
-#if defined(HX_LINUX) || defined(HX_ANDROID)
-#define POSIX_SEMAPHORE
-#include <semaphore.h>
-#endif
-
-#if defined(HX_MACOS) || defined(IPHONE) || defined(APPLETV)
-#define APPLE_SEMAPHORE
-#include <dispatch/dispatch.h>
-#endif
-
-class hxSemaphore : public hx::Object {
-public:
-  hx::InternalFinalizer *mFinalizer;
-#ifdef HX_WINDOWS
-  HANDLE sem;
-#elif defined (POSIX_SEMAPHORE)
-  sem_t sem;
-#elif defined(APPLE_SEMAPHORE)
-	dispatch_semaphore_t sem;
-#endif
-  bool valid;
-
-  hxSemaphore(int value) {
-    mFinalizer = new hx::InternalFinalizer(this);
-    mFinalizer->mFinalizer = clean;
-#ifdef HX_WINDOWS
-    sem = CreateSemaphoreW(NULL, value, 0x7FFFFFFF, NULL);
-#elif defined(POSIX_SEMAPHORE)
-    sem_init(&sem, 0, value);
-#elif defined(APPLE_SEMAPHORE)
-    sem = dispatch_semaphore_create(value);
-#endif
-    valid = true;
-  }
-
-  HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSemaphore };
-
-#ifdef HXCPP_VISIT_ALLOCS
-  void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
-#endif
-
-  void Acquire() {
-	hx::EnterGCFreeZone();
-#if HX_WINDOWS
-	WaitForSingleObject(sem, INFINITE);
-#elif defined(POSIX_SEMAPHORE)
-    sem_wait(&sem);
-#elif defined(APPLE_SEMAPHORE)
-    dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
-#endif
-	hx::ExitGCFreeZone();
-  }
-
-  bool TryAcquire(double timeout) {
-	hx::AutoGCFreeZone blocking;
-#ifdef HX_WINDOWS
-    return WaitForSingleObject(sem, (DWORD)((FLOAT)timeout * 1000.0)) == 0;
-#elif defined(POSIX_SEMAPHORE)
-    if (timeout == 0) {
-      return sem_trywait(&sem) == 0;
-    } else {
-      struct timeval tv;
-      struct timespec t;
-      double delta = timeout;
-      int idelta = (int)delta, idelta2;
-      delta -= idelta;
-      delta *= 1.0e9;
-      gettimeofday(&tv, NULL);
-      delta += tv.tv_usec * 1000.0;
-      idelta2 = (int)(delta / 1e9);
-      delta -= idelta2 * 1e9;
-      t.tv_sec = tv.tv_sec + idelta + idelta2;
-      t.tv_nsec = (long)delta;
-      return sem_timedwait(&sem, &t) == 0;
-    }
-#elif defined(APPLE_SEMAPHORE)
-    return dispatch_semaphore_wait(
-               sem,
-               dispatch_time(DISPATCH_TIME_NOW,
-                             (int64_t)(timeout * 1000 * 1000 * 1000))) == 0;
-#else
-	return false;
-#endif
-  }
-
-  void Release() {
-#if HX_WINDOWS
-	ReleaseSemaphore(sem, 1, NULL);
-#elif defined(POSIX_SEMAPHORE)
-    sem_post(&sem);
-#elif defined(APPLE_SEMAPHORE)
-    dispatch_semaphore_signal(sem);
-#endif
-  }
-
-  static void clean(hx::Object *inObj) {
-    hxSemaphore *l = dynamic_cast<hxSemaphore *>(inObj);
-    if (l) {
-      if(l->valid) {
-#ifdef HX_WINDOWS
-		CloseHandle(l->sem);
-#elif defined(POSIX_SEMAPHORE)
-		  sem_destroy(&l->sem);
-#endif
-		  l->valid = false;
-	  }
-    }
-  }
-};
+// --- Semaphore ------------------------------------------------------------
 
 Dynamic __hxcpp_semaphore_create(int value) {
-  return new hxSemaphore(value);
+	return new hx::thread::CountingSemaphore_obj(value);
 }
 void __hxcpp_semaphore_acquire(Dynamic inSemaphore) {
-  hxSemaphore *semaphore = dynamic_cast<hxSemaphore *>(inSemaphore.mPtr);
-  if (!semaphore)
-    throw HX_INVALID_OBJECT;
-  semaphore->Acquire();
+	auto semaphore = inSemaphore.Cast<hx::thread::CountingSemaphore>();
+
+	semaphore->acquire();
 }
 bool __hxcpp_semaphore_try_acquire(Dynamic inSemaphore, double timeout) {
-  hxSemaphore *semaphore = dynamic_cast<hxSemaphore *>(inSemaphore.mPtr);
-  if (!semaphore)
-    throw HX_INVALID_OBJECT;
-  return semaphore->TryAcquire(timeout);
+	auto semaphore = inSemaphore.Cast<hx::thread::CountingSemaphore>();
+
+	return semaphore->tryAcquire(timeout);
 }
 void __hxcpp_semaphore_release(Dynamic inSemaphore) {
-  hxSemaphore *semaphore = dynamic_cast<hxSemaphore *>(inSemaphore.mPtr);
-  if (!semaphore)
-    throw HX_INVALID_OBJECT;
-  semaphore->Release();
+	auto semaphore = inSemaphore.Cast<hx::thread::CountingSemaphore>();
+
+	semaphore->release();
 }
+
+// --- Condition ------------------------------------------------------------
 
 Dynamic __hxcpp_condition_create(void)
 {
@@ -744,14 +399,10 @@ void __hxcpp_lock_release(Dynamic inlock)
 
 int __hxcpp_GetCurrentThreadNumber()
 {
-    // Can't allow GetCurrentInfo() to create the main thread's info
-    // because that can cause a call loop.
-    hxThreadInfo *threadInfo = GetCurrentInfo(false);
-    if (!threadInfo) {
-        return 0;
-    }
-    return threadInfo->GetThreadNumber();
+	return hx::thread::Thread_obj::id();
 }
+
+#endif
 
 // --- Atomic ---
 
@@ -769,5 +420,3 @@ int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr )
 {
    return _hx_atomic_sub(inPtr, 1);
 }
-
-

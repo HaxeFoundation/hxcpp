@@ -35,7 +35,7 @@ static ::NS::Dynamic __##class##func(::hxNS::Object *inObj, dynamic_arg_list) \
 
 
 #define HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-static ::NS::Dynamic __##class##func(::hxNS::Object *inObj, const Array< ::NS::Dynamic> &inArgs) \
+static ::NS::Dynamic __##class##func(::hxNS::Object *inObj, const ::NS::Array< ::NS::Dynamic> &inArgs) \
 { \
       ret reinterpret_cast<class *>(inObj)->func(array_list); return  ::NS::Dynamic(); \
 }; \
@@ -96,7 +96,7 @@ static ::NS::Dynamic __##class##func(dynamic_arg_list) \
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-static ::NS::Dynamic __##class##func(const Array< ::NS::Dynamic> &inArgs) \
+static ::NS::Dynamic __##class##func(const ::NS::Array< ::NS::Dynamic> &inArgs) \
 { \
       ret class::func(array_list); return  ::NS::Dynamic(); \
 }; \
@@ -121,8 +121,8 @@ static ::NS::Dynamic __##class##func(const Array< ::NS::Dynamic> &inArgs) \
     #define HX_DYNAMIC_CALL(ret,func,array_args,dyn_arg_list,arg_list)
 #else
     #define HX_DYNAMIC_CALL(ret,func,array_args,dyn_arg_list,arg_list) \
-        ::NS::Dynamic __Run(const Array< ::NS::Dynamic> &inArgs) { ret func( array_args ); return null();} \
-        ::NS::Dynamic __run(dyn_arg_list) { ret func( arg_list ); return null();}
+        ::NS::Dynamic __Run(const ::NS::Array< ::NS::Dynamic> &inArgs) { ret func( array_args ); return ::NS::null();} \
+        ::NS::Dynamic __run(dyn_arg_list) { ret func( arg_list ); return ::NS::null();}
 #endif
 
 ::foreach PARAMS::
@@ -133,7 +133,7 @@ static ::NS::Dynamic __##class##func(const Array< ::NS::Dynamic> &inArgs) \
 	    namespace { \
        struct name : public ::hxNS::Object { \
        ::hxNS::ObjectPtr<t0> __this; \
-       name(::hxNS::ObjectPtr<t0> __0 = null()) : __this(__0) {} \
+       name(::hxNS::ObjectPtr<t0> __0 = ::NS::null()) : __this(__0) {} \
        void __Mark(::hxNS::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); } \
        void __Visit(::hxNS::VisitContext *__inCtx) { HX_VISIT_MEMBER(__this); }
 #else
@@ -142,7 +142,7 @@ static ::NS::Dynamic __##class##func(const Array< ::NS::Dynamic> &inArgs) \
        struct name : public ::hxNS::Object { int __GetType() const { return vtFunction; } \
        HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hxNS::clsIdClosure }; \
        ::hxNS::ObjectPtr<t0> __this; \
-       name(::hxNS::ObjectPtr<t0> __0 = null()) : __this(__0) {} \
+       name(::hxNS::ObjectPtr<t0> __0 = ::NS::null()) : __this(__0) {} \
        void __Mark(::hxNS::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); } \
        void __Visit(::hxNS::VisitContext *__inCtx) { HX_VISIT_MEMBER(__this); }
 #endif

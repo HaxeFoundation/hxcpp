@@ -37,8 +37,10 @@ Defines affecting how the code is compiled.  These can be on the command line wh
 | *HXCPP_CHECK_POINTER*   | Add null-pointer checks,even in release mode. |
 | *HXCPP_PROFILER*        | Add profiler support |
 | *HXCPP_TELEMETRY*       | Add telemetry support |
-| *HXCPP_CPP11*           | Use c++11 features and link libraries |
-| *HXCPP_CPP17*           | Use c++17 features and link libraries |
+| *HXCPP_C_STANDARD*      | Set default C standard |
+| *HXCPP_CXX_STANDARD*    | Set default C++ standard |
+| *HXCPP_OBJC_STANDARD*   | Set default Objective-C standard |
+| *HXCPP_OBJCXX_STANDARD* | Set default Objective-C++ standard |
 | *exe_link*              | Generate executable file (rather than dynamic library on android) |
 | *static_link*           | Generate static library |
 | *dll_link*              | Generate dynamic library |

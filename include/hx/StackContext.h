@@ -116,7 +116,7 @@
        ::hx::StackVariable __stackvariable_##cpp_var(_hx_stackframe.variables, false, haxe_name, &cpp_var);
 
    #define HX_STACK_CATCHABLE(T, n)                                        \
-       hx::StackCatchable __stackcatchable_##n                             \
+       ::hx::StackCatchable __stackcatchable_##n                             \
            (_hx_stackframe, reinterpret_cast<T *>(&_hx_stackframe));
 
    // If HXCPP_DEBUGGER is enabled, then a throw is checked to see if it

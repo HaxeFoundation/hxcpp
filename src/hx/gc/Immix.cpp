@@ -3,10 +3,12 @@
 #include <hx/GC.h>
 #include <hx/Memory.h>
 #include <hx/Thread.h>
+#include <hx/thread/Thread.hpp>
 #include "../Hash.h"
 #include "GcRegCapture.h"
 #include <hx/Unordered.h>
 #include <mutex>
+#include <thread>
 #include <condition_variable>
 
 #ifdef EMSCRIPTEN
@@ -4515,10 +4517,9 @@ public:
       }
    }
 
-   static THREAD_FUNC_TYPE SThreadLoop( void *inInfo )
+   static void SThreadLoop( void *inInfo )
    {
       sGlobalAlloc->ThreadLoop((int)(size_t)inInfo);
-      THREAD_FUNC_RET;
    }
 
    void CreateWorker(int inId)
@@ -4536,7 +4537,9 @@ public:
 
          sThreadSleeping[inId] = false;
 
-         HxCreateDetachedThread(SThreadLoop, info);
+         std::thread thread(SThreadLoop, info);
+
+         thread.detach();
       #endif
    }
 
@@ -6574,7 +6577,7 @@ void InitAlloc()
    ExitGCFreeZone();
 
    // Setup main thread ...
-   __hxcpp_thread_current();
+   hx::thread::Thread_obj::current();
 
    gMainThreadContext->onThreadAttach();
 }

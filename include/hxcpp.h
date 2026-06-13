@@ -249,7 +249,7 @@ namespace hx { class Object; }
 namespace hx { class FieldRef; }
 namespace hx { class IndexRef; }
 namespace hx { class NativeInterface; }
-namespace hx { class StackContext; }
+namespace hx { struct StackContext; }
 namespace hx { template<typename T> class Native; }
 namespace hx { template<typename O> class ObjectPtr; }
 namespace cpp { template<typename S,typename H> class Struct; }
@@ -261,7 +261,7 @@ namespace cpp { namespace marshal { template<class T> class ValueType; } }
 namespace cpp { namespace marshal { template<class T> class ValueReference; } }
 namespace cpp { namespace marshal { template<class T> class PointerType; } }
 namespace cpp { namespace marshal { template<class T> class PointerReference; } }
-namespace cpp { namespace marshal { template<class T> class View; } }
+namespace cpp { namespace marshal { template<class T> struct View; } }
 template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
 namespace hx {
@@ -314,9 +314,9 @@ enum PropertyAccessMode
    paccAlways  = 2,
 };
 typedef PropertyAccessMode PropertyAccess;
-#define HX_PROP_NEVER  hx::paccNever
-#define HX_PROP_DYNAMIC hx::paccDynamic
-#define HX_PROP_ALWAYS hx::paccAlways
+#define HX_PROP_NEVER ::hx::paccNever
+#define HX_PROP_DYNAMIC ::hx::paccDynamic
+#define HX_PROP_ALWAYS ::hx::paccAlways
 
 } // end namespace hx
 

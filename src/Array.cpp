@@ -366,7 +366,7 @@ void ArrayBase::Splice(ArrayBase *outResult,int inPos,int inLen)
       if (inPos<0)
          inPos =0;
    }
-   if (inLen<0)
+   if (inLen<=0)
       return;
    if (inPos+inLen>length)
       inLen = length - inPos;

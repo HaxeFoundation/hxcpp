@@ -331,7 +331,7 @@ public:
 
    inline int cca(int inPos) const
    {
-      if ((unsigned)inPos>=length) return 0;
+      if ( (inPos>=length) || (inPos<0) ) return 0;
       #ifdef HX_SMART_STRINGS
       if (isUTF16Encoded())
          return __w[inPos];

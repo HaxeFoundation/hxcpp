@@ -5,3 +5,4 @@ HostExtendedRoot
 -L utest
 --dce no
 --cpp bin
+-D HXCPP_CATCH_SEGV

@@ -255,29 +255,15 @@ void __hxcpp_stdlibs_boot()
 #endif
 
    #if defined(_MSC_VER) && !defined(HX_WINRT)
-   HMODULE kernel32 = LoadLibraryA("kernel32");
-   if (kernel32)
-   {
-      typedef BOOL (WINAPI *AttachConsoleFunc)(DWORD);
-      typedef HWND (WINAPI *GetConsoleWindowFunc)(void);
-      AttachConsoleFunc attach = (AttachConsoleFunc)GetProcAddress(kernel32,"AttachConsole");
-      GetConsoleWindowFunc getConsole = (GetConsoleWindowFunc)GetProcAddress(kernel32,"GetConsoleWindow");
-      if (attach && getConsole)
-      {
-         if (!attach( /*ATTACH_PARENT_PROCESS*/ (DWORD)-1 ))
-         {
-            //printf("Could not attach to parent console : %d\n",GetLastError());
-         }
-         else if (getConsole())
-         {
-            if (_fileno(stdout) < 0 || _get_osfhandle(fileno(stdout)) < 0)
-               freopen("CONOUT$", "w", stdout);
-            if (_fileno(stderr) < 0 || _get_osfhandle(fileno(stderr)) < 0)
-               freopen("CONOUT$", "w", stderr);
-            if (_fileno(stdin) < 0 || _get_osfhandle(fileno(stdin)) < 0)
-               freopen("CONIN$", "r", stdin);
-         }
-      }
+   if (!AttachConsole(ATTACH_PARENT_PROCESS)) {
+
+   } else if (GetConsoleWindow()) {
+      if (_fileno(stdout) < 0 || _get_osfhandle(fileno(stdout)) < 0)
+         freopen("CONOUT$", "w", stdout);
+      if (_fileno(stderr) < 0 || _get_osfhandle(fileno(stderr)) < 0)
+         freopen("CONOUT$", "w", stderr);
+      if (_fileno(stdin) < 0 || _get_osfhandle(fileno(stdin)) < 0)
+         freopen("CONIN$", "r", stdin);
    }
    //_setmode(_fileno(stdout), 0x00040000); // _O_U8TEXT
    //_setmode(_fileno(stderr), 0x00040000); // _O_U8TEXT
@@ -294,12 +280,72 @@ void __hxcpp_stdlibs_boot()
    setbuf(stderr, 0);
 }
 
+#ifdef HX_WINDOWS
+void WriteConsoleAllW(HANDLE h, const wchar_t *str, DWORD length) {
+   DWORD total_written = 0;
+   DWORD remaining = length;
+   while (total_written < length) {
+      DWORD written;
+      if (!WriteConsoleW(h, str + total_written, remaining, &written, NULL))
+      {
+         return;
+      }
+      if (written == remaining) {
+         return;
+      }
+      total_written += written;
+      remaining -= written;
+   }
+}
+
+void WriteConsoleAllA(HANDLE h, const char *str, DWORD length) {
+   DWORD total_written = 0;
+   DWORD remaining = length;
+   while (total_written < length) {
+      DWORD written;
+      if (!WriteConsoleA(h, str + total_written, remaining, &written, NULL))
+      {
+         return;
+      }
+      if (written == remaining) {
+         return;
+      }
+      total_written += written;
+      remaining -= written;
+   }
+}
+#endif
+
 void __trace(Dynamic inObj, Dynamic info)
 {
    String text;
    if (inObj != null())
       text = inObj->toString();
 
+#ifdef HX_WINDOWS
+   HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+   DWORD mode;
+   if (GetConsoleMode(handle, &mode))
+   {
+      fflush(stdout);
+      String s;
+      if (info == null()) {
+         s = String("?? ") + text + String("\n");
+      } else {
+         String filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString();
+         int line = Dynamic((info)->__Field(HX_CSTRING("lineNumber"), HX_PROP_DYNAMIC))->__ToInt();
+         s = filename + String(":") + line + String(": ") + text + String("\n");
+      }
+      if (s.isUTF16Encoded())
+      {
+         WriteConsoleAllW(handle, s.__WCStr(), s.length);
+      } else {
+         // ascii
+         WriteConsoleAllA(handle, s.__CStr(), s.length);
+      }
+      return;
+   }
+#endif
 
    hx::strbuf convertBuf;
    if (info==null())
@@ -606,12 +652,34 @@ Array<String> __get_args()
 
 void __hxcpp_print_string(const String &inV)
 {
+#ifdef HX_WINDOWS
+   HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+   DWORD mode;
+   if (GetConsoleMode(handle, &mode) && inV.isUTF16Encoded())
+   {
+      fflush(stdout);
+      WriteConsoleAllW(handle, inV.__WCStr(), inV.length);
+      return;
+   }
+#endif
    hx::strbuf convertBuf;
    PRINTF("%s", inV.out_str(&convertBuf) );
 }
 
 void __hxcpp_println_string(const String &inV)
 {
+#ifdef HX_WINDOWS
+   HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+   DWORD mode;
+   if (GetConsoleMode(handle, &mode) && inV.isUTF16Encoded())
+   {
+      fflush(stdout);
+      WriteConsoleAllW(handle, inV.__WCStr(), inV.length);
+      fwrite("\n", 1, 1, stdout);
+      fflush(stdout);
+      return;
+   }
+#endif
    hx::strbuf convertBuf;
    PRINTF("%s\n", inV.out_str(&convertBuf));
    fflush(stdout);

@@ -1,13 +1,14 @@
 <xml>
 
 <!-- make sure hxcpp.n is up to date -->
-<pleaseUpdateHxcppTool version="7" />
+<pleaseUpdateHxcppTool version="8" />
 
 <pragma once="true" />
 
 
 <!-- Use value from Build.xml file unless one is specified from the haxe defines -->
 <set name="hxcpp_api_level" value="${HXCPP_API_LEVEL}" unless="hxcpp_api_level" if="HXCPP_API_LEVEL"  />
+<set name="HXCPP_THREAD_XML" value="${HXCPP}/toolchain/haxe-target-threads.xml" unless="HXCPP_THREAD_XML"/>
 
 <!-- You can override the exes an "exe" section on your own .hxcpp_config -->
 <!-- You can use replace="1" to change the compiler, or omit to add flags -->
@@ -77,6 +78,10 @@
   <depend name="${HXCPP}/include/hx/zip/Uncompress.hpp"/>
   <depend name="${HXCPP}/include/hx/thread/RecursiveMutex.hpp"/>
   <depend name="${HXCPP}/include/hx/thread/ConditionVariable.hpp"/>
+  <depend name="${HXCPP}/include/hx/thread/CountingSemaphore.hpp"/>
+  <depend name="${HXCPP}/include/hx/thread/Thread.hpp"/>
+  <depend name="${HXCPP}/include/hx/thread/ThreadLocal.hpp"/>
+  <depend name="${HXCPP}/include/hx/thread/Scratch.hpp"/>
   <section unless="HXCPP_LINK_NO_TOOL_DEPENDS" >
      <depend name="${HXCPP}/toolchain/haxe-target.xml" dateOnly="true" />
      <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml" dateOnly="true" />
@@ -166,6 +171,7 @@
   <depend name="${HXCPP}/src/hx/Hash.h"/>
   <depend name="${HXCPP}/src/hx/Unicase.h"/>
   <depend name="${HXCPP}/src/hx/gc/GcRegCapture.h"/>
+  <depend name="${HXCPP}/src/hx/thread/ThreadImpl.hpp"/>
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
 
   <compilerflag value="-DHX_UNDEFINE_H" />
@@ -208,8 +214,7 @@
   <file name = "src/cpp/encoding/Utf8.cpp"/>
   <file name = "src/cpp/encoding/Utf16.cpp"/>
 
-  <file name="${HXCPP}/src/hx/thread/RecursiveMutex.cpp"/>
-  <file name="${HXCPP}/src/hx/thread/ConditionVariable.cpp"/>
+  <include name="${HXCPP_THREAD_XML}"/>
 
   <addTwice if="linux||android" />
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />
