@@ -70,7 +70,15 @@ class TestWeakHash extends Test
 
    public function test()
    {
-      final map = createMapDeep(20,1000);
+      var map : WeakMap<WeakObjectData,Int> = null;
+
+      final sema = new sys.thread.Semaphore(0);
+      sys.thread.Thread.create(() -> {
+         map = createMapDeep(20,1000);
+         sema.release();
+      });
+      sema.acquire();
+      
       cpp.vm.Gc.run(true);
       deepCheckMap(10,map,500);
       deepClearRetained(10);
