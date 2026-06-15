@@ -78,7 +78,10 @@ class TestWeakHash extends Test
          sema.release();
       });
       sema.acquire();
-      
+
+      // Give the thread enough time to exit and unregister itself from the GC
+      Sys.sleep(1);
+
       cpp.vm.Gc.run(true);
       deepCheckMap(10,map,500);
       deepClearRetained(10);
