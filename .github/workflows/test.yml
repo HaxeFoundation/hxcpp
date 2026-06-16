@@ -196,10 +196,24 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+      - name: Get Haxe commit SHA
+        if: inputs.haxe == 'latest'
+        id: haxe_sha
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(haxe --version)
+          short_sha=${version##*+}
+          full_sha=$(gh api repos/HaxeFoundation/haxe/commits/$short_sha --jq '.sha')
+          echo "Haxe version: $version"
+          echo "sha=$full_sha" >> "$GITHUB_OUTPUT"
+          echo "Commit SHA: $short_sha, Full SHA: $full_sha"
       - name: checkout haxe (latest)
         if: inputs.haxe == 'latest'
         uses: actions/checkout@v4
         with:
+          ref: ${{ steps.haxe_sha.outputs.sha }}
           repository: HaxeFoundation/haxe
           path: haxe
       - name: checkout haxe (stable)
