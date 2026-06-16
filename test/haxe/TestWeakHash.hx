@@ -83,10 +83,38 @@ class TestWeakHash extends Test
       Sys.sleep(1);
 
       cpp.vm.Gc.run(true);
-      deepCheckMap(10,map,500);
-      deepClearRetained(10);
+
+      final sema = new sys.thread.Semaphore(0);
+      sys.thread.Thread.create(() -> {
+         checkMap(map,500);
+         sema.release();
+      });
+      sema.acquire();
+
+      // Give the thread enough time to exit and unregister itself from the GC
+      Sys.sleep(1);
+
+      final sema = new sys.thread.Semaphore(0);
+      sys.thread.Thread.create(() -> {
+         retained = [];
+         sema.release();
+      });
+      sema.acquire();
+
+      // Give the thread enough time to exit and unregister itself from the GC
+      Sys.sleep(1);
+
       cpp.vm.Gc.run(true);
-      checkMap(map,0);
+
+      final sema = new sys.thread.Semaphore(0);
+      sys.thread.Thread.create(() -> {
+         checkMap(map,0);
+         sema.release();
+      });
+      sema.acquire();
+
+      // Give the thread enough time to exit and unregister itself from the GC
+      Sys.sleep(1);
       
       Assert.pass();
    }
