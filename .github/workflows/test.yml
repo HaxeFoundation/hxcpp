@@ -200,6 +200,8 @@ jobs:
         if: inputs.haxe == 'latest'
         id: haxe_sha
         shell: bash
+        working-directory:
+          ${{env.GITHUB_WORKSPACE}}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
