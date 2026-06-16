@@ -196,12 +196,16 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+      - name: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
       - name: Get Haxe commit SHA
         if: inputs.haxe == 'latest'
         id: haxe_sha
         shell: bash
         working-directory:
-          ${{env.GITHUB_WORKSPACE}}
+          ${{github.workspace}}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -225,10 +229,6 @@ jobs:
           repository: HaxeFoundation/haxe
           path: haxe
           ref: ${{ inputs.haxe }}
-      - name: setup
-        uses: ./.github/workflows/setup
-        with:
-          haxe: ${{ inputs.haxe }}
       - name: install haxe libs
         run: haxelib install compile-cpp.hxml --always
         # haxe 4 tests don't build with latest utest
