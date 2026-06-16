@@ -52,21 +52,6 @@ class TestWeakHash extends Test
       Assert.isTrue(oddFound<=2, "Too many odd values retained " + oddFound);
       Assert.isTrue(valid>=expect && valid<expect+2, "WeakHash invalid range "+ expect + "..." + valid + "..." + (expect+2));
    }
-   function deepCheckMap(inDepth:Int, map:WeakMap<WeakObjectData,Int>, expect:Int)
-   {
-      if (inDepth<1)
-         checkMap(map,expect);
-      else
-         deepCheckMap(inDepth-1, map, expect);
-   }
-
-   function deepClearRetained(inRecurse:Int)
-   {
-      if (inRecurse>0)
-         deepClearRetained(inRecurse-1);
-      else
-         retained = [];
-   }
 
    public function test()
    {
@@ -74,7 +59,7 @@ class TestWeakHash extends Test
 
       final sema = new sys.thread.Semaphore(0);
       sys.thread.Thread.create(() -> {
-         map = createMapDeep(20,1000);
+         map = createMap(1000);
          sema.release();
       });
       sema.acquire();
