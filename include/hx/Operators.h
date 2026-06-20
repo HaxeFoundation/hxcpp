@@ -406,7 +406,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES StringValueIterator : public cpp::StringIter
 public:
    StringValueIterator(const String &inValue) : StringIterator(inValue) { }
 
-   int next() { return value.cca(pos++); }
+   int next() HXCPP_OVERRIDE { return value.cca(pos++); }
 };
 
 class HXCPP_EXTERN_CLASS_ATTRIBUTES StringKeyValueIterator : public cpp::StringIterator<Dynamic>
@@ -414,7 +414,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES StringKeyValueIterator : public cpp::StringI
 public:
    StringKeyValueIterator(const String &inValue) : StringIterator(inValue) { }
 
-   Dynamic next() {
+   Dynamic next() HXCPP_OVERRIDE {
       int p = pos;
       return
         hx::AnonStruct2_obj< int,int >::Create(HX_("key",9f,89,51,00),p,

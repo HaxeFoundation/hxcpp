@@ -69,7 +69,7 @@ struct SocketWrapper : public hx::Object
 
    SOCKET socket;
 
-   int __GetType() const { return socketType; }
+   int __GetType() const HXCPP_OVERRIDE { return socketType; }
 };
 
 
@@ -1122,19 +1122,19 @@ struct polldata : public hx::Object
       }
    }
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(ridx); HX_MARK_MEMBER(widx); }
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER(ridx); HX_MARK_MEMBER(widx); }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(ridx); HX_VISIT_MEMBER(widx); }
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(ridx); HX_VISIT_MEMBER(widx); }
    #endif
 
-   int __GetType() const { return pollType; }
+   int __GetType() const HXCPP_OVERRIDE { return pollType; }
 
    static void finalize(Dynamic obj)
    {
       ((polldata *)(obj.mPtr))->destroy();
    }
 
-   String toString() { return HX_CSTRING("polldata"); }
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING("polldata"); }
 };
 
 polldata *val_poll(Dynamic o)

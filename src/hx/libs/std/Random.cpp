@@ -39,7 +39,7 @@ struct rnd  : public hx::Object
    unsigned long seeds[NSEEDS];
    unsigned long cur;
 
-   String toString() { return HX_CSTRING("rand"); }
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING("rand"); }
 };
 
 static unsigned long mag01[2]={ 

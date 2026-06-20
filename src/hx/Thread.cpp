@@ -36,7 +36,7 @@ struct Deque : public Array_obj<Dynamic>
 	}
 
    #ifdef HXCPP_VISIT_ALLOCS
-  	void __Visit(hx::VisitContext *__inCtx)
+	void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
 	{
 		Array_obj<Dynamic>::__Visit(__inCtx);
 		mFinalizer->Visit(__inCtx);
@@ -65,7 +65,7 @@ struct Deque : public Array_obj<Dynamic>
 		mSemaphore.Set();
 	}
 
-	
+
 	Dynamic PopFront(bool inBlock)
 	{
 		hx::EnterGCFreeZone();
@@ -106,7 +106,7 @@ struct Deque : public Array_obj<Dynamic>
 		mSemaphore.QSet();
 	}
 
-	
+
 	Dynamic PopFront(bool inBlock)
 	{
 		hx::EnterGCFreeZone();
@@ -248,7 +248,7 @@ Dynamic __hxcpp_condition_create(void)
 void __hxcpp_condition_acquire(Dynamic inCond)
 {
 	auto condition = inCond.Cast<hx::thread::ConditionVariable>();
-  
+
 	condition->acquire();
 }
 bool __hxcpp_condition_try_acquire(Dynamic inCond)
@@ -301,7 +301,7 @@ public:
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdLock };
 
    #ifdef HXCPP_VISIT_ALLOCS
-	void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
+	void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { mFinalizer->Visit(__inCtx); }
    #endif
 
 	hx::InternalFinalizer *mFinalizer;

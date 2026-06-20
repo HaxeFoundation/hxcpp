@@ -16,6 +16,14 @@ class IStringAlloc
       ~IStringAlloc(){};
 };
 
+#ifndef HXCPP_OVERRIDE
+   #if HXCPP_API_LEVEL >= 500 && (__cplusplus >= 201103L || (defined(_MSC_VER) && _MSVC_LANG >= 201103L))
+      #define HXCPP_OVERRIDE override
+   #else
+      #define HXCPP_OVERRIDE
+   #endif
+#endif
+
 template<int STACK>
 class StringAlloc : public IStringAlloc
 {
@@ -30,7 +38,7 @@ class StringAlloc : public IStringAlloc
          if (heap)
             free(heap);
       }
-      void *allocBytes(size_t inBytes)
+      void *allocBytes(size_t inBytes) HXCPP_OVERRIDE
       {
          if (inBytes<=STACK)
             return buffer;

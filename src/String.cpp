@@ -2262,7 +2262,7 @@ String &String::operator+=(const String &inRHS)
 #if (HXCPP_API_LEVEL>=500)
     #ifdef HXCPP_VISIT_ALLOCS
         #define STRING_VISIT_FUNC \
-            void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); }
+            void __Visit(hx::VisitContext *__inCtx) override { HX_VISIT_MEMBER(mThis); }
     #else
         #define STRING_VISIT_FUNC
     #endif
@@ -2294,7 +2294,7 @@ String &String::operator+=(const String &inRHS)
                     mThis = inThis; \
                 } \
                 void* __GetHandle() const override { return const_cast<char *>(mThis.raw_ptr()); } \
-                void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+                void __Mark(hx::MarkContext *__inCtx) override { HX_MARK_MEMBER(mThis); } \
                 STRING_VISIT_FUNC \
                 int __Compare(const ::hx::Object* inRhs) const override \
                 { \
@@ -2337,7 +2337,7 @@ String &String::operator+=(const String &inRHS)
 #else
     #ifdef HXCPP_VISIT_ALLOCS
     #define STRING_VISIT_FUNC \
-        void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_STRING(mThis.raw_ref()); }
+        void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_STRING(mThis.raw_ref()); }
     #else
     #define STRING_VISIT_FUNC
     #endif
@@ -2351,22 +2351,22 @@ String &String::operator+=(const String &inRHS)
        __String_##func(const String &inThis) : mThis(inThis) { \
           HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
        } \
-       String toString() const{ return HX_CSTRING(#func); } \
-       String __ToString() const{ return HX_CSTRING(#func); } \
-       int __GetType() const { return vtFunction; } \
-       void *__GetHandle() const { return const_cast<char *>(mThis.raw_ptr()); } \
-       int __ArgCount() const { return ARG_C; } \
-       void __Mark(hx::MarkContext *__inCtx) { HX_MARK_STRING(mThis.raw_ptr()); } \
-       Dynamic __Run(const Array<Dynamic> &inArgs) \
+       String toString() HXCPP_OVERRIDE { return HX_CSTRING(#func); } \
+       String __ToString() const HXCPP_OVERRIDE { return HX_CSTRING(#func); } \
+       int __GetType() const HXCPP_OVERRIDE { return vtFunction; } \
+       void *__GetHandle() const HXCPP_OVERRIDE { return const_cast<char *>(mThis.raw_ptr()); } \
+       int __ArgCount() const HXCPP_OVERRIDE { return ARG_C; } \
+       void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_STRING(mThis.raw_ptr()); } \
+       Dynamic __Run(const Array<Dynamic> &inArgs) HXCPP_OVERRIDE \
        { \
           return mThis.func(array_list); return Dynamic(); \
        } \
-       Dynamic __run(dynamic_arg_list) \
+       Dynamic __run(dynamic_arg_list) HXCPP_OVERRIDE \
        { \
           return mThis.func(arg_list); return Dynamic(); \
        } \
        STRING_VISIT_FUNC \
-       void  __SetThis(Dynamic inThis) { mThis = inThis; } \
+       void  __SetThis(Dynamic inThis) HXCPP_OVERRIDE { mThis = inThis; } \
     }; \
     Dynamic String::func##_dyn()  { return new __String_##func(*this);  }
 
@@ -2489,13 +2489,13 @@ public:
       HX_OBJ_WB_GET(this,mValue.raw_ref());
    };
 
-   hx::Class __GetClass() const { return __StringClass; }
+   hx::Class __GetClass() const HXCPP_OVERRIDE { return __StringClass; }
    bool __Is(hx::Object *inClass) const { return dynamic_cast< StringData *>(inClass); }
 
-   virtual int __GetType() const { return vtString; }
-   String __ToString() const { return mValue; }
-   String toString() { return mValue; }
-   double __ToDouble() const
+   int __GetType() const HXCPP_OVERRIDE { return vtString; }
+   String __ToString() const HXCPP_OVERRIDE { return mValue; }
+   String toString() HXCPP_OVERRIDE { return mValue; }
+   double __ToDouble() const HXCPP_OVERRIDE
    {
       if (!mValue.raw_ptr()) return 0;
 
@@ -2505,33 +2505,33 @@ public:
       return atof(mValue.utf8_str());
       #endif
    }
-   int __length() const { return mValue.length; }
+   int __length() const HXCPP_OVERRIDE { return mValue.length; }
 
-   void __Mark(hx::MarkContext *__inCtx)
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_MARK_MEMBER(mValue);
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_VISIT_MEMBER(mValue);
    }
    #endif
 
 
-   int __ToInt() const
+   int __ToInt() const HXCPP_OVERRIDE
    {
       if (!mValue.raw_ptr()) return 0;
       return atoi(mValue.utf8_str());
    }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE
    {
       return mValue.compare( const_cast<hx::Object*>(inRHS)->toString() );
    }
 
-   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp)
+   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp) HXCPP_OVERRIDE
    {
       return mValue.__Field(inString, inCallProp);
    }

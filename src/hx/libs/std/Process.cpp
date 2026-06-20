@@ -97,7 +97,7 @@ struct vprocess : public hx::Object
       ((vprocess *)(obj.mPtr))->destroy();
    }
 
-   String toString() { return HX_CSTRING("vprocess"); }
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING("vprocess"); }
 };
 
 vprocess *getProcess(Dynamic handle)

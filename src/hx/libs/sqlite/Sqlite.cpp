@@ -96,7 +96,7 @@ struct result : public hx::Object
       }
    }
 
-   String toString() { return HX_CSTRING("Sqlite Result"); }
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING("Sqlite Result"); }
 
  //static void finalize_result( result *r, int exc, bool throwError = true )
 };
@@ -153,12 +153,12 @@ struct database : public hx::Object
       HX_OBJ_WB_GET(this, last.mPtr);
    }
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(last); }
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER(last); }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(last); }
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(last); }
    #endif
 
-   String toString() { return HX_CSTRING("Sqlite Databse"); }
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING("Sqlite Databse"); }
 };
 
 static void sqlite_error( sqlite3 *db ) {

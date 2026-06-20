@@ -39,17 +39,17 @@ namespace hx
 			ThreadImpl_obj(const int _id);
 			ThreadImpl_obj(const int _id, Thread_obj::CreateFunction _run, CountingSemaphore _semaphore);
 
-			String getName() override;
-			void setName(const String& name) override;
+			String getName() HXCPP_OVERRIDE;
+			void setName(const String& name) HXCPP_OVERRIDE;
 
 			Dynamic getSlot(const int id);
 			void setSlot(const int id, const Dynamic& obj);
 
-			String toString() override;
+			String toString() HXCPP_OVERRIDE;
 
-			void __Mark(HX_MARK_PARAMS) override;
+			void __Mark(HX_MARK_PARAMS) HXCPP_OVERRIDE;
 #ifdef HXCPP_VISIT_ALLOCS
-			void __Visit(HX_VISIT_PARAMS) override;
+			void __Visit(HX_VISIT_PARAMS) HXCPP_OVERRIDE;
 #endif
 
 			static void finalise(hx::Object* obj);

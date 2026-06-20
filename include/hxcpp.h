@@ -98,6 +98,12 @@
   #endif
 #endif
 
+#if HXCPP_API_LEVEL >= 500 && (__cplusplus >= 201103L || (defined(_MSC_VER) && _MSVC_LANG >= 201103L))
+  #define HXCPP_OVERRIDE override
+#else
+  #define HXCPP_OVERRIDE
+#endif
+
 typedef char HX_CHAR;
 
 

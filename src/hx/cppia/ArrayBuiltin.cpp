@@ -106,12 +106,12 @@ struct ArraySetter : public ArrayBuiltinBase
       : ArrayBuiltinBase(inSrc,inThisExpr,ioExpressions)
    {
    }
-   const char *getName() { return "ArraySetter"; }
-   virtual ExprType getType()
+   const char *getName() HXCPP_OVERRIDE { return "ArraySetter"; }
+   ExprType getType() HXCPP_OVERRIDE
    {
       return (ExprType)ExprTypeOf<ELEM>::value;
    }
-   int runInt(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       Array_obj<ELEM> *thisVal = reinterpret_cast<Array_obj<ELEM>*>(thisExpr->runObject(ctx));
       BCR_CHECK;
@@ -125,7 +125,7 @@ struct ArraySetter : public ArrayBuiltinBase
       #endif
       return ValToInt(elem);
    }
-   Float  runFloat(CppiaCtx *ctx)
+   Float  runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       Array_obj<ELEM> *thisVal = reinterpret_cast<Array_obj<ELEM>*>(thisExpr->runObject(ctx));
       BCR_CHECK;
@@ -139,7 +139,7 @@ struct ArraySetter : public ArrayBuiltinBase
       #endif
       return ValToFloat(elem);
    }
-   String  runString(CppiaCtx *ctx)
+   String  runString(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       Array_obj<ELEM> *thisVal = reinterpret_cast<Array_obj<ELEM>*>(thisExpr->runObject(ctx));
       BCR_CHECK;
@@ -153,7 +153,7 @@ struct ArraySetter : public ArrayBuiltinBase
       #endif
       return ValToString(elem);
    }
-   hx::Object *runObject(CppiaCtx *ctx)
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       Array_obj<ELEM> *thisVal = reinterpret_cast<Array_obj<ELEM>*>(thisExpr->runObject(ctx));
       BCR_CHECK;
@@ -220,7 +220,7 @@ struct ArraySetter : public ArrayBuiltinBase
    }
 
 
-   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType) HXCPP_OVERRIDE
    {
       ExprType elemType = (ExprType)ExprTypeOf<ELEM>::value;
       ExprType rightHandType;
@@ -416,9 +416,9 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    {
       unsafe = inUnsafe;
    }
-   const char *getName() { return gArrayFuncNames[FUNC]; }
+   const char *getName() HXCPP_OVERRIDE { return gArrayFuncNames[FUNC]; }
 
-   ExprType getType()
+   ExprType getType() HXCPP_OVERRIDE
    {
       switch(FUNC)
       {
@@ -459,7 +459,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    }
 
 
-   int runInt(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       if (FUNC==afPush)
       {
@@ -565,7 +565,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
       return 0;
    }
-   Float       runFloat(CppiaCtx *ctx)
+   Float       runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       if (FUNC==afPop)
       {
@@ -619,7 +619,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    }
 
 
-   ::String    runString(CppiaCtx *ctx)
+   ::String    runString(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       if (FUNC==afPop)
       {
@@ -693,7 +693,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
       return runObject(ctx)->toString();
    }
-   hx::Object *runObject(CppiaCtx *ctx)
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       if (FUNC==af__get)
       {
@@ -826,7 +826,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
       return 0;
    }
-   void        runVoid(CppiaCtx *ctx)
+   void        runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       if (FUNC==afPop)
       {
@@ -946,7 +946,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    }
 
 
-   CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue)
+   CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue) HXCPP_OVERRIDE
    {
       if (FUNC==af__get)
       {
@@ -1003,7 +1003,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       return 0;
    }
 
-   CppiaExpr   *makeCrement(CrementOp inOp)
+   CppiaExpr   *makeCrement(CrementOp inOp) HXCPP_OVERRIDE
    {
       if (FUNC==af__get)
       {
@@ -1221,7 +1221,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
    static bool isBoolElem() { return ExprTypeIsBool<ELEM>::value; }
 
-   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType) HXCPP_OVERRIDE
    {
       // TODO - null check
       switch(FUNC)
