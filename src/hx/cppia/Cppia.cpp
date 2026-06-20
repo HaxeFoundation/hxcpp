@@ -4657,15 +4657,10 @@ struct GetFieldByLinkage : public CppiaExpr
                      (CppiaExpr*)new MemReference<String,locThis>(this,offset);
                   break;
             case fsObject:
-               replace = object ?
-                     (CppiaExpr*)new MemReference<hx::Object *,locObj>(this,offset,object):
-                     (CppiaExpr*)new MemReference<hx::Object *,locThis>(this,offset);
-                  break;
             case fsByte:
             case fsUnknown:
                 forceNamedAccess = true;
                 break;
-                ;
          }
       }
 
