@@ -3,10 +3,12 @@
 #include <hx/GC.h>
 #include <hx/Memory.h>
 #include <hx/Thread.h>
+#include <hx/thread/Thread.hpp>
 #include "../Hash.h"
 #include "GcRegCapture.h"
 #include <hx/Unordered.h>
 #include <mutex>
+#include <thread>
 #include <condition_variable>
 
 #ifdef EMSCRIPTEN
@@ -394,7 +396,7 @@ static int sgTimeToNextTableUpdate = 1;
 
 
 
-std::mutex *gThreadStateChangeLock=nullptr;
+std::recursive_mutex *gThreadStateChangeLock=nullptr;
 std::mutex *gSpecialObjectLock=nullptr;
 
 class LocalAllocator;
@@ -3133,12 +3135,12 @@ public:
    {
       if (!gThreadStateChangeLock)
       {
-         gThreadStateChangeLock = new std::mutex();
+         gThreadStateChangeLock = new std::recursive_mutex();
          gSpecialObjectLock = new std::mutex();
       }
       // Until we add ourselves, the collector will not wait
       //  on us - ie, we are assumed ot be in a GC free zone.
-      std::lock_guard<std::mutex> lock(*gThreadStateChangeLock);
+      std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
       mLocalAllocs.push(inAlloc);
       // TODO Attach debugger
    }
@@ -3161,7 +3163,7 @@ public:
 
    LocalAllocator *GetPooledAllocator()
    {
-      std::lock_guard<std::mutex> lock(*gThreadStateChangeLock);
+      std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
       for(int p=0;p<LOCAL_POOL_SIZE;p++)
       {
          if (mLocalPool[p])
@@ -4515,10 +4517,9 @@ public:
       }
    }
 
-   static THREAD_FUNC_TYPE SThreadLoop( void *inInfo )
+   static void SThreadLoop( void *inInfo )
    {
       sGlobalAlloc->ThreadLoop((int)(size_t)inInfo);
-      THREAD_FUNC_RET;
    }
 
    void CreateWorker(int inId)
@@ -4536,7 +4537,9 @@ public:
 
          sThreadSleeping[inId] = false;
 
-         HxCreateDetachedThread(SThreadLoop, info);
+         std::thread thread(SThreadLoop, info);
+
+         thread.detach();
       #endif
    }
 
@@ -5857,7 +5860,7 @@ public:
          EnterGCFreeZone();
       #endif
 
-      std::lock_guard<std::mutex> lock(*gThreadStateChangeLock);
+      std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
 
       #ifdef HX_WINDOWS
       mID = 0;
@@ -6084,7 +6087,7 @@ public:
       if (!mGCFreeZone)
          CriticalGCError("GCFree Zone mismatch");
 
-      std::lock_guard<std::mutex> lock(*gThreadStateChangeLock);
+      std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
       mReadyForCollect.Reset();
       mGCFreeZone = false;
       #endif
@@ -6574,7 +6577,7 @@ void InitAlloc()
    ExitGCFreeZone();
 
    // Setup main thread ...
-   __hxcpp_thread_current();
+   hx::thread::Thread_obj::current();
 
    gMainThreadContext->onThreadAttach();
 }

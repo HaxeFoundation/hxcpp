@@ -157,6 +157,11 @@ namespace hx
                     return wrapped.GetPtr();
                 }
 
+                std::type_index callableId() const override
+                {
+                    return wrapped->callableId();
+                }
+
                 inline void __Mark(hx::MarkContext* __inCtx) override
                 {
                     HX_MARK_MEMBER(wrapped);
@@ -335,6 +340,11 @@ namespace hx
                 void* __GetHandle() const override
                 {
                     return wrapped.GetPtr();
+                }
+
+                std::type_index callableId() const override
+                {
+                    return wrapped->callableId();
                 }
 
                 inline void __Mark(hx::MarkContext* __inCtx) override

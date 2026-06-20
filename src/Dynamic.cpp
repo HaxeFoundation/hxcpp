@@ -123,7 +123,7 @@ public:
    String __ToString() const HXCPP_OVERRIDE { return String(mValue); }
    double __ToDouble() const HXCPP_OVERRIDE { return mValue; }
    int __ToInt() const HXCPP_OVERRIDE { return (int)mValue; }
-   cpp::Int64 __ToInt64() const HXCPP_OVERRIDE { return mValue; }
+   cpp::Int64 __ToInt64() const HXCPP_OVERRIDE { return (cpp::Int64)mValue; }
 
    int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE
    {
@@ -153,7 +153,7 @@ public:
    int __GetType() const HXCPP_OVERRIDE { return vtInt64; }
    String toString() HXCPP_OVERRIDE { return String(mValue); }
    String __ToString() const HXCPP_OVERRIDE { return String(mValue); }
-   double __ToDouble() const HXCPP_OVERRIDE { return mValue; }
+   double __ToDouble() const HXCPP_OVERRIDE { return (double)mValue; }
    int __ToInt() const HXCPP_OVERRIDE { return (int)mValue; }
    cpp::Int64 __ToInt64() const HXCPP_OVERRIDE { return mValue; }
    void __GetFields(Array<String>& outFields) HXCPP_OVERRIDE
@@ -414,7 +414,7 @@ Dynamic::Dynamic(double inVal)
       int idx = inVal+1;
       mPtr = sConstDynamicInts[idx].mPtr;
       if (!mPtr)
-         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
+         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData((int)inVal);
    }
    else
       mPtr = (hx::Object *)new DoubleData(inVal);
@@ -423,12 +423,13 @@ Dynamic::Dynamic(double inVal)
 
 Dynamic::Dynamic(cpp::Int64 inVal)
 {
-   if ( (int)inVal==inVal && inVal>=-1 && inVal<256 )
+   int ival = (int)inVal;
+   if ( ival==inVal && ival>=-1 && ival<256 )
    {
-      int idx = inVal+1;
+      int idx = ival+1;
       mPtr = sConstDynamicInts[idx].mPtr;
       if (!mPtr)
-         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
+         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(ival);
    }
    else
       mPtr = (hx::Object *)new Int64Data(inVal);

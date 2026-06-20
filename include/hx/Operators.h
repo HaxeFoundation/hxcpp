@@ -82,8 +82,8 @@ template<> inline double ToDouble(double inValue) { return inValue; }
 template<> inline double ToDouble(int inValue) { return inValue; }
 template<> inline double ToDouble(bool inValue) { return inValue; }
 template<> inline double ToDouble(float inValue) { return inValue; }
-template<> inline double ToDouble(cpp::UInt64 inValue) { return inValue; }
-template<> inline double ToDouble(cpp::Int64 inValue) { return inValue; }
+template<> inline double ToDouble(cpp::UInt64 inValue) { return (double)inValue; }
+template<> inline double ToDouble(cpp::Int64 inValue) { return (double)inValue; }
 template<> inline double ToDouble(null inValue) { return 0; }
 
 
@@ -261,7 +261,7 @@ template<> inline float TCastObject<float>(hx::Object *inObj)
 {
    if (!inObj || (inObj->__GetType()!=::vtFloat && inObj->__GetType()!=::vtInt64 && inObj->__GetType()!=::vtInt))
       return hx::BadCast();
-   return inObj->__ToDouble();
+   return (float)inObj->__ToDouble();
 }
 
 template<> inline String TCastObject<String>(hx::Object *inObj)

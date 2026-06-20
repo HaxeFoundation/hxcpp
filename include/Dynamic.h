@@ -168,7 +168,7 @@ public:
       bool operator op (const ::String &inRHS)  const { return mPtr && ((::String)(*this) op inRHS); } \
       bool operator op (double inRHS)  const { return IsNumeric() && ((double)(*this) op inRHS); } \
       bool operator op (::cpp::Int64 inRHS)  const { return IsNumeric() && ((::cpp::Int64)(*this) op inRHS); } \
-      bool operator op (::cpp::UInt64 inRHS)  const { return IsNumeric() && ((::cpp::Int64)(*this) op inRHS); } \
+      bool operator op (::cpp::UInt64 inRHS)  const { return IsNumeric() && ((::cpp::UInt64)(*this) op inRHS); } \
       bool operator op (float inRHS)  const { return IsNumeric() && ((double)(*this) op inRHS); } \
       bool operator op (int inRHS)  const { return IsNumeric() && ((double)(*this) op (double)inRHS); } \
       bool operator op (unsigned int inRHS)  const { return IsNumeric() && ((double)(*this) op (double)inRHS); } \
@@ -183,7 +183,7 @@ public:
    bool operator != (const String &inRHS)  const { return !mPtr || ((String)(*this) != inRHS); }
    bool operator != (double inRHS)  const { return !IsNumeric() || ((double)(*this) != inRHS); }
    bool operator != (cpp::Int64 inRHS)  const { return !IsNumeric() || ((cpp::Int64)(*this) != inRHS); }
-   bool operator != (cpp::UInt64 inRHS)  const { return !IsNumeric() || ((cpp::Int64)(*this) != inRHS); }
+   bool operator != (cpp::UInt64 inRHS)  const { return !IsNumeric() || ((cpp::UInt64)(*this) != inRHS); }
    bool operator != (float inRHS)  const { return !IsNumeric() || ((double)(*this) != inRHS); }
    bool operator != (int inRHS)  const { return !IsNumeric() || ((double)(*this) != (double)inRHS); }
    bool operator != (unsigned int inRHS)  const { return !IsNumeric() || ((double)(*this) != (double)inRHS); }
@@ -381,9 +381,9 @@ inline int Dynamic::Cast<int>() const { return mPtr ? mPtr->__ToInt() : 0; }
 template<>
 inline bool Dynamic::Cast<bool>() const { return mPtr ? mPtr->__ToInt() : 0; }
 template<>
-inline double Dynamic::Cast<double>() const { return mPtr ? mPtr->__ToDouble() : 0; }
+inline double Dynamic::Cast<double>() const { return mPtr ? mPtr->__ToDouble() : 0.0; }
 template<>
-inline float Dynamic::Cast<float>() const { return mPtr ? mPtr->__ToDouble() : 0; }
+inline float Dynamic::Cast<float>() const { return (float)(mPtr ? mPtr->__ToDouble() : 0.0f); }
 template<>
 inline String Dynamic::Cast<String>() const { return mPtr ? mPtr->toString() : String(null()); }
 
@@ -466,8 +466,8 @@ COMPARE_DYNAMIC_OP( >  )
 
 
 #define ARITH_DYNAMIC( op ) \
-   inline double operator op (const ::cpp::Int64 &inLHS,const ::Dynamic &inRHS) { return inLHS op (::cpp::Int64)inRHS;} \
-   inline double operator op (const ::cpp::UInt64 &inLHS,const ::Dynamic &inRHS) { return inLHS op (::cpp::UInt64)inRHS;} \
+   inline double operator op (const ::cpp::Int64 &inLHS,const ::Dynamic &inRHS) { return (double)( inLHS op (::cpp::Int64)inRHS );} \
+   inline double operator op (const ::cpp::UInt64 &inLHS,const ::Dynamic &inRHS) { return (double)( inLHS op (::cpp::UInt64)inRHS );} \
    inline double operator op (const double &inLHS,const ::Dynamic &inRHS) { return inLHS op (double)inRHS;} \
    inline double operator op (const float &inLHS,const ::Dynamic &inRHS) { return inLHS op (double)inRHS;} \
    inline double operator op (const int &inLHS,const ::Dynamic &inRHS) { return inLHS op (double)inRHS; } \

@@ -243,7 +243,7 @@ inline void CopyValue(String &outValue, Float inValue) {  }
 inline void CopyValue(String &outValue, const Dynamic &inValue) { outValue = inValue; }
 inline void CopyValue(int &outValue, int inValue) { outValue = inValue; }
 inline void CopyValue(int &outValue, cpp::Int64 inValue) { }
-inline void CopyValue(int &outValue, Float inValue) { outValue = inValue; }
+inline void CopyValue(int &outValue, Float inValue) { outValue = (int)inValue; }
 inline void CopyValue(int &outValue, const Dynamic &inValue) { outValue = inValue; }
 inline void CopyValue(int &outValue, const String &inValue) {  }
 inline void CopyValue(Float &outValue, Float inValue) { outValue = inValue; }
