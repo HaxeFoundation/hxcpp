@@ -11,7 +11,7 @@
 #   include <memory.h>
 #   include <errno.h>
 #   include <signal.h>
-#   if defined(ANDROID) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
+#   if defined(ANDROID) || defined(BLACKBERRY) || defined(EMSCRIPTEN) || defined(NEKO_BSD)
 #      include <sys/wait.h>
 #   elif !defined(NEKO_MAC)
 #      include <wait.h>
