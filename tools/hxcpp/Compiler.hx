@@ -694,7 +694,7 @@ class Compiler
    {
       mPCH = inPCH;
       createCompilerVersion();
-      static final regex = ~/clang/i;
+      final regex = ~/clang/i;
       if (inPCH != null && regex.match(mCompilerVersionString)) {
          mPCH = "clang";
       }
