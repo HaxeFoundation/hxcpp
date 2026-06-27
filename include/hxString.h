@@ -42,6 +42,7 @@ public:
    inline String(const char16_t *inPtr) { *this = create(inPtr); }
    inline String(const char *inPtr) { *this = create(inPtr); }
 
+   // If inLen is -1, the input string is treated as null terminated.
    static String create(const wchar_t *inPtr,int inLen=-1);
    static String create(const char16_t *inPtr,int inLen=-1);
    static String create(const char *inPtr,int inLen=-1);
