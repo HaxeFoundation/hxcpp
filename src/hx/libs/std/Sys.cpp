@@ -19,6 +19,7 @@
    #include <conio.h>
    #include <locale.h>
 #else
+   #include <fcntl.h>
    #include <errno.h>
    #ifndef EPPC
       #include <unistd.h>
@@ -454,6 +455,16 @@ Dynamic _hx_std_sys_stat( String path )
          hx::strbuf buf;
          err = _stat(path.utf8_str(&buf),&s);
       }
+   #elif defined(HX_LINUX)
+      struct stat s;
+      hx::strbuf buf;
+      err = stat(path.utf8_str(&buf),&s);
+      struct statx sx;
+      if (!err)
+      {
+         hx::strbuf buf2;
+         err = statx(AT_FDCWD,path.utf8_str(&buf2),0,STATX_BTIME,&sx);
+      }
    #else
       struct stat s;
       hx::strbuf buf;
@@ -469,7 +480,13 @@ Dynamic _hx_std_sys_stat( String path )
    STATF(uid);
    STATF(atime);
    STATF(mtime);
+   #if defined(HX_LINUX)
+   o->Add(HX_CSTRING("ctime"),(int)(sx.stx_btime.tv_sec));
+   #elif defined(HX_MACOS)
+   o->Add(HX_CSTRING("ctime"),(int)(s.st_birthtime));
+   #else
    STATF(ctime);
+   #endif
    STATF(dev);
    STATF(ino);
    STATF(mode);
