@@ -959,10 +959,17 @@ void CppiaClassInfo::linkTypes()
       std::vector<CppiaVar *> combinedVars(cppiaSuper->memberVars );
       for(int i=0;i<memberVars.size();i++)
       {
-         for(int j=0;j<combinedVars.size();j++)
+         bool found = false;
+         for(int j=0;j<combinedVars.size() && !found;j++)
             if (combinedVars[j]->nameId==memberVars[i]->nameId)
-               printf("Warning duplicate member var %s\n", cppia.strings[memberVars[i]->nameId].out_str());
-         combinedVars.push_back(memberVars[i]);
+            {
+               // Redefinition in subclass, child field reuses parent's storage slot.
+               memberVars[i]->offset = combinedVars[j]->offset;
+               combinedVars[j] = memberVars[i];
+               found = true;
+            }
+         if (!found)
+            combinedVars.push_back(memberVars[i]);
       }
       memberVars.swap(combinedVars);
 
