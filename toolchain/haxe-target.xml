@@ -172,7 +172,6 @@
   <depend name="${HXCPP}/src/hx/Unicase.h"/>
   <depend name="${HXCPP}/src/hx/gc/GcRegCapture.h"/>
   <depend name="${HXCPP}/src/hx/thread/ThreadImpl.hpp"/>
-  <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
 
   <compilerflag value="-DHX_UNDEFINE_H" />
 

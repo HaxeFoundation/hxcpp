@@ -9,7 +9,8 @@
 
   <section if="windows">
     <file name="src/hx/thread/CountingSemaphore.win32.cpp"/>
-    <file name="src/hx/thread/ThreadImpl.win32.cpp"/>
+    <file name="src/hx/thread/ThreadImpl.win32.cpp" unless="mingw" />
+    <file name="src/hx/thread/ThreadImpl.noop.cpp" if="mingw" />
   </section>
 
   <section if="apple">
