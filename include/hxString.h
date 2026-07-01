@@ -76,11 +76,11 @@ public:
    }
    #endif
    #if defined(HX_WINRT) && defined(__cplusplus_winrt)
-   inline String(Platform::String^ inString)
+   explicit inline String(Platform::String^ inString)
    {
       *this = String(inString->Data());
    }
-   inline String(Platform::StringReference inString)
+   explicit inline String(Platform::StringReference inString)
    {
       *this = String(inString.Data());
    }
