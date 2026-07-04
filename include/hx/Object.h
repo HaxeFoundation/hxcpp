@@ -42,7 +42,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES null BadCast();
 // CPPIA_CALL = fastcall on x86(32), nothing otherwise
 #if (defined(_WIN32) && !defined(_M_X64) && !defined(__x86_64__) && !defined(_ARM_) ) || \
    defined(HXCPP_X86) || defined(__i386__) || defined(__i386) || \
-   (!defined(_WIN32) && !defined(_ARM_) && !defined(__arm__) && !defined(__x86_64__) )
+   (!defined(_WIN32) && !defined(_ARM_) && !defined(__arm__) && !defined(__aarch64__) && !defined(__x86_64__) )
 
    #if defined(__GNUC__) && !defined(__APPLE__) && !defined(EMSCRIPTEN)
       #define CPPIA_CALL __attribute__ ((fastcall))

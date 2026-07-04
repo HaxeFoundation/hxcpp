@@ -2,6 +2,20 @@ Files
 ------
 The files node defines a group of files that all share the same attributes, including relative directory, default compiler flags and dependencies.  The node can be used to define a set of header files on which other files can depend, or a set of source files to be compiled and included in a target.
 
+```xml
+<files id="foo" cxx_standard="14">
+  <file name="foo.cpp"/>
+  <file name="bar.c"/>
+</files>
+```
+
+#### Attributes
+
+  + `c_standard` = Default C standard for the file group
+  + `cxx_standard` = Default C++ standard for the file group
+  + `objc_standard` = Default Objective-C standard for the file group
+  + `objcxx_standard` = Default Objective-C++ standard for the file group
+#### Nodes
 - *depend* - Declare that all files in the group depend on another file or another file group.
   ```xml
   <depend name="filename" />
@@ -80,13 +94,17 @@ The files node defines a group of files that all share the same attributes, incl
 
 - *file* - Add file to group, with optional attributes
   ```xml
-  <file name="filename" tags="tag,tag1" filterout="define" embedName="embed" >
+  <file name="filename" tags="tag,tag1" filterout="define" embedName="embed" cxx_standard="17">
      <depend name="filename1" />
      <depend name="filename2" />
   </file>
   ```
      + name = name of file - may be absolute or relative to files.dir
      + tags = optional override of group tags.  See [Tags.md](Tags.md).
+     + `c_standard` = C standard for the file
+     + `cxx_standard` = C++ standard for the file
+     + `objc_standard` = Objective-C standard for the file
+     + `objcxx_standard` = Objective-C++ standard for the file
      + filterout = allows files to be skipped at compile-time if the named define exists.
        This is useful when the define is set sometime after the file list is parsed.
      + depend name = filename of additional dependency

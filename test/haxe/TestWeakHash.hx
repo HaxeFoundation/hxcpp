@@ -52,30 +52,54 @@ class TestWeakHash extends Test
       Assert.isTrue(oddFound<=2, "Too many odd values retained " + oddFound);
       Assert.isTrue(valid>=expect && valid<expect+2, "WeakHash invalid range "+ expect + "..." + valid + "..." + (expect+2));
    }
-   function deepCheckMap(inDepth:Int, map:WeakMap<WeakObjectData,Int>, expect:Int)
-   {
-      if (inDepth<1)
-         checkMap(map,expect);
-      else
-         deepCheckMap(inDepth-1, map, expect);
-   }
-
-   function deepClearRetained(inRecurse:Int)
-   {
-      if (inRecurse>0)
-         deepClearRetained(inRecurse-1);
-      else
-         retained = [];
-   }
 
    public function test()
    {
-      final map = createMapDeep(20,1000);
+      var map : WeakMap<WeakObjectData,Int> = null;
+
+      final sema = new sys.thread.Semaphore(0);
+      sys.thread.Thread.create(() -> {
+         map = createMap(1000);
+         sema.release();
+      });
+      sema.acquire();
+
+      // Give the thread enough time to exit and unregister itself from the GC
+      Sys.sleep(1);
+
       cpp.vm.Gc.run(true);
-      deepCheckMap(10,map,500);
-      deepClearRetained(10);
+
+      final sema = new sys.thread.Semaphore(0);
+      sys.thread.Thread.create(() -> {
+         checkMap(map,500);
+         sema.release();
+      });
+      sema.acquire();
+
+      // Give the thread enough time to exit and unregister itself from the GC
+      Sys.sleep(1);
+
+      final sema = new sys.thread.Semaphore(0);
+      sys.thread.Thread.create(() -> {
+         retained = [];
+         sema.release();
+      });
+      sema.acquire();
+
+      // Give the thread enough time to exit and unregister itself from the GC
+      Sys.sleep(1);
+
       cpp.vm.Gc.run(true);
-      checkMap(map,0);
+
+      final sema = new sys.thread.Semaphore(0);
+      sys.thread.Thread.create(() -> {
+         checkMap(map,0);
+         sema.release();
+      });
+      sema.acquire();
+
+      // Give the thread enough time to exit and unregister itself from the GC
+      Sys.sleep(1);
       
       Assert.pass();
    }

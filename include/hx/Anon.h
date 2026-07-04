@@ -114,26 +114,26 @@ public:
    void operator delete( void *, int) { }
 
 
-   hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp);
-   bool __HasField(const String &inString);
-   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp);
-   virtual void __GetFields(Array<String> &outFields);
-   Dynamic *__GetFieldMap() { return &mFields; }
+   hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp) HXCPP_OVERRIDE;
+   bool __HasField(const String &inString) HXCPP_OVERRIDE;
+   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp) HXCPP_OVERRIDE;
+   void __GetFields(Array<String> &outFields) HXCPP_OVERRIDE;
+   Dynamic *__GetFieldMap() HXCPP_OVERRIDE { return &mFields; }
 
-   virtual int __GetType() const { return vtObject; }
+   int __GetType() const HXCPP_OVERRIDE { return vtObject; }
 
    hx::Anon_obj *Add(const String &inName,const Dynamic &inValue,bool inSetThisPointer=true);
-   void __Mark(hx::MarkContext *__inCtx);
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE;
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx);
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE;
    #endif
 
-   String __ToString() const;
-   String toString();
+   String __ToString() const HXCPP_OVERRIDE;
+   String toString() HXCPP_OVERRIDE;
 
    static hx::ObjectPtr<hx::Class_obj> __mClass; \
    static hx::ObjectPtr<hx::Class_obj> &__SGetClass() { return __mClass; }
-   hx::ObjectPtr<hx::Class_obj > __GetClass() const { return __mClass; }
+   hx::ObjectPtr<hx::Class_obj > __GetClass() const HXCPP_OVERRIDE { return __mClass; }
 
    bool __Remove(String inKey);
 };
@@ -227,7 +227,7 @@ public:
       }
       return result;
    }
-   hx::Val __Field(const String &inField, hx::PropertyAccess)
+   hx::Val __Field(const String &inField, hx::PropertyAccess) HXCPP_OVERRIDE
    {
       if (inField.__s==name0.__s) return t0;
       if (inField.__s==name1.__s) return t1;
@@ -241,7 +241,7 @@ public:
       if (HX_QSTR_EQ_AE(inField,name1)) return t1;
       return null();
    }
-   hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp)
+   hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp) HXCPP_OVERRIDE
    {
       if (inField.__s==name0.__s) {
         t0 = inValue.Cast< _hx_T0 >();
@@ -276,26 +276,26 @@ public:
       return inValue;
    }
 
-   void __Mark(hx::MarkContext *__inCtx)
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_MARK_MEMBER(t0);
       HX_MARK_MEMBER(t1);
    }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_VISIT_MEMBER(t0);
       HX_VISIT_MEMBER(t1);
    }
    #endif
 
-    void __GetFields(Array<String> &outFields)
+    void __GetFields(Array<String> &outFields) HXCPP_OVERRIDE
     {
        outFields->push(name0);
        outFields->push(name1);
     }
 
-   String toString() { return StringFromAnonFields(this); }
+   String toString() HXCPP_OVERRIDE { return StringFromAnonFields(this); }
 
 };
 
@@ -330,7 +330,7 @@ public:
       }
       return result;
    }
-   hx::Val __Field(const String &inField, hx::PropertyAccess)
+   hx::Val __Field(const String &inField, hx::PropertyAccess) HXCPP_OVERRIDE
    {
       if (inField.__s==name0.__s) return t0;
       if (inField.__s==name1.__s) return t1;
@@ -344,7 +344,7 @@ public:
       if (HX_QSTR_EQ_AE(inField,name2)) return t2;
       return null();
    }
-   hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp)
+   hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp) HXCPP_OVERRIDE
    {
       if (inField.__s==name0.__s) {
         t0 = inValue.Cast< _hx_T0 >();
@@ -394,14 +394,14 @@ public:
       return inValue;
    }
 
-   void __Mark(hx::MarkContext *__inCtx)
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_MARK_MEMBER(t0);
       HX_MARK_MEMBER(t1);
       HX_MARK_MEMBER(t2);
    }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_VISIT_MEMBER(t0);
       HX_VISIT_MEMBER(t1);
@@ -409,14 +409,14 @@ public:
    }
    #endif
 
-    void __GetFields(Array<String> &outFields)
+    void __GetFields(Array<String> &outFields) HXCPP_OVERRIDE
     {
        outFields->push(name0);
        outFields->push(name1);
        outFields->push(name2);
     }
 
-   String toString() { return StringFromAnonFields(this); }
+   String toString() HXCPP_OVERRIDE { return StringFromAnonFields(this); }
 };
 
 
@@ -516,7 +516,7 @@ public:
         t1 = inValue.Cast< _hx_T1 >();
         if (hx::ContainsPointers<_hx_T1>()) {
           HX_OBJ_WB_GET(this, hx::PointerOf(t1));
-        }  
+        }
         return inValue;
       }
       if (HX_QSTR_EQ(inField,name2)) {

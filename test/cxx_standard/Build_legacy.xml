@@ -1,0 +1,12 @@
+<xml>
+	<set name="HXCPP_CPP17" value="1" />
+
+	<files id="test">
+		<compilerflag value="/Zc:__cplusplus" if="isMsvc" />
+		<file name="main.cpp" />
+	</files>
+
+	<target id="default" tool="linker" toolid="exe" output="main">
+		<files id="test"/>
+	</target>
+</xml>

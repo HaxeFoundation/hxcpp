@@ -189,6 +189,55 @@ class Client
          default:
       }
 
+      switch LocalFunctionExceptions.testObjMethodOnReturn() {
+         case Error(message):
+            Common.status = 'Failed test for running object method on returned value: ' + message;
+            return;
+         default:
+      }
+
+      switch LocalFunctionExceptions.testClassMethodOnReturn() {
+         case Error(message):
+            Common.status = 'Failed test for running class method on returned value: ' + message;
+            return;
+         default:
+      }
+
+      switch LocalFunctionExceptions.testHostClassMethodOnHostReturn() {
+         case Error(message):
+            Common.status = 'Failed test for running host class method on returned value: ' + message;
+            return;
+         default:
+      }
+
+		switch ReturnExpressions.testHostThisReturn() {
+         case Error(message):
+            Common.status = 'Failed test for host this return stopping argument evaluation: ' + message;
+            return;
+         default:
+      }
+
+		switch ReturnExpressions.testHostArgReturn() {
+			case Error(message):
+				Common.status = 'Failed test for argument return stopping argument evaluation: ' + message;
+				return;
+			default:
+		}
+
+		switch ReturnExpressions.testClientThisReturn() {
+			case Error(message):
+				Common.status = 'Failed test for client this return stopping evaluation: ' + message;
+				return;
+			default:
+		}
+
+		switch ReturnExpressions.testFuncReturn() {
+			case Error(message):
+				Common.status = 'Failed test for function value return stopping evaluation: ' + message;
+				return;
+			default:
+		}
+
       // regression test for #926
       var x:Dynamic = 3;
       x *= 5;

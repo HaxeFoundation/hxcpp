@@ -35,8 +35,6 @@
   <set name="EXEPREFIX" value="llvm" />
 </section>
 
-<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11 || HXCPP_CPP17" />
-
 <include name="toolchain/gcc-toolchain.xml"/>
 
 <compiler id="android-gcc" exe="clang++">
@@ -63,8 +61,6 @@
   <flag value="-DHXCPP_ANDROID_PLATFORM=${HXCPP_ANDROID_PLATFORM}" />
 
   <!-- Options -->
-  <cppflag value="-std=c++11" if="HXCPP_CPP11" />
-  <cppflag value="-std=c++17" if="HXCPP_CPP17" />
   <flag value="-flto" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
   <flag value="-fvisibility=hidden"/>
   <flag value="-ffunction-sections"/>

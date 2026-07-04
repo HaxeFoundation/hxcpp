@@ -235,14 +235,6 @@ class Setup
       if (!ioDefines.exists("MINGW_ROOT"))
       {
 
-         var haxelib = PathManager.getHaxelib("minimingw","",false);
-         if (haxelib!=null && haxelib!="")
-         {
-            ioDefines.set("MINGW_ROOT", haxelib);
-            Log.v('Using haxelib version of MinGW, $haxelib');
-            return;
-         }
-
          var guesses = ["c:/MinGW"];
          for (guess in guesses)
          {

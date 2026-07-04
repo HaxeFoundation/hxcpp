@@ -1,0 +1,12 @@
+<xml>
+	<files id="test" cxx_standard="17">
+		<compilerflag value="/Zc:__cplusplus" if="isMsvc" />
+		<section>
+			<file name="main.cpp" />
+		</section>
+	</files>
+
+	<target id="default" tool="linker" toolid="exe" output="main">
+		<files id="test"/>
+	</target>
+</xml>

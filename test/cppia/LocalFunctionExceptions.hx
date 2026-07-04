@@ -3,8 +3,12 @@ enum Status {
 	Error(message:String);
 }
 
+class DummyClass {
+	public function run() {}
+}
+
 class LocalFunctionExceptions {
-	static function staticFunction() {
+	static function staticFunction():Dynamic {
 		throw 'Thrown from static';
 	}
 
@@ -60,6 +64,60 @@ class LocalFunctionExceptions {
 				return Ok;
 			} else {
 				return Error("Incorrect exception caught from local function call");
+			}
+		}
+
+		return Error("No exception caught");
+	}
+
+	public static function testObjMethodOnReturn():Status {
+		function localFunction() {
+			(staticFunction() : Dynamic).run();
+		}
+
+		try {
+			localFunction();
+		} catch (e:Dynamic) {
+			if (e == 'Thrown from static') {
+				return Ok;
+			} else {
+				return Error("Incorrect exception caught from local function call: " + e);
+			}
+		}
+
+		return Error("No exception caught");
+	}
+
+	public static function testClassMethodOnReturn():Status {
+		function localFunction() {
+			(staticFunction() : DummyClass).run();
+		}
+
+		try {
+			localFunction();
+		} catch (e:Dynamic) {
+			if (e == 'Thrown from static') {
+				return Ok;
+			} else {
+				return Error("Incorrect exception caught from local function call: " + e);
+			}
+		}
+
+		return Error("No exception caught");
+	}
+
+	public static function testHostClassMethodOnHostReturn():Status {
+		function localFunction() {
+			(staticFunction() : Common).dummyMethod();
+		}
+
+		try {
+			localFunction();
+		} catch (e:Dynamic) {
+			if (e == 'Thrown from static') {
+				return Ok;
+			} else {
+				return Error("Incorrect exception caught from local function call: " + e);
 			}
 		}
 

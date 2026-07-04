@@ -7,6 +7,7 @@
 #include <hx/Thread.h>
 #include <hx/Telemetry.h>
 #include <hx/Unordered.h>
+#include <hx/thread/Thread.hpp>
 #include <hx/OS.h>
 #include <mutex>
 
@@ -128,9 +129,9 @@ public:
 
    hxSehException(int inCode) : code(inCode) { }
 
-   String __ToString() const { return  HX_CSTRING("hxSehException"); }
+   String __ToString() const HXCPP_OVERRIDE { return  HX_CSTRING("hxSehException"); }
 
-   int __GetType() const { return vtObject; }
+   int __GetType() const HXCPP_OVERRIDE { return vtObject; }
 };
 
 static hx::Object *sException = new hxSehException(1);
@@ -244,7 +245,7 @@ StackContext::~StackContext()
 void StackContext::onThreadAttach()
 {
    #ifdef HXCPP_STACK_IDS
-   mThreadId = __hxcpp_GetCurrentThreadNumber();
+    mThreadId = hx::thread::Thread_obj::id();
 
    {
        std::lock_guard<std::mutex> guard(sStackMapMutex);

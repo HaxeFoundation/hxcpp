@@ -82,8 +82,8 @@ template<> inline double ToDouble(double inValue) { return inValue; }
 template<> inline double ToDouble(int inValue) { return inValue; }
 template<> inline double ToDouble(bool inValue) { return inValue; }
 template<> inline double ToDouble(float inValue) { return inValue; }
-template<> inline double ToDouble(cpp::UInt64 inValue) { return inValue; }
-template<> inline double ToDouble(cpp::Int64 inValue) { return inValue; }
+template<> inline double ToDouble(cpp::UInt64 inValue) { return (double)inValue; }
+template<> inline double ToDouble(cpp::Int64 inValue) { return (double)inValue; }
 template<> inline double ToDouble(null inValue) { return 0; }
 
 
@@ -261,7 +261,7 @@ template<> inline float TCastObject<float>(hx::Object *inObj)
 {
    if (!inObj || (inObj->__GetType()!=::vtFloat && inObj->__GetType()!=::vtInt64 && inObj->__GetType()!=::vtInt))
       return hx::BadCast();
-   return inObj->__ToDouble();
+   return (float)inObj->__ToDouble();
 }
 
 template<> inline String TCastObject<String>(hx::Object *inObj)
@@ -406,7 +406,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES StringValueIterator : public cpp::StringIter
 public:
    StringValueIterator(const String &inValue) : StringIterator(inValue) { }
 
-   int next() { return value.cca(pos++); }
+   int next() HXCPP_OVERRIDE { return value.cca(pos++); }
 };
 
 class HXCPP_EXTERN_CLASS_ATTRIBUTES StringKeyValueIterator : public cpp::StringIterator<Dynamic>
@@ -414,7 +414,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES StringKeyValueIterator : public cpp::StringI
 public:
    StringKeyValueIterator(const String &inValue) : StringIterator(inValue) { }
 
-   Dynamic next() {
+   Dynamic next() HXCPP_OVERRIDE {
       int p = pos;
       return
         hx::AnonStruct2_obj< int,int >::Create(HX_("key",9f,89,51,00),p,

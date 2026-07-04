@@ -2,6 +2,23 @@ name: main
 on: [push, pull_request]
 
 jobs:
+  check-headers:
+    name: Check headers
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+
+    - name: Install pcre2grep
+      run: sudo apt-get update && sudo apt-get install -y pcre2-utils
+
+    - run: |
+        # macros in public headers must use the global namespace to qualify types
+        ! pcre2grep --buffer-size=1M --recursive --multiline --line-number --include='.*\.h$' \
+          '#define\s+(?:.*\\\r?\n)*.*?\K(?<!:)\b(Enum|String|StringOffset|Array|ArrayClassID|Math|Math_obj|Void|null|Dynamic|hx::|cpp::)\b' \
+          include
+      name: Check public headers
+
   Windows32:
     strategy:
       fail-fast: false

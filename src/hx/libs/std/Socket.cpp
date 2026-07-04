@@ -9,7 +9,9 @@
 
 #ifdef __GNUC__
    // Mingw / gcc on windows
+   #ifndef _WIN32_WINNT
    #define _WIN32_WINNT 0x0501
+   #endif
    #include <winsock2.h>
    #include <ws2tcpip.h>
 #else
@@ -19,14 +21,9 @@
    #include <Ws2tcpip.h>
 #endif
 
-
 #define DYNAMIC_INET_FUNCS 1
-typedef WINSOCK_API_LINKAGE  INT (WSAAPI *inet_pton_func)( INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
-typedef WINSOCK_API_LINKAGE  PCSTR (WSAAPI *inet_ntop_func)(INT  Family, PVOID pAddr, PSTR pStringBuf, size_t StringBufSize);
-
-
-
-
+typedef INT (WSAAPI *inet_pton_func)( INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
+typedef PCSTR (WSAAPI *inet_ntop_func)(INT  Family, PVOID pAddr, PSTR pStringBuf, size_t StringBufSize);
 
 #   define FDSIZE(n)   (sizeof(u_int) + (n) * sizeof(SOCKET))
 #   define SHUT_WR      SD_SEND
@@ -72,7 +69,7 @@ struct SocketWrapper : public hx::Object
 
    SOCKET socket;
 
-   int __GetType() const { return socketType; }
+   int __GetType() const HXCPP_OVERRIDE { return socketType; }
 };
 
 
@@ -710,7 +707,7 @@ static void make_array_result_inplace(Array<Dynamic> a, fd_set *tmp)
 static struct timeval *init_timeval( double f, struct timeval *t ) {
    if (f<0)
       return 0;
-   t->tv_usec = (f - (int)f ) * 1000000;
+   t->tv_usec = (int)(  (f - (int)f ) * 1000000 );
    t->tv_sec = (int)f;
    return t;
 }
@@ -1125,19 +1122,19 @@ struct polldata : public hx::Object
       }
    }
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(ridx); HX_MARK_MEMBER(widx); }
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER(ridx); HX_MARK_MEMBER(widx); }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(ridx); HX_VISIT_MEMBER(widx); }
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(ridx); HX_VISIT_MEMBER(widx); }
    #endif
 
-   int __GetType() const { return pollType; }
+   int __GetType() const HXCPP_OVERRIDE { return pollType; }
 
    static void finalize(Dynamic obj)
    {
       ((polldata *)(obj.mPtr))->destroy();
    }
 
-   String toString() { return HX_CSTRING("polldata"); }
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING("polldata"); }
 };
 
 polldata *val_poll(Dynamic o)
