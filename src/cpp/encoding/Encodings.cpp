@@ -398,7 +398,7 @@ String cpp::encoding::Utf16::decode(const cpp::marshal::View<uint8_t>& buffer)
 #else
         auto size    = simdutf::utf8_length_from_utf16(chars.ptr, chars.length);
         auto backing = hx::NewString(size);
-        auto written = simdutd::convert_valid_utf16_to_utf8(chars.ptr, chars.length, backing);
+        auto written = simdutf::convert_valid_utf16_to_utf8(chars.ptr, chars.length, backing);
 #endif
 
         return String(backing, static_cast<int>(written));
