@@ -1,5 +1,4 @@
 #include <hxcpp.h>
-#include <array>
 #include <simdutf.h>
 #include <hx/thread/Scratch.hpp>
 
@@ -246,8 +245,8 @@ String cpp::encoding::Utf8::decode(const cpp::marshal::View<uint8_t>& buffer)
 
 char32_t cpp::encoding::Utf8::codepoint(const cpp::marshal::View<uint8_t>& buffer)
 {
-    auto output = std::array<char32_t, 4>();
-    auto read   = simdutf::convert_utf8_to_utf32(reinterpret_cast<char*>(buffer.ptr.ptr), std::min(int64_t{ 4 }, buffer.length), output.data());
+    auto output = hx::thread::Scratch::alloc(sizeof(char32_t) * 4);
+    auto read   = simdutf::convert_utf8_to_utf32(reinterpret_cast<char*>(buffer.ptr.ptr), std::min(output.view.length, buffer.length), reinterpret_cast<char32_t*>(output.view.ptr.ptr));
 
     if (0 == read)
     {
@@ -255,7 +254,7 @@ char32_t cpp::encoding::Utf8::codepoint(const cpp::marshal::View<uint8_t>& buffe
     }
     else
     {
-        return output[0];
+        return reinterpret_cast<char32_t*>(output.view.ptr.ptr)[0];
     }
 }
 
@@ -411,11 +410,11 @@ String cpp::encoding::Utf16::decode(const cpp::marshal::View<uint8_t>& buffer)
 
 char32_t cpp::encoding::Utf16::codepoint(const cpp::marshal::View<uint8_t>& buffer)
 {
-    auto output = std::array<char32_t, 8>();
+    auto output = hx::thread::Scratch::alloc(sizeof(char32_t) * 4);
 #if defined(HXCPP_BIG_ENDIAN)
-    auto read = simdutf::convert_utf16be_to_utf32(reinterpret_cast<char16_t*>(buffer.ptr.ptr), std::min(int64_t{ 4 }, buffer.length), output.data());
+    auto read = simdutf::convert_utf16be_to_utf32(reinterpret_cast<char16_t*>(buffer.ptr.ptr), std::min(output.view.length, buffer.length), reinterpret_cast<char32_t*>(output.view.ptr.ptr));
 #else
-    auto read = simdutf::convert_utf16le_to_utf32(reinterpret_cast<char16_t*>(buffer.ptr.ptr), std::min(int64_t{ 4 }, buffer.length), output.data());
+    auto read = simdutf::convert_utf16le_to_utf32(reinterpret_cast<char16_t*>(buffer.ptr.ptr), std::min(output.view.length, buffer.length), reinterpret_cast<char32_t*>(output.view.ptr.ptr));
 #endif
 
     if (0 == read)
@@ -424,6 +423,6 @@ char32_t cpp::encoding::Utf16::codepoint(const cpp::marshal::View<uint8_t>& buff
     }
     else
     {
-        return output[0];
+        return reinterpret_cast<char32_t*>(output.view.ptr.ptr)[0];
     }
 }
