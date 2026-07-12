@@ -128,6 +128,8 @@ class Builder
                   if (wantLinux32())
                      validArchs.set("m32", ["-D"+target, "-DHXCPP_M32"].concat(staticFlags) );
                   validArchs.set("m64", ["-D"+target, "-DHXCPP_M64"].concat(staticFlags) );
+                  validArchs.set("armv7", ["-D"+target, "-DHXCPP_ARMV7"].concat(staticFlags) );
+                  validArchs.set("arm64", ["-D"+target, "-DHXCPP_ARM64"].concat(staticFlags) );
 
                case "mac":
                   if (wantMac32())
