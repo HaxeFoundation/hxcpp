@@ -167,12 +167,12 @@
 
 <files id="simdutf" dir="${HXCPP}" tags="haxe">
   <depend files="hxcpp-depends"/>
-  <depend name="${HXCPP}/project/thirdparty/simdutf-8.0.0/simdutf.h"/>
+  <depend name="${HXCPP}/project/thirdparty/simdutf-8.2.0/simdutf.h"/>
   <options name="Options.txt"/>
 
-  <compilerflag value="-I${HXCPP}/project/thirdparty/simdutf-8.0.0/"/>
+  <compilerflag value="-I${HXCPP}/project/thirdparty/simdutf-8.2.0/"/>
 
-  <file name="project/thirdparty/simdutf-8.0.0/simdutf.cpp"/>
+  <file name="project/thirdparty/simdutf-8.2.0/simdutf.cpp"/>
 
   <cache value="1" project="hxcpp-simdutf" asLibrary="true" />
 </files>
@@ -186,7 +186,7 @@
   <depend name="${HXCPP}/src/hx/thread/ThreadImpl.hpp"/>
 
   <compilerflag value="-DHX_UNDEFINE_H" />
-  <compilerflag value="-I${HXCPP}/project/thirdparty/simdutf-8.0.0/"/>
+  <compilerflag value="-I${HXCPP}/project/thirdparty/simdutf-8.2.0/"/>
 
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" />
 

@@ -1,4 +1,4 @@
-/* auto-generated on 2026-01-13 09:03:21 +0100. Do not edit! */
+/* auto-generated on 2026-03-12 20:42:59 -0400. Do not edit! */
 /* begin file include/simdutf.h */
 #ifndef SIMDUTF_H
 #define SIMDUTF_H
@@ -208,6 +208,22 @@
     #define SIMDUTF_IS_LASX 1 // We can always run both
   #elif defined(__loongarch_sx)
     #define SIMDUTF_IS_LSX 1
+    // Adjust for runtime dispatching support.
+    #if defined(__GNUC__) && !defined(__clang__) &&                            \
+        !defined(__INTEL_COMPILER) && !defined(__NVCOMPILER)
+      #if __GNUC__ > 15 || (__GNUC__ == 15 && __GNUC_MINOR__ >= 0)
+        // We are ok, we will support runtime dispatch for LASX.
+      #else
+        // We disable runtime dispatch for LASX, which means that we will not be
+        // able to use LASX even if it is supported by the hardware. Loongson
+        // users should update to GCC 15 or better.
+        #define SIMDUTF_IMPLEMENTATION_LASX 0
+      #endif
+    #else
+      // We are not using GCC, so we assume that we can support runtime dispatch
+      // for LASX. https://godbolt.org/z/jcMnrjYhs
+      #define SIMDUTF_IMPLEMENTATION_LASX 0
+    #endif
   #endif
 #else
   // The simdutf library is designed
@@ -922,7 +938,7 @@ SIMDUTF_DISABLE_UNDESIRED_WARNINGS
 #define SIMDUTF_SIMDUTF_VERSION_H
 
 /** The version of simdutf being used (major.minor.revision) */
-#define SIMDUTF_VERSION "8.0.0"
+#define SIMDUTF_VERSION "8.2.0"
 
 namespace simdutf {
 enum {
@@ -933,7 +949,7 @@ enum {
   /**
    * The minor version (major.MINOR.revision) of simdutf being used.
    */
-  SIMDUTF_VERSION_MINOR = 0,
+  SIMDUTF_VERSION_MINOR = 2,
   /**
    * The revision (major.minor.REVISION) of simdutf being used.
    */
@@ -2790,6 +2806,87 @@ template <endianness big_endian>
 inline result simple_convert_with_errors(const char16_t *buf, size_t len,
                                          char *utf8_output) {
   return convert_with_errors<big_endian, false>(buf, len, utf8_output, 0);
+}
+
+template <endianness big_endian>
+simdutf_constexpr23 size_t convert_with_replacement(const char16_t *data,
+                                                    size_t len,
+                                                    char *utf8_output) {
+  size_t pos = 0;
+  char *start = utf8_output;
+  while (pos < len) {
+#if SIMDUTF_CPLUSPLUS23
+    if !consteval
+#endif
+    {
+      // try to convert the next block of 8 bytes
+      if (pos + 4 <= len) { // if it is safe to read 8 more bytes, check that
+                            // they are ascii
+        uint64_t v;
+        ::memcpy(&v, data + pos, sizeof(uint64_t));
+        if simdutf_constexpr (!match_system(big_endian)) {
+          v = (v >> 8) | (v << (64 - 8));
+        }
+        if ((v & 0xFF80FF80FF80FF80) == 0) {
+          size_t final_pos = pos + 4;
+          while (pos < final_pos) {
+            *utf8_output++ = !match_system(big_endian)
+                                 ? char(u16_swap_bytes(data[pos]))
+                                 : char(data[pos]);
+            pos++;
+          }
+          continue;
+        }
+      }
+    }
+    uint16_t word =
+        !match_system(big_endian) ? u16_swap_bytes(data[pos]) : data[pos];
+    if ((word & 0xFF80) == 0) {
+      // will generate one UTF-8 bytes
+      *utf8_output++ = char(word);
+      pos++;
+    } else if ((word & 0xF800) == 0) {
+      // will generate two UTF-8 bytes
+      // we have 0b110XXXXX 0b10XXXXXX
+      *utf8_output++ = char((word >> 6) | 0b11000000);
+      *utf8_output++ = char((word & 0b111111) | 0b10000000);
+      pos++;
+    } else if ((word & 0xF800) != 0xD800) {
+      // will generate three UTF-8 bytes
+      // we have 0b1110XXXX 0b10XXXXXX 0b10XXXXXX
+      *utf8_output++ = char((word >> 12) | 0b11100000);
+      *utf8_output++ = char(((word >> 6) & 0b111111) | 0b10000000);
+      *utf8_output++ = char((word & 0b111111) | 0b10000000);
+      pos++;
+    } else {
+      // surrogate range
+      uint16_t diff = uint16_t(word - 0xD800);
+      if (diff <= 0x3FF && pos + 1 < len) {
+        // high surrogate, check for valid pair
+        uint16_t next_word = !match_system(big_endian)
+                                 ? u16_swap_bytes(data[pos + 1])
+                                 : data[pos + 1];
+        uint16_t diff2 = uint16_t(next_word - 0xDC00);
+        if (diff2 <= 0x3FF) {
+          // valid surrogate pair
+          uint32_t value = (diff << 10) + diff2 + 0x10000;
+          // will generate four UTF-8 bytes
+          *utf8_output++ = char((value >> 18) | 0b11110000);
+          *utf8_output++ = char(((value >> 12) & 0b111111) | 0b10000000);
+          *utf8_output++ = char(((value >> 6) & 0b111111) | 0b10000000);
+          *utf8_output++ = char((value & 0b111111) | 0b10000000);
+          pos += 2;
+          continue;
+        }
+      }
+      // unpaired surrogate: replace with U+FFFD (0xEF 0xBF 0xBD)
+      *utf8_output++ = char(0xef);
+      *utf8_output++ = char(0xbf);
+      *utf8_output++ = char(0xbd);
+      pos++;
+    }
+  }
+  return utf8_output - start;
 }
 
 } // namespace utf16_to_utf8
@@ -7047,6 +7144,113 @@ convert_utf16be_to_utf8_with_errors(
   #endif // SIMDUTF_SPAN
 
 /**
+ * Convert possibly broken UTF-16LE string into UTF-8 string, replacing
+ * unpaired surrogates with the Unicode replacement character U+FFFD.
+ *
+ * This function always succeeds: unpaired surrogates are replaced with
+ * U+FFFD (3 bytes in UTF-8: 0xEF 0xBF 0xBD).
+ *
+ * This function is not BOM-aware.
+ *
+ * @param input         the UTF-16LE string to convert
+ * @param length        the length of the string in 2-byte code units (char16_t)
+ * @param utf8_buffer   the pointer to buffer that can hold conversion result
+ * @return number of written code units
+ */
+simdutf_warn_unused size_t convert_utf16le_to_utf8_with_replacement(
+    const char16_t *input, size_t length, char *utf8_buffer) noexcept;
+  #if SIMDUTF_SPAN
+simdutf_really_inline simdutf_warn_unused simdutf_constexpr23 size_t
+convert_utf16le_to_utf8_with_replacement(
+    std::span<const char16_t> utf16_input,
+    detail::output_span_of_byte_like auto &&utf8_output) noexcept {
+    #if SIMDUTF_CPLUSPLUS23
+  if consteval {
+    return scalar::utf16_to_utf8::convert_with_replacement<endianness::LITTLE>(
+        utf16_input.data(), utf16_input.size(), utf8_output.data());
+  } else
+    #endif
+  {
+    return convert_utf16le_to_utf8_with_replacement(
+        utf16_input.data(), utf16_input.size(),
+        reinterpret_cast<char *>(utf8_output.data()));
+  }
+}
+  #endif // SIMDUTF_SPAN
+
+/**
+ * Convert possibly broken UTF-16BE string into UTF-8 string, replacing
+ * unpaired surrogates with the Unicode replacement character U+FFFD.
+ *
+ * This function always succeeds: unpaired surrogates are replaced with
+ * U+FFFD (3 bytes in UTF-8: 0xEF 0xBF 0xBD).
+ *
+ * This function is not BOM-aware.
+ *
+ * @param input         the UTF-16BE string to convert
+ * @param length        the length of the string in 2-byte code units (char16_t)
+ * @param utf8_buffer   the pointer to buffer that can hold conversion result
+ * @return number of written code units
+ */
+simdutf_warn_unused size_t convert_utf16be_to_utf8_with_replacement(
+    const char16_t *input, size_t length, char *utf8_buffer) noexcept;
+  #if SIMDUTF_SPAN
+simdutf_really_inline simdutf_warn_unused simdutf_constexpr23 size_t
+convert_utf16be_to_utf8_with_replacement(
+    std::span<const char16_t> utf16_input,
+    detail::output_span_of_byte_like auto &&utf8_output) noexcept {
+    #if SIMDUTF_CPLUSPLUS23
+  if consteval {
+    return scalar::utf16_to_utf8::convert_with_replacement<endianness::BIG>(
+        utf16_input.data(), utf16_input.size(), utf8_output.data());
+  } else
+    #endif
+  {
+    return convert_utf16be_to_utf8_with_replacement(
+        utf16_input.data(), utf16_input.size(),
+        reinterpret_cast<char *>(utf8_output.data()));
+  }
+}
+  #endif // SIMDUTF_SPAN
+
+/**
+ * Convert possibly broken UTF-16 string (native endianness) into UTF-8 string,
+ * replacing unpaired surrogates with the Unicode replacement character U+FFFD.
+ *
+ * This function always succeeds: unpaired surrogates are replaced with
+ * U+FFFD (3 bytes in UTF-8: 0xEF 0xBF 0xBD).
+ *
+ * This function is not BOM-aware.
+ *
+ * @param input         the UTF-16 string to convert
+ * @param length        the length of the string in 2-byte code units (char16_t)
+ * @param utf8_buffer   the pointer to buffer that can hold conversion result
+ * @return number of written code units
+ */
+simdutf_warn_unused size_t convert_utf16_to_utf8_with_replacement(
+    const char16_t *input, size_t length, char *utf8_buffer) noexcept;
+  #if SIMDUTF_SPAN
+simdutf_really_inline simdutf_warn_unused simdutf_constexpr23 size_t
+convert_utf16_to_utf8_with_replacement(
+    std::span<const char16_t> utf16_input,
+    detail::output_span_of_byte_like auto &&utf8_output) noexcept {
+    #if SIMDUTF_CPLUSPLUS23
+  if consteval {
+    return scalar::utf16_to_utf8::convert_with_replacement<endianness::NATIVE>(
+        utf16_input.data(), utf16_input.size(), utf8_output.data());
+  } else
+    #endif
+  {
+    return convert_utf16_to_utf8_with_replacement(
+        utf16_input.data(), utf16_input.size(),
+        reinterpret_cast<char *>(utf8_output.data()));
+  }
+}
+  #endif // SIMDUTF_SPAN
+#endif   // SIMDUTF_FEATURE_UTF8 && SIMDUTF_FEATURE_UTF16
+
+#if SIMDUTF_FEATURE_UTF8 && SIMDUTF_FEATURE_UTF16
+/**
  * Using native endianness, convert valid UTF-16 string into UTF-8 string.
  *
  * This function assumes that the input string is valid UTF-16.
@@ -10431,6 +10635,35 @@ maximal_binary_length_from_base64(InputPtr input, size_t length) noexcept {
   return actual_length / 4 * 3 + (actual_length % 4) - 1;
 }
 
+// This function computes the binary length by iterating through the input
+// and counting non-whitespace characters (excluding padding characters).
+// We use a simple check (c > ' ') which is easy to parallelize and matches
+// SIMD behavior. Only the last few characters are checked for padding '='.
+template <class char_type>
+simdutf_warn_unused simdutf_constexpr23 size_t
+binary_length_from_base64(const char_type *input, size_t length) noexcept {
+  // Count non-whitespace characters (c > ' ') with loop unrolling
+  size_t count = 0;
+  for (size_t i = 0; i < length; i++) {
+    count += (input[i] > ' ');
+  }
+
+  // Check for padding '=' at the end (at most 2 padding characters)
+  // Scan backwards, skipping whitespace, to find padding
+  size_t padding = 0;
+  size_t pos = length;
+  // Skip trailing whitespace
+  while (pos > 0 && padding < 2) {
+    char_type c = input[--pos];
+    if (c == '=') {
+      padding++;
+    } else if (c > ' ') {
+      break;
+    }
+  }
+  return ((count - padding) * 3) / 4;
+}
+
 template <typename char_type>
 simdutf_warn_unused simdutf_constexpr23 full_result
 base64_to_binary_details_impl(
@@ -10720,6 +10953,71 @@ maximal_binary_length_from_base64(std::span<const char16_t> input) noexcept {
     #endif
   {
     return maximal_binary_length_from_base64(input.data(), input.size());
+  }
+}
+  #endif // SIMDUTF_SPAN
+
+/**
+ * Compute the binary length from a base64 input.
+ * This function is useful for base64 inputs that may contain ASCII whitespaces
+ * (such as line breaks). For such inputs, the result is exact, and for any
+ * inputs the result can be used to size the output buffer passed to
+ * `base64_to_binary`.
+ *
+ * The function ignores whitespace and does not require padding characters
+ * ('=').
+ *
+ * @param input         the base64 input to process
+ * @param length        the length of the base64 input in bytes
+ * @return number of binary bytes
+ */
+simdutf_warn_unused size_t binary_length_from_base64(const char *input,
+                                                     size_t length) noexcept;
+  #if SIMDUTF_SPAN
+simdutf_really_inline simdutf_warn_unused simdutf_constexpr23 size_t
+binary_length_from_base64(
+    const detail::input_span_of_byte_like auto &input) noexcept {
+    #if SIMDUTF_CPLUSPLUS23
+  if consteval {
+    return scalar::base64::binary_length_from_base64(input.data(),
+                                                     input.size());
+  } else
+    #endif
+  {
+    return binary_length_from_base64(
+        reinterpret_cast<const char *>(input.data()), input.size());
+  }
+}
+  #endif // SIMDUTF_SPAN
+
+/**
+ * Compute the binary length from a base64 input.
+ * This function is useful for base64 inputs that may contain ASCII whitespaces
+ * (such as line breaks). For such inputs, the result is exact, and for any
+ * inputs the result can be used to size the output buffer passed to
+ * `base64_to_binary`.
+ *
+ * The function ignores whitespace and does not require padding characters
+ * ('=').
+ *
+ * @param input         the base64 input to process, in ASCII stored as 16-bit
+ * units
+ * @param length        the length of the base64 input in 16-bit units
+ * @return number of binary bytes
+ */
+simdutf_warn_unused size_t binary_length_from_base64(const char16_t *input,
+                                                     size_t length) noexcept;
+  #if SIMDUTF_SPAN
+simdutf_really_inline simdutf_warn_unused simdutf_constexpr23 size_t
+binary_length_from_base64(std::span<const char16_t> input) noexcept {
+    #if SIMDUTF_CPLUSPLUS23
+  if consteval {
+    return scalar::base64::binary_length_from_base64(input.data(),
+                                                     input.size());
+  } else
+    #endif
+  {
+    return binary_length_from_base64(input.data(), input.size());
   }
 }
   #endif // SIMDUTF_SPAN
@@ -12186,6 +12484,44 @@ public:
                                       char *utf8_buffer) const noexcept = 0;
 
   /**
+   * Convert possibly broken UTF-16LE string into UTF-8 string, replacing
+   * unpaired surrogates with the Unicode replacement character U+FFFD.
+   *
+   * This function always succeeds: unpaired surrogates are replaced with
+   * U+FFFD (3 bytes in UTF-8: 0xEF 0xBF 0xBD).
+   *
+   * This function is not BOM-aware.
+   *
+   * @param input         the UTF-16LE string to convert
+   * @param length        the length of the string in 2-byte code units
+   * (char16_t)
+   * @param utf8_buffer   the pointer to buffer that can hold conversion result
+   * @return number of written code units
+   */
+  simdutf_warn_unused virtual size_t convert_utf16le_to_utf8_with_replacement(
+      const char16_t *input, size_t length,
+      char *utf8_buffer) const noexcept = 0;
+
+  /**
+   * Convert possibly broken UTF-16BE string into UTF-8 string, replacing
+   * unpaired surrogates with the Unicode replacement character U+FFFD.
+   *
+   * This function always succeeds: unpaired surrogates are replaced with
+   * U+FFFD (3 bytes in UTF-8: 0xEF 0xBF 0xBD).
+   *
+   * This function is not BOM-aware.
+   *
+   * @param input         the UTF-16BE string to convert
+   * @param length        the length of the string in 2-byte code units
+   * (char16_t)
+   * @param utf8_buffer   the pointer to buffer that can hold conversion result
+   * @return number of written code units
+   */
+  simdutf_warn_unused virtual size_t convert_utf16be_to_utf8_with_replacement(
+      const char16_t *input, size_t length,
+      char *utf8_buffer) const noexcept = 0;
+
+  /**
    * Convert valid UTF-16LE string into UTF-8 string.
    *
    * This function assumes that the input string is valid UTF-16LE.
@@ -12919,6 +13255,38 @@ public:
    */
   simdutf_warn_unused size_t maximal_binary_length_from_base64(
       const char16_t *input, size_t length) const noexcept;
+
+  /**
+   * Compute the binary length from a base64 input with ASCII spaces.
+   * This function is useful for well-formed base64 inputs that may contain
+   * ASCII spaces (such as line breaks). For such inputs, the result is exact.
+   *
+   * The function counts non-whitespace characters (ASCII value > 0x20) and
+   * subtracts padding characters ('=') found at the end.
+   *
+   * @param input         the base64 input to process
+   * @param length        the length of the base64 input in bytes
+   * @return number of binary bytes
+   */
+  simdutf_warn_unused virtual size_t
+  binary_length_from_base64(const char *input, size_t length) const noexcept;
+
+  /**
+   * Compute the binary length from a base64 input with ASCII spaces.
+   * This function is useful for well-formed base64 inputs that may contain
+   * ASCII spaces (such as line breaks). For such inputs, the result is exact.
+   *
+   * The function counts non-whitespace characters (ASCII value > 0x20) and
+   * subtracts padding characters ('=') found at the end.
+   *
+   * @param input         the base64 input to process, in ASCII stored as 16-bit
+   * units
+   * @param length        the length of the base64 input in 16-bit units
+   * @return number of binary bytes
+   */
+  simdutf_warn_unused virtual size_t
+  binary_length_from_base64(const char16_t *input,
+                            size_t length) const noexcept;
 
   /**
    * Convert a base64 input to a binary output.
