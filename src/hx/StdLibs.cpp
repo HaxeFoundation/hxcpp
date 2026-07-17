@@ -815,17 +815,17 @@ struct VarArgFunc : public hx::Object
    }
 #endif
 
-   int __GetType() const { return vtFunction; }
-   ::String __ToString() const { return mRealFunc->__ToString() ; }
+   int __GetType() const HXCPP_OVERRIDE { return vtFunction; }
+   ::String __ToString() const HXCPP_OVERRIDE { return mRealFunc->__ToString(); }
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mRealFunc); }
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER(mRealFunc); }
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mRealFunc); }
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(mRealFunc); }
    #endif
 
-   void *__GetHandle() const { return mRealFunc.GetPtr(); }
-   Dynamic __Run(const Array<Dynamic> &inArgs)
+   void *__GetHandle() const HXCPP_OVERRIDE { return mRealFunc.GetPtr(); }
+   Dynamic __Run(const Array<Dynamic> &inArgs) HXCPP_OVERRIDE
    {
 #if (HXCPP_API_LEVEL>=500)
        return hx::invoker::invoke(mRealFunc.mPtr, inArgs);

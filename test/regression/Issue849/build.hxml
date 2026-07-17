@@ -1,0 +1,3 @@
+-cpp bin
+-D disable-unicode-strings
+-m Main

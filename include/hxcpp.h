@@ -98,6 +98,12 @@
   #endif
 #endif
 
+#if HXCPP_API_LEVEL >= 500 && (__cplusplus >= 201103L || (defined(_MSC_VER) && _MSVC_LANG >= 201103L))
+  #define HXCPP_OVERRIDE override
+#else
+  #define HXCPP_OVERRIDE
+#endif
+
 typedef char HX_CHAR;
 
 
@@ -346,7 +352,9 @@ typedef PropertyAccessMode PropertyAccess;
 #include <hx/Class.h>
 #include "Enum.h"
 #include <hx/Interface.h>
+#ifdef HXCPP_TELEMETRY
 #include <hx/Telemetry.h>
+#endif
 #if defined(__OBJC__) && defined(HXCPP_OBJC)
   #include <hx/ObjcHelpers.h>
 #endif

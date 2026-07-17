@@ -8,6 +8,7 @@
 #include "GcRegCapture.h"
 #include <hx/Unordered.h>
 #include <mutex>
+#include <thread>
 #include <condition_variable>
 
 #ifdef EMSCRIPTEN
@@ -395,7 +396,7 @@ static int sgTimeToNextTableUpdate = 1;
 
 
 
-std::mutex *gThreadStateChangeLock=nullptr;
+std::recursive_mutex *gThreadStateChangeLock=nullptr;
 std::mutex *gSpecialObjectLock=nullptr;
 
 class LocalAllocator;
@@ -2439,7 +2440,7 @@ public:
    // Don't mark our ref !
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mRef); }
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(mRef); }
    #endif
 
    Dynamic mRef;
@@ -2930,8 +2931,8 @@ public:
 
    AllocCounter() { count = 0; }
 
-   void visitObject(hx::Object **ioPtr) { count ++; }
-   void visitAlloc(void **ioPtr) { count ++; }
+   void visitObject(hx::Object **ioPtr) HXCPP_OVERRIDE { count ++; }
+   void visitAlloc(void **ioPtr) HXCPP_OVERRIDE { count ++; }
 };
 
 
@@ -3134,12 +3135,12 @@ public:
    {
       if (!gThreadStateChangeLock)
       {
-         gThreadStateChangeLock = new std::mutex();
+         gThreadStateChangeLock = new std::recursive_mutex();
          gSpecialObjectLock = new std::mutex();
       }
       // Until we add ourselves, the collector will not wait
       //  on us - ie, we are assumed ot be in a GC free zone.
-      std::lock_guard<std::mutex> lock(*gThreadStateChangeLock);
+      std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
       mLocalAllocs.push(inAlloc);
       // TODO Attach debugger
    }
@@ -3162,7 +3163,7 @@ public:
 
    LocalAllocator *GetPooledAllocator()
    {
-      std::lock_guard<std::mutex> lock(*gThreadStateChangeLock);
+      std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
       for(int p=0;p<LOCAL_POOL_SIZE;p++)
       {
          if (mLocalPool[p])
@@ -3876,24 +3877,24 @@ public:
          GlobalAllocator *mAlloc;
       public:
          AdjustPointer(GlobalAllocator *inAlloc) : mAlloc(inAlloc) {  }
-      
-         void visitObject(hx::Object **ioPtr)
+
+         void visitObject(hx::Object **ioPtr) HXCPP_OVERRIDE
          {
             if ( ((*(unsigned int **)ioPtr)[-1]) == IMMIX_OBJECT_HAS_MOVED )
             {
                //GCLOG("  patch object to  %p -> %p\n", *ioPtr,  (*(hx::Object ***)ioPtr)[0]);
                *ioPtr = (*(hx::Object ***)ioPtr)[0];
-               //GCLOG("    %08x %08x ...\n", ((int *)(*ioPtr))[0], ((int *)(*ioPtr))[1] ); 
+               //GCLOG("    %08x %08x ...\n", ((int *)(*ioPtr))[0], ((int *)(*ioPtr))[1] );
             }
          }
 
-         void visitAlloc(void **ioPtr)
+         void visitAlloc(void **ioPtr) HXCPP_OVERRIDE
          {
             if ( ((*(unsigned int **)ioPtr)[-1]) == IMMIX_OBJECT_HAS_MOVED )
             {
                //GCLOG("  patch reference to  %p -> %p\n", *ioPtr,  (*(void ***)ioPtr)[0]);
                *ioPtr = (*(void ***)ioPtr)[0];
-               //GCLOG("    %08x %08x ...\n", ((int *)(*ioPtr))[0], ((int *)(*ioPtr))[1] ); 
+               //GCLOG("    %08x %08x ...\n", ((int *)(*ioPtr))[0], ((int *)(*ioPtr))[1] );
             }
          }
       };
@@ -4516,10 +4517,9 @@ public:
       }
    }
 
-   static THREAD_FUNC_TYPE SThreadLoop( void *inInfo )
+   static void SThreadLoop( void *inInfo )
    {
       sGlobalAlloc->ThreadLoop((int)(size_t)inInfo);
-      THREAD_FUNC_RET;
    }
 
    void CreateWorker(int inId)
@@ -4537,7 +4537,9 @@ public:
 
          sThreadSleeping[inId] = false;
 
-         HxCreateDetachedThread(SThreadLoop, info);
+         std::thread thread(SThreadLoop, info);
+
+         thread.detach();
       #endif
    }
 
@@ -5858,7 +5860,7 @@ public:
          EnterGCFreeZone();
       #endif
 
-      std::lock_guard<std::mutex> lock(*gThreadStateChangeLock);
+      std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
 
       #ifdef HX_WINDOWS
       mID = 0;
@@ -6085,7 +6087,7 @@ public:
       if (!mGCFreeZone)
          CriticalGCError("GCFree Zone mismatch");
 
-      std::lock_guard<std::mutex> lock(*gThreadStateChangeLock);
+      std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
       mReadyForCollect.Reset();
       mGCFreeZone = false;
       #endif
@@ -6148,7 +6150,7 @@ public:
    #endif // }  HXCPP_EXPLICIT_STACK_EXTENT
 
 
-   void SetupStackAndCollect(bool inMajor, bool inForceCompact, bool inLocked=false,bool inFreeIsFragged=false)
+   void SetupStackAndCollect(bool inMajor, bool inForceCompact, bool inLocked=false,bool inFreeIsFragged=false) HXCPP_OVERRIDE
    {
       #ifndef HXCPP_SINGLE_THREADED_APP
         #if HXCPP_DEBUG
@@ -6210,7 +6212,7 @@ public:
    }
 
 
-   void *CallAlloc(int inSize,unsigned int inObjectFlags)
+   void *CallAlloc(int inSize,unsigned int inObjectFlags) HXCPP_OVERRIDE
    {
       #ifndef HXCPP_SINGLE_THREADED_APP
       #if HXCPP_DEBUG
@@ -6869,7 +6871,7 @@ int GcGetThreadAttachedCount()
 class GcFreezer : public hx::VisitContext
 {
 public:
-   void visitObject(hx::Object **ioPtr)
+   void visitObject(hx::Object **ioPtr) HXCPP_OVERRIDE
    {
       hx::Object *obj = *ioPtr;
       if (!obj || IsConstAlloc(obj))
@@ -6882,7 +6884,7 @@ public:
       (*ioPtr)->__Visit(this);
    }
 
-   void visitAlloc(void **ioPtr)
+   void visitAlloc(void **ioPtr) HXCPP_OVERRIDE
    {
       void *data = *ioPtr;
       if (!data || IsConstAlloc(data))
