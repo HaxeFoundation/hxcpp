@@ -75,7 +75,7 @@
 
   <outflag value="-o"/>
   <ext value=".o"/>
-  <objdir value="obj/iphonesim${OBJGCC}${OBJDBG}-64/" if="HXCPP_ARM64" />
+  <objdir value="obj/iphonesim${OBJGCC}${OBJDBG}-arm64/" if="HXCPP_ARM64" />
   <objdir value="obj/iphonesim${OBJGCC}${OBJDBG}/" unless="HXCPP_ARM64" />
 </compiler>
 
