@@ -7,8 +7,8 @@
 
 #define TRACY_ENABLE
 #include <hxcpp.h>
-#include "../../project/thirdparty/tracy-0.12.0/tracy/TracyC.h"
-#include "../../project/thirdparty/tracy-0.12.0/tracy/Tracy.hpp"
+#include "../../project/thirdparty/tracy-0.13.1/tracy/TracyC.h"
+#include "../../project/thirdparty/tracy-0.13.1/tracy/Tracy.hpp"
 
 #ifdef HXCPP_TRACY_MEMORY
 	#ifdef HXCPP_GC_MOVING

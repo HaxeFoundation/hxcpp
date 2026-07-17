@@ -2,6 +2,7 @@
 #include <semaphore.h>
 #include <sys/time.h>
 #include <memory>
+#include <cerrno>
 #include <hx/thread/CountingSemaphore.hpp>
 
 struct hx::thread::CountingSemaphore_obj::Impl
