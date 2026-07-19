@@ -36,7 +36,7 @@
    #endif
 #endif
 
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
    #include <sys/wait.h>
 #endif
 
@@ -266,7 +266,7 @@ String _hx_std_sys_string()
    return HX_CSTRING("Android");
 #elif defined(BLACKBERRY)
    return HX_CSTRING("BlackBerry");
-#elif defined(EMSCRIPTEN)
+#elif defined(__EMSCRIPTEN__)
    return HX_CSTRING("Emscripten");
 #elif defined(EPPC)
    return HX_CSTRING("EPPC");
@@ -296,7 +296,7 @@ bool _hx_std_sys_is64()
 **/
 int _hx_std_sys_command( String cmd )
 {
-   #if defined(HX_WINRT) || defined(EMSCRIPTEN) || defined(EPPC) || defined(IPHONE) || defined(APPLETV) || defined(HX_APPLEWATCH)
+   #if defined(HX_WINRT) || defined(__EMSCRIPTEN__) || defined(EPPC) || defined(IPHONE) || defined(APPLETV) || defined(HX_APPLEWATCH)
    return -1;
    #else
    if( !cmd.raw_ptr() || !cmd.length )
@@ -865,7 +865,7 @@ Array<String> _hx_std_sys_env()
 **/
 int _hx_std_sys_getch( bool b )
 {
-#if defined(HX_WINRT) || defined(EMSCRIPTEN) || defined(EPPC)
+#if defined(HX_WINRT) || defined(__EMSCRIPTEN__) || defined(EPPC)
    return 0;
 #elif defined(NEKO_WINDOWS)
    hx::EnterGCFreeZone();

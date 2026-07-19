@@ -28,7 +28,7 @@
    #include <stdint.h>
    #include <cstddef>
    namespace hx { typedef std::type_info type_info; }
-   #ifndef EMSCRIPTEN
+   #ifndef __EMSCRIPTEN__
       using hx::type_info;
       #ifdef __MINGW32__
          #include <stdint.h>
@@ -38,12 +38,12 @@
    #endif
 #endif
 
-#if defined(EMSCRIPTEN) || defined(IPHONE) || defined(APPLETV)
+#if defined(__EMSCRIPTEN__) || defined(IPHONE) || defined(APPLETV)
   #include <unistd.h>
   #include <cstdlib>
 #endif
 
-#if defined(EMSCRIPTEN)
+#if defined(__EMSCRIPTEN__)
   #include <emscripten.h>
 #endif
 
@@ -64,7 +64,7 @@
   #include <stddef.h>
 #endif
 
-#if defined(EMSCRIPTEN)  || defined(_ARM_) || defined(__arm__) || defined(GCW0)
+#if defined(__EMSCRIPTEN__)  || defined(_ARM_) || defined(__arm__) || defined(GCW0)
    #define HXCPP_ALIGN_FLOAT
 #endif
 
