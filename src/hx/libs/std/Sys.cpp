@@ -30,7 +30,7 @@
    #include <limits.h>
    #ifndef ANDROID
       #include <locale.h>
-      #if !defined(BLACKBERRY) && !defined(EPPC) && !defined(GCW0) && !defined(__GLIBC__)
+      #if !defined(BLACKBERRY) && !defined(EPPC) && !defined(GCW0) && !defined(__GLIBC__) && !defined(NEKO_BSD)
          #include <xlocale.h>
       #endif
    #endif
@@ -52,7 +52,7 @@
    #include <string>
 #endif
 
-#ifdef HX_ANDROID
+#if defined(HX_ANDROID) || defined(NEKO_BSD)
  #include <sys/wait.h>
 #endif
 
