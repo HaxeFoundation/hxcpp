@@ -28,7 +28,7 @@
 		<flag value="Security" />
 
 		<flag value="-framework" unless="macos" />
-		<flag value="Security" unless="macos" />
+		<flag value="CoreFoundation" unless="macos" />
 	</section>
 </target>
 
