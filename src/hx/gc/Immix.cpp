@@ -4772,6 +4772,32 @@ public:
 
       hx::FindZombies(mMarker);
 
+      // Weak-key hashes are ephemerons: a value is reachable only when both
+      // the hash and its key are reachable. Values marked here may in turn
+      // make keys in other weak hashes reachable, so iterate to a fixed point.
+      bool markedWeakValue;
+      do
+      {
+         markedWeakValue = false;
+         mMarker.init();
+         for(int i=0;i<hx::sWeakHashList.size();i++)
+         {
+            hx::HashRoot *hash = hx::sWeakHashList[i];
+            if (hx::IsWeakRefValid(hash))
+               markedWeakValue = hash->markWeakValues(&mMarker) || markedWeakValue;
+         }
+         if (markedWeakValue)
+         {
+            #ifdef HX_MULTI_THREAD_MARKING
+            mMarker.releaseJobs();
+            StartThreadJobs(tpjMark, MAX_GC_THREADS, true);
+            #else
+            mMarker.processMarkStack();
+            #endif
+         }
+      }
+      while(markedWeakValue);
+
       hx::RunFinalizers();
 
       #ifdef HXCPP_GC_VERIFY
