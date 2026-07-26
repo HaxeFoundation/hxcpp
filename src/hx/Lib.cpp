@@ -11,10 +11,10 @@
 #include <unistd.h>
 #endif
 
-#if (defined (IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK) || defined(APPLETV) ) && \
+#if (defined (IPHONE) || defined(__EMSCRIPTEN__) || defined(STATIC_LINK) || defined(APPLETV) ) && \
 	!defined(HXCPP_DLL_IMPORT) && (!defined(HXCPP_DLL_EXPORT) || defined(HXCPP_SCRIPTABLE) )
 #define HXCPP_NO_DYNAMIC_LOADING
-#elif !defined(ANDROID) && !defined(HX_WINRT) && !defined(IPHONE) && !defined(EMSCRIPTEN) && \
+#elif !defined(ANDROID) && !defined(HX_WINRT) && !defined(IPHONE) && !defined(__EMSCRIPTEN__) && \
 	!defined(STATIC_LINK) && !defined(APPLETV)
 #define HXCPP_TRY_HAXELIB
 #endif
@@ -71,7 +71,7 @@ typedef void *Module;
 Module hxLoadLibrary(String inLib)
 {
    int flags = RTLD_GLOBAL;
-   #if defined(HXCPP_RTLD_LAZY) || defined(IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK) || defined(APPLETV)
+   #if defined(HXCPP_RTLD_LAZY) || defined(IPHONE) || defined(__EMSCRIPTEN__) || defined(STATIC_LINK) || defined(APPLETV)
    flags |= RTLD_LAZY;
    #else
    flags |= RTLD_NOW;
@@ -418,7 +418,7 @@ String __hxcpp_get_bin_dir()
     HX_CSTRING("BlackBerry");
 #elif defined(RASPBERRYPI)
     HX_CSTRING("RPi");
-#elif defined(EMSCRIPTEN)
+#elif defined(__EMSCRIPTEN__)
     HX_CSTRING("Emscripten");
 #elif defined(TIZEN)
     HX_CSTRING("Tizen");
@@ -454,7 +454,7 @@ String __hxcpp_get_dll_extension()
     HX_CSTRING(".sim.dylib");
 #elif defined(__APPLE__)
     HX_CSTRING(".dylib");
-#elif defined(ANDROID) || defined(GPH) || defined(WEBOS)  || defined(BLACKBERRY) || defined(EMSCRIPTEN) || defined(TIZEN)
+#elif defined(ANDROID) || defined(GPH) || defined(WEBOS)  || defined(BLACKBERRY) || defined(__EMSCRIPTEN__) || defined(TIZEN)
     HX_CSTRING(".so");
 #else
     HX_CSTRING(".dso");

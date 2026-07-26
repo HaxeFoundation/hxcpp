@@ -492,7 +492,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void NewMarkedObject(hx::Object *inPtr);
 
 inline void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx)
 {
-   #ifdef EMSCRIPTEN
+   #ifdef __EMSCRIPTEN__
    // Unaligned must be constants...
    if ( !( ((size_t)inPtr) & 3) )
    #endif
@@ -502,7 +502,7 @@ inline void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx)
 }
 inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
 {
-   #ifdef EMSCRIPTEN
+   #ifdef __EMSCRIPTEN__
    // Unaligned must be constants...
    if ( !( ((size_t)inPtr) & 3) )
    #endif
