@@ -308,6 +308,101 @@ class Setup
          Log.v("No EMSDK_NODE provided, using 'node'");
          ioDefines.set("EMSDK_NODE", "node");
       }
+
+      // Detect EMSDK major version to enable profile_funcs for EMSDK6+ to fix spill-pointers issue
+      if (!ioDefines.exists("HXCPP_NO_GC_LINK"))
+      {
+         var ver:String = null;
+
+         // Prefer reading the version file when EMSDK path is known
+         var emsdk = ioDefines.get("EMSDK");
+         if (emsdk != null)
+         {
+            var versionFile = emsdk + "/upstream/emscripten/emscripten-version.txt";
+            if (FileSystem.exists(versionFile))
+            {
+               try { ver = StringTools.trim(sys.io.File.getContent(versionFile)).split("\"").join(""); }
+               catch (e:Dynamic) { Log.v('Could not read $versionFile'); }
+            }
+         }
+
+         // Fallback: ask the compiler directly.
+         // On Windows with EMSCRIPTEN_ROOT use python emcc.py; elsewhere just emcc.
+         if (ver == null)
+         {
+            try
+            {
+               var emscriptenRoot = ioDefines.get("EMSCRIPTEN_ROOT");
+               var lines:Array<String>;
+               if (BuildTool.isWindows && emscriptenRoot != null)
+                  lines = ProcessManager.readStdout("python", ['"${emscriptenRoot}/emcc.py"', "--version"]);
+               else
+                  lines = ProcessManager.readStdout("emcc", ["--version"]);
+               // Output: "emcc (...) 3.1.45 (...)"
+               var versionRe = ~/\b(\d+\.\d+[\.\d]*)\b/;
+               for (line in lines)
+                  if (ver == null && versionRe.match(line))
+                     ver = versionRe.matched(1);
+            }
+            catch (e:Dynamic) { Log.v("Could not query emcc version"); }
+         }
+
+         if (ver != null)
+         {
+            var major = Std.parseInt(ver.split(".")[0]);
+            Log.v('Emscripten $ver ($major) detected');
+            if (major != null && major >= 6)
+            {
+               ioDefines.set("EMSDK6+", "1");
+
+               // Locate wasm-opt, required for the separate spill-pointers pass
+               if (ioDefines.exists("HXCPP_WASM_OPT"))
+               {
+                  Log.v('Using provided HXCPP_WASM_OPT: ${ioDefines.get("HXCPP_WASM_OPT")}');
+               }
+               else
+               {
+                  var wasmOptExe = BuildTool.isWindows ? "wasm-opt.exe" : "wasm-opt";
+                  var found = false;
+
+                  // 1. Try wasm-opt already in PATH
+                  Log.v('Emscripten 6+: checking for $wasmOptExe in PATH...');
+                  try
+                  {
+                     var lines = ProcessManager.readStdout(wasmOptExe, ["--version"]);
+                     if (lines?.length>0)
+                     {
+                        Log.v('Found $wasmOptExe in PATH ${lines[0]}');
+                        ioDefines.set("HXCPP_WASM_OPT", wasmOptExe);
+                        found = true;
+                     }
+                  }
+                  catch (e:Dynamic) { }
+                  if (!found)
+                     Log.v('$wasmOptExe not found in PATH');
+
+                  // 2. Try $EMSDK/upstream/bin/wasm-opt
+                  if (!found)
+                  {
+                     var emsdk = ioDefines.get("EMSDK");
+                     if (emsdk != null)
+                     {
+                        var sdkPath = emsdk + "/upstream/bin/" + wasmOptExe;
+                        Log.v('Checking for wasm-opt at $sdkPath...');
+                        if (FileSystem.exists(sdkPath))
+                        {
+                           Log.v('Found wasm-opt at $sdkPath');
+                           ioDefines.set("HXCPP_WASM_OPT", sdkPath);
+                           found = true;
+                        }
+                        else
+                           Log.v('wasm-opt not found at $sdkPath');
+                     }
+                  }
+               }
+            }
+         }
+      }
    }
 
 

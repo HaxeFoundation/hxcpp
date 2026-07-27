@@ -104,7 +104,6 @@ class Linker
 
       mLastOutName = out_name;
 
-
       var lastLib = "";
       var libs = new Array<String>();
       for(l in inTarget.mAutoLibs)

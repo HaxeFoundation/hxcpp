@@ -1257,6 +1257,7 @@ class BuildTool
                     if (el.has.name)
                        s.mFlags.push(substitute(el.att.name));
                     s.mFlags.push(substitute(el.att.value));
+                case "ext" : s.mExt = substitute(el.att.value);
                 case "exe" : s.mExe = substitute((el.att.name));
             }
       }
