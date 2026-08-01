@@ -781,7 +781,8 @@ class Setup
    public static function setupMSVC(ioDefines:Hash<String>, in64:Bool, inArm64, isWinRT:Bool)
    {
       var detectMsvc = !ioDefines.exists("NO_AUTO_MSVC") &&
-                       !ioDefines.exists("HXCPP_MSVC_CUSTOM");
+                       !ioDefines.exists("HXCPP_MSVC_CUSTOM") &&
+                       !ioDefines.exists("HXCPP_MSVC_ROOT");
 
       if (ioDefines.exists("HXCPP_MSVC_VER"))
       {
