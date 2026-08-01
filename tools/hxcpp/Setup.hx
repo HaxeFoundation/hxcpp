@@ -901,6 +901,8 @@ class Setup
          }
       }
 
+      if (ioDefines.exists("HXCPP_MSVC_LLVM")) return;
+
       try
       {
          var proc = new Process("cl.exe",[]);
