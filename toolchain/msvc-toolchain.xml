@@ -3,7 +3,27 @@
 
 <!-- WINDOWS TOOLS -->
 
+<set name="TOOLS_EXE_SUFFIX" value=".exe" />
 
+<section if="HXCPP_MSVC_LLVM" >
+
+  <set name="CL_EXE" value="clang-cl${TOOLS_EXE_SUFFIX}" />
+  <set name="LINK_EXE" value="lld-link${TOOLS_EXE_SUFFIX}" />
+  <set name="LIB_EXE" value="llvm-lib${TOOLS_EXE_SUFFIX}" />
+  <set name="RC_EXE" value="llvm-rc${TOOLS_EXE_SUFFIX}" />
+  <set name="MT_EXE" value="llvm-mt${TOOLS_EXE_SUFFIX}" />
+
+</section>
+
+<section unless="HXCPP_MSVC_LLVM">
+
+  <set name="CL_EXE" value="cl${TOOLS_EXE_SUFFIX}" />
+  <set name="LINK_EXE" value="link${TOOLS_EXE_SUFFIX}" />
+  <set name="LIB_EXE" value="lib${TOOLS_EXE_SUFFIX}" />
+  <set name="RC_EXE" value="rc${TOOLS_EXE_SUFFIX}" />
+  <set name="MT_EXE" value="mt${TOOLS_EXE_SUFFIX}" />
+
+</section>
 
 <set name="USE_PRECOMPILED_HEADERS" value="msvc" unless="NO_PRECOMPILED_HEADERS" />
 
@@ -52,8 +72,10 @@
 <unset name="HXCPP_FAST_LINK" if="HXCPP_FAST_LINK" unless="MSVC19"/>
 
 <compiler id="MSVC" exe="cl.exe" if="windows">
+  <exe name="${CL_EXE}" />
   <flag value="-nologo"/>
 
+  <pchflag value="/TP" />
 
   <!-- Newer options -->
   <!-- <flag value = "/analyze-" if="MSVC17+" /> -->
@@ -107,18 +129,26 @@
   <flag value="-wd4996"/>
   <outflag value="-Fo"/>
   <ext value=".obj"/>
-  <asmExe value="ml64.exe" if="HXCPP_M64" />
-  <asmExe value="ml.exe" unless="HXCPP_M64" />
+
+  <section if="HXCPP_MSVC_LLVM">
+    <asmExe value="llvm-ml${TOOLS_EXE_SUFFIX}" />
+  </section>
+  <section unless="HXCPP_MSVC_LLVM">
+    <asmExe value="ml64.exe" if="HXCPP_M64" />
+    <asmExe value="ml.exe" unless="HXCPP_M64" />
+  </section>
+
   <objdir value="${MSVC_OBJ_DIR}" />
 
-  <rcexe name="rc.exe" />
+  <rcexe name="${RC_EXE}" />
   <rcext value=".res" />
   <rcflag value="-nologo" />
 
-  <getversion value="cl.exe"/>
+  <getversion value="${CL_EXE}" unless="HXCPP_MSVC_LLVM"/>
 </compiler>
 
 <linker id="dll" exe="link.exe" if="windows">
+  <exe name="${LINK_EXE}" />
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
   <flag value="-dll"/>
@@ -142,6 +172,7 @@
 </linker>
 
 <linker id="exe" exe="link.exe" unless="winrt">
+  <exe name="${LINK_EXE}" />
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
@@ -166,6 +197,7 @@
 
 
 <manifest exe="mt.exe" >
+  <exe name="${MT_EXE}" />
   <flag value="-nologo"/>
   <flag value="-manifest"/>
   <outPre value="-outputresource:" />
@@ -175,6 +207,7 @@
 
 
 <linker id="exe" exe="link.exe" if="winrt">
+  <exe name="${LINK_EXE}" />
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
@@ -197,6 +230,7 @@
 </linker>
 
 <linker id="static_link" exe="lib.exe" if="windows">
+  <exe name="${LIB_EXE}" />
   <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
   <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
   <fromfile value="@"/>
