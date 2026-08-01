@@ -694,7 +694,7 @@ class Compiler
    {
       mPCH = inPCH;
       createCompilerVersion();
-		if (inPCH != null && ~/clang/i.match(mCompilerVersionString)) {
+      if (inPCH != null && ~/clang/i.match(mCompilerVersionString) && !BuildTool.isMsvcLlvm()) {
          mPCH = "clang";
       }
       switch (mPCH) {
