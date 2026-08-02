@@ -395,9 +395,18 @@ public:
 
 #if (HXCPP_API_LEVEL < 500) || defined(CPPIA_JIT)
 
+   #if defined(__GNUC__) || defined(__clang__)
+      #pragma GCC diagnostic push
+      #pragma GCC diagnostic ignored "-Winvalid-offsetof"
+   #endif
+
    static inline int baseOffset() { return (int)offsetof(ArrayBase,mBase); }
    static inline int allocOffset() { return (int)offsetof(ArrayBase,mAlloc); }
    static inline int lengthOffset() { return (int)offsetof(ArrayBase,length); }
+
+   #if defined(__GNUC__) || defined(__clang__)
+      #pragma GCC diagnostic pop
+   #endif
 
 #endif
 
