@@ -1525,6 +1525,11 @@ class BuildTool
       return instance.mDefines.get("toolchain")=="msvc";
    }
 
+   public static function isMsvcLlvm()
+   {
+		return isMsvc() && instance.mDefines.exists("HXCPP_MSVC_LLVM");
+   }
+
    public static function isMingw()
    {
       return instance.mDefines.get("toolchain")=="mingw";
