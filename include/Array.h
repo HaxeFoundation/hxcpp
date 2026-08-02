@@ -393,9 +393,13 @@ public:
 
    mutable int length;
 
+#if (HXCPP_API_LEVEL < 500) || defined(CPPIA_JIT)
+
    static inline int baseOffset() { return (int)offsetof(ArrayBase,mBase); }
    static inline int allocOffset() { return (int)offsetof(ArrayBase,mAlloc); }
    static inline int lengthOffset() { return (int)offsetof(ArrayBase,length); }
+
+#endif
 
 protected:
    mutable int mAlloc;
