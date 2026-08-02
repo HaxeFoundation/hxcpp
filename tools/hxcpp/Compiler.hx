@@ -640,8 +640,10 @@ class Compiler
       if (mPCH == "msvc")
       {
          args.push( mPCHCreate + header + ".h" );
-         var symbol = "link" + Md5.encode( PathManager.combine(dir, file + mExt) );
-         args.push( "-Yl" + symbol  );
+         if (!BuildTool.isMsvcLlvm()) {
+            var symbol = "link" + Md5.encode( PathManager.combine(dir, file + mExt) );
+            args.push( "-Yl" + symbol  );
+         }
 
          // Create a temp file for including ...
          var tmp_cpp = dir + "/" + file + ".cpp";
