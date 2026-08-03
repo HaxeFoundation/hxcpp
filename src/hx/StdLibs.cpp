@@ -8,7 +8,7 @@
 #include <io.h>
 #elif defined(__unix__) || defined(__APPLE__)
 #include <sys/time.h>
-#ifndef EMSCRIPTEN
+#ifndef __EMSCRIPTEN__
 typedef int64_t __int64;
 #endif
 #endif
@@ -704,7 +704,7 @@ bool __instanceof(const Dynamic &inValue, const Dynamic &inType)
 
 int __int__(double x)
 {
-   #ifndef EMSCRIPTEN
+   #ifndef __EMSCRIPTEN__
    if (x < -0x7fffffff || x>0x7fffffff )
    {
       __int64 big_int = (__int64)(x);
@@ -907,7 +907,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
       sgFieldToStringAlloc *= 2;
       String *newData = (String *)malloc(sgFieldToStringAlloc*sizeof(String));
       if (oldAlloc)
-         memcpy(newData, oldData, oldAlloc*sizeof(String));
+         memcpy((void *)newData, oldData, oldAlloc*sizeof(String));
       // Let oldData dangle to keep it thread safe, rather than require mutex on id read.
       sgFieldToString = newData;
    }

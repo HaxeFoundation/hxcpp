@@ -1096,6 +1096,8 @@ public:
          else
             mPtr = arr;
       }
+      else
+         mPtr = nullptr;
    }
 
    Array( const Dynamic &inRHS ) : super(0) { setDynamic(inRHS); }

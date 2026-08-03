@@ -53,7 +53,7 @@
 #define NEKO_EXT "dylib"
 
 #else
-#if defined(EMSCRIPTEN)
+#if defined(__EMSCRIPTEN__)
 #define EXT "ll"
 #else
 #define EXT "so"

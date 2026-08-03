@@ -65,7 +65,7 @@ namespace
 
 hx::thread::Thread hx::thread::Thread_obj::create(CreateFunction job)
 {
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
 	return hx::Throw(HX_CSTRING("Threads are not supported on Emscripten"));
 #else
 

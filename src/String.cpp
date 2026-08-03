@@ -1431,7 +1431,7 @@ String String::fromCharCode( int c )
       if (!sCharToString[group])
       {
          String *ptr = (String *)malloc( sizeof(String)*1024 );
-         memset(ptr, 0, sizeof(String)*1024 );
+         memset((void *)ptr, 0, sizeof(String)*1024 );
          sCharToString[group] = ptr;
       }
       String *ptr = sCharToString[group];
@@ -1556,7 +1556,7 @@ String _hx_utf8_to_utf16(const unsigned char *ptr, int inUtf8Len, bool addHash)
    }
    if (addHash)
    {
-      #ifdef EMSCRIPTEN
+      #ifdef __EMSCRIPTEN__
          *((emscripten_align1_int *)(str+char16Count+1) ) = hash;
       #else
          *((unsigned int *)(str+char16Count+1) ) = hash;

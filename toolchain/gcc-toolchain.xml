@@ -41,7 +41,7 @@
 <unset name="nostrip" if="HXCPP_DEBUG_LINK_AND_STRIP"/>
 
 
-<stripper id="strip" exe="strip" unless="nostrip">
+<stripper id="strip" exe="strip" unless="nostrip || no_gcc_strip">
   <exe name="strip"/>
   <exe name="arm-none-linux-gnueabi-strip" if="webos" />
   <exe name="${EXEPREFIX}-strip" if="EXEPREFIX" />

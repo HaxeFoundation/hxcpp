@@ -241,13 +241,13 @@ public:
          #endif
          if (__s[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT)
          {
-            #ifdef EMSCRIPTEN
+            #ifdef __EMSCRIPTEN__
             return  ((emscripten_align1_int*)__s)[-2];
             #else
             return  ((unsigned int *)__s)[-2];
             #endif
          }
-        #ifdef EMSCRIPTEN
+        #ifdef __EMSCRIPTEN__
            return *((emscripten_align1_int *)(__s+length+1) );
         #else
            return *((unsigned int *)(__s+length+1) );
