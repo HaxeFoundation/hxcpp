@@ -51,8 +51,6 @@
   <flag value="-Wno-unused-value" />
   <flag value="-Wno-overflow" />
   <flag value="-Wno-trigraphs"/>
-  <cppflag value="-Wno-return-type-c-linkage" />
-  <mmflag value="-Wno-return-type-c-linkage" />
   <flag value="-Wno-bool-conversion" unless="HXCPP_GCC"/>
   <!-- Removed for iOS 8 -->
   <!-- <flag value="-fvisibility=hidden"/> -->
