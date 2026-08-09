@@ -60,6 +60,16 @@ class TestCommon extends Test {
     }
 
     @:depends(testStatus)
+    function testUntypedRegisterMove() {
+        final cls = Type.resolveClass('ClientUntypedMove');
+
+        if (Assert.notNull(cls, 'Unable to resolve ClientUntypedMove')) {
+            Assert.equals('1', Std.string(Reflect.callMethod(null, Reflect.field(cls, 'subtractIndexed'), [])),
+                'Subtracting two array elements into a string did not answer');
+        }
+    }
+
+    @:depends(testStatus)
     function testInterfaceCalling() {
         final obj : IFoo = Type.createInstance(Type.resolveClass('ClientFoo'), []);
 

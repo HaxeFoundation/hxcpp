@@ -14,6 +14,16 @@ class ClientFoo implements IFoo {
    }
 }
 
+class ClientUntypedMove {
+
+   public static function subtractIndexed():String {
+      var a:Int = 2;
+      var ints:Array<Int> = [7,8,9];
+
+      return "" + (ints[a - 1] - ints[0]);
+   }
+}
+
 class Client
 {
    public static var clientBool0 = true;
