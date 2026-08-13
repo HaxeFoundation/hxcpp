@@ -180,14 +180,17 @@ void CppiaVar::linkVarTypes(CppiaModule &cppia, int &ioOffset)
       AlignOffset(exprType, ioOffset);
       offset = ioOffset;
       
-      switch(exprType)
+      storeType = typeId==0 ? fsObject : fieldStorageFromType(type);
+
+      switch(storeType)
       {
-         case etInt: ioOffset += sizeof(int); storeType=fsInt; break;
-         case etFloat: ioOffset += sizeof(Float);storeType=fsFloat;  break;
-         case etString: ioOffset += sizeof(String);storeType=fsString;  break;
-         case etObject: ioOffset += sizeof(hx::Object *);storeType=fsObject;  break;
-         case etVoid:
-         case etNull:
+         case fsBool: ioOffset += sizeof(int); break;
+         case fsByte: ioOffset += sizeof(int); break;
+         case fsInt: ioOffset += sizeof(int); break;
+         case fsFloat: ioOffset += sizeof(Float); break;
+         case fsString: ioOffset += sizeof(String); break;
+         case fsObject: ioOffset += sizeof(hx::Object *); break;
+         case fsUnknown:
             break;
       }
    }
