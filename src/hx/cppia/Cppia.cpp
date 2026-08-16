@@ -6818,7 +6818,7 @@ struct OpSub : public BinOp
          else
          {
             compiler->sub(sJitTemp1.as(jtInt),lval,sJitTemp0,false);
-            compiler->convert(sJitTemp1,etInt, inDest, destType);
+            compiler->convert(sJitTemp1.as(jtInt),etInt, inDest, destType);
          }
       }
       else

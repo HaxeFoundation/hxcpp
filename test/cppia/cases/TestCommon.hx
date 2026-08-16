@@ -59,14 +59,44 @@ class TestCommon extends Test {
         Assert.equals(2, Common.callbackSet, 'Bad cppia closure');
     }
 
-    @:depends(testStatus)
-    function testUntypedRegisterMove() {
-        final cls = Type.resolveClass('ClientUntypedMove');
+    function callConvert(name:String):Dynamic {
+        final cls = Type.resolveClass('ClientJitConvert');
 
-        if (Assert.notNull(cls, 'Unable to resolve ClientUntypedMove')) {
-            Assert.equals('1', Std.string(Reflect.callMethod(null, Reflect.field(cls, 'subtractIndexed'), [])),
-                'Subtracting two array elements into a string did not answer');
+        if (!Assert.notNull(cls, 'Unable to resolve ClientJitConvert')) {
+            return null;
         }
+
+        return Reflect.callMethod(null, Reflect.field(cls, name), []);
+    }
+
+    @:depends(testStatus)
+    function testSubtractionToString() {
+        Assert.equals('1', callConvert('subtractToString'), 'Int subtraction into a string did not answer');
+    }
+
+    @:depends(testStatus)
+    function testSubtractionToFloat() {
+        Assert.floatEquals(2.5, callConvert('subtractToFloat'), 'Int subtraction into a float did not answer');
+    }
+
+    @:depends(testStatus)
+    function testSubtractionToDynamic() {
+        Assert.equals(5, callConvert('subtractToDynamic'), 'Int subtraction into a dynamic did not answer');
+    }
+
+    @:depends(testStatus)
+    function testDynamicToString() {
+        Assert.equals('hello!', callConvert('dynamicToString'), 'Dynamic into a string did not answer');
+    }
+
+    @:depends(testStatus)
+    function testDynamicToFloat() {
+        Assert.floatEquals(3.5, callConvert('dynamicToFloat'), 'Dynamic into a float did not answer');
+    }
+
+    @:depends(testStatus)
+    function testDynamicToFloatInRegister() {
+        Assert.floatEquals(3.0, callConvert('dynamicToFloatInRegister'), 'Dynamic into a float register did not answer');
     }
 
     @:depends(testStatus)
