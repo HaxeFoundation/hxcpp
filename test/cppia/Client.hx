@@ -17,10 +17,23 @@ class ClientFoo implements IFoo {
 class ClientBoolField {
 
    public var flag:Bool = true;
+   public var offFlag:Bool = false;
 
    public static var staticFlag:Bool = true;
 
    public function new() {}
+
+   public function readFlag():Bool return flag;
+
+   public function readOffFlag():Bool return offFlag;
+
+   public function flagToString():String return "" + flag;
+
+   public function branchOnFlag():Int return flag ? 10 : 20;
+
+   public function branchOnOffFlag():Int return offFlag ? 10 : 20;
+
+   public function clearFlag():Bool { flag = false; return flag; }
 }
 
 class Client

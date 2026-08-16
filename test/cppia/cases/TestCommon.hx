@@ -72,6 +72,47 @@ class TestCommon extends Test {
     }
 
     @:depends(testStatus)
+    function testBoolMemberFromScript() {
+        final cls = Type.resolveClass('ClientBoolField');
+
+        if (Assert.notNull(cls, 'Unable to resolve ClientBoolField')) {
+            final obj = Type.createInstance(cls, []);
+
+            Assert.equals(true, Reflect.callMethod(obj, Reflect.field(obj, 'readFlag'), []),
+                'Script read of a true Bool member failed');
+            Assert.equals(false, Reflect.callMethod(obj, Reflect.field(obj, 'readOffFlag'), []),
+                'Script read of a false Bool member failed');
+            Assert.equals('true', Reflect.callMethod(obj, Reflect.field(obj, 'flagToString'), []),
+                'Bool member did not stringify as a boolean');
+            Assert.equals(10, Reflect.callMethod(obj, Reflect.field(obj, 'branchOnFlag'), []),
+                'Branch on a true Bool member took the wrong arm');
+            Assert.equals(20, Reflect.callMethod(obj, Reflect.field(obj, 'branchOnOffFlag'), []),
+                'Branch on a false Bool member took the wrong arm');
+        }
+    }
+
+    @:depends(testStatus)
+    function testBoolMemberWrite() {
+        final cls = Type.resolveClass('ClientBoolField');
+
+        if (Assert.notNull(cls, 'Unable to resolve ClientBoolField')) {
+            final obj = Type.createInstance(cls, []);
+
+            Assert.equals(false, Reflect.callMethod(obj, Reflect.field(obj, 'clearFlag'), []),
+                'Script write of a Bool member did not stick');
+            Assert.equals('false', Std.string(Reflect.field(obj, 'flag')),
+                'Reflection did not see the script write');
+
+            Reflect.setField(obj, 'flag', true);
+
+            Assert.equals(true, Reflect.callMethod(obj, Reflect.field(obj, 'readFlag'), []),
+                'Script did not see the reflection write');
+            Assert.equals(10, Reflect.callMethod(obj, Reflect.field(obj, 'branchOnFlag'), []),
+                'Branch did not see the reflection write');
+        }
+    }
+
+    @:depends(testStatus)
     function testInterfaceCalling() {
         final obj : IFoo = Type.createInstance(Type.resolveClass('ClientFoo'), []);
 
