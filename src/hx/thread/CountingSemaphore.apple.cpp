@@ -8,7 +8,11 @@ struct hx::thread::CountingSemaphore_obj::Impl
 
 	static void finalise(hx::Object* obj)
 	{
-		delete reinterpret_cast<hx::thread::CountingSemaphore_obj*>(obj)->impl;
+		auto semaphore = reinterpret_cast<hx::thread::CountingSemaphore_obj*>(obj);
+
+		dispatch_release(semaphore->impl->semaphore)
+
+		delete semaphore->impl;
 	}
 };
 
