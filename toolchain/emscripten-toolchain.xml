@@ -30,6 +30,11 @@
     Currently, the 'spill-pointers' options is needed for GC.  If you do not need gc,
     for example compiling non-haxe code, you can disable by specifying HXCPP_NO_GC_LINK
 
+       EMSDK < 6, this is in BINARYEN_EXTRA_PASSES
+       EMSDK >= 6, this is in BINARYEN_EXTRA_PASSES, but also requires profiling-funcs or the stack can't be found
+          The extra data from profiling-funcs can later be stripped
+       At some point in the future, spill-pointers may move to wasm-opt, which can also handle stripping
+
     emscripten target will default to single-threaded, which allows for some GC optimizations
 
 
@@ -54,17 +59,18 @@
    <error value="Please provide EMSDK" unless="EMSCRIPTEN_ROOT" />
    <set name="HXCPP_RANLIB" value='python "${EMSCRIPTEN_ROOT}/emranlib.py"' />
    <set name="HXCPP_AR" value='python "${EMSCRIPTEN_ROOT}/emar.py"' />
+   <set name="HXCPP_STRIP" value='python "${EMSCRIPTEN_ROOT}/emstrip.py"' />
    <set name="CXX" value='python "${EMSCRIPTEN_ROOT}/emcc.py"' />
 </section>
 
-<set name="nostrip" value="1" if="emscripten"/>
 
+<!-- do not use gcc strip -->
+<set name="no_gcc_strip" value="1" />
 <include name="toolchain/gcc-toolchain.xml"/>
-
-
 
 <!-- EMCC TOOLS -->
 
+<!-- <set name="add_spill_pointers_pass" value="1" if="EMSDK6+" unless="HXCPP_NO_PROFILE_FUNCS || HXCPP_NO_GC_LINK" /> -->
 
 <section unless="HXCPP_OPTIM_LEVEL" >
    <!-- O2 generates stack-overflow when running unit tests - not sure what best default value is
@@ -149,6 +155,7 @@
   <flag name="-s" value="WASM=1" />
   <flag value="--Wno-limited-postlink-optimizations" unless="HXCPP_NO_GC_LINK" />
   <flag name="-s" value="BINARYEN_EXTRA_PASSES='--spill-pointers'" unless="HXCPP_NO_GC_LINK" />
+  <flag value="--profiling-funcs" if="add_spill_pointers_pass || EMSDK6+" />
   <section unless="HXCPP_LINK_NO_EXCEPTIONS" >
      <flag name="-s" value="DISABLE_EXCEPTION_CATCHING=0" if="HXCPP_NO_WASM_EXEPTIONS" />
      <flag value="-fwasm-exceptions" unless="HXCPP_NO_WASM_EXEPTIONS" />
@@ -160,7 +167,6 @@
   <ext value=".so"/>
   <outflag value="-o "/>
 </linker>
-
 
 
 <linker id="exe" exe="emcc">
@@ -195,6 +201,7 @@
   <flag name="-s" value="WASM=1" />
   <flag value="--Wno-limited-postlink-optimizations" unless="HXCPP_NO_GC_LINK" />
   <flag name="-s" value="BINARYEN_EXTRA_PASSES='--spill-pointers'" unless="HXCPP_NO_GC_LINK" />
+  <flag value="--profiling-funcs" if="add_spill_pointers_pass || EMSDK6+" />
   <section unless="HXCPP_LINK_NO_EXCEPTIONS" >
      <flag name="-s" value="DISABLE_EXCEPTION_CATCHING=0" if="HXCPP_NO_WASM_EXEPTIONS" />
      <flag value="-fwasm-exceptions" unless="HXCPP_NO_WASM_EXEPTIONS" />
@@ -211,5 +218,21 @@
   <ext value="${HXCPP_LINK_EMSCRIPTEN_EXT}"/>
   <outflag value="-o "/>
 </linker>
+
+
+<stripper id="strip" exe="strip" unless="nostrip || add_spill_pointers_pass">
+  <exe name="emstrip"/>
+  <exe name="${HXCPP_STRIP}" if="HXCPP_STRIP" />
+  <ext value="wasm" />
+</stripper>
+
+
+<stripper id="strip" exe="strip" if="add_spill_pointers_pass">
+  <exe name="${HXCPP_WASM_OPT}"/>
+  <ext value="wasm" />
+  <flag value="--spill-pointers" />
+  <flag value="--all-features" />
+  <flag value="--strip-debug" unless="nostrip"/>
+</stripper>
 
 </xml>

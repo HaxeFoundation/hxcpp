@@ -1431,7 +1431,7 @@ String String::fromCharCode( int c )
       if (!sCharToString[group])
       {
          String *ptr = (String *)malloc( sizeof(String)*1024 );
-         memset(ptr, 0, sizeof(String)*1024 );
+         memset((void *)ptr, 0, sizeof(String)*1024 );
          sCharToString[group] = ptr;
       }
       String *ptr = sCharToString[group];

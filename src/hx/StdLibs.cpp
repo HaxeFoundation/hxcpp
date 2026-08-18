@@ -907,7 +907,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
       sgFieldToStringAlloc *= 2;
       String *newData = (String *)malloc(sgFieldToStringAlloc*sizeof(String));
       if (oldAlloc)
-         memcpy(newData, oldData, oldAlloc*sizeof(String));
+         memcpy((void *)newData, oldData, oldAlloc*sizeof(String));
       // Let oldData dangle to keep it thread safe, rather than require mutex on id read.
       sgFieldToString = newData;
    }
