@@ -182,17 +182,7 @@ void CppiaVar::linkVarTypes(CppiaModule &cppia, int &ioOffset)
       
       storeType = typeId==0 ? fsObject : fieldStorageFromType(type);
 
-      switch(storeType)
-      {
-         case fsBool: ioOffset += sizeof(int); break;
-         case fsByte: ioOffset += sizeof(int); break;
-         case fsInt: ioOffset += sizeof(int); break;
-         case fsFloat: ioOffset += sizeof(Float); break;
-         case fsString: ioOffset += sizeof(String); break;
-         case fsObject: ioOffset += sizeof(hx::Object *); break;
-         case fsUnknown:
-            break;
-      }
+      ioOffset += sTypeSize[exprType];
    }
 }
 
