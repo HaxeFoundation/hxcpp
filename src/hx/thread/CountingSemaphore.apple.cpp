@@ -10,7 +10,7 @@ struct hx::thread::CountingSemaphore_obj::Impl
 	{
 		auto semaphore = reinterpret_cast<hx::thread::CountingSemaphore_obj*>(obj);
 
-		dispatch_release(semaphore->impl->semaphore)
+		dispatch_release(semaphore->impl->semaphore);
 
 		delete semaphore->impl;
 	}
