@@ -25,7 +25,12 @@
 typedef INT (WSAAPI *inet_pton_func)( INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
 typedef PCSTR (WSAAPI *inet_ntop_func)(INT  Family, PVOID pAddr, PSTR pStringBuf, size_t StringBufSize);
 
-#   define FDSIZE(n)   (sizeof(u_int) + (n) * sizeof(SOCKET))
+// fd_array does not begin at sizeof(u_int). On 64-bit Windows SOCKET is
+// eight bytes, so fd_set carries four bytes of padding after fd_count and
+// the array starts at offset 8. Sizing the copy as 4 + n*8 truncated the
+// first handle by half and left the rest as whatever malloc returned, so
+// select() saw a handle that was not a socket and failed with WSAENOTSOCK.
+#   define FDSIZE(n)   (offsetof(fd_set, fd_array) + (n) * sizeof(SOCKET))
 #   define SHUT_WR      SD_SEND
 #   define SHUT_RD      SD_RECEIVE
 #   define SHUT_RDWR   SD_BOTH
