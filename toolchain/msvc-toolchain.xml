@@ -80,6 +80,11 @@
     <flag value="${HXCPP_MSVC_ROOT}" />
   </section>
 
+  <section if="HXCPP_MSVC_LLVM HXCPP_ARM64">
+    <flag value="-target" />
+    <flag value="aarch64-pc-windows-msvc" />
+  </section>
+
   <pchflag value="/TP" />
 
   <!-- Newer options -->
