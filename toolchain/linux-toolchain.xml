@@ -51,7 +51,6 @@
   <include name="toolchain/common-defines.xml" />
   <flag value="-m32" unless="noM32"/>
   <flag value="-m64" if="HXCPP_M64" unless="noM64" />
-  <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/linux${OBJEXT}/"/>
   <outflag value="-o"/>
