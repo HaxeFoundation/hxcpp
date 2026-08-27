@@ -32,12 +32,6 @@ typedef int64_t __int64;
 #include <clocale>
 #include <mutex>
 
-
-#ifdef HX_ANDROID
-#define rand() lrand48()
-#define srand(x) srand48(x)
-#endif
-
 #ifdef HX_WINRT
 #define PRINTF WINRT_PRINTF
 #elif defined(TIZEN)

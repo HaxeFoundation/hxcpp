@@ -29,10 +29,6 @@
 #include "mysql.h"
 #include <string.h>
 
-#ifdef HX_ANDROID
-#define atof(x) strtod((x),0)
-#endif
-
 /**
    <doc>
    <h1>MySQL</h1>

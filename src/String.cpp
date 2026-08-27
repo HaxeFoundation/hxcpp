@@ -2459,12 +2459,7 @@ public:
    double __ToDouble() const HXCPP_OVERRIDE
    {
       if (!mValue.raw_ptr()) return 0;
-
-      #ifdef HX_ANDROID
-      return strtod(mValue.utf8_str(),0);
-      #else
       return atof(mValue.utf8_str());
-      #endif
    }
    int __length() const HXCPP_OVERRIDE { return mValue.length; }
 
