@@ -1,3 +1,5 @@
+#if (HXCPP_ANDROID_PLATFORM>=21) && !defined(HXCPP_M64)
+
 #include <hxcpp.h>
 #include <limits>
 #include <stdlib.h>
@@ -6,7 +8,6 @@
 #include <dlfcn.h>
 #include <android/log.h>
 
-#if (HXCPP_ANDROID_PLATFORM>=21) && !defined(HXCPP_M64)
 extern "C" {
 
 // These functions are inlined prior to android-ndk-platform-21, which means they
