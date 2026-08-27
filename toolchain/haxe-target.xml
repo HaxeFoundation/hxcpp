@@ -199,7 +199,7 @@
   <file name = "src/hx/Profiler.cpp" if="HXCPP_PROFILER" />
   <file name = "src/hx/Thread.cpp"/>
   <file name = "src/hx/RunLibs.cpp" if="static_link||dll_link"/>
-  <file name = "src/hx/AndroidCompat.cpp" if="android"/>
+  <file name = "src/hx/AndroidCompat.cpp" if="android" unless="HXCPP_ARM64||HXCPP_X86_64" />
 
   <file name = "src/Array.cpp"/>
   <file name = "src/hx/Class.cpp"/>

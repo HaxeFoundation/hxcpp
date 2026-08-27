@@ -9,7 +9,7 @@
 // These functions are inlined prior to android-ndk-platform-21, which means they
 // are missing from the libc functions on those phones, and you will get link errors.
 
-#if (HXCPP_ANDROID_PLATFORM>=21) && !defined(HXCPP_ARM64)
+#if HXCPP_ANDROID_PLATFORM>=21
 extern "C" {
 
 
@@ -43,7 +43,7 @@ __sighandler_t bsd_signal(int s, __sighandler_t f)
 {
  if (bsd_signal_func == 0)
  {
-   // For now (up to Android 7.0) this is always available 
+   // For now (up to Android 7.0) this is always available
    bsd_signal_func = (bsd_signal_func_t) dlsym(RTLD_DEFAULT, "bsd_signal");
 
    if (bsd_signal_func == 0)
