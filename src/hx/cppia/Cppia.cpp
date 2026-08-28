@@ -3826,6 +3826,8 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
 }
 #endif
 
+#ifdef HXCPP_GC_GENERATIONAL
+
 template<typename T>
 inline static bool isPointerObject(T *) { return false; }
 inline static bool isPointerObject(hx::Object **) { return true; }
@@ -3835,7 +3837,6 @@ inline static void * getPointerFrom(T *) { return 0; }
 inline static void * getPointerFrom(hx::Object **o) { return *o; }
 inline static void * getPointerFrom(String *s) { return (void *)s->raw_ptr(); }
 
-#ifdef HXCPP_GC_GENERATIONAL
   #define MEM_WB_CHECK \
      if (isPointerObject(t)) {\
         if (REFMODE==locThis) { \

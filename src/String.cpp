@@ -143,6 +143,7 @@ static void UTF8EncodeAdvance(char * &ioPtr,int c)
       }
 }
 
+#ifndef HX_SMART_STRINGS
 static unsigned char *sUtf8LenArray = 0;
 
 static const unsigned char *getUtf8LenArray()
@@ -155,6 +156,7 @@ static const unsigned char *getUtf8LenArray()
    }
    return sUtf8LenArray;
 }
+#endif
 
 static inline int DecodeAdvanceUTF8(const unsigned char * &ioPtr)
 {
