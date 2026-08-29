@@ -482,7 +482,10 @@ Dynamic _hx_mysql_request(Dynamic handle,String req)
 {
    Connection *connection = getConnection(handle);
 
-   if( mysql_real_query(connection->m,req.utf8_str(),req.length) != 0 )
+    Array< unsigned char > bytes = Array_obj< unsigned char >::__new();
+   __hxcpp_bytes_of_string(bytes, req);
+
+   if( mysql_real_query(connection->m,req.utf8_str(),bytes.__length()) != 0 )
       error(connection->m,req);
 
    MYSQL_RES *res = mysql_store_result(connection->m);
@@ -516,7 +519,10 @@ String  _hx_mysql_escape(Dynamic handle,String str)
    int len = str.length * 2 + 1;
    AutoBuf sout(len);
 
-   int finalLen = mysql_real_escape_string(connection->m,sout.buffer,str.utf8_str(),str.length);
+   Array< unsigned char > bytes = Array_obj< unsigned char >::__new();
+   __hxcpp_bytes_of_string(bytes, str);
+   
+   int finalLen = mysql_real_escape_string(connection->m,sout.buffer,str.utf8_str(),bytes.__length());
    if( finalLen < 0 )
       hx::Throw( HX_CSTRING("Unsupported charset : ") + String(mysql_character_set_name(connection->m)) );
 
