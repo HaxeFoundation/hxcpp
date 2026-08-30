@@ -1,5 +1,6 @@
 -m TestMain
 -r TestMain.hx
 -D HXCPP_GC_GENERATIONAL
+-D HXCPP_GC_BIG_BLOCKS
 -L utest
 --cpp bin
