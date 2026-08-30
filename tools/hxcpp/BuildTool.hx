@@ -1525,6 +1525,11 @@ class BuildTool
       return instance.mDefines.get("toolchain")=="msvc";
    }
 
+   public static function isMsvcLlvm()
+   {
+		return isMsvc() && instance.mDefines.exists("HXCPP_MSVC_LLVM");
+   }
+
    public static function isMingw()
    {
       return instance.mDefines.get("toolchain")=="mingw";
@@ -2129,9 +2134,14 @@ class BuildTool
          // Cross-compile?
          if(defines.exists("windows"))
          {
-            defines.set("toolchain","mingw");
-            defines.set("mingw", "mingw");
-            defines.set("xcompile","1");
+            if (defines.exists("HXCPP_MSVC_LLVM"))
+               defines.set("toolchain", "msvc");
+            else
+            {
+               defines.set("toolchain","mingw");
+               defines.set("mingw", "mingw");
+            }
+            defines.set("xcompile", "1");
             defines.set("BINDIR", arm64 ? "WindowsArm64" : m64 ? "Windows64":"Windows");
          }
          else
