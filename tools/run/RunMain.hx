@@ -1,4 +1,9 @@
 import sys.FileSystem;
+#if haxe4
+import sys.thread.Thread;
+#elseif neko
+import neko.vm.Thread;
+#end
 
 class RunMain
 {
@@ -26,7 +31,7 @@ class RunMain
       log("  haxe compile.hxml");
 
       var gotUserResponse = false;
-      sys.thread.Thread.create(function() {
+      Thread.create(function() {
          Sys.sleep(30);
          if (!gotUserResponse)
          {
