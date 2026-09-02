@@ -222,6 +222,7 @@ class TestPtr extends Test
       var emptyInt:Array<Int> = [];
       cpp.Pointer.ofArray( emptyInt );
       Assert.equals( 0, emptyInt.length );
+      Assert.equals( 0, emptyInt.memcmp([]) );
    }
 
    public function testArrayAccess() {
