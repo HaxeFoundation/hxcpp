@@ -4783,10 +4783,10 @@ public:
       #endif
 
       #ifdef HX_WATCH
-      for(uintptr_t* watch = hxWatchList; *watch; watch++)
+      for (uintptr_t watch : hxWatchList)
       {
-         GCLOG("********* Watch mark : %p %08x\n", *watch, (reinterpret_cast<unsigned int*>(*watch))[-1]);
-         GCLOG(" ******** is marked  : %d\n", (((unsigned char *)(*watch))[HX_ENDIAN_MARK_ID_BYTE]== gByteMarkID));
+         GCLOG("********* Watch mark : %p %08x\n", reinterpret_cast<void*>(watch), (reinterpret_cast<unsigned int*>(watch))[-1]);
+         GCLOG(" ******** is marked  : %d\n", (reinterpret_cast<unsigned char*>(watch)[HX_ENDIAN_MARK_ID_BYTE] == gByteMarkID));
       }
       #endif
    }
@@ -5595,15 +5595,6 @@ MarkChunk *MarkChunk::swapForNew()
 
 void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
 {
-#pragma clang diagnostic push
-#pragma clang diagnostic error "-Wconversion"
-#pragma clang diagnostic error "-Wsign-conversion"
-#pragma clang diagnostic error "-Wimplicit"
-#pragma clang diagnostic error "-Wimplicit-int-conversion"
-#pragma clang diagnostic error "-Wall"
-#pragma clang diagnostic ignored "-Wunused-variable"
-#pragma clang diagnostic ignored "-Wunused-but-set-variable"
-
    #ifdef VERIFY_STACK_READ
    VerifyStackRead(inBottom, inTop);
    #endif
@@ -5667,7 +5658,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
          {
             isWatch = true;
             lastWatch = potentialObject;
-            GCLOG("********* Watch location conservative mark %p:%d\n", potentialObject, mem);
+            GCLOG("********* Watch location conservative mark %p:%d\n", reinterpret_cast<void*>(potentialObject), mem);
          }
          #endif
 
@@ -5695,7 +5686,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
                if (!isWatch && hxInWatchList(potentialObject))
                {
                   isWatch = true;
-                  GCLOG("********* Watch location conservative mark offset %p:%d\n", potentialObject,mem);
+                  GCLOG("********* Watch location conservative mark offset %p:%d\n", reinterpret_cast<void*>(potentialObject), mem);
                }
                #endif
 
@@ -5705,7 +5696,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
                   #ifdef HX_WATCH
                   if (isWatch)
                   {
-                     GCLOG(" Mark object %p (%p)\n", potentialObject,ptr);
+                     GCLOG(" Mark object %p (%p)\n", reinterpret_cast<void*>(potentialObject), ptr);
                   }
                   #endif
                   hx::MarkObjectAlloc( reinterpret_cast<hx::Object*>(potentialObject), __inCtx );
@@ -5716,7 +5707,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
                {
                   #ifdef HX_WATCH
                   if (isWatch)
-                     GCLOG(" Mark string %p (%p)\n", potentialObject,ptr);
+                     GCLOG(" Mark string %p (%p)\n", reinterpret_cast<void*>(potentialObject), ptr);
                   #endif
                   HX_MARK_STRING(reinterpret_cast<void*>(potentialObject));
                   lastPin = potentialObject;
@@ -5726,7 +5717,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
                {
                   #ifdef HX_WATCH
                   if (isWatch)
-                     GCLOG(" pin alloced %p (%p)\n", potentialObject,ptr);
+                     GCLOG(" pin alloced %p (%p)\n", reinterpret_cast<void*>(potentialObject), ptr);
                   #endif
                   lastPin = potentialObject;
                   info->pin();
@@ -5736,7 +5727,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
                {
                   if (isWatch)
                   {
-                     GCLOG(" missed watch %p:%d\n", potentialObject,t);
+                     GCLOG(" missed watch %p:%d\n", reinterpret_cast<void*>(potentialObject), t);
                      int x = info->GetAllocType(pos-sizeof(int),allowPrevious);
                      int y = info->GetEnclosingAllocType(pos-sizeof(int),&potentialObject,allowPrevious);
                      #ifdef HXCPP_GC_NURSERY
@@ -5744,7 +5735,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
                      #else
                      int z = 0;
                      #endif
-                     printf("but got alloc type=%d, enclosing=%d nurs=%d o=%d\n",x,y,z,sgCheckInternalOffset);
+                     printf("but got alloc type=%d, enclosing=%d nurs=%d o=%d\n", x, y, z, static_cast<int>(sgCheckInternalOffset));
                   }
                }
                #endif
@@ -5757,8 +5748,6 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
    #ifdef SHOW_MEM_EVENTS
    GCLOG("...]\n");
    #endif
-
-   #pragma clang diagnostic pop
 }
 
 } // namespace hx
