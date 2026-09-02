@@ -277,13 +277,13 @@ inline bool TIsInterface(hx::Object *inPtr)
 }
 
 
-HXCPP_EXTERN_CLASS_ATTRIBUTES void RegisterVTableOffset(int inOffset);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void RegisterVTableOffset(uintptr_t inOffset);
 
 #define HX_REGISTER_VTABLE_OFFSET( CLASS, INTERFACE ) \
 { \
    CLASS *dummy = (CLASS *)0; \
    INTERFACE *intf = dummy; \
-   ::hx::RegisterVTableOffset( (int)( (size_t)((char *)intf - (char *)dummy)) ); \
+   ::hx::RegisterVTableOffset( reinterpret_cast<uintptr_t>(reinterpret_cast<char *>(intf) - reinterpret_cast<char *>(dummy) )); \
 }
 
 

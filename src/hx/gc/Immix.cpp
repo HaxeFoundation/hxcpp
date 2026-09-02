@@ -100,11 +100,9 @@ static void *sgObject_root = 0;
 // With virtual inheritance, stack pointers can point to the middle of an object
 #ifdef _MSC_VER
 // MSVC optimizes by taking the address of an initernal data member
-static int sgCheckInternalOffset = sizeof(void *)*2;
-static int sgCheckInternalOffsetRows = 1;
+static uintptr_t sgCheckInternalOffset = sizeof(void *)*2;
 #else
-static int sgCheckInternalOffset = 0;
-static int sgCheckInternalOffsetRows = 0;
+static uintptr_t sgCheckInternalOffset = 0;
 #endif
 
 int gInAlloc = false;
@@ -168,13 +166,13 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 
 
 #ifdef HX_WATCH
-void *hxWatchList[] = {
-  (void *)0x0000000100000200,
-  (void *)0
+uintptr_t hxWatchList[] = {
+  uintptr_t{ 0x0000000100000200 },
+  uintptr_t{ 0 }
 };
-bool hxInWatchList(void *watch)
+bool hxInWatchList(uintptr_t watch)
 {
-   for(void **t = hxWatchList; *t; t++)
+   for(uintptr_t* t = hxWatchList; *t; t++)
       if (*t==watch)
          return true;
    return false;
@@ -1144,10 +1142,10 @@ struct BlockDataInfo
 
 
    // When known to be an actual object start...
-   AllocType GetAllocTypeChecked(int inOffset, bool allowPrevious)
+   AllocType GetAllocTypeChecked(uintptr_t inOffset, bool allowPrevious) const
    {
-      char time = mPtr->mRow[0][inOffset+HX_ENDIAN_MARK_ID_BYTE_HEADER];
-      if ( ((time+1) & MARK_BYTE_MASK) != (gByteMarkID & MARK_BYTE_MASK)  )
+      unsigned char time{ mPtr->mRow[0][inOffset + HX_ENDIAN_MARK_ID_BYTE_HEADER] };
+      if (((time + 1) & MARK_BYTE_MASK) != (gByteMarkID & MARK_BYTE_MASK))
       {
          // Object is either out-of-date, or already marked....
          return time==gByteMarkID ? allocMarked : allocNone;
@@ -1156,11 +1154,11 @@ struct BlockDataInfo
       if (!allowPrevious)
          return allocNone;
 
-      if (*(unsigned int *)(mPtr->mRow[0] + inOffset) & IMMIX_ALLOC_IS_CONTAINER)
+      if (*reinterpret_cast<unsigned int *>(mPtr->mRow[0] + inOffset) & IMMIX_ALLOC_IS_CONTAINER)
       {
          // See if object::new has been called, but not constructed yet ...
-         void **vtable = (void **)(mPtr->mRow[0] + inOffset + sizeof(int));
-         if (vtable[0]==0)
+         void** vtable{ reinterpret_cast<void**>(mPtr->mRow[0] + inOffset + sizeof(int)) };
+         if (nullptr == vtable[0])
          {
             // GCLOG("Partially constructed object.");
             return allocString;
@@ -1172,7 +1170,7 @@ struct BlockDataInfo
    }
 
    #ifdef HXCPP_GC_NURSERY
-   AllocType GetEnclosingNurseryType(int inOffset, void **outPtr)
+   AllocType GetEnclosingNurseryType(uintptr_t inOffset, uintptr_t* outPtr) const
    {
       // The block did not get used in the previous cycle, so allocStart is invalid and
       //  no new objects should be in here
@@ -1182,12 +1180,11 @@ struct BlockDataInfo
       // So trace tne new object links through the new allocation holes
       for(int h=0;h<mHoles;h++)
       {
-         int scan = mRanges[h].start;
+         size_t scan{ mRanges[h].start };
          if (inOffset<scan)
             break;
 
-         int size = 0;
-         int last = scan + mRanges[h].length;
+         size_t last{ scan + mRanges[h].length };
          if (inOffset<last)
          {
             #ifdef HXCPP_ALIGN_ALLOC
@@ -1201,22 +1198,25 @@ struct BlockDataInfo
             while(scan<=inOffset)
             {
                // Trace along the hole...
-               unsigned int header = *(unsigned int *)(mPtr->mRow[0]+scan);
-               if (!(header & 0xff000000))
-                  size = header & 0x0000ffff;
-               else
-                  size = (header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT;
+               unsigned int header{ *reinterpret_cast<unsigned int*>(mPtr->mRow[0] + scan) };
+               unsigned int size{
+                  !(header & 0xff000000)
+                     ? (header & 0x0000ffff)
+                     : ((header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT) };
 
-               int end = scan+size+sizeof(int);
+               size_t end{ scan + size + sizeof(int) };
                if (!size || end > last)
                   return allocNone;
 
                if (inOffset>=scan && inOffset<end)
                {
-                  if (inOffset>scan+sgCheckInternalOffset)
+                  if (inOffset > scan + sgCheckInternalOffset)
                      return allocNone;
 
-                  *outPtr = mPtr->mRow[0] + scan + sizeof(int);
+                  if (nullptr != outPtr)
+                  {
+                     *outPtr = reinterpret_cast<uintptr_t>(mPtr->mRow[0] + scan + sizeof(int));
+                  }
 
                   if (header & IMMIX_ALLOC_IS_CONTAINER)
                   {
@@ -1246,10 +1246,10 @@ struct BlockDataInfo
 }
    #endif
 
-   AllocType GetAllocType(int inOffset,bool inAllowPrevious)
+   AllocType GetAllocType(uintptr_t inOffset, bool inAllowPrevious) const
    {
       // Row that the header would be on
-      int r = inOffset >> IMMIX_LINE_BITS;
+      uintptr_t r{ inOffset >> IMMIX_LINE_BITS };
 
       // Out of bounds - can't be a new object start
       if (r < IMMIX_HEADER_LINES || r >= IMMIX_LINES)
@@ -1261,8 +1261,7 @@ struct BlockDataInfo
       if ( !( allocStart[r] & hx::gImmixStartFlag[inOffset &127]) )
       {
          #ifdef HXCPP_GC_NURSERY
-         void *ptr;
-         return GetEnclosingNurseryType(inOffset,&ptr);
+         return GetEnclosingNurseryType(inOffset, nullptr);
          #endif
          //Not a actual start...
          return allocNone;
@@ -1271,35 +1270,39 @@ struct BlockDataInfo
       return GetAllocTypeChecked(inOffset,inAllowPrevious);
    }
 
-   AllocType GetEnclosingAllocType(int inOffset,void **outPtr,bool inAllowPrevious)
+   AllocType GetEnclosingAllocType(uintptr_t inOffset, uintptr_t* outPtr, bool inAllowPrevious) const
    {
-      for(int dx=0;dx<=sgCheckInternalOffset;dx+=4)
+      for (uintptr_t dx{ 0 }; dx <= sgCheckInternalOffset; dx += 4)
       {
-         int blockOffset = inOffset - dx;
+         uintptr_t blockOffset{ inOffset - dx };
          if (blockOffset >= 0)
          {
-            int r = blockOffset >> IMMIX_LINE_BITS;
+            uintptr_t r{ blockOffset >> IMMIX_LINE_BITS };
             if (r >= IMMIX_HEADER_LINES && r < IMMIX_LINES)
             {
                // Normal, good alloc
-               int rowPos = hx::gImmixStartFlag[blockOffset &127];
+               unsigned int rowPos{ hx::gImmixStartFlag[blockOffset & 127] };
                if ( allocStart[r] & rowPos )
                {
                   // Found last valid object - is it big enough?
-                  unsigned int header =  *(unsigned int *)((char *)mPtr + blockOffset);
-                  int size = (header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT;
+                  unsigned int header{ *reinterpret_cast<unsigned int*>(reinterpret_cast<char*>(mPtr) + blockOffset) };
+                  size_t size{ (header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT };
                   // Valid object not big enough...
-                  if (blockOffset + size +sizeof(int) <= inOffset )
+                  if (blockOffset + size + sizeof(int) <= inOffset )
                      break;
 
                   // If the object is old, it could be the tail end of an old row that
                   //  thinks is is covering this row, but it is not because this row is reused.
                   // So we can say there is no other object that could be covering
                   //  this spot, but not that it is not a nursery object.
-                  AllocType result = GetAllocTypeChecked(blockOffset,inAllowPrevious);
+                  AllocType result{ GetAllocTypeChecked(blockOffset,inAllowPrevious) };
                   if (result!=allocNone)
                   {
-                     *outPtr = (void *)(mPtr->mRow[0] + blockOffset + sizeof(int));
+                     if (nullptr != outPtr)
+                     {
+                        *outPtr = reinterpret_cast<uintptr_t>(mPtr->mRow[0] + blockOffset + sizeof(int));
+                     }
+                     
                      return result;
                   }
                   break;
@@ -3664,9 +3667,9 @@ public:
   void MoveSpecial(hx::Object *inTo, hx::Object *inFrom, int size)
    {
       #ifdef HX_WATCH
-      if (hxInWatchList(inFrom))
+      if (hxInWatchList(reinterpret_cast<uintptr_t>(inFrom)))
          GCLOG("****** watch MOVE from %p\n",inFrom);
-      if (hxInWatchList(inTo))
+      if (hxInWatchList(reinterpret_cast<uintptr_t>(inTo)))
          GCLOG("****** watch MOVE to %p\n",inTo);
       #endif
        // FinalizerList will get visited...
@@ -4780,9 +4783,9 @@ public:
       #endif
 
       #ifdef HX_WATCH
-      for(void **watch = hxWatchList; *watch; watch++)
+      for(uintptr_t* watch = hxWatchList; *watch; watch++)
       {
-         GCLOG("********* Watch mark : %p %08x\n",*watch, ((unsigned int *)*watch)[-1]);
+         GCLOG("********* Watch mark : %p %08x\n", *watch, (reinterpret_cast<unsigned int*>(*watch))[-1]);
          GCLOG(" ******** is marked  : %d\n", (((unsigned char *)(*watch))[HX_ENDIAN_MARK_ID_BYTE]== gByteMarkID));
       }
       #endif
@@ -5532,29 +5535,18 @@ public:
       return false;
    }
 
-   MemType GetMemType(void *inPtr)
+   MemType GetMemType(uintptr_t inPtr)
    {
-      BlockData *block = (BlockData *)( ((size_t)inPtr) & IMMIX_BLOCK_BASE_MASK);
+      BlockData* block{ reinterpret_cast<BlockData*>(inPtr & IMMIX_BLOCK_BASE_MASK) };
 
-      bool isBlock = IsAllBlock(block);
-      /*
-      bool found = false;
-      for(int i=0;i<mAllBlocks.size();i++)
-      {
-         if (mAllBlocks[i]==block)
-         {
-            found = true;
-            break;
-         }
-      }
-      */
+      bool isBlock{ IsAllBlock(block) };
 
       if (isBlock)
          return memBlock;
 
       for(int i=0;i<mLargeList.size();i++)
       {
-         unsigned int *blob = mLargeList[i] + 2;
+         uintptr_t blob{ reinterpret_cast<uintptr_t>(mLargeList[i] + 2) };
          if (blob==inPtr)
             return memLarge;
       }
@@ -5603,6 +5595,15 @@ MarkChunk *MarkChunk::swapForNew()
 
 void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
 {
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wconversion"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wimplicit"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
+#pragma clang diagnostic error "-Wall"
+#pragma clang diagnostic ignored "-Wunused-variable"
+#pragma clang diagnostic ignored "-Wunused-but-set-variable"
+
    #ifdef VERIFY_STACK_READ
    VerifyStackRead(inBottom, inTop);
    #endif
@@ -5626,48 +5627,47 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
       inTop--;
    }
 
-   void *prev = 0;
-   void *lastPin = 0;
+   uintptr_t prev{};
+   uintptr_t lastPin{};
    #ifdef HX_WATCH
-   void *lastWatch = 0;
-   bool isWatch = false;
+   uintptr_t lastWatch{};
+   bool isWatch{false};
    #endif
 
    #ifdef HXCPP_GC_GENERATIONAL
    // If this is a generational mark, then the byte marker has not been increased.
    // Previous mark Ids are therfore from more than 1 collection ago
-   bool allowPrevious = !__inCtx->isGenerational;
+   bool allowPrevious{ !__inCtx->isGenerational };
    #else
-   const bool allowPrevious = true;
+   const bool allowPrevious{ true };
    #endif
 
 
    for(int *ptr = inBottom ; ptr<inTop; ptr++)
    {
-      void *vptr = *(void **)ptr;
+      uintptr_t potentialObject{ reinterpret_cast<uintptr_t>(*reinterpret_cast<void**>(ptr)) };
 
-      MemType mem;
       #ifdef HXCPP_ALIGN_ALLOC
-      const size_t validObjectMask = 0x07;
+      const size_t validObjectMask{ 0x07 };
       #else
-      const size_t validObjectMask = 0x03;
+      const size_t validObjectMask{ 0x03 };
       #endif
 
-      if (vptr && !((size_t)vptr & validObjectMask) && vptr!=prev && vptr!=lastPin)
+      if (potentialObject && !(potentialObject & validObjectMask) && potentialObject != prev && potentialObject != lastPin)
       {
 
          #ifdef PROFILE_COLLECT
          hx::localCount++;
          #endif
-         MemType mem = sGlobalAlloc->GetMemType(vptr);
+         MemType mem{ sGlobalAlloc->GetMemType(potentialObject) };
 
          #ifdef HX_WATCH
          isWatch = false;
-         if (hxInWatchList(vptr) && vptr!=lastWatch)
+         if (hxInWatchList(potentialObject) && potentialObject !=lastWatch)
          {
             isWatch = true;
-            lastWatch = vptr;
-            GCLOG("********* Watch location conservative mark %p:%d\n",vptr,mem);
+            lastWatch = potentialObject;
+            GCLOG("********* Watch location conservative mark %p:%d\n", potentialObject, mem);
          }
          #endif
 
@@ -5675,25 +5675,27 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
          {
             if (mem==memLarge)
             {
-               unsigned char &mark = ((unsigned char *)(vptr))[HX_ENDIAN_MARK_ID_BYTE];
+               unsigned char& rMark{ reinterpret_cast<unsigned char*>(potentialObject)[HX_ENDIAN_MARK_ID_BYTE] };
+               int mark{ rMark };
                if (mark!=gByteMarkID)
                   mark = gByteMarkID;
             }
             else
             {
-               BlockData *block = (BlockData *)( ((size_t)vptr) & IMMIX_BLOCK_BASE_MASK);
-               BlockDataInfo *info = (*gBlockInfo)[block->mId];
+               BlockData* block{ reinterpret_cast<BlockData*>(potentialObject & IMMIX_BLOCK_BASE_MASK) };
+               BlockDataInfo* info{ (*gBlockInfo)[block->mId] };
 
-               int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
-               AllocType t = sgCheckInternalOffset ?
-                     info->GetEnclosingAllocType(pos-sizeof(int),&vptr, allowPrevious):
-                     info->GetAllocType(pos-sizeof(int), allowPrevious);
+               size_t pos{ potentialObject & IMMIX_BLOCK_OFFSET_MASK };
+               AllocType t{
+                  sgCheckInternalOffset ?
+                     info->GetEnclosingAllocType(pos - sizeof(int), &potentialObject, allowPrevious) :
+                     info->GetAllocType(pos - sizeof(int), allowPrevious) };
 
                #ifdef HX_WATCH
-               if (!isWatch && hxInWatchList(vptr))
+               if (!isWatch && hxInWatchList(potentialObject))
                {
                   isWatch = true;
-                  GCLOG("********* Watch location conservative mark offset %p:%d\n",vptr,mem);
+                  GCLOG("********* Watch location conservative mark offset %p:%d\n", potentialObject,mem);
                }
                #endif
 
@@ -5703,30 +5705,30 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
                   #ifdef HX_WATCH
                   if (isWatch)
                   {
-                     GCLOG(" Mark object %p (%p)\n", vptr,ptr);
+                     GCLOG(" Mark object %p (%p)\n", potentialObject,ptr);
                   }
                   #endif
-                  hx::MarkObjectAlloc( ((hx::Object *)vptr), __inCtx );
-                  lastPin = vptr;
+                  hx::MarkObjectAlloc( reinterpret_cast<hx::Object*>(potentialObject), __inCtx );
+                  lastPin = potentialObject;
                   info->pin();
                }
                else if (t==allocString)
                {
                   #ifdef HX_WATCH
                   if (isWatch)
-                     GCLOG(" Mark string %p (%p)\n", vptr,ptr);
+                     GCLOG(" Mark string %p (%p)\n", potentialObject,ptr);
                   #endif
-                  HX_MARK_STRING(vptr);
-                  lastPin = vptr;
+                  HX_MARK_STRING(reinterpret_cast<void*>(potentialObject));
+                  lastPin = potentialObject;
                   info->pin();
                }
                else if (t==allocMarked)
                {
                   #ifdef HX_WATCH
                   if (isWatch)
-                     GCLOG(" pin alloced %p (%p)\n", vptr,ptr);
+                     GCLOG(" pin alloced %p (%p)\n", potentialObject,ptr);
                   #endif
-                  lastPin = vptr;
+                  lastPin = potentialObject;
                   info->pin();
                }
                #ifdef HX_WATCH
@@ -5734,12 +5736,11 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
                {
                   if (isWatch)
                   {
-                     GCLOG(" missed watch %p:%d\n", vptr,t);
+                     GCLOG(" missed watch %p:%d\n", potentialObject,t);
                      int x = info->GetAllocType(pos-sizeof(int),allowPrevious);
-                     int y = info->GetEnclosingAllocType(pos-sizeof(int),&vptr,allowPrevious);
+                     int y = info->GetEnclosingAllocType(pos-sizeof(int),&potentialObject,allowPrevious);
                      #ifdef HXCPP_GC_NURSERY
-                     void *nptr;
-                     int z = info->GetEnclosingNurseryType(pos-sizeof(int),&nptr);
+                     int z = info->GetEnclosingNurseryType(pos-sizeof(int),nullptr);
                      #else
                      int z = 0;
                      #endif
@@ -5756,6 +5757,8 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
    #ifdef SHOW_MEM_EVENTS
    GCLOG("...]\n");
    #endif
+
+   #pragma clang diagnostic pop
 }
 
 } // namespace hx
@@ -6822,12 +6825,11 @@ void UnregisterCurrentThread()
    local->Release();
 }
 
-void RegisterVTableOffset(int inOffset)
+void RegisterVTableOffset(uintptr_t inOffset)
 {
    if (inOffset>sgCheckInternalOffset)
    {
       sgCheckInternalOffset = inOffset;
-      sgCheckInternalOffsetRows = 1 + (inOffset>>IMMIX_LINE_BITS);
    }
 }
 
