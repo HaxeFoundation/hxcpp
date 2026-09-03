@@ -5622,7 +5622,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
    uintptr_t lastPin{};
    #ifdef HX_WATCH
    uintptr_t lastWatch{};
-   bool isWatch{false};
+   bool isWatch{};
    #endif
 
    #ifdef HXCPP_GC_GENERATIONAL
