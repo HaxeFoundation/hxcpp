@@ -143,6 +143,7 @@ static void UTF8EncodeAdvance(char * &ioPtr,int c)
       }
 }
 
+#ifndef HX_SMART_STRINGS
 static unsigned char *sUtf8LenArray = 0;
 
 static const unsigned char *getUtf8LenArray()
@@ -155,6 +156,7 @@ static const unsigned char *getUtf8LenArray()
    }
    return sUtf8LenArray;
 }
+#endif
 
 static inline int DecodeAdvanceUTF8(const unsigned char * &ioPtr)
 {
@@ -2432,52 +2434,6 @@ static String sStringFields[] = {
 
 namespace hx
 {
-
-
-
-#ifndef HX_WINDOWS
-inline double _wtof(const wchar_t *inStr)
-{
-   #ifdef ANDROID
-   char buf[101];
-   int i;
-   for(i=0;i<100 && inStr[i];i++)
-      buf[i] = inStr[i];
-   buf[i] = '\0';
-   return strtod(buf, 0);
-   #else
-   return wcstod(inStr,0);
-   #endif
-}
-
-#ifdef HX_ANDROID
-int my_wtol(const wchar_t *inStr,wchar_t ** end, int inBase)
-{
-   char buf[101];
-   int i;
-   for(i=0;i<100 && inStr[i];i++)
-      buf[i] = inStr[i];
-   buf[i] = '\0';
-   char *cend = buf;
-   int result = strtol(buf,&cend,inBase);
-   *end = (wchar_t *)inStr + (cend-buf);
-   return result;
-}
-#define wcstol my_wtol
-#endif
-
-inline int _wtoi(const wchar_t *inStr)
-{
-   wchar_t *end = 0;
-   if (!inStr) return 0;
-   long result = 0;
-   if (inStr[0]=='0' && (inStr[1]=='x' || inStr[1]=='X'))
-      result = wcstol(inStr,&end,16);
-   else
-      result = wcstol(inStr,&end,10);
-   return result;
-}
-#endif
 
 
 

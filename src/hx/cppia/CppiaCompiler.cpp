@@ -10,11 +10,6 @@
 namespace hx
 {
 
-static void test_func(CppiaCtx *inCtx)
-{
-   printf("Test!\n");
-}
-
 static void SLJIT_CALL my_trace_func(const char *inText)
 {
    printf("trace: %s\n", inText);

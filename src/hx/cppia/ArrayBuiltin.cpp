@@ -383,17 +383,12 @@ struct ArraySetter : public ArrayBuiltinBase
 };
 
 #ifdef CPPIA_JIT
-static ArrayBase * SLJIT_CALL array_expand(ArrayBase *inArray)
-{
-  inArray->Realloc( inArray->length + 1 );
-  return inArray;
-}
 static hx::Object *SLJIT_CALL objGetIndex(hx::Object *inArray, int inIndex)
 {
    return Dynamic(inArray->__GetItem(inIndex)).mPtr;
 }
 #endif
- 
+
 
 template<typename T>
 struct ExprBaseTypeOf { typedef hx::Object *Base ; };
@@ -1954,145 +1949,6 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 #define BasePtr(x) x
 typedef cpp::VirtualArray_obj ArrayAnyImpl;
 #define CALL(x) x
-
-#ifdef CPPIA_JIT
-static hx::Object * SLJIT_CALL objGetItem(hx::Object *inObj, int inIndex)
-{
-   return inObj->__GetItem(inIndex).mPtr;
-}
-static int SLJIT_CALL arrayContains(ArrayAnyImpl *inObj, hx::Object *inValue)
-{
-   return inObj->contains(inValue);
-}
-static int SLJIT_CALL arrayRemove(ArrayAnyImpl *inObj, hx::Object *inValue)
-{
-   return inObj->remove(inValue);
-}
-static hx::Object * SLJIT_CALL arrayConcat(ArrayAnyImpl *inObj, hx::Object *inValue)
-{
-   return inObj->concat(Dynamic(inValue)).mPtr;
-}
-static void SLJIT_CALL arraySetSizeExact(ArrayAnyImpl *inObj, int inSize)
-{
-   inObj->__SetSizeExact(inSize);
-}
-
-
-static hx::Object * SLJIT_CALL arraySplice(ArrayAnyImpl *inObj, hx::Object *a0, hx::Object *a1)
-{
-   return inObj->splice( Dynamic(a0), Dynamic(a1) ).mPtr;
-}
-static hx::Object * SLJIT_CALL arraySlice(ArrayAnyImpl *inObj, hx::Object *a0, hx::Object *a1)
-{
-   return inObj->slice( Dynamic(a0), Dynamic(a1) ).mPtr;
-}
-static hx::Object * SLJIT_CALL arrayPop(ArrayAnyImpl *inObj)
-{
-   return inObj->pop().mPtr;
-}
-static hx::Object * SLJIT_CALL arrayShift(ArrayAnyImpl *inObj)
-{
-   return inObj->shift().mPtr;
-}
-
-static void SLJIT_CALL runSort( ArrayAnyImpl *inArray, hx::Object *inFunc)
-{
-   TRY_NATIVE
-   inArray->sort( Dynamic(inFunc) );
-   CATCH_NATIVE
-}
-static void SLJIT_CALL runReverse( ArrayAnyImpl *inArray)
-{
-   inArray->reverse();
-}
-
-static hx::Object * SLJIT_CALL runCopy( ArrayAnyImpl *inArray)
-{
-   return (inArray->copy()).mPtr;
-}
-
-
-
-static void SLJIT_CALL runJoin( ArrayAnyImpl *inArray, String *ioValue)
-{
-   TRY_NATIVE
-   *ioValue = inArray->join( *ioValue );
-   CATCH_NATIVE
-}
-
-
-
-static int SLJIT_CALL arrayPushInt( ArrayAnyImpl *inArray, int inVal)
-{
-   return inArray->push(inVal);
-}
-static int SLJIT_CALL arrayPushObject( ArrayAnyImpl *inArray, hx::Object *inVal)
-{
-   return inArray->push(Dynamic(inVal));
-}
-static int SLJIT_CALL arrayPushFloat( ArrayAnyImpl *inArray, double *inVal)
-{
-   return inArray->push(*inVal);
-}
-static int SLJIT_CALL arrayPushString( ArrayAnyImpl *inArray, String *inVal)
-{
-   return inArray->push(*inVal);
-}
-
-
-
-static int SLJIT_CALL arraySetInt( ArrayAnyImpl *inArray, int inIndex, int inVal)
-{
-   inArray->set(inIndex,inVal);
-   return inVal;
-}
-static hx::Object * SLJIT_CALL arraySetObject( ArrayAnyImpl *inArray, int inIndex, hx::Object *inVal)
-{
-   inArray->set(inIndex,Dynamic(inVal));
-   return inVal;
-}
-static void SLJIT_CALL arraySetFloat( ArrayAnyImpl *inArray, int inIndex, double *inVal)
-{
-   inArray->set(inIndex,*inVal);
-}
-static void SLJIT_CALL arraySetString( ArrayAnyImpl *inArray, int inIndex, String *inVal)
-{
-   inArray->set(inIndex,*inVal);
-}
-
-
-
-static void SLJIT_CALL arrayUnshiftInt( ArrayAnyImpl *inArray, int inVal)
-{
-   inArray->unshift(inVal);
-}
-static void SLJIT_CALL arrayUnshiftObject( ArrayAnyImpl *inArray, hx::Object *inVal)
-{
-   inArray->unshift(Dynamic(inVal));
-}
-static void SLJIT_CALL arrayUnshiftFloat( ArrayAnyImpl *inArray, double *inVal)
-{
-   inArray->unshift(*inVal);
-}
-
-static void SLJIT_CALL arrayUnshiftString( ArrayAnyImpl *inArray, String *inVal)
-{
-   inArray->unshift(*inVal);
-}
-
-
-static void SLJIT_CALL runBlit( JitMultiArg *inArgs)
-{
-    // this, inDestElement, inSourceArray, inSourceElement, inElementCount
-    ArrayAnyImpl *dest = (ArrayAnyImpl *)inArgs[0].obj;
-    ArrayAnyImpl *src = (ArrayAnyImpl *)inArgs[2].obj;
-    dest->blit( inArgs[1].ival, src, inArgs[3].ival, inArgs[4].ival );
-}
-
-
-
-#endif
-
 
 
 template<int BUILTIN,typename CREMENT>
