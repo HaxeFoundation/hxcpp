@@ -370,7 +370,7 @@ class Setup
                   try
                   {
                      var lines = ProcessManager.readStdout(wasmOptExe, ["--version"]);
-                     if (lines?.length>0)
+                     if (lines.length>0)
                      {
                         Log.v('Found $wasmOptExe in PATH ${lines[0]}');
                         ioDefines.set("HXCPP_WASM_OPT", wasmOptExe);
@@ -623,7 +623,7 @@ class Setup
 
             var minPlatform:Null<Int> = try {
                haxe.Json.parse(sys.io.File.getContent(platformsJson)).min;
-            } catch (e) {
+            } catch (e:Dynamic) {
                Log.warn("Unable to determine minimum supported Android platform: " + e.toString());
                null;
             };
