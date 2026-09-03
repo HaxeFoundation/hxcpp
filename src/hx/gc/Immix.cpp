@@ -10,6 +10,7 @@
 #include <mutex>
 #include <thread>
 #include <condition_variable>
+#include <inttypes.h>
 
 #ifdef __EMSCRIPTEN__
    #include <emscripten/stack.h>
@@ -5735,7 +5736,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
                      #else
                      int z = 0;
                      #endif
-                     printf("but got alloc type=%d, enclosing=%d nurs=%d o=%d\n", x, y, z, static_cast<int>(sgCheckInternalOffset));
+                     printf("but got alloc type=%d, enclosing=%d nurs=%d o=%" PRIdPTR "\n", x, y, z, sgCheckInternalOffset);
                   }
                }
                #endif
