@@ -124,7 +124,7 @@ unsigned int ObjectSizeSafe(void *inData);
 
 // Const buffers are allocated outside the GC system, and do not require marking
 // String buffers can optionally have a pre-computed hash appended with this method
-void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHash=false);
+void *InternalCreateConstBuffer(const void *inData, size_t inSize, bool inAddStringHash=false);
 
 // Called after collection by an unspecified thread
 typedef void (*finalizer)(hx::Object *v);

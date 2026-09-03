@@ -2860,19 +2860,27 @@ bool IsConstAlloc(const void *inData)
    return header[-1] & HX_GC_CONST_ALLOC_BIT;
 }
 
-void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHash)
+void *InternalCreateConstBuffer(const void *inData, size_t inSize, bool inAddStringHash)
 {
-   bool addHash = inAddStringHash && inSize>0;
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wconversion"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wimplicit"
+#pragma clang diagnostic error "-Wimplicit-int-conversion"
+#pragma clang diagnostic error "-Wall"
+#pragma clang diagnostic ignored "-Wunused-variable"
+#pragma clang diagnostic ignored "-Wunused-but-set-variable"
 
-   int *result = (int *)HxAlloc(inSize + sizeof(int) + (addHash ? sizeof(int):0) );
+   bool addHash{ inAddStringHash && inSize > 0 };
+   unsigned int* result{ static_cast<unsigned int*>(HxAlloc(inSize + sizeof(int) + (addHash ? sizeof(int) : 0))) };
+
    if (addHash)
    {
-      unsigned int hash = 0;
+      unsigned int hash{ 0 };
       if (inData)
          for(int i=0;i<inSize-1;i++)
-            hash = hash*223 + ((unsigned char *)inData)[i];
+            hash = hash * 223 + reinterpret_cast<const unsigned char*>(inData)[i];
 
-      //*((unsigned int *)((char *)result + inSize + sizeof(int))) = hash;
       *result++ = hash;
       *result++ = HX_GC_CONST_ALLOC_BIT | HX_GC_STRING_HASH;
    }
@@ -2891,6 +2899,8 @@ void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHa
    }
 
    return result;
+
+#pragma clang diagnostic pop
 }
 
 // Used when the allocation size is zero for a non-null pointer
