@@ -148,6 +148,10 @@ class BuildTool
             m32 = arch=="x86";
             arm64 = arch=="arm64";
          }
+         else if (mDefines.exists("android"))
+         {
+            arm64 = true;
+         }
          else
          {
             var hostArch = getArch();
