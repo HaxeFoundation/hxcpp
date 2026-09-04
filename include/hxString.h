@@ -228,8 +228,8 @@ public:
          #ifdef HXCPP_PARANOID
          unsigned int result = calcHash();
 
-         unsigned int have = (((unsigned int *)__s)[-1] & HX_GC_CONST_ALLOC_BIT) ?
-                ((unsigned int *)__s)[-2] :  *((unsigned int *)(__s+length+1) );
+         unsigned int have = (((unsigned int *)__s)[-1] & HX_GC_CONST_ALLOC_BIT) ? ((unsigned int *)__s)[-2] :
+                             isUTF16Encoded() ? *((unsigned int *)(__w+length+1)) : *((unsigned int *)(__s+length+1));
 
          if ( have != result )
          {
@@ -245,6 +245,13 @@ public:
             return  ((emscripten_align1_int*)__s)[-2];
             #else
             return  ((unsigned int *)__s)[-2];
+            #endif
+         }
+         if (isUTF16Encoded()) {
+            #ifdef __EMSCRIPTEN__
+            return *((emscripten_align1_int *)(__w+length+1));
+            #else
+            return *((unsigned int *)(__w+length+1));
             #endif
          }
         #ifdef __EMSCRIPTEN__
