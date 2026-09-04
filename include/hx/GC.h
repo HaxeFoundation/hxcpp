@@ -113,10 +113,10 @@ namespace hx
 // If inSize is small (<4k) it will be allocated from the immix pool.
 // Larger, and it will be allocated from a separate memory pool
 // inIsObject specifies whether "__Mark"  should be called on the resulting object
-void *InternalNew(int inSize,bool inIsObject);
+void *InternalNew(size_t inSize,bool inIsObject);
 
 // Used internall - realloc array data
-void *InternalRealloc(int inFromSize, void *inData,int inSize,bool inAllowExpansion=false);
+void *InternalRealloc(size_t inFromSize, void *inData,size_t inSize,bool inAllowExpansion=false);
 
 void InternalReleaseMem(void *inMem);
 
@@ -197,8 +197,8 @@ char *NewString(int inLen);
 // The concept of 'private' is from the old conservative Gc method.
 // Now with explicit marking, these functions do the same thing, which is
 //  to allocate some GC memory and optionally copy the 'inData' into those bytes
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewGCBytes(void *inData,int inSize);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewGCPrivate(void *inData,int inSize);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewGCBytes(void *inData,size_t inSize);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewGCPrivate(void *inData,size_t inSize);
 
 // Force a collect from the calling thread
 // Only one thread should call this at a time
@@ -336,8 +336,8 @@ EXTERN_FAST_TLS_DATA(StackContext, tlsStackContext);
 extern StackContext *gMainThreadContext;
 
 extern unsigned int gImmixStartFlag[128];
-extern int gMarkID;
-extern int gMarkIDWithContainer;
+extern unsigned int gMarkID;
+extern unsigned int gMarkIDWithContainer;
 extern void BadImmixAlloc();
 
 
@@ -345,15 +345,15 @@ class ImmixAllocator
 {
 public:
    virtual ~ImmixAllocator() {}
-   virtual void *CallAlloc(int inSize,unsigned int inObjectFlags) = 0;
+   virtual void *CallAlloc(size_t inSize,unsigned int inObjectFlags) = 0;
    virtual void SetupStackAndCollect(bool inMajor, bool inForceCompact, bool inLocked=false,bool inFreeIsFragged=false) = 0;
 
    #ifdef HXCPP_GC_NURSERY
    unsigned char  *spaceFirst;
    unsigned char  *spaceOversize;
    #else
-   int            spaceStart;
-   int            spaceEnd;
+   size_t         spaceStart;
+   size_t         spaceEnd;
    #endif
    unsigned int   *allocStartFlags;
    unsigned char  *allocBase;
@@ -367,25 +367,25 @@ public:
 
          #ifdef HXCPP_ALIGN_ALLOC
          // make sure buffer is 8-byte aligned
-         unsigned char *buffer = alloc->spaceFirst + ( (size_t)alloc->spaceFirst & 4 );
+         unsigned char* buffer{ alloc->spaceFirst + (reinterpret_cast<uintptr_t>(alloc->spaceFirst) & 4) };
          #else
-         unsigned char *buffer = alloc->spaceFirst;
+         unsigned char* buffer{ alloc->spaceFirst };
          #endif
-         unsigned char *end = buffer + (inSize + 4);
+         unsigned char* end{ buffer + (inSize + 4) };
 
          if ( end > alloc->spaceOversize )
          {
             // Fall back to external method
-            buffer = (unsigned char *)alloc->CallAlloc(inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0);
+            buffer = static_cast<unsigned char*>(alloc->CallAlloc(inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0));
          }
          else
          {
             alloc->spaceFirst = end;
 
             if (inContainer)
-               ((unsigned int *)buffer)[-1] = inSize | IMMIX_ALLOC_IS_CONTAINER;
+                reinterpret_cast<unsigned int*>(buffer)[-1] = static_cast<unsigned int>(inSize) | IMMIX_ALLOC_IS_CONTAINER;
             else
-               ((unsigned int *)buffer)[-1] = inSize;
+                reinterpret_cast<unsigned int*>(buffer)[-1] = static_cast<unsigned int>(inSize);
          }
 
          #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
@@ -401,30 +401,30 @@ public:
       #else
          // Inline the fast-path if we can
          // We know the object can hold a pointer (vtable) and that the size is int-aligned
-         int start = alloc->spaceStart;
+         size_t start{ alloc->spaceStart };
          #ifdef HXCPP_ALIGN_ALLOC
             // Ensure odd alignment in 8 bytes
-            start += 4 - (start & 4);
+            start += 4 - (start & size_t{ 4 });
          #endif
-         int end = start + (int)(sizeof(int) + inSize);
+          size_t end{ start + sizeof(int) + inSize };
 
          if ( end <= alloc->spaceEnd )
          {
             alloc->spaceStart = end;
 
-            unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
+            unsigned int* buffer{ reinterpret_cast<unsigned int*>(alloc->allocBase + start) };
 
-            int startRow = start>>IMMIX_LINE_BITS;
+            size_t startRow{ start >> IMMIX_LINE_BITS };
 
             alloc->allocStartFlags[ startRow ] |= gImmixStartFlag[start&127];
 
             if (inContainer)
-               *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                            ((int)inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
+               *buffer++ =  static_cast<unsigned int>(( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
+                            static_cast<unsigned int>(inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
                             hx::gMarkIDWithContainer;
             else
-               *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                            ((int)inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
+               *buffer++ =  static_cast<unsigned int>(( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
+                            static_cast<unsigned int>(inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
                             hx::gMarkID;
 
             #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
@@ -439,7 +439,7 @@ public:
          }
 
          // Fall back to external method
-         void *result = alloc->CallAlloc((int)inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0);
+         void *result = alloc->CallAlloc(inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0);
 
          #ifdef HXCPP_TELEMETRY
             __hxt_gc_new((hx::StackContext *)alloc,result, inSize, inName);

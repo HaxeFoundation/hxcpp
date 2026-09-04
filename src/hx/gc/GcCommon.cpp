@@ -122,7 +122,7 @@ HX_CHAR *NewString(int inLen)
 
 }
 
-void *NewGCBytes(void *inData,int inSize)
+void *NewGCBytes(void *inData, size_t inSize)
 {
    void *result =  hx::InternalNew(inSize,false);
    if (inData)
@@ -133,7 +133,7 @@ void *NewGCBytes(void *inData,int inSize)
 }
 
 
-void *NewGCPrivate(void *inData,int inSize)
+void *NewGCPrivate(void *inData, size_t inSize)
 {
    void *result =  InternalNew(inSize,false);
    if (inData)

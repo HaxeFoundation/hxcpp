@@ -419,8 +419,8 @@ StackContext *gMainThreadContext = 0;
 
 unsigned int gImmixStartFlag[128];
 
-int gMarkID = 0x10 << 24;
-int gMarkIDWithContainer = (0x10 << 24) | IMMIX_ALLOC_IS_CONTAINER;
+unsigned int gMarkID = 0x10 << 24;
+unsigned int gMarkIDWithContainer = (0x10 << 24) | IMMIX_ALLOC_IS_CONTAINER;
 
 int gPrevByteMarkID = 0x2f;
 unsigned int gPrevMarkIdMask = ((~0x2f000000) & 0x30000000) | HX_GC_CONST_ALLOC_BIT;
@@ -1477,7 +1477,7 @@ void GCCheckPointer(void *inPtr)
 void GCOnNewPointer(void *inPtr)
 {
    #ifdef HXCPP_ALIGN_ALLOC
-   if ( (size_t)inPtr & 0x7 )
+   if ( reinterpret_cast<uintptr_t>(inPtr) & 0x7 )
    {
       GCLOG("Misaligned pointer %p\n", inPtr);
       NullReference("Object", false);
@@ -2862,15 +2862,6 @@ bool IsConstAlloc(const void *inData)
 
 void *InternalCreateConstBuffer(const void *inData, size_t inSize, bool inAddStringHash)
 {
-#pragma clang diagnostic push
-#pragma clang diagnostic error "-Wconversion"
-#pragma clang diagnostic error "-Wsign-conversion"
-#pragma clang diagnostic error "-Wimplicit"
-#pragma clang diagnostic error "-Wimplicit-int-conversion"
-#pragma clang diagnostic error "-Wall"
-#pragma clang diagnostic ignored "-Wunused-variable"
-#pragma clang diagnostic ignored "-Wunused-but-set-variable"
-
    bool addHash{ inAddStringHash && inSize > 0 };
    unsigned int* result{ static_cast<unsigned int*>(HxAlloc(inSize + sizeof(int) + (addHash ? sizeof(int) : 0))) };
 
@@ -2899,8 +2890,6 @@ void *InternalCreateConstBuffer(const void *inData, size_t inSize, bool inAddStr
    }
 
    return result;
-
-#pragma clang diagnostic pop
 }
 
 // Used when the allocation size is zero for a non-null pointer
@@ -3228,7 +3217,7 @@ public:
       }
    }
 
-   void *AllocLarge(int inSize, bool inClear)
+   void *AllocLarge(size_t inSize, bool inClear)
    {
       if (hx::gPauseForCollect)
          __hxcpp_gc_safe_point();
@@ -3243,18 +3232,18 @@ public:
          CollectFromThisThread(false,false);
       }
 
-      inSize = (inSize +3) & ~3;
+      inSize = (inSize + 3) & ~size_t{ 3 };
 
       if (inSize<<1 > mLargeAllocSpace)
          mLargeAllocSpace = inSize<<1;
 
-      unsigned int *result = 0;
+      unsigned int* result{};
       #ifndef HXCPP_SINGLE_THREADED_APP
-      bool do_lock = true;
+      bool do_lock{ true };
       #else
-      bool do_lock = false;
+      bool do_lock{};
       #endif
-      bool isLocked = false;
+      bool isLocked{};
 
 
       if (largeObjectRecycle.size())
@@ -3281,7 +3270,7 @@ public:
       }
 
       if (!result)
-         result = (unsigned int *)HxAlloc(inSize + sizeof(int)*2);
+         result = static_cast<unsigned int*>(HxAlloc(inSize + sizeof(int)*2));
 
       if (!result)
       {
@@ -3296,7 +3285,7 @@ public:
          }
 
          CollectFromThisThread(true,true);
-         result = (unsigned int *)HxAlloc(inSize + sizeof(int)*2);
+         result = static_cast<unsigned int*>(HxAlloc(inSize + sizeof(int) * 2));
       }
 
       if (!result)
@@ -3308,7 +3297,7 @@ public:
       if (inClear)
          ZERO_MEM(result, inSize + sizeof(int)*2);
 
-      result[0] = inSize;
+      result[0] = static_cast<unsigned int>(inSize);
       #ifdef HXCPP_GC_NURSERY
       result[1] = 0;
       #else
@@ -3380,19 +3369,19 @@ public:
       __attribute__((no_sanitize("thread")))
      #endif
    #endif
-   BlockDataInfo *GetNextFree(int inRequiredBytes)
+   BlockDataInfo *GetNextFree(size_t inRequiredBytes)
    {
       bool failedLock = true;
-      int sizeSlot = inRequiredBytes>>IMMIX_LINE_BITS;
+      size_t sizeSlot{ inRequiredBytes >> IMMIX_LINE_BITS };
       if (sizeSlot>=BLOCK_OFSIZE_COUNT)
          sizeSlot = BLOCK_OFSIZE_COUNT-1;
       //volatile int &nextFreeBlock = mNextFreeBlockOfSize[sizeSlot];
-      int nextFreeBlock = mNextFreeBlockOfSize[sizeSlot];
+      int nextFreeBlock{ mNextFreeBlockOfSize[sizeSlot] };
       while(failedLock && nextFreeBlock<mFreeBlocks.size())
       {
          failedLock = false;
 
-         for(int i=nextFreeBlock; i<mFreeBlocks.size(); i++)
+         for (int i{ nextFreeBlock }; i < mFreeBlocks.size(); i++)
          {
              BlockDataInfo *info = mFreeBlocks[i];
              if (!info->mOwned && info->mMaxHoleSize>=inRequiredBytes)
@@ -3585,7 +3574,7 @@ public:
    }
 
 
-   BlockDataInfo *GetFreeBlock(int inRequiredBytes, hx::ImmixAllocator *inAlloc)
+   BlockDataInfo *GetFreeBlock(size_t inRequiredBytes, hx::ImmixAllocator *inAlloc)
    {
       while(true)
       {
@@ -6192,7 +6181,7 @@ public:
 
 
 
-   void ExpandAlloc(int &ioSize)
+   void ExpandAlloc(size_t& ioSize)
    {
       #ifdef HXCPP_ALIGN_ALLOC
       // Do nothing here - aligning to the end of the row will bump the
@@ -6203,11 +6192,11 @@ public:
          int spaceEnd = spaceOversize - allocBase - 4;
          #endif
 
-         int size = ioSize + sizeof(int);
-         int end = spaceStart + size;
+         size_t size{ ioSize + sizeof(int) };
+         size_t end{ spaceStart + size };
          if (end <= spaceEnd)
          {
-            int linePad = IMMIX_LINE_LEN - (end & (IMMIX_LINE_LEN-1));
+            size_t linePad{ IMMIX_LINE_LEN - (end & (IMMIX_LINE_LEN - 1)) };
             if (linePad>0 && linePad<=64)
                ioSize += linePad;
          }
@@ -6215,7 +6204,7 @@ public:
    }
 
 
-   void *CallAlloc(int inSize,unsigned int inObjectFlags) HXCPP_OVERRIDE
+   void *CallAlloc(size_t inSize, unsigned int inObjectFlags) HXCPP_OVERRIDE
    {
       #ifndef HXCPP_SINGLE_THREADED_APP
       #if HXCPP_DEBUG
@@ -6231,9 +6220,10 @@ public:
 
       #if defined(HXCPP_VISIT_ALLOCS) && (defined(HXCPP_M64)||defined(HXCPP_ARM64))
       // Make sure we can fit a relocation pointer
-      int allocSize = sizeof(int) + std::max(8,inSize);
+      // I think we could use something like sizeof(void*) instead of 8.
+      size_t allocSize{ sizeof(int) + std::max(size_t{ 8 }, inSize) };
       #else
-      int allocSize = sizeof(int) + inSize;
+      size_t allocSize{ sizeof(int) + inSize };
       #endif
 
       #if HXCPP_GC_DEBUG_LEVEL>0
@@ -6243,9 +6233,9 @@ public:
       while(1)
       {
          #ifdef HXCPP_GC_NURSERY
-            unsigned char *buffer = spaceFirst;
+            unsigned char* buffer{ spaceFirst };
             #ifdef HXCPP_ALIGN_ALLOC
-            if ((size_t)buffer & 0x4 )
+            if (reinterpret_cast<uintptr_t>(buffer) & 0x4 )
                buffer += 4;
             #endif
             unsigned char *end = buffer + allocSize;
@@ -6254,8 +6244,7 @@ public:
             {
                spaceFirst = end;
 
-               int size = allocSize - 4;
-               ((unsigned int *)buffer)[-1] = size | inObjectFlags;
+               reinterpret_cast<unsigned int*>(buffer)[-1] = static_cast<unsigned int>(allocSize) - 4 | inObjectFlags;
 
                #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
                hx::GCOnNewPointer(buffer);
@@ -6264,27 +6253,30 @@ public:
                return buffer;
             }
             // spaceOversize might have been set to zero for quick-termination of alloc.
-            unsigned char *s = spaceOversize;
+            unsigned char* s{ spaceOversize };
             if (s>spaceFirst && mFraggedRows)
                *mFraggedRows += (s - spaceFirst)>>IMMIX_LINE_BITS;
          #else
             #ifdef HXCPP_ALIGN_ALLOC
-            if (!((size_t)spaceStart & 0x4 ))
+            if (!(size_t{ spaceStart } & 0x4))
                spaceStart += 4;
             #endif
 
-            int end = spaceStart + allocSize;
+            size_t end{ allocSize + spaceStart };
             if (end <= spaceEnd)
             {
-               unsigned int *buffer = (unsigned int *)(allocBase + spaceStart);
+               unsigned int* buffer{ reinterpret_cast<unsigned int*>(allocBase + spaceStart) };
 
-               int startRow = spaceStart>>IMMIX_LINE_BITS;
-               allocStartFlags[ startRow ] |= hx::gImmixStartFlag[spaceStart &127];
+               size_t startRow{ spaceStart >> IMMIX_LINE_BITS };
+               size_t endRow{ (end + (IMMIX_LINE_LEN - 1)) >> IMMIX_LINE_BITS };
 
-               int endRow = (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS;
+               allocStartFlags[startRow] |= hx::gImmixStartFlag[spaceStart & 127];
 
-               *buffer++ = inObjectFlags | hx::gMarkID |
-                     (inSize<<IMMIX_ALLOC_SIZE_SHIFT) | (endRow-startRow);
+               *buffer++ =
+                   inObjectFlags |
+                   hx::gMarkID |
+                   static_cast<unsigned int>(inSize << IMMIX_ALLOC_SIZE_SHIFT) |
+                   static_cast<unsigned int>(endRow - startRow);
 
                spaceStart = end;
 
@@ -6300,9 +6292,9 @@ public:
             }
             if (mFraggedRows)
             {
-               int frag = spaceEnd-spaceStart;
+               size_t frag{ spaceEnd - spaceStart };
                if (frag>0)
-                  *mFraggedRows += frag>>IMMIX_LINE_BITS;
+                  *mFraggedRows += int{ static_cast<int>(frag >> IMMIX_LINE_BITS) };
             }
          #endif
 
@@ -6333,7 +6325,7 @@ public:
 
             BlockDataInfo *info = sGlobalAlloc->GetFreeBlock(allocSize,this);
 
-            allocBase = (unsigned char *)info->mPtr;
+            allocBase = reinterpret_cast<unsigned char*>(info->mPtr);
             mCurrentRange = info->mRanges;
             allocStartFlags = info->allocStart;
             mCurrentHoles = info->mHoles;
@@ -6494,7 +6486,7 @@ void CollectFromThisThread(bool inMajor,bool inForceCompact)
 namespace hx
 {
 
-void *ImmixAllocator::CallAlloc(int inSize,unsigned int inObjectFlags)
+void *ImmixAllocator::CallAlloc(size_t inSize,unsigned int inObjectFlags)
 {
    return reinterpret_cast<LocalAllocator *>(this)->CallAlloc(inSize, inObjectFlags);
 }
@@ -6624,7 +6616,7 @@ void SetTopOfStack(int *inTop,bool inForce)
 }
 
 
-void *InternalNew(int inSize,bool inIsObject)
+void *InternalNew(size_t inSize,bool inIsObject)
 {
    // HX_STACK_FRAME("GC", "new", 0, "GC::new", __FILE__, __LINE__, 0)
 
@@ -6639,16 +6631,16 @@ void *InternalNew(int inSize,bool inIsObject)
 
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
    {
-      void *result = sGlobalAlloc->AllocLarge(inSize, true);
+      void* result{ sGlobalAlloc->AllocLarge(inSize, true) };
       return result;
    }
    else
    {
-      LocalAllocator *tla = GetLocalAlloc();
+      LocalAllocator* tla{ GetLocalAlloc() };
 
       if (inIsObject)
       {
-         void* result = tla->CallAlloc(inSize,IMMIX_ALLOC_IS_CONTAINER);
+         void* result{ tla->CallAlloc(inSize,IMMIX_ALLOC_IS_CONTAINER) };
          return result;
       }
       else
@@ -6658,7 +6650,7 @@ void *InternalNew(int inSize,bool inIsObject)
             return tla->CallAlloc(8,0);
          #endif
 
-         void* result = tla->CallAlloc( (inSize+3)&~3,0);
+         void* result{ tla->CallAlloc((inSize + 3) & ~size_t{3},0) };
          return result;
       }
    }
@@ -6728,7 +6720,7 @@ void InternalReleaseMem(void *inMem)
 
 
 
-void *InternalRealloc(int inFromSize, void *inData,int inSize, bool inExpand)
+void *InternalRealloc(size_t inFromSize, void *inData, size_t inSize, bool inExpand)
 {
    if (inData==0 || inFromSize==0)
    {
@@ -6748,7 +6740,7 @@ void *InternalRealloc(int inFromSize, void *inData,int inSize, bool inExpand)
    _hx_atomic_add(&sgAllocsSinceLastSpam, 1);
    #endif
 
-   void *new_data = 0;
+   void* new_data{};
    if (inSize==0)
    {
       new_data = hx::emptyAlloc;
@@ -6756,8 +6748,8 @@ void *InternalRealloc(int inFromSize, void *inData,int inSize, bool inExpand)
    else if (inSize>=IMMIX_LARGE_OBJ_SIZE)
    {
       new_data = sGlobalAlloc->AllocLarge(inSize, false);
-      if (inSize>inFromSize)
-         ZERO_MEM((char *)new_data + inFromSize,inSize-inFromSize);
+      if (inSize > inFromSize)
+         ZERO_MEM(static_cast<char*>(new_data) + inFromSize, inSize - inFromSize);
    }
    else
    {
@@ -6769,7 +6761,7 @@ void *InternalRealloc(int inFromSize, void *inData,int inSize, bool inExpand)
       else
       #endif
       {
-         inSize = (inSize+3) & ~3;
+         inSize = (inSize + 3) & ~size_t{ 3 };
          if (inExpand)
             tla->ExpandAlloc(inSize);
 
@@ -6783,7 +6775,7 @@ void *InternalRealloc(int inFromSize, void *inData,int inSize, bool inExpand)
    __hxt_gc_realloc(inData, new_data, inSize);
 #endif
 
-   int min_size = inFromSize < inSize ? inFromSize : inSize;
+   size_t min_size{ inFromSize < inSize ? inFromSize : inSize };
 
    if (min_size)
       memcpy(new_data, inData, min_size );
