@@ -135,7 +135,7 @@ jobs:
           uses: ncipollo/release-action@v1
           with:
             tag: v${{ env.hxcpp_release }}
-            commit: ${{ github.ref }}
+            commit: ${{ github.sha }}
             name: Release ${{ env.hxcpp_release }}
             draft: false
             prerelease: false
