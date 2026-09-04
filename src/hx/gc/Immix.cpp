@@ -3241,7 +3241,7 @@ public:
       #ifndef HXCPP_SINGLE_THREADED_APP
       bool do_lock{ true };
       #else
-      bool do_lock{};
+      bool do_lock{ false };
       #endif
       bool isLocked{};
 
