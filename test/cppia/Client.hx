@@ -14,6 +14,15 @@ class ClientFoo implements IFoo {
    }
 }
 
+class ClientBoolField {
+
+   public var flag:Bool = true;
+
+   public static var staticFlag:Bool = true;
+
+   public function new() {}
+}
+
 class Client
 {
    public static var clientBool0 = true;
