@@ -14,6 +14,48 @@ class ClientFoo implements IFoo {
    }
 }
 
+class ClientJitConvert {
+
+   public static function subtractToString():String {
+      var a:Int = 2;
+
+      return "" + (a - 1);
+   }
+
+   public static function subtractToFloat():Float {
+      var a:Int = 7;
+
+      return (a - 2) / 2;
+   }
+
+   public static function subtractToDynamic():Dynamic {
+      var a:Int = 9;
+
+      return a - 4;
+   }
+
+   public static function dynamicToString():String {
+      var d:Dynamic = "hello";
+      var s:String = d;
+
+      return s + "!";
+   }
+
+   public static function dynamicToFloat():Float {
+      var d:Dynamic = 2.5;
+      var f:Float = d;
+
+      return f + 1;
+   }
+
+   public static function dynamicToFloatInRegister():Float {
+      var d:Dynamic = 1.5;
+      var m:Float = 2;
+
+      return m * d;
+   }
+}
+
 class Client
 {
    public static var clientBool0 = true;
