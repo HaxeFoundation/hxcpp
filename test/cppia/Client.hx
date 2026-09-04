@@ -14,6 +14,17 @@ class ClientFoo implements IFoo {
    }
 }
 
+class ClientThrower {
+
+   public static function boom():String {
+      throw "boom";
+   }
+
+   public static function fine():String {
+      return "still here";
+   }
+}
+
 class Client
 {
    public static var clientBool0 = true;
