@@ -254,7 +254,7 @@ void __hxcpp_stdlibs_boot()
     QueryPerformanceFrequency(&qpcFrequency);
 #endif
 
-   #if defined(_MSC_VER) && !defined(HX_WINRT)
+   #if defined(HX_WINDOWS) && !defined(HX_WINRT)
    if (!AttachConsole(ATTACH_PARENT_PROCESS)) {
 
    } else if (GetConsoleWindow()) {
