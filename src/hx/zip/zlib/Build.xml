@@ -39,7 +39,7 @@
     <cache value="true" asLibrary="true" />
     <addTwice value="1" />
 
-    <compilerflag value="-I${ZLIB_DIR}"/>
+    <compilerflag value="-I${ZLIB_DIR}" unless="HXCPP_NO_VENDORED" />
     <compilerflag value="-I${this_dir}"/>
 
     <file name="ZLibUncompress.cpp"/>
@@ -48,7 +48,8 @@
 
   <target id="haxe">
     <files id="hxcpp_zlib_impl" />
-    <files id="zlib_sources" unless="HXCPP_LINK_NO_ZLIB"/>
+    <files id="zlib_sources" unless="HXCPP_LINK_NO_ZLIB || HXCPP_NO_VENDORED"/>
+    <lib name="-lz" if="HXCPP_NO_VENDORED" unless="static_link" />
   </target>
 
 </xml>
