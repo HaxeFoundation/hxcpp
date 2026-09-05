@@ -4806,6 +4806,8 @@ struct DataVal : public CppiaExprWithValue
    }
    const char *getName() HXCPP_OVERRIDE { return "DataVal"; }
 
+   bool isBoolInt() HXCPP_OVERRIDE { return ExprTypeIsBool<T>::value; }
+
    ExprType getType() HXCPP_OVERRIDE { return (ExprType)ExprTypeOf<T>::value; }
 
    void        runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE {  }
