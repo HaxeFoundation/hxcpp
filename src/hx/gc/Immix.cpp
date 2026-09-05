@@ -413,7 +413,7 @@ static void CollectFromThisThread(bool inMajor,bool inForceCompact);
 
 namespace hx
 {
-int gPauseForCollect = 0x00000000;
+std::atomic_uint gPauseForCollect{ 0x00000000 };
 
 StackContext *gMainThreadContext = 0;
 
@@ -4823,7 +4823,8 @@ public:
       #ifndef HXCPP_SINGLE_THREADED_APP
       // If we set the flag from 0 -> 0xffffffff then we are the collector
       //  otherwise, someone else is collecting at the moment - so wait...
-      if (_hx_atomic_compare_exchange((volatile int *)&hx::gPauseForCollect, 0, 0xffffffff) != 0)
+      unsigned int expected{ 0 };
+      if (false == hx::gPauseForCollect.compare_exchange_strong(expected, std::numeric_limits<unsigned int>::max()))
       {
          if (inLocked)
          {
