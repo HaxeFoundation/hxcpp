@@ -4315,7 +4315,7 @@ public:
    {
       while(!sgThreadPoolAbort)
       {
-         int blockId = _hx_atomic_add(&mThreadJobId, 1);
+         size_t blockId{ mThreadJobId.fetch_add(1) };
          if (blockId>=mAllBlocks.size())
             break;
 
@@ -4330,7 +4330,7 @@ public:
    {
       while(!sgThreadPoolAbort)
       {
-         int blockId = _hx_atomic_add(&mThreadJobId, 1);
+         size_t blockId{ mThreadJobId.fetch_add(1) };
          if (blockId>=mAllBlocks.size())
             break;
 
@@ -4343,7 +4343,7 @@ public:
    {
       while(!sgThreadPoolAbort)
       {
-         int blockId = _hx_atomic_add(&mThreadJobId, 1);
+         size_t blockId{ mThreadJobId.fetch_add(1) };
          if (blockId>=mAllBlocks.size())
             break;
 
@@ -4358,7 +4358,7 @@ public:
    {
       while(!sgThreadPoolAbort)
       {
-         int blockId = _hx_atomic_add(&mThreadJobId, 1);
+         size_t blockId{ mThreadJobId.fetch_add(1) };
          if (blockId>=mAllBlocks.size())
             break;
 
@@ -4372,7 +4372,7 @@ public:
    {
       while(!sgThreadPoolAbort)
       {
-         int zeroListId = _hx_atomic_add(&mThreadJobId, 1);
+         size_t zeroListId{ mThreadJobId.fetch_add(1) };
          if (zeroListId>=mZeroList.size())
             break;
 
@@ -4398,7 +4398,7 @@ public:
          spinCount = 0;
 
          // Look at next block...
-         int zeroListId = _hx_atomic_add(&mThreadJobId, 1);
+         size_t zeroListId{ mThreadJobId.fetch_add(1) };
          if (zeroListId>=mZeroList.size())
          {
             // Done, so sleep...
@@ -5570,7 +5570,7 @@ public:
    hx::MarkContext mMarker;
 
    volatile int mNextFreeBlockOfSize[BLOCK_OFSIZE_COUNT];
-   volatile int mThreadJobId;
+   std::atomic_size_t mThreadJobId;
 
    BlockList mAllBlocks;
    BlockList mFreeBlocks;
