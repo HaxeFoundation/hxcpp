@@ -215,7 +215,7 @@ static int *sThreadMarkCount = sThreadMarkCountData + 1;
 static int *sThreadArrayMarkCount = sThreadArrayMarkCountData + 1;
 static int sThreadChunkPushCount;
 static int sThreadChunkWakes;
-static int sSpinCount = 0;
+static std::atomic_int sSpinCount = 0;
 static int sThreadZeroWaits = 0;
 static int sThreadZeroPokes = 0;
 static int sThreadBlockZeroCount = 0;
@@ -1502,9 +1502,9 @@ struct MarkInfo
 struct GlobalChunks
 {
    volatile MarkChunk *processList;
-   volatile int       processListPopLock;
+   std::atomic_int     processListPopLock;
    volatile MarkChunk *freeList;
-   volatile int       freeListPopLock;
+   std::atomic_int     freeListPopLock;
 
    GlobalChunks()
    {
@@ -1652,11 +1652,12 @@ struct GlobalChunks
       if (inChunk)
          release(inChunk);
 
-      while(_hx_atomic_compare_exchange(&processListPopLock, 0, 1) != 0)
+      int expected{ 0 };
+      while(false == processListPopLock.compare_exchange_strong(expected, 1))
       {
          // Spin
          #ifdef PROFILE_THREAD_USAGE
-         _hx_atomic_add(&sSpinCount, 1);
+         sSpinCount++;
          #endif
       }
 
@@ -1735,11 +1736,12 @@ struct GlobalChunks
 
    inline MarkChunk *alloc()
    {
-      while(_hx_atomic_compare_exchange(&freeListPopLock, 0, 1) != 0)
+      int expected{ 0 };
+      while(false == freeListPopLock.compare_exchange_strong(expected, 1))
       {
          // Spin
          #ifdef PROFILE_THREAD_USAGE
-         _hx_atomic_add(&sSpinCount, 1);
+         sSpinCount++;
          #endif
       }
 
