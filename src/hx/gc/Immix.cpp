@@ -219,7 +219,7 @@ static int sSpinCount = 0;
 static int sThreadZeroWaits = 0;
 static int sThreadZeroPokes = 0;
 static int sThreadBlockZeroCount = 0;
-static volatile int sThreadZeroMisses = 0;
+static std::atomic_int sThreadZeroMisses{};
 #endif
 
 enum { MARK_BYTE_MASK = 0x0f };
@@ -3415,7 +3415,7 @@ public:
                          else
                          {
                             if (!info->mZeroed)
-                               _hx_atomic_add(&sThreadZeroMisses, 1);
+                                sThreadZeroMisses++;
                          }
                          #endif
                        }
