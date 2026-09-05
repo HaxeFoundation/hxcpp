@@ -738,7 +738,7 @@ struct BlockDataInfo
    #ifdef HXCPP_GC_GENERATIONAL
    bool         mHasSurvivor;
    #endif
-   volatile int mZeroLock;
+   std::atomic_int mZeroLock;
 
 
    BlockDataInfo(int inGid, BlockData *inData)
@@ -850,7 +850,8 @@ struct BlockDataInfo
       if (mZeroed)
          return false;
 
-      if (_hx_atomic_compare_exchange(&mZeroLock, 0,1) == 0)
+      int expected{ 0 };
+      if (mZeroLock.compare_exchange_strong(expected, 1))
          return zeroAndUnlock();
 
       return false;
@@ -3387,7 +3388,8 @@ public:
              if (!info->mOwned && info->mMaxHoleSize>=inRequiredBytes)
              {
                 // Acquire the zero-lock
-                if (_hx_atomic_compare_exchange(&info->mZeroLock, 0, 1) == 0)
+                int expected{ 0 };
+                if (info->mZeroLock.compare_exchange_strong(expected, 1))
                 {
                    // Acquire ownership...
                    if (info->mOwned)
