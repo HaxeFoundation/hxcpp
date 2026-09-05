@@ -266,7 +266,7 @@ static int sgSpamCollects = 0;
 #endif
 
 #if defined(HXCPP_DEBUG) || defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
-volatile int sgAllocsSinceLastSpam = 0;
+static std::atomic_int sgAllocsSinceLastSpam{};
 #endif
 
 #ifdef ANDROID
@@ -1487,7 +1487,7 @@ void GCOnNewPointer(void *inPtr)
 
    #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
    hx::sgPointerMoved.erase(inPtr);
-   _hx_atomic_add(&sgAllocsSinceLastSpam, 1);
+   sgAllocsSinceLastSpam++;
    #endif
 }
 
@@ -6629,7 +6629,7 @@ void *InternalNew(size_t inSize,bool inIsObject)
       //GCLOG("InternalNew spam\n");
       CollectFromThisThread(false,false);
    }
-   _hx_atomic_add(&sgAllocsSinceLastSpam, 1);
+   sgAllocsSinceLastSpam++;
    #endif
 
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
@@ -6740,7 +6740,7 @@ void *InternalRealloc(size_t inFromSize, void *inData, size_t inSize, bool inExp
       //GCLOG("InternalNew spam\n");
       CollectFromThisThread(false,false);
    }
-   _hx_atomic_add(&sgAllocsSinceLastSpam, 1);
+   sgAllocsSinceLastSpam++;
    #endif
 
    void* new_data{};
