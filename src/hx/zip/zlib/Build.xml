@@ -2,7 +2,7 @@
 
   <pragma once="true" />
 
-  <set name="ZLIB_DIR" value="${HXCPP}/project/thirdparty/zlib-1.3.1"/>
+  <set name="ZLIB_DIR" value="${HXCPP}/project/thirdparty/zlib-1.3.2"/>
 
   <files id="zlib_sources">
     <cache value="true" asLibrary="true" />
