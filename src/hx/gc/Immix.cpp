@@ -213,7 +213,7 @@ static int sThreadMarkCountData[MAX_GC_THREADS+1];
 static int sThreadArrayMarkCountData[MAX_GC_THREADS+1];
 static int *sThreadMarkCount = sThreadMarkCountData + 1;
 static int *sThreadArrayMarkCount = sThreadArrayMarkCountData + 1;
-static int sThreadChunkPushCount;
+static std::atomic_int sThreadChunkPushCount;
 static int sThreadChunkWakes;
 static std::atomic_int sSpinCount = 0;
 static int sThreadZeroWaits = 0;
@@ -1506,39 +1506,33 @@ struct GlobalChunks
    std::atomic<MarkChunk*> freeList;
    std::atomic_int         freeListPopLock;
 
-   GlobalChunks()
-   {
-      processList = 0;
-      freeList = 0;
-      freeListPopLock = 0;
-      processListPopLock = 0;
-   }
+   GlobalChunks() : processList(), processListPopLock(), freeList(), freeListPopLock() {}
 
    MarkChunk *pushJobNoWake(MarkChunk *inChunk)
    {
-      while(true)
+      MarkChunk* head{};
+
+      do
       {
-         MarkChunk* head{ processList };
+         head = processList;
          inChunk->next = head;
-         if (processList.compare_exchange_strong(head, inChunk))
-            break;
-      }
+      } while (false == processList.compare_exchange_strong(head, inChunk));
 
       return alloc();
    }
 
    MarkChunk *pushJob(MarkChunk *inChunk,bool inAndAlloc)
    {
-      while(true)
+      MarkChunk* head{};
+
+      do
       {
-         MarkChunk* head{ processList };
+         head = processList;
          inChunk->next = head;
-         if (processList.compare_exchange_strong(head, inChunk))
-            break;
-      }
+      } while (false == processList.compare_exchange_strong(head, inChunk));
 
       #ifdef PROFILE_THREAD_USAGE
-      _hx_atomic_add(&sThreadChunkPushCount, 1);
+      sThreadChunkPushCount++;
       #endif
 
       if (MAX_GC_THREADS>1 && sLazyThreads)
@@ -1637,13 +1631,13 @@ struct GlobalChunks
 
    inline void release(MarkChunk *inChunk)
    {
-      while(true)
+      MarkChunk* head{};
+
+      do
       {
-         MarkChunk* head{ freeList };
+         head = freeList;
          inChunk->next = head;
-         if (freeList.compare_exchange_strong(head, inChunk))
-            return;
-      }
+      } while (false == freeList.compare_exchange_strong(head, inChunk));
    }
 
 
