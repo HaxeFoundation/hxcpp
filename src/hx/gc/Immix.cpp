@@ -1501,10 +1501,10 @@ struct MarkInfo
 
 struct GlobalChunks
 {
-   volatile MarkChunk *processList;
-   std::atomic_int     processListPopLock;
-   volatile MarkChunk *freeList;
-   std::atomic_int     freeListPopLock;
+   std::atomic<MarkChunk*> processList;
+   std::atomic_int         processListPopLock;
+   std::atomic<MarkChunk*> freeList;
+   std::atomic_int         freeListPopLock;
 
    GlobalChunks()
    {
@@ -1518,9 +1518,9 @@ struct GlobalChunks
    {
       while(true)
       {
-         MarkChunk *head = (MarkChunk *)processList;
+         MarkChunk* head{ processList };
          inChunk->next = head;
-         if (_hx_atomic_compare_exchange_cast_ptr(&processList, head, inChunk) == head)
+         if (processList.compare_exchange_strong(head, inChunk))
             break;
       }
 
@@ -1531,9 +1531,9 @@ struct GlobalChunks
    {
       while(true)
       {
-         MarkChunk *head = (MarkChunk *)processList;
+         MarkChunk* head{ processList };
          inChunk->next = head;
-         if (_hx_atomic_compare_exchange_cast_ptr(&processList, head, inChunk) == head)
+         if (processList.compare_exchange_strong(head, inChunk))
             break;
       }
 
@@ -1576,14 +1576,14 @@ struct GlobalChunks
 
    void addLocked(MarkChunk *inChunk)
    {
-      inChunk->next = (MarkChunk *)processList;
-      processList = (volatile MarkChunk *)inChunk;
+      inChunk->next = processList;
+      processList = inChunk;
    }
 
    void copyPointers( QuickVec<hx::Object *> &outPointers,bool andFree=false)
    {
-      int size = 0;
-      for(MarkChunk *c =(MarkChunk *)processList; c; c=c->next )
+      int size{ 0 };
+      for (MarkChunk* c{ processList }; c; c = c->next)
          size += c->count;
 
       outPointers.setSize(size);
@@ -1592,19 +1592,19 @@ struct GlobalChunks
       {
          while(processList)
          {
-            MarkChunk *c = (MarkChunk *)processList;
+            MarkChunk* c{ processList };
             processList = c->next;
 
             for(int i=0;i<c->count;i++)
                outPointers[idx++] = c->stack[i];
             c->count = 0;
-            c->next = (MarkChunk *)freeList;
+            c->next = freeList;
             freeList = c;
          }
       }
       else
       {
-         for(MarkChunk *c = (MarkChunk *)processList; c; c=c->next )
+         for (MarkChunk* c{ processList }; c; c = c->next)
          {
             for(int i=0;i<c->count;i++)
                outPointers[idx++] = c->stack[i];
@@ -1639,9 +1639,9 @@ struct GlobalChunks
    {
       while(true)
       {
-         MarkChunk *head = (MarkChunk *)freeList;
+         MarkChunk* head{ freeList };
          inChunk->next = head;
-         if (_hx_atomic_compare_exchange_cast_ptr(&freeList, head, inChunk) == head)
+         if (freeList.compare_exchange_strong(head, inChunk))
             return;
       }
    }
@@ -1663,14 +1663,14 @@ struct GlobalChunks
 
       while(true)
       {
-         MarkChunk *head = (MarkChunk *)processList;
+         MarkChunk* head{ processList };
          if (!head)
          {
             processListPopLock = 0;
             return 0;
          }
          MarkChunk *next = head->next;
-         if (_hx_atomic_compare_exchange_cast_ptr(&processList, head, next) == head)
+         if (processList.compare_exchange_strong(head, next))
          {
             processListPopLock = 0;
 
@@ -1747,14 +1747,14 @@ struct GlobalChunks
 
       while(true)
       {
-         MarkChunk *head = (MarkChunk *)freeList;
+         MarkChunk* head{ freeList };
          if (!head)
          {
             freeListPopLock = 0;
             return new MarkChunk;
          }
-         MarkChunk *next = head->next;
-         if (_hx_atomic_compare_exchange_cast_ptr(&freeList, head, next) == head)
+         MarkChunk* next{ head->next };
+         if (freeList.compare_exchange_strong(head, next))
          {
             freeListPopLock = 0;
 
