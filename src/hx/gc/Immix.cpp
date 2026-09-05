@@ -213,13 +213,13 @@ static int sThreadMarkCountData[MAX_GC_THREADS+1];
 static int sThreadArrayMarkCountData[MAX_GC_THREADS+1];
 static int *sThreadMarkCount = sThreadMarkCountData + 1;
 static int *sThreadArrayMarkCount = sThreadArrayMarkCountData + 1;
-static int sThreadChunkPushCount;
+static std::atomic_int sThreadChunkPushCount;
 static int sThreadChunkWakes;
-static int sSpinCount = 0;
+static std::atomic_int sSpinCount = 0;
 static int sThreadZeroWaits = 0;
 static int sThreadZeroPokes = 0;
 static int sThreadBlockZeroCount = 0;
-static volatile int sThreadZeroMisses = 0;
+static std::atomic_int sThreadZeroMisses{};
 #endif
 
 enum { MARK_BYTE_MASK = 0x0f };
@@ -266,7 +266,7 @@ static int sgSpamCollects = 0;
 #endif
 
 #if defined(HXCPP_DEBUG) || defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
-volatile int sgAllocsSinceLastSpam = 0;
+static std::atomic_int sgAllocsSinceLastSpam{};
 #endif
 
 #ifdef ANDROID
@@ -413,7 +413,7 @@ static void CollectFromThisThread(bool inMajor,bool inForceCompact);
 
 namespace hx
 {
-int gPauseForCollect = 0x00000000;
+std::atomic_uint gPauseForCollect{ 0x00000000 };
 
 StackContext *gMainThreadContext = 0;
 
@@ -738,7 +738,7 @@ struct BlockDataInfo
    #ifdef HXCPP_GC_GENERATIONAL
    bool         mHasSurvivor;
    #endif
-   volatile int mZeroLock;
+   std::atomic_int mZeroLock;
 
 
    BlockDataInfo(int inGid, BlockData *inData)
@@ -850,7 +850,8 @@ struct BlockDataInfo
       if (mZeroed)
          return false;
 
-      if (_hx_atomic_compare_exchange(&mZeroLock, 0,1) == 0)
+      int expected{ 0 };
+      if (mZeroLock.compare_exchange_strong(expected, 1))
          return zeroAndUnlock();
 
       return false;
@@ -1486,7 +1487,7 @@ void GCOnNewPointer(void *inPtr)
 
    #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
    hx::sgPointerMoved.erase(inPtr);
-   _hx_atomic_add(&sgAllocsSinceLastSpam, 1);
+   sgAllocsSinceLastSpam++;
    #endif
 }
 
@@ -1500,44 +1501,38 @@ struct MarkInfo
 
 struct GlobalChunks
 {
-   volatile MarkChunk *processList;
-   volatile int       processListPopLock;
-   volatile MarkChunk *freeList;
-   volatile int       freeListPopLock;
+   std::atomic<MarkChunk*> processList;
+   std::atomic_int         processListPopLock;
+   std::atomic<MarkChunk*> freeList;
+   std::atomic_int         freeListPopLock;
 
-   GlobalChunks()
-   {
-      processList = 0;
-      freeList = 0;
-      freeListPopLock = 0;
-      processListPopLock = 0;
-   }
+   GlobalChunks() : processList(), processListPopLock(), freeList(), freeListPopLock() {}
 
    MarkChunk *pushJobNoWake(MarkChunk *inChunk)
    {
-      while(true)
+      MarkChunk* head{};
+
+      do
       {
-         MarkChunk *head = (MarkChunk *)processList;
+         head = processList;
          inChunk->next = head;
-         if (_hx_atomic_compare_exchange_cast_ptr(&processList, head, inChunk) == head)
-            break;
-      }
+      } while (false == processList.compare_exchange_strong(head, inChunk));
 
       return alloc();
    }
 
    MarkChunk *pushJob(MarkChunk *inChunk,bool inAndAlloc)
    {
-      while(true)
+      MarkChunk* head{};
+
+      do
       {
-         MarkChunk *head = (MarkChunk *)processList;
+         head = processList;
          inChunk->next = head;
-         if (_hx_atomic_compare_exchange_cast_ptr(&processList, head, inChunk) == head)
-            break;
-      }
+      } while (false == processList.compare_exchange_strong(head, inChunk));
 
       #ifdef PROFILE_THREAD_USAGE
-      _hx_atomic_add(&sThreadChunkPushCount, 1);
+      sThreadChunkPushCount++;
       #endif
 
       if (MAX_GC_THREADS>1 && sLazyThreads)
@@ -1575,14 +1570,14 @@ struct GlobalChunks
 
    void addLocked(MarkChunk *inChunk)
    {
-      inChunk->next = (MarkChunk *)processList;
-      processList = (volatile MarkChunk *)inChunk;
+      inChunk->next = processList;
+      processList = inChunk;
    }
 
    void copyPointers( QuickVec<hx::Object *> &outPointers,bool andFree=false)
    {
-      int size = 0;
-      for(MarkChunk *c =(MarkChunk *)processList; c; c=c->next )
+      int size{ 0 };
+      for (MarkChunk* c{ processList }; c; c = c->next)
          size += c->count;
 
       outPointers.setSize(size);
@@ -1591,19 +1586,19 @@ struct GlobalChunks
       {
          while(processList)
          {
-            MarkChunk *c = (MarkChunk *)processList;
+            MarkChunk* c{ processList };
             processList = c->next;
 
             for(int i=0;i<c->count;i++)
                outPointers[idx++] = c->stack[i];
             c->count = 0;
-            c->next = (MarkChunk *)freeList;
+            c->next = freeList;
             freeList = c;
          }
       }
       else
       {
-         for(MarkChunk *c = (MarkChunk *)processList; c; c=c->next )
+         for (MarkChunk* c{ processList }; c; c = c->next)
          {
             for(int i=0;i<c->count;i++)
                outPointers[idx++] = c->stack[i];
@@ -1636,13 +1631,13 @@ struct GlobalChunks
 
    inline void release(MarkChunk *inChunk)
    {
-      while(true)
+      MarkChunk* head{};
+
+      do
       {
-         MarkChunk *head = (MarkChunk *)freeList;
+         head = freeList;
          inChunk->next = head;
-         if (_hx_atomic_compare_exchange_cast_ptr(&freeList, head, inChunk) == head)
-            return;
-      }
+      } while (false == freeList.compare_exchange_strong(head, inChunk));
    }
 
 
@@ -1651,24 +1646,25 @@ struct GlobalChunks
       if (inChunk)
          release(inChunk);
 
-      while(_hx_atomic_compare_exchange(&processListPopLock, 0, 1) != 0)
+      int expected{ 0 };
+      while(false == processListPopLock.compare_exchange_strong(expected, 1))
       {
          // Spin
          #ifdef PROFILE_THREAD_USAGE
-         _hx_atomic_add(&sSpinCount, 1);
+         sSpinCount++;
          #endif
       }
 
       while(true)
       {
-         MarkChunk *head = (MarkChunk *)processList;
+         MarkChunk* head{ processList };
          if (!head)
          {
             processListPopLock = 0;
             return 0;
          }
          MarkChunk *next = head->next;
-         if (_hx_atomic_compare_exchange_cast_ptr(&processList, head, next) == head)
+         if (processList.compare_exchange_strong(head, next))
          {
             processListPopLock = 0;
 
@@ -1734,24 +1730,25 @@ struct GlobalChunks
 
    inline MarkChunk *alloc()
    {
-      while(_hx_atomic_compare_exchange(&freeListPopLock, 0, 1) != 0)
+      int expected{ 0 };
+      while(false == freeListPopLock.compare_exchange_strong(expected, 1))
       {
          // Spin
          #ifdef PROFILE_THREAD_USAGE
-         _hx_atomic_add(&sSpinCount, 1);
+         sSpinCount++;
          #endif
       }
 
       while(true)
       {
-         MarkChunk *head = (MarkChunk *)freeList;
+         MarkChunk* head{ freeList };
          if (!head)
          {
             freeListPopLock = 0;
             return new MarkChunk;
          }
-         MarkChunk *next = head->next;
-         if (_hx_atomic_compare_exchange_cast_ptr(&freeList, head, next) == head)
+         MarkChunk* next{ head->next };
+         if (freeList.compare_exchange_strong(head, next))
          {
             freeListPopLock = 0;
 
@@ -3387,7 +3384,8 @@ public:
              if (!info->mOwned && info->mMaxHoleSize>=inRequiredBytes)
              {
                 // Acquire the zero-lock
-                if (_hx_atomic_compare_exchange(&info->mZeroLock, 0, 1) == 0)
+                int expected{ 0 };
+                if (info->mZeroLock.compare_exchange_strong(expected, 1))
                 {
                    // Acquire ownership...
                    if (info->mOwned)
@@ -3415,7 +3413,7 @@ public:
                          else
                          {
                             if (!info->mZeroed)
-                               _hx_atomic_add(&sThreadZeroMisses, 1);
+                                sThreadZeroMisses++;
                          }
                          #endif
                        }
@@ -4313,7 +4311,7 @@ public:
    {
       while(!sgThreadPoolAbort)
       {
-         int blockId = _hx_atomic_add(&mThreadJobId, 1);
+         size_t blockId{ mThreadJobId.fetch_add(1) };
          if (blockId>=mAllBlocks.size())
             break;
 
@@ -4328,7 +4326,7 @@ public:
    {
       while(!sgThreadPoolAbort)
       {
-         int blockId = _hx_atomic_add(&mThreadJobId, 1);
+         size_t blockId{ mThreadJobId.fetch_add(1) };
          if (blockId>=mAllBlocks.size())
             break;
 
@@ -4341,7 +4339,7 @@ public:
    {
       while(!sgThreadPoolAbort)
       {
-         int blockId = _hx_atomic_add(&mThreadJobId, 1);
+         size_t blockId{ mThreadJobId.fetch_add(1) };
          if (blockId>=mAllBlocks.size())
             break;
 
@@ -4356,7 +4354,7 @@ public:
    {
       while(!sgThreadPoolAbort)
       {
-         int blockId = _hx_atomic_add(&mThreadJobId, 1);
+         size_t blockId{ mThreadJobId.fetch_add(1) };
          if (blockId>=mAllBlocks.size())
             break;
 
@@ -4370,7 +4368,7 @@ public:
    {
       while(!sgThreadPoolAbort)
       {
-         int zeroListId = _hx_atomic_add(&mThreadJobId, 1);
+         size_t zeroListId{ mThreadJobId.fetch_add(1) };
          if (zeroListId>=mZeroList.size())
             break;
 
@@ -4396,7 +4394,7 @@ public:
          spinCount = 0;
 
          // Look at next block...
-         int zeroListId = _hx_atomic_add(&mThreadJobId, 1);
+         size_t zeroListId{ mThreadJobId.fetch_add(1) };
          if (zeroListId>=mZeroList.size())
          {
             // Done, so sleep...
@@ -4407,7 +4405,7 @@ public:
          if (info->tryZero())
          {
             // We zeroed it, so increase queue count
-            _hx_atomic_add(&mZeroListQueue, 1);
+            mZeroListQueue++;
             #ifdef PROFILE_THREAD_USAGE
             sThreadBlockZeroCount++;
             #endif
@@ -4421,7 +4419,7 @@ public:
    void onZeroedBlockDequeued()
    {
       // Wake the thread?
-      if (_hx_atomic_sub(&mZeroListQueue, 1)<sMinZeroQueueSize && !sRunningThreads)
+      if (mZeroListQueue.fetch_sub(1) < sMinZeroQueueSize && !sRunningThreads)
       {
          if (mZeroListQueue + mThreadJobId < mZeroList.size())
          {
@@ -4823,7 +4821,8 @@ public:
       #ifndef HXCPP_SINGLE_THREADED_APP
       // If we set the flag from 0 -> 0xffffffff then we are the collector
       //  otherwise, someone else is collecting at the moment - so wait...
-      if (_hx_atomic_compare_exchange((volatile int *)&hx::gPauseForCollect, 0, 0xffffffff) != 0)
+      unsigned int expected{ 0 };
+      if (false == hx::gPauseForCollect.compare_exchange_strong(expected, std::numeric_limits<unsigned int>::max()))
       {
          if (inLocked)
          {
@@ -5567,12 +5566,12 @@ public:
    hx::MarkContext mMarker;
 
    volatile int mNextFreeBlockOfSize[BLOCK_OFSIZE_COUNT];
-   volatile int mThreadJobId;
+   std::atomic_size_t mThreadJobId;
 
    BlockList mAllBlocks;
    BlockList mFreeBlocks;
    BlockList mZeroList;
-   volatile int mZeroListQueue;
+   std::atomic_int mZeroListQueue;
 
    LargeList mLargeList;
    std::mutex mLargeListLock;
@@ -6626,7 +6625,7 @@ void *InternalNew(size_t inSize,bool inIsObject)
       //GCLOG("InternalNew spam\n");
       CollectFromThisThread(false,false);
    }
-   _hx_atomic_add(&sgAllocsSinceLastSpam, 1);
+   sgAllocsSinceLastSpam++;
    #endif
 
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
@@ -6737,7 +6736,7 @@ void *InternalRealloc(size_t inFromSize, void *inData, size_t inSize, bool inExp
       //GCLOG("InternalNew spam\n");
       CollectFromThisThread(false,false);
    }
-   _hx_atomic_add(&sgAllocsSinceLastSpam, 1);
+   sgAllocsSinceLastSpam++;
    #endif
 
    void* new_data{};

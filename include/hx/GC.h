@@ -3,6 +3,7 @@
 
 #include <hx/Tls.h>
 #include <stdio.h>
+#include <atomic>
 
 // Under the current scheme (as defined by HX_HCSTRING/HX_CSTRING in hxcpp.h)
 //  each constant string data is prepended with a 4-byte header that says the string
@@ -154,7 +155,7 @@ void  GCSetFinalizer( hx::Object *, hx::finalizer f );
 // This automatically gets checked when you call "new", but if you are in long-running
 //  loop with no new call, you might starve another thread if you to not check this.
 //  0xffffffff = pause requested
-extern int gPauseForCollect;
+extern std::atomic_uint gPauseForCollect;
 
 
 // Minimum total memory - used + buffer for new objects
