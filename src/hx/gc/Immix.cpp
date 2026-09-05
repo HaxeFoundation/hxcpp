@@ -4407,7 +4407,7 @@ public:
          if (info->tryZero())
          {
             // We zeroed it, so increase queue count
-            _hx_atomic_add(&mZeroListQueue, 1);
+            mZeroListQueue++;
             #ifdef PROFILE_THREAD_USAGE
             sThreadBlockZeroCount++;
             #endif
@@ -4421,7 +4421,7 @@ public:
    void onZeroedBlockDequeued()
    {
       // Wake the thread?
-      if (_hx_atomic_sub(&mZeroListQueue, 1)<sMinZeroQueueSize && !sRunningThreads)
+      if (mZeroListQueue.fetch_sub(1) < sMinZeroQueueSize && !sRunningThreads)
       {
          if (mZeroListQueue + mThreadJobId < mZeroList.size())
          {
@@ -5573,7 +5573,7 @@ public:
    BlockList mAllBlocks;
    BlockList mFreeBlocks;
    BlockList mZeroList;
-   volatile int mZeroListQueue;
+   std::atomic_int mZeroListQueue;
 
    LargeList mLargeList;
    std::mutex mLargeListLock;
