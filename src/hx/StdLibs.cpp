@@ -330,11 +330,11 @@ void __trace(Dynamic inObj, Dynamic info)
       fflush(stdout);
       String s;
       if (info == null()) {
-         s = String("?? ") + text + String("\n");
+         s = HX_CSTRING("?? ") + text + HX_CSTRING("\n");
       } else {
          String filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString();
          int line = Dynamic((info)->__Field(HX_CSTRING("lineNumber"), HX_PROP_DYNAMIC))->__ToInt();
-         s = filename + String(":") + line + String(": ") + text + String("\n");
+         s = filename + HX_CSTRING(":") + line + HX_CSTRING(": ") + text + HX_CSTRING("\n");
       }
       if (s.isUTF16Encoded())
       {
