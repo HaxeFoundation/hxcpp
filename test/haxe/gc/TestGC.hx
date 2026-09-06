@@ -137,4 +137,15 @@ class TestGC extends Test {
 			Assert.isFalse( untyped __global__.__hxcpp_is_const_string(string) );
    }
    #end
+
+	public function testLargeAlloc() {
+		var largeString = {
+			var bytes = Bytes.alloc(4000);
+			bytes.fill(0, bytes.length, "a".code);
+			bytes.toString();
+		};
+		Assert.equals("aaaaa", largeString.substr(0, 5));
+		Gc.run(true);
+		Assert.equals("aaaaa", largeString.substr(0, 5));
+	}
 }

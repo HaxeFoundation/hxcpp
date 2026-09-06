@@ -5665,10 +5665,9 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
          {
             if (mem==memLarge)
             {
-               unsigned char& rMark{ reinterpret_cast<unsigned char*>(potentialObject)[HX_ENDIAN_MARK_ID_BYTE] };
-               int mark{ rMark };
-               if (mark!=gByteMarkID)
-                  mark = gByteMarkID;
+               unsigned char& mark{ reinterpret_cast<unsigned char*>(potentialObject)[HX_ENDIAN_MARK_ID_BYTE] };
+               if (mark != gByteMarkID)
+                  mark = static_cast<unsigned char>(gByteMarkID);
             }
             else
             {
