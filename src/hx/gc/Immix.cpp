@@ -6288,11 +6288,9 @@ public:
 
                return buffer;
             }
-            if (mFraggedRows)
+            if (mFraggedRows && spaceEnd > spaceStart)
             {
-               size_t frag{ spaceEnd - spaceStart };
-               if (frag>0)
-                  *mFraggedRows += int{ static_cast<int>(frag >> IMMIX_LINE_BITS) };
+               *mFraggedRows += static_cast<int>((spaceEnd - spaceStart) >> IMMIX_LINE_BITS);
             }
          #endif
 
