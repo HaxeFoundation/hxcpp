@@ -934,9 +934,10 @@ unsigned int String::calcSubHash(int start, int inLen) const
    if (isUTF16Encoded())
    {
       const char16_t *w = __w + start;
-      for(int i=0;i<inLen;i++)
+      const char16_t *end = w + inLen;
+      while (w < end)
       {
-         int c = w[i];
+         int c = Char16Advance(w, false);
          if( c <= 0x7F )
          {
             ADD_HASH(c);
@@ -979,9 +980,11 @@ unsigned int String::calcHash() const
    #ifdef HX_SMART_STRINGS
    if (isUTF16Encoded())
    {
-      for(int i=0;i<length;i++)
+      const char16_t *w = __w;
+      const char16_t *end = w + length;
+      while (w < end)
       {
-         int c = __w[i];
+         int c = Char16Advance(w, false);
          if( c <= 0x7F )
          {
             ADD_HASH(c);
