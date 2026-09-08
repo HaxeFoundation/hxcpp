@@ -1477,7 +1477,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   if (destType!=etInt || isMemoryVal(inDest))
                   {
                      compiler->move(sJitTemp1.as(jtInt),sJitTemp1.atReg(sJitTemp0,1).as(jtShort));
-                     compiler->convert(sJitTemp1,etInt, inDest, destType);
+                     compiler->convert(sJitTemp1.as(jtInt),etInt, inDest, destType);
                   }
                   else
                      compiler->move( inDest.as(jtInt),  sJitTemp1.atReg(sJitTemp0).as(jtShort) );
