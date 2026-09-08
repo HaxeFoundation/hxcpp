@@ -11,11 +11,6 @@
 #include <stdlib.h>
 
 
-#ifdef HX_ANDROID
-  #define atof(x) strtod(x,0)
-#endif
-
-
 // Really microsoft?
 #ifdef interface
   #undef interface
