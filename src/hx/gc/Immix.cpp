@@ -6556,7 +6556,6 @@ void InitAlloc()
    sFinalizerLock = new std::mutex();
    sGCRootLock = new std::mutex();
 
-   //GCLOG("__root pointer %p\n", sgObject_root);
    gMainThreadContext =  new LocalAllocator();
 
    tlsStackContext = gMainThreadContext;
