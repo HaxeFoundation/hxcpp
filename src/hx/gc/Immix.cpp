@@ -97,7 +97,6 @@ void DebuggerTrap()
 
 static bool sgAllocInit = 0;
 static bool sgInternalEnable = true;
-static void *sgObject_root = 0;
 // With virtual inheritance, stack pointers can point to the middle of an object
 #ifdef _MSC_VER
 // MSVC optimizes by taking the address of an initernal data member
@@ -5126,13 +5125,13 @@ public:
          else
          {
             size_t mem = mRowsInUse<<IMMIX_LINE_BITS;
-            size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, mem/100 * (size_t)hx::sgTargetFreeSpacePercentage );
-            targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
-            sWorkingMemorySize = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory);
+            size_t targetFree = std::max(hx::sgMinimumFreeSpace, mem / 100 * hx::sgTargetFreeSpacePercentage );
+            targetFree = std::min(targetFree, sgMaximumFreeSpace );
+            sWorkingMemorySize = std::max( mem + targetFree, hx::sgMinimumWorkingMemory);
 
             size_t allMem = GetWorkingMemory();
             // 8 Meg too much?
-            size_t allowExtra = std::max( (size_t)8*1024*1024, sWorkingMemorySize*5/4 );
+            size_t allowExtra = std::max(size_t{ 8 } * 1024 * 1024, sWorkingMemorySize * 5 / 4);
 
             if ( allMem > sWorkingMemorySize + allowExtra )
             {
@@ -5176,9 +5175,9 @@ public:
                if (doRelease)
                {
                   size_t mem = mRowsInUse<<IMMIX_LINE_BITS;
-                  size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, bytesInUse/100 *hx::sgTargetFreeSpacePercentage );
-                  targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
-                  size_t targetMem = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory) +
+                  size_t targetFree = std::max(hx::sgMinimumFreeSpace, bytesInUse/100 *hx::sgTargetFreeSpacePercentage );
+                  targetFree = std::min(targetFree, sgMaximumFreeSpace );
+                  size_t targetMem = std::max( mem + targetFree, hx::sgMinimumWorkingMemory) +
                                         (2<<(IMMIX_BLOCK_GROUP_BITS+IMMIX_BLOCK_BITS));
 
                   if (inForceCompact)
@@ -5225,14 +5224,14 @@ public:
       size_t mem = mRowsInUse<<IMMIX_LINE_BITS;
       size_t baseMem = full ? bytesInUse : mem;
       #ifdef HXCPP_GC_DYNAMIC_SIZE
-      size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, (size_t)(baseMem * profileCollectSummary.spaceFactor ) );
+      size_t targetFree = std::max(hx::sgMinimumFreeSpace, baseMem * profileCollectSummary.spaceFactor );
       #else
-      size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, baseMem/100 *hx::sgTargetFreeSpacePercentage );
+      size_t targetFree = std::max(hx::sgMinimumFreeSpace, baseMem / 100 *hx::sgTargetFreeSpacePercentage );
       #endif
-      targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
+      targetFree = std::min(targetFree, sgMaximumFreeSpace );
       // Only adjust if non-generational
       if (!generational)
-         sWorkingMemorySize = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory);
+         sWorkingMemorySize = std::max( mem + targetFree, hx::sgMinimumWorkingMemory);
 
       #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
       GCLOG("Target memory %s, using %s\n",  formatBytes(sWorkingMemorySize).c_str(), formatBytes(mem).c_str() );
@@ -6556,11 +6555,7 @@ void InitAlloc()
    sgFinalizers = new FinalizerList();
    sFinalizerLock = new std::mutex();
    sGCRootLock = new std::mutex();
-   hx::Object tmp;
-   void **stack = *(void ***)(&tmp);
-   sgObject_root = stack[0];
 
-   //GCLOG("__root pointer %p\n", sgObject_root);
    gMainThreadContext =  new LocalAllocator();
 
    tlsStackContext = gMainThreadContext;
