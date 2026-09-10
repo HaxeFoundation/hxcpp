@@ -624,10 +624,14 @@ union BlockData
    BlockIdType mId;
 
    // First 2/4 rows contain a byte-flag-per-row 
-   unsigned char  mRowMarked[IMMIX_LINES];
+   unsigned char mRowMarked[IMMIX_LINES];
    // Row data as union - don't use first 2/4 rows
-   unsigned char  mRow[IMMIX_LINES][IMMIX_LINE_LEN];
+   unsigned char mData[IMMIX_LINES * IMMIX_LINE_LEN];
 
+   inline unsigned char* row(size_t r)
+   {
+       return mData + (r * IMMIX_LINE_LEN);
+   }
 };
 
 struct BlockDataStats
@@ -1031,7 +1035,7 @@ struct BlockDataInfo
                   unsigned int &starts = allocStart[r];
                   if (starts)
                   {
-                     unsigned int *headerPtr = ((unsigned int *)mPtr->mRow[r]);
+                     unsigned int* headerPtr{ reinterpret_cast<unsigned int*>(mPtr->row(static_cast<size_t>(r))) };
                      #define CHECK_FLAG(i,byteMask) \
                      { \
                         unsigned int mask = 1<<i; \
@@ -1145,7 +1149,7 @@ struct BlockDataInfo
    // When known to be an actual object start...
    AllocType GetAllocTypeChecked(uintptr_t inOffset, bool allowPrevious) const
    {
-      unsigned char time{ mPtr->mRow[0][inOffset + HX_ENDIAN_MARK_ID_BYTE_HEADER] };
+      unsigned char time{ mPtr->mData[inOffset + HX_ENDIAN_MARK_ID_BYTE_HEADER] };
       if (((time + 1) & MARK_BYTE_MASK) != (gByteMarkID & MARK_BYTE_MASK))
       {
          // Object is either out-of-date, or already marked....
@@ -1155,10 +1159,10 @@ struct BlockDataInfo
       if (!allowPrevious)
          return allocNone;
 
-      if (*reinterpret_cast<unsigned int *>(mPtr->mRow[0] + inOffset) & IMMIX_ALLOC_IS_CONTAINER)
+      if (*reinterpret_cast<unsigned int *>(mPtr->mData + inOffset) & IMMIX_ALLOC_IS_CONTAINER)
       {
          // See if object::new has been called, but not constructed yet ...
-         void** vtable{ reinterpret_cast<void**>(mPtr->mRow[0] + inOffset + sizeof(int)) };
+         void** vtable{ reinterpret_cast<void**>(mPtr->mData + inOffset + sizeof(int)) };
          if (nullptr == vtable[0])
          {
             // GCLOG("Partially constructed object.");
@@ -1199,7 +1203,7 @@ struct BlockDataInfo
             while(scan<=inOffset)
             {
                // Trace along the hole...
-               unsigned int header{ *reinterpret_cast<unsigned int*>(mPtr->mRow[0] + scan) };
+               unsigned int header{ *reinterpret_cast<unsigned int*>(mPtr->mData + scan) };
                unsigned int size{
                   !(header & 0xff000000)
                      ? (header & 0x0000ffff)
@@ -1216,13 +1220,13 @@ struct BlockDataInfo
 
                   if (nullptr != outPtr)
                   {
-                     *outPtr = reinterpret_cast<uintptr_t>(mPtr->mRow[0] + scan + sizeof(int));
+                     *outPtr = reinterpret_cast<uintptr_t>(mPtr->mData + scan + sizeof(int));
                   }
 
                   if (header & IMMIX_ALLOC_IS_CONTAINER)
                   {
                      // See if object::new has been called, but not constructed yet ...
-                     void **vtable = (void **)(mPtr->mRow[0] + scan + sizeof(int));
+                     void **vtable{ reinterpret_cast<void **>(mPtr->mData + scan + sizeof(int)) };
                      if (vtable[0]==0)
                      {
                         // GCLOG("Partially constructed object.");
@@ -1301,7 +1305,7 @@ struct BlockDataInfo
                   {
                      if (nullptr != outPtr)
                      {
-                        *outPtr = reinterpret_cast<uintptr_t>(mPtr->mRow[0] + blockOffset + sizeof(int));
+                        *outPtr = reinterpret_cast<uintptr_t>(mPtr->mData + blockOffset + sizeof(int));
                      }
                      
                      return result;
@@ -1334,10 +1338,10 @@ struct BlockDataInfo
       {
          if (rowMarked[r])
          {
-            unsigned int starts = allocStart[r];
+            unsigned int starts{ allocStart[r] };
             if (!starts)
                continue;
-            unsigned char *row = mPtr->mRow[r];
+            unsigned char* row{ mPtr->row(static_cast<size_t>(r)) };
             for(int i=0;i<32;i++)
             {
                int pos = i<<2;
@@ -3754,8 +3758,8 @@ public:
                {
                   if ( starts & (1<<i))
                   {
-                     unsigned int *row = (unsigned int *)from->mPtr->mRow[r];
-                     unsigned int &header = row[i];
+                     unsigned int* row{ reinterpret_cast<unsigned int*>(from->mPtr->row(static_cast<size_t>(r))) };
+                     unsigned int &header{ row[i] };
 
                      if ((header&IMMIX_ALLOC_MARK_ID) == hx::gMarkID)
                      {
@@ -3964,8 +3968,8 @@ public:
                   for(int loc=0;loc<32;loc++)
                      if (startFlags & (1<<loc))
                      {
-                        unsigned int *row = (unsigned int *)from->mPtr->mRow[r];
-                        unsigned int &header = row[loc];
+                        unsigned int* row{ reinterpret_cast<unsigned int*>(from->mPtr->row(static_cast<size_t>(r))) };
+                        unsigned int &header{ row[loc] };
 
                         if ((header&IMMIX_ALLOC_MARK_ID) == hx::gMarkID)
                         {
