@@ -1,4 +1,6 @@
 #include <hxcpp.h>
+
+#if (HXCPP_API_LEVEL>=500)
 #include <hx/thread/Scratch.hpp>
 #include "ThreadImpl.hpp"
 
@@ -72,3 +74,5 @@ hx::thread::Scratch& hx::thread::Scratch::operator=(const Scratch& _other)
 
 	return *this;
 }
+
+#endif

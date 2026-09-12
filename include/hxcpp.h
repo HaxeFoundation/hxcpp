@@ -261,6 +261,7 @@ namespace hx { template<typename O> class ObjectPtr; }
 namespace cpp { template<typename S,typename H> class Struct; }
 namespace cpp { template<typename T> class Pointer; }
 namespace cpp { template<typename T> class Function; }
+#if (HXCPP_API_LEVEL>=500)
 namespace cpp { namespace marshal { template<class T> class Boxed_obj; } }
 namespace cpp { namespace marshal { template<class T> using Boxed =::hx::ObjectPtr<Boxed_obj<T>>; } }
 namespace cpp { namespace marshal { template<class T> class ValueType; } }
@@ -268,6 +269,7 @@ namespace cpp { namespace marshal { template<class T> class ValueReference; } }
 namespace cpp { namespace marshal { template<class T> class PointerType; } }
 namespace cpp { namespace marshal { template<class T> class PointerReference; } }
 namespace cpp { namespace marshal { template<class T> struct View; } }
+#endif
 template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
 namespace hx {
@@ -360,21 +362,21 @@ typedef PropertyAccessMode PropertyAccess;
 #endif
 #include <hx/StdLibs.h>
 #include <cpp/Pointer.h>
-#include <cpp/marshal/Boxed.hpp>
-#include <cpp/marshal/ValueType.hpp>
-#include <cpp/marshal/PointerType.hpp>
-#include <cpp/marshal/ValueReference.hpp>
-#include <cpp/marshal/PointerReference.hpp>
-#include <cpp/marshal/View.hpp>
-#include <cpp/marshal/Marshal.hpp>
-#include <cpp/marshal/RootHandle.hpp>
-#include <cpp/encoding/Ascii.hpp>
-#include <cpp/encoding/Utf8.hpp>
-#include <cpp/encoding/Utf16.hpp>
 #include <hx/Native.h>
 #include <hx/Operators.h>
 #if (HXCPP_API_LEVEL>=500)
-#include <hx/Invoker.h>
+  #include <cpp/marshal/Boxed.hpp>
+  #include <cpp/marshal/ValueType.hpp>
+  #include <cpp/marshal/PointerType.hpp>
+  #include <cpp/marshal/ValueReference.hpp>
+  #include <cpp/marshal/PointerReference.hpp>
+  #include <cpp/marshal/View.hpp>
+  #include <cpp/marshal/Marshal.hpp>
+  #include <cpp/marshal/RootHandle.hpp>
+  #include <cpp/encoding/Ascii.hpp>
+  #include <cpp/encoding/Utf8.hpp>
+  #include <cpp/encoding/Utf16.hpp>
+  #include <hx/Invoker.h>
 #endif
 // second time ...
 #include <cpp/Variant.h>
