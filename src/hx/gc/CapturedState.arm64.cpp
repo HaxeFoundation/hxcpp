@@ -74,10 +74,10 @@ void hx::gc::Capture(CapturedState& state)
     uintptr_t rX30{};
     asm("mov %0, x30\n\t" : "=r" (rX30));
 
-    uintptr_t rSpEl0{};
-    asm("mov %0, SP_EL0\n\t" : "=r" (rSpEl0));
+    uintptr_t rSp{};
+    asm("mov %0, k\n\t" : "=r" (rSp));
 
-    state.stackLimit = rSpEl0;
+    state.stackLimit = rSp;
 
     auto pointers = reinterpret_cast<uintptr_t*>(state.registers.data());
     pointers[0] = rX0;
