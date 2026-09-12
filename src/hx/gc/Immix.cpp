@@ -5769,13 +5769,7 @@ class LocalAllocator : public hx::StackContext
 
    bool           mMoreHoles;
 
-   #ifndef HXCPP_EXPLICIT_STACK_EXTENT
-   int *mTopOfStack;
-   int *mBottomOfStack;
-   #endif
-
-   hx::RegisterCaptureBuffer mRegisterBuf;
-   int                   mRegisterBufSize;
+   ::hx::gc::CapturedState state;
 
    #ifndef HXCPP_SINGLE_THREADED_APP
    bool            mGCFreeZone;
@@ -5810,11 +5804,8 @@ public:
 
    void AttachThread(int *inTopOfStack)
    {
-      #ifndef HXCPP_EXPLICIT_STACK_EXTENT
-      mTopOfStack = mBottomOfStack = inTopOfStack;
-      #endif
+      state.stackBase = state.stackLimit = reinterpret_cast<uintptr_t>(inTopOfStack);
 
-      mRegisterBufSize = 0;
       mStackLocks = 0;
       mGlobalStackLock = false;
       #ifdef HX_WINDOWS
@@ -5868,10 +5859,6 @@ public:
             hx::sGlobalChunks.free( mOldReferrers );
          mOldReferrers = 0;
       }
-      #endif
-
-      #ifndef HXCPP_EXPLICIT_STACK_EXTENT
-      mTopOfStack = mBottomOfStack = 0;
       #endif
 
       sGlobalAlloc->RemoveLocalLocked(this);
@@ -5948,8 +5935,8 @@ public:
    {
       if (inTop)
       {
-         if (!mTopOfStack)
-            mTopOfStack = inTop;
+         if (!state.stackBase)
+             state.stackBase = reinterpret_cast<uintptr_t>(inTop);
          // EMSCRIPTEN the stack grows upwards - not wasm.
          // It could be that the main routine was called from deep with in the stack,
          //  then some callback was called from a higher location on the stack
@@ -5957,8 +5944,8 @@ public:
          else if (inTop < mTopOfStack)
             mTopOfStack = inTop;
          #else
-         else if (inTop > mTopOfStack)
-            mTopOfStack = inTop;
+         else if (reinterpret_cast<uintptr_t>(inTop) > state.stackBase)
+             state.stackBase = reinterpret_cast<uintptr_t>(inTop);
          #endif
 
          if (inPush)
@@ -6009,7 +5996,7 @@ public:
 
    void SetBottomOfStack(int *inBottom)
    {
-      mBottomOfStack = inBottom;
+       state.stackLimit = reinterpret_cast<uintptr_t>(inBottom);
       #ifdef VerifyStackRead
       VerifyStackRead(mBottomOfStack, mTopOfStack)
       #endif
@@ -6018,10 +6005,7 @@ public:
 
    void PauseForCollect()
    {
-      #ifndef HXCPP_SINGLE_THREADED_APP
-      volatile int dummy = 1;
-      mBottomOfStack = (int *)&dummy;
-      CAPTURE_REGS;
+       ::hx::gc::Capture(state);
       #ifdef VerifyStackRead
       VerifyStackRead(mBottomOfStack, mTopOfStack)
       #endif
@@ -6031,25 +6015,17 @@ public:
 
       mReadyForCollect.Set();
       mCollectDone.Wait();
-      #endif
    }
 
    void EnterGCFreeZone()
    {
-      #ifndef HXCPP_SINGLE_THREADED_APP
-      volatile int dummy = 1;
-      mBottomOfStack = (int *)&dummy;
-      if (mTopOfStack)
-      {
-         CAPTURE_REGS;
-      }
+       ::hx::gc::Capture(state);
       #ifdef VerifyStackRead
       VerifyStackRead(mBottomOfStack, mTopOfStack)
       #endif
 
       mGCFreeZone = true;
       mReadyForCollect.Set();
-      #endif
    }
 
    bool TryGCFreeZone()
@@ -6152,28 +6128,22 @@ public:
         #endif
       #endif
 
-      #ifndef HXCPP_EXPLICIT_STACK_EXTENT
-      volatile int dummy = 1;
-      mBottomOfStack = (int *)&dummy;
+      ::hx::gc::Capture(state);
 
-      CAPTURE_REGS;
-
-      if (!mTopOfStack)
-         mTopOfStack = mBottomOfStack;
+      if (!state.stackBase)
+         state.stackBase = state.stackLimit;
 
       // EMSCRIPTEN the stack grows upwards
       #ifdef HXCPP_STACK_UP
       if (mBottomOfStack < mTopOfStack)
          mTopOfStack = mBottomOfStack;
       #else
-      if (mBottomOfStack > mTopOfStack)
-         mTopOfStack = mBottomOfStack;
+      if (state.stackLimit > state.stackBase)
+         state.stackBase = state.stackLimit;
       #endif
 
       #ifdef VerifyStackRead
       VerifyStackRead(mBottomOfStack, mTopOfStack)
-      #endif
-
       #endif
 
 
@@ -6370,13 +6340,11 @@ public:
 
    void Mark(hx::MarkContext *__inCtx)
    {
-      #ifndef HXCPP_SINGLE_THREADED_APP
-      if (!mTopOfStack)
+      if (!state.stackBase)
       {
          Reset();
          return;
       }
-      #endif
 
       #ifdef SHOW_MEM_EVENTS
       //int here = 0;
@@ -6390,8 +6358,8 @@ public:
          #ifdef HXCPP_EXPLICIT_STACK_EXTENT
            hx::MarkConservative( (int *)emscripten_stack_get_current(),(int *)emscripten_stack_get_base(), __inCtx);
          #else
-         if (mTopOfStack && mBottomOfStack)
-            hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
+         if (state.stackBase && state.stackLimit)
+            hx::MarkConservative(reinterpret_cast<int*>(state.stackLimit), reinterpret_cast<int*>(state.stackBase), __inCtx);
          #endif
 
          #ifdef HXCPP_SCRIPTABLE
@@ -6399,7 +6367,7 @@ public:
             hx::MarkConservative((int *)(stack), (int *)(pointer),__inCtx);
          #endif
          MarkSetMember("Registers",__inCtx);
-         hx::MarkConservative(CAPTURE_REG_START, CAPTURE_REG_END, __inCtx);
+         hx::MarkConservative(reinterpret_cast<int*>(state.registers.data()), reinterpret_cast<int*>(state.registers.data() + state.registers.size()), __inCtx);
 
 
          MarkPopClass(__inCtx);
@@ -6408,9 +6376,9 @@ public:
          #ifdef HXCPP_EXPLICIT_STACK_EXTENT
            hx::MarkConservative( (int *)emscripten_stack_get_current(), (int *) emscripten_stack_get_base(), __inCtx);
          #else
-            if (mTopOfStack && mBottomOfStack)
-               hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
-            hx::MarkConservative(CAPTURE_REG_START, CAPTURE_REG_END, __inCtx);
+            if (state.stackBase && state.stackLimit)
+               hx::MarkConservative(reinterpret_cast<int*>(state.stackLimit), reinterpret_cast<int*>(state.stackBase), __inCtx);
+            hx::MarkConservative(reinterpret_cast<int*>(state.registers.data()), reinterpret_cast<int*>(state.registers.data() + state.registers.size()), __inCtx);
          #endif
 
          #ifdef HXCPP_SCRIPTABLE
