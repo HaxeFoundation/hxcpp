@@ -75,7 +75,7 @@ void hx::gc::Capture(CapturedState& state)
     asm("mov %0, x30\n\t" : "=r" (rX30));
 
     uintptr_t rSp{};
-    asm("mov %0, k\n\t" : "=r" (rSp));
+    asm("mov %0, sp\n\t" : "=r" (rSp));
 
     state.stackLimit = rSp;
 
