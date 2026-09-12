@@ -22,21 +22,21 @@ void hx::gc::Capture(CapturedState& state)
 {
 #if defined(HXCPP_M32)
 	uintptr_t rEax{};
-	volatile asm("mov %%eax, %0\n\t" : "=r" (rEax));
+	asm("mov %%eax, %0\n\t" : "=r" (rEax));
 	uintptr_t rEbx{};
-	volatile asm("mov %%ebx, %0\n\t" : "=r" (rEbx));
+	asm("mov %%ebx, %0\n\t" : "=r" (rEbx));
 	uintptr_t rEcx{};
-	volatile asm("mov %%ecx, %0\n\t" : "=r" (rEcx));
+	asm("mov %%ecx, %0\n\t" : "=r" (rEcx));
 	uintptr_t rEdx{};
-	volatile asm("mov %%edx, %0\n\t" : "=r" (rEdx));
+	asm("mov %%edx, %0\n\t" : "=r" (rEdx));
 	uintptr_t rEbp{};
-	volatile asm("mov %%ebp, %0\n\t" : "=r" (rEbp));
+	asm("mov %%ebp, %0\n\t" : "=r" (rEbp));
 	uintptr_t rEdi{};
-	volatile asm("mov %%edi, %0\n\t" : "=r" (rEdi));
+	asm("mov %%edi, %0\n\t" : "=r" (rEdi));
 	uintptr_t rEsi{};
-	volatile asm("mov %%esi, %0\n\t" : "=r" (rEsi));
+	asm("mov %%esi, %0\n\t" : "=r" (rEsi));
 	uintptr_t rEsp{};
-	volatile asm("mov %%esp, %0\n\t" : "=r" (rEsp));
+	asm("mov %%esp, %0\n\t" : "=r" (rEsp));
 
 	state.stackLimit = rEsp;
 
@@ -51,37 +51,37 @@ void hx::gc::Capture(CapturedState& state)
 	pointers[7] = rEbp;
 #elif defined(HXCPP_M64)
 	uintptr_t rRax{};
-	volatile asm("movq %%rax, %0\n\t" : "=r" (rRax));
+	asm("movq %%rax, %0\n\t" : "=r" (rRax));
 	uintptr_t rRbx{};
-	volatile asm("movq %%rbx, %0\n\t" : "=r" (rRbx));
+	asm("movq %%rbx, %0\n\t" : "=r" (rRbx));
 	uintptr_t rRcx{};
-	volatile asm("movq %%rcx, %0\n\t" : "=r" (rRcx));
+	asm("movq %%rcx, %0\n\t" : "=r" (rRcx));
 	uintptr_t rRdx{};
-	volatile asm("movq %%rdx, %0\n\t" : "=r" (rRdx));
+	asm("movq %%rdx, %0\n\t" : "=r" (rRdx));
 	uintptr_t rRsi{};
-	volatile asm("movq %%rsi, %0\n\t" : "=r" (rRsi));
+	asm("movq %%rsi, %0\n\t" : "=r" (rRsi));
 	uintptr_t rRdi{};
-	volatile asm("movq %%rdi, %0\n\t" : "=r" (rRdi));
+	asm("movq %%rdi, %0\n\t" : "=r" (rRdi));
 	uintptr_t rRsp{};
-	volatile asm("movq %%rsp, %0\n\t" : "=r" (rRsp));
+	asm("movq %%rsp, %0\n\t" : "=r" (rRsp));
 	uintptr_t rRbp{};
-	volatile asm("movq %%rbp, %0\n\t" : "=r" (rRbp));
+	asm("movq %%rbp, %0\n\t" : "=r" (rRbp));
 	uintptr_t rR8{};
-	volatile asm("movq %%r8, %0\n\t" : "=r" (rR8));
+	asm("movq %%r8, %0\n\t" : "=r" (rR8));
 	uintptr_t rR9{};
-	volatile asm("movq %%r9, %0\n\t" : "=r" (rR9));
+	asm("movq %%r9, %0\n\t" : "=r" (rR9));
 	uintptr_t rR10{};
-	volatile asm("movq %%r10, %0\n\t" : "=r" (rR10));
+	asm("movq %%r10, %0\n\t" : "=r" (rR10));
 	uintptr_t rR11{};
-	volatile asm("movq %%r11, %0\n\t" : "=r" (rR11));
+	asm("movq %%r11, %0\n\t" : "=r" (rR11));
 	uintptr_t rR12{};
-	volatile asm("movq %%r12, %0\n\t" : "=r" (rR12));
+	asm("movq %%r12, %0\n\t" : "=r" (rR12));
 	uintptr_t rR13{};
-	volatile asm("movq %%r13, %0\n\t" : "=r" (rR13));
+	asm("movq %%r13, %0\n\t" : "=r" (rR13));
 	uintptr_t rR14{};
-	volatile asm("movq %%r14, %0\n\t" : "=r" (rR14));
+	asm("movq %%r14, %0\n\t" : "=r" (rR14));
 	uintptr_t rR15{};
-	volatile asm("movq %%r15, %0\n\t" : "=r" (rR15));
+	asm("movq %%r15, %0\n\t" : "=r" (rR15));
 
 	state.stackLimit = rRsp;
 
