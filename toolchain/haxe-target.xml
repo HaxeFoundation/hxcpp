@@ -191,6 +191,15 @@
   <file name = "src/hx/Debug.cpp"/>
   <file name = "src/hx/Debugger.cpp" if="HXCPP_DEBUGGER" />
 
+  <section if="windows">
+    <file name = "src/hx/gc/CapturedState.win32.cpp" tags="haxe,gc" if="windows"/>
+  </section>
+  <section unless="windows">
+    <file name = "src/hx/gc/CapturedState.x86.cpp" tags="haxe,gc" if="HXCPP_X86||HXCPP_X86_64"/>
+    <file name = "src/hx/gc/CapturedState.arm64.cpp" tags="haxe,gc" if="HXCPP_ARM64"/>
+    <file name = "src/hx/gc/CapturedState.setjmp.cpp" tags="haxe,gc" unless="HXCPP_X86||HXCPP_X86_64||HXCPP_ARM64"/>
+  </section>
+
   <section if="HXCPP_TELEMETRY">
     <file name = "src/hx/TelemetryTracy.cpp" if="HXCPP_TRACY"/>
     <file name = "src/hx/Telemetry.cpp" unless="HXCPP_TRACY"/>
