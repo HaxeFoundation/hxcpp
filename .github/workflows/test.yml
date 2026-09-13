@@ -30,7 +30,7 @@ jobs:
         working-directory: test/haxe
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
@@ -49,7 +49,7 @@ jobs:
         working-directory: test/cffi
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
@@ -90,7 +90,7 @@ jobs:
         working-directory: test/telemetry
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
@@ -109,7 +109,7 @@ jobs:
         working-directory: test/debugger
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
@@ -128,7 +128,7 @@ jobs:
           working-directory: test/native
       steps:
         - name: checkout
-          uses: actions/checkout@v4
+          uses: actions/checkout@v7
         - name: setup
           uses: ./.github/workflows/setup
           with:
@@ -147,7 +147,7 @@ jobs:
           working-directory: test/std
       steps:
         - name: checkout
-          uses: actions/checkout@v4
+          uses: actions/checkout@v7
         - name: setup
           uses: ./.github/workflows/setup
           with:
@@ -181,7 +181,7 @@ jobs:
         working-directory: test/cppia
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
@@ -202,7 +202,7 @@ jobs:
         working-directory: haxe/tests/unit
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
@@ -225,14 +225,14 @@ jobs:
           echo "Commit SHA: $short_sha, Full SHA: $full_sha"
       - name: checkout haxe (latest)
         if: inputs.haxe == 'latest'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.haxe_sha.outputs.sha }}
           repository: HaxeFoundation/haxe
           path: haxe
       - name: checkout haxe (stable)
         if: inputs.haxe != 'latest'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: HaxeFoundation/haxe
           path: haxe
@@ -251,7 +251,7 @@ jobs:
     name: build tool tests
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
@@ -274,7 +274,7 @@ jobs:
         working-directory: test/regression
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
