@@ -35,6 +35,7 @@ jobs:
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: build
         run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: run
@@ -53,6 +54,7 @@ jobs:
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: build project
         working-directory: test/cffi/project
         run: haxelib run hxcpp build.xml -Ddebug -D${{ env.HXCPP_ARCH_FLAG }}
@@ -93,6 +95,7 @@ jobs:
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: build
         run: haxe compile.hxml ${{ matrix.suffix }} -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: run
@@ -111,6 +114,7 @@ jobs:
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: build
         run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: run
@@ -129,6 +133,7 @@ jobs:
           uses: ./.github/workflows/setup
           with:
             haxe: ${{ inputs.haxe }}
+            arch: ${{ inputs.arch }}
         - name: build
           run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
         - name: run
@@ -147,6 +152,7 @@ jobs:
           uses: ./.github/workflows/setup
           with:
             haxe: ${{ inputs.haxe }}
+            arch: ${{ inputs.arch }}
         - name: setup mariadb
           if: runner.os == 'Linux'
           run: |
@@ -180,6 +186,7 @@ jobs:
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: build host
         run: haxe compile-host.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: build client
@@ -200,6 +207,7 @@ jobs:
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: Get Haxe commit SHA
         if: inputs.haxe == 'latest'
         id: haxe_sha
@@ -248,6 +256,7 @@ jobs:
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: test c/cxx_standard attributes
         working-directory: test/cxx_standard
         shell: bash
@@ -270,5 +279,6 @@ jobs:
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: run
         run: haxe --run Run -D ${{ env.HXCPP_ARCH_FLAG }}
