@@ -5865,6 +5865,8 @@ public:
 
       hx::tlsStackContext = 0;
 
+      state.stackBase = state.stackLimit = 0;
+
       if (!sGlobalAlloc->ReturnToPoolLocked(this))
          delete this;
    }
