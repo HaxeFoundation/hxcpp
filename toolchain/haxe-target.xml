@@ -54,7 +54,6 @@
   <depend name="${HXCPP}/include/hx/OS.h"/>
   <depend name="${HXCPP}/include/hx/ObjcHelpers.h"/>
   <depend name="${HXCPP}/include/hx/HeaderVersion.h"/>
-  <depend name="${HXCPP}/include/hx/Unordered.h"/>
   <depend name="${HXCPP}/include/hx/LessThanEq.h"/>
   <depend name="${HXCPP}/include/hx/Interface.h"/>
   <depend name="${HXCPP}/include/cpp/Pointer.h"/>

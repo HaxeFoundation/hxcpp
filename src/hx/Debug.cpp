@@ -6,9 +6,9 @@
 #include <hx/Debug.h>
 #include <hx/Thread.h>
 #include <hx/Telemetry.h>
-#include <hx/Unordered.h>
 #include <hx/thread/Thread.hpp>
 #include <hx/OS.h>
+#include <unordered_map>
 #include <mutex>
 
 
@@ -48,7 +48,7 @@ const char* EXTERN_CLASS_NAME = "extern";
 
 #ifdef HXCPP_STACK_IDS
 static std::mutex sStackMapMutex;
-typedef UnorderedMap<int, StackContext *> StackMap;
+typedef std::unordered_map<int, StackContext *> StackMap;
 static StackMap sStackMap;
 #endif
 
