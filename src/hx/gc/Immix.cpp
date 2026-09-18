@@ -6,7 +6,8 @@
 #include <hx/thread/Thread.hpp>
 #include "../Hash.h"
 #include "GcRegCapture.h"
-#include <hx/Unordered.h>
+#include <unordered_set>
+#include <unordered_map>
 #include <mutex>
 #include <thread>
 #include <condition_variable>
@@ -47,7 +48,7 @@ namespace hx
 #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
 
 enum { gAlwaysMove = true };
-typedef hx::UnorderedSet<void *> PointerMovedSet;
+typedef std::unordered_set<void *> PointerMovedSet;
 PointerMovedSet sgPointerMoved;
 
 #else
@@ -2374,10 +2375,10 @@ void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx)
 // --- Roots -------------------------------
 
 FILE_SCOPE std::mutex* sGCRootLock = nullptr;
-typedef hx::UnorderedSet<hx::Object **> RootSet;
+typedef std::unordered_set<hx::Object **> RootSet;
 static RootSet sgRootSet;
 
-typedef hx::UnorderedMap<void *,int> OffsetRootSet;
+typedef std::unordered_map<void *,int> OffsetRootSet;
 static OffsetRootSet *sgOffsetRootSet=0;
 
 void GCAddRoot(hx::Object **inRoot)
@@ -2456,20 +2457,20 @@ typedef hx::QuickVec<InternalFinalizer *> FinalizerList;
 
 FILE_SCOPE FinalizerList *sgFinalizers = 0;
 
-typedef hx::UnorderedMap<hx::Object *,hx::finalizer> FinalizerMap;
+typedef std::unordered_map<hx::Object *,hx::finalizer> FinalizerMap;
 FILE_SCOPE FinalizerMap sFinalizerMap;
 
 typedef void (*HaxeFinalizer)(Dynamic);
-typedef hx::UnorderedMap<hx::Object *,HaxeFinalizer> HaxeFinalizerMap;
+typedef std::unordered_map<hx::Object *,HaxeFinalizer> HaxeFinalizerMap;
 FILE_SCOPE HaxeFinalizerMap sHaxeFinalizerMap;
 
 hx::QuickVec<int> sFreeObjectIds;
-typedef hx::UnorderedMap<hx::Object *,int> ObjectIdMap;
+typedef std::unordered_map<hx::Object *,int> ObjectIdMap;
 typedef hx::QuickVec<hx::Object *> IdObjectMap;
 FILE_SCOPE ObjectIdMap sObjectIdMap;
 FILE_SCOPE IdObjectMap sIdObjectMap;
 
-typedef hx::UnorderedSet<hx::Object *> MakeZombieSet;
+typedef std::unordered_set<hx::Object *> MakeZombieSet;
 FILE_SCOPE MakeZombieSet sMakeZombieSet;
 
 typedef hx::QuickVec<hx::Object *> ZombieList;

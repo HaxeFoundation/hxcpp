@@ -108,7 +108,7 @@ void CppiaModule::registerDebugger()
       addScriptableClass( scriptable.makePermanent().utf8_str() );
    }
 
-   for(hx::UnorderedSet<int>::const_iterator i = allFileIds.begin(); i!=allFileIds.end(); ++i)
+   for(std::unordered_set<int>::const_iterator i = allFileIds.begin(); i!=allFileIds.end(); ++i)
       addScriptableFile(strings[*i]);
 
    #if (HXCPP_API_LEVEL >= 500)
