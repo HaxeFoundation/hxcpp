@@ -26,7 +26,7 @@
 
 namespace
 {
-    // It took until C++26 for them to add saturating casts!
+    // It took until C++26 for them to add saturating arithmetic!
     // So lets have some very basic saturating maths helpers
 
     template<class T>
@@ -748,10 +748,10 @@ struct BlockDataInfo
    HoleRange    mRanges[MAX_HOLES];
    uint8_t      mHoles;
 
-   int          mUsedRows;
+   uint8_t      mUsedRows;
    int          mMaxHoleSize;
    int          mMoveScore;
-   int          mUsedBytes;
+   uint16_t     mUsedBytes;
    int          mFraggedRows;
    bool         mPinned;
    unsigned char mZeroed;
@@ -818,7 +818,7 @@ struct BlockDataInfo
    void makeFull()
    {
       mUsedRows = IMMIX_USEFUL_LINES;
-      mUsedBytes = mUsedRows<<IMMIX_LINE_BITS;
+      mUsedBytes = uint16_t{ mUsedRows } << IMMIX_LINE_BITS;
       mFraggedRows = 0;
       memset(mPtr->mRowMarked+IMMIX_HEADER_LINES, 1,IMMIX_USEFUL_LINES); 
       mRanges[0].start = 0;
@@ -970,7 +970,7 @@ struct BlockDataInfo
       #endif
 
       mUsedRows = (total & 0xff) + ((total>>8) & 0xff) + ((total>>16)&0xff) + ((total>>24)&0xff);
-      mUsedBytes = mUsedRows<<IMMIX_LINE_BITS;
+      mUsedBytes = uint16_t{ mUsedRows } << IMMIX_LINE_BITS;
 
       mZeroLock = 0;
       mOwned = false;
@@ -993,7 +993,7 @@ struct BlockDataInfo
          mReclaimed = false;
       }
 
-      int left = (IMMIX_USEFUL_LINES - mUsedRows) << IMMIX_LINE_BITS;
+      uint16_t left{ static_cast<uint16_t>((IMMIX_USEFUL_LINES - mUsedRows) << IMMIX_LINE_BITS) };
       if (left<mMaxHoleSize)
          mMaxHoleSize = left;
    }
@@ -1139,7 +1139,7 @@ struct BlockDataInfo
          mHoles = hole;
       }
 
-      mUsedBytes =  FULL ? usedBytes : (mUsedRows<<IMMIX_LINE_BITS);
+      mUsedBytes = FULL ? usedBytes : uint16_t{ mUsedRows } << IMMIX_LINE_BITS;
       mMoveScore = calcFragScore();
       mReclaimed = true;
 
