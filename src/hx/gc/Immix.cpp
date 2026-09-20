@@ -666,12 +666,12 @@ struct BlockDataStats
       fraggedRows += inOther.fraggedRows;
    }
 
-   int rowsInUse;
+   size_t rowsInUse;
    size_t bytesInUse;
-   int emptyBlocks;
-   int fragScore;
-   int fraggedBlocks;
-   int fraggedRows;
+   size_t emptyBlocks;
+   size_t fragScore;
+   size_t fraggedBlocks;
+   size_t fraggedRows;
 };
 
 static BlockDataStats sThreadBlockDataStats[MAX_GC_THREADS];
