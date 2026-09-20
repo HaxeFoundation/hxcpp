@@ -24,6 +24,24 @@
 #include <string>
 #include <stdlib.h>
 
+namespace
+{
+    // It took until C++26 for them to add saturating casts!
+    // So lets have some very basic saturating maths helpers
+
+    template<class T>
+    T saturating_add(T x, T delta)
+    {
+        if (x > std::numeric_limits<T>::max() - delta)
+        {
+            return std::numeric_limits<T>::max();
+        }
+        else
+        {
+            return x + delta;
+        }
+    }
+}
 
 static bool sgIsCollecting = false;
 
@@ -728,7 +746,7 @@ struct BlockDataInfo
    unsigned int allocStart[IMMIX_LINES];
 
    HoleRange    mRanges[MAX_HOLES];
-   int          mHoles;
+   uint8_t      mHoles;
 
    int          mUsedRows;
    int          mMaxHoleSize;
@@ -841,7 +859,7 @@ struct BlockDataInfo
          if (!mReclaimed)
             reclaim<false>(0);
 
-         for(int i=0;i<mHoles;i++)
+         for (uint8_t i{ 0 }; i < mHoles; i++)
              ZERO_MEM( (char *)mPtr+mRanges[i].start, mRanges[i].length );
          mZeroed = ZEROED_THREAD;
       }
@@ -1184,7 +1202,7 @@ struct BlockDataInfo
          return allocNone;
       // For the nursery(generational) case, the allocStart markers are not set
       // So trace tne new object links through the new allocation holes
-      for(int h=0;h<mHoles;h++)
+      for (uint8_t h{ 0 }; h < mHoles; h++)
       {
          size_t scan{ mRanges[h].start };
          if (inOffset<scan)
@@ -3955,7 +3973,7 @@ public:
          unsigned int *srcStart = from->allocStart;
 
          // Scan nursery for survivors
-         for(int hole = 0; hole<from->mHoles; hole++)
+         for (uint8_t hole{ 0 }; hole < from->mHoles; hole++)
          {
             int start = from->mRanges[hole].start;
             int len = from->mRanges[hole].length;
@@ -5443,7 +5461,7 @@ public:
          }
       }
 
-      int extra = std::max( mAllBlocks.size(), 8<<IMMIX_BLOCK_GROUP_BITS);
+      size_t extra{ std::max(mAllBlocks.size(), static_cast<size_t>(8 << IMMIX_BLOCK_GROUP_BITS)) };
       mFreeBlocks.safeReserveExtra(extra);
 
       std::sort(&mFreeBlocks[0], &mFreeBlocks[0] + mFreeBlocks.size(), SmallestFreeFirst );
@@ -5763,8 +5781,8 @@ static int sFragIgnore=0;
 
 class LocalAllocator : public hx::StackContext
 {
-   int            mCurrentHole;
-   int            mCurrentHoles;
+   uint8_t        mCurrentHole;
+   uint8_t        mCurrentHoles;
    HoleRange     *mCurrentRange;
    int           *mFraggedRows;
 
@@ -6308,7 +6326,7 @@ public:
             spaceStart = mCurrentRange[mCurrentHole].start;
             spaceEnd = spaceStart + mCurrentRange[mCurrentHole].length;
             #endif
-            mCurrentHole++;
+            mCurrentHole = saturating_add<uint8_t>(mCurrentHole, 1);
             mMoreHoles = mCurrentHole<mCurrentHoles;
 
          }
