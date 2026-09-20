@@ -1,4 +1,6 @@
 #include <hxcpp.h>
+
+#if (HXCPP_API_LEVEL>=500)
 #include <array>
 
 using namespace cpp::marshal;
@@ -652,3 +654,5 @@ inline char32_t cpp::encoding::Utf16::codepoint(const cpp::marshal::View<uint8_t
         return static_cast<char32_t>(first);
     }
 }
+
+#endif

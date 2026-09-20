@@ -246,6 +246,8 @@ struct CompareTraits< T * >
    inline static bool isNull(T *inValue) { return !inValue; }
 };
 
+#if (HXCPP_API_LEVEL>=500)
+
 template <typename T>
 struct CompareTraits< cpp::marshal::ValueReference<T> >
 {
@@ -273,6 +275,8 @@ struct CompareTraits< cpp::marshal::PointerReference<T> >
     inline static int getDynamicCompareType(const ::Dynamic&) { return type; }
     inline static bool isNull(const ::cpp::marshal::PointerReference<T>& ref) { return nullptr == ref.ptr || nullptr == *ref.ptr; }
 };
+
+#endif
 
 template<typename T1>
 hx::Object *GetExistingObject(const T1 &v1)
@@ -437,6 +441,8 @@ inline bool TestLessEq(const T1 &v1, const T2 &v2)
 template<typename T1, typename T2>
 bool IsEq(const T1 &v1, const T2 &v2) { return TestLessEq<false,true,T1,T2>(v1,v2); }
 
+#if (HXCPP_API_LEVEL>=500)
+
 template<typename T1, typename T2>
 bool IsEq(const ::cpp::marshal::ValueReference<T1>& v1, const ::cpp::marshal::ValueReference<T2>& v2) { return v1 == v2; }
 
@@ -459,14 +465,20 @@ bool IsEq(const ::cpp::marshal::PointerReference<T1>& v1, const ::cpp::marshal::
     return *v1.ptr == *v2.ptr;
 }
 
+#endif
+
 template<typename T1, typename T2>
 bool IsNotEq(const T1 &v1, const T2 &v2) { return TestLessEq<false,false,T1,T2>(v1,v2); }
+
+#if (HXCPP_API_LEVEL>=500)
 
 template<typename T1, typename T2>
 bool IsNotEq(const ::cpp::marshal::ValueReference<T1>& v1, const ::cpp::marshal::ValueReference<T2>& v2) { return v1 != v2; }
 
 template<typename T1, typename T2>
 bool IsNotEq(const ::cpp::marshal::PointerReference<T1>& v1, const ::cpp::marshal::PointerReference<T2>& v2) { return IsEq(v1, v2) == false; }
+
+#endif
 
 template<typename T1, typename T2>
 bool IsLess(const T1 &v1, const T2 &v2) { return TestLessEq<true,false,T1,T2>(v1,v2); }
