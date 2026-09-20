@@ -752,7 +752,7 @@ struct BlockDataInfo
    int          mMaxHoleSize;
    int          mMoveScore;
    uint16_t     mUsedBytes;
-   int          mFraggedRows;
+   uint8_t      mFraggedRows;
    bool         mPinned;
    unsigned char mZeroed;
    bool         mReclaimed;
@@ -5784,7 +5784,7 @@ class LocalAllocator : public hx::StackContext
    uint8_t        mCurrentHole;
    uint8_t        mCurrentHoles;
    HoleRange     *mCurrentRange;
-   int           *mFraggedRows;
+   uint8_t       *mFraggedRows;
 
    bool           mMoreHoles;
 
@@ -6275,7 +6275,7 @@ public:
             // spaceOversize might have been set to zero for quick-termination of alloc.
             unsigned char* s{ spaceOversize };
             if (s>spaceFirst && mFraggedRows)
-               *mFraggedRows += (s - spaceFirst)>>IMMIX_LINE_BITS;
+               *mFraggedRows += static_cast<uint8_t>((s - spaceFirst) >> IMMIX_LINE_BITS);
          #else
             #ifdef HXCPP_ALIGN_ALLOC
             if (!(size_t{ spaceStart } & 0x4))
@@ -6312,7 +6312,7 @@ public:
             }
             if (mFraggedRows && spaceEnd > spaceStart)
             {
-               *mFraggedRows += static_cast<int>((spaceEnd - spaceStart) >> IMMIX_LINE_BITS);
+               *mFraggedRows += static_cast<uint8_t>((spaceEnd - spaceStart) >> IMMIX_LINE_BITS);
             }
          #endif
 
