@@ -27,19 +27,25 @@
 namespace
 {
     // It took until C++26 for them to add saturating arithmetic!
-    // So lets have some very basic saturating maths helpers
+    // So lets have some very basic saturating maths helpers.
+    // Funky branchless saturating from https://web.archive.org/web/20190213215419/https://locklessinc.com/articles/sat_arithmetic/
 
     template<class T>
     T saturating_add(T x, T delta)
     {
-        if (x > std::numeric_limits<T>::max() - delta)
-        {
-            return std::numeric_limits<T>::max();
-        }
-        else
-        {
-            return x + delta;
-        }
+        T res = x + delta;
+        res |= -(res < x);
+
+        return res;
+    }
+
+    template<class T>
+    T saturating_sub(T x, T delta)
+    {
+        T res = x - delta;
+        res &= -(res <= x);
+
+        return res;
     }
 }
 
@@ -749,7 +755,7 @@ struct BlockDataInfo
    uint8_t      mHoles;
 
    uint8_t      mUsedRows;
-   int          mMaxHoleSize;
+   uint16_t     mMaxHoleSize;
    int          mMoveScore;
    uint16_t     mUsedBytes;
    uint8_t      mFraggedRows;
@@ -1028,7 +1034,7 @@ struct BlockDataInfo
       {
          ranges[0].start  = IMMIX_HEADER_LINES<<IMMIX_LINE_BITS;
          ranges[0].length = (IMMIX_USEFUL_LINES)<<IMMIX_LINE_BITS;
-         mMaxHoleSize = (IMMIX_USEFUL_LINES)<<IMMIX_LINE_BITS;
+         mMaxHoleSize = static_cast<uint16_t>(IMMIX_USEFUL_LINES << IMMIX_LINE_BITS);
          mUsedRows = 0;
          mHoles = 1;
          mMoveScore = 0;
@@ -1119,15 +1125,15 @@ struct BlockDataInfo
          mMaxHoleSize = 0;
          for(int h=0;h<hole;h++)
          {
-            int s = ranges->start;
-            int l = ranges->length;
+            uint16_t s{ ranges->start };
+            uint16_t l{ ranges->length };
             freeLines += l;
             ZERO_MEM(allocStart+s, l*sizeof(int));
 
-            int sBytes = s<<IMMIX_LINE_BITS;
+            uint16_t sBytes{ static_cast<uint16_t>(s << IMMIX_LINE_BITS) };
             ranges->start = sBytes;
 
-            int lBytes = l<<IMMIX_LINE_BITS;
+            uint16_t lBytes{ static_cast<uint16_t>(l << IMMIX_LINE_BITS) };
             ranges->length = lBytes;
 
             if (lBytes>mMaxHoleSize)
@@ -1159,9 +1165,9 @@ struct BlockDataInfo
       mFraggedRows = 0;
    }
 
-   int calcFragScore()
+   int calcFragScore() const
    {
-      return mPinned ? 0 : (mHoles>3 ? mHoles-3 : 0) + 8 * (mUsedRows<<IMMIX_LINE_BITS) / (mUsedBytes+IMMIX_LINE_LEN);
+      return mPinned ? 0 : saturating_sub<uint8_t>(mHoles, 3) + 8 * (mUsedRows<<IMMIX_LINE_BITS) / (mUsedBytes+IMMIX_LINE_LEN);
    }
 
 
@@ -1412,37 +1418,15 @@ struct BlockDataInfo
    #endif
 };
 
-
-
-
-
-bool MostUsedFirst(BlockDataInfo *inA, BlockDataInfo *inB)
-{
-   return inA->getUsedRows() > inB->getUsedRows();
-}
-
-bool BiggestFreeFirst(BlockDataInfo *inA, BlockDataInfo *inB)
-{
-   return inA->mMaxHoleSize > inB->mMaxHoleSize;
-}
-bool SmallestFreeFirst(BlockDataInfo *inA, BlockDataInfo *inB)
+static bool SmallestFreeFirst(BlockDataInfo *inA, BlockDataInfo *inB)
 {
    return inA->mMaxHoleSize < inB->mMaxHoleSize;
 }
 
-
-bool LeastUsedFirst(BlockDataInfo *inA, BlockDataInfo *inB)
-{
-   return inA->getUsedRows() < inB->getUsedRows();
-}
-
-
-
-bool SortMoveOrder(BlockDataInfo *inA, BlockDataInfo *inB)
+static bool SortMoveOrder(BlockDataInfo *inA, BlockDataInfo *inB)
 {
    return inA->mMoveScore > inB->mMoveScore;
 }
-
 
 namespace hx
 {
