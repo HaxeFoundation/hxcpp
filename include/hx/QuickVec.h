@@ -97,12 +97,12 @@ struct QuickVec
    {
       for (size_t i{ 0 }; i < mSize; i++)
       {
-          if (mPtr[i] == inVal)
-          {
-              --mSize;
-              mPtr[i] = mPtr[mSize];
-              return true;
-          }
+         if (mPtr[i] == inVal)
+         {
+            --mSize;
+            mPtr[i] = mPtr[mSize];
+            return true;
+         }
       }
       return false;
    }
