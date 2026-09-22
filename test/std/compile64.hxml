@@ -1,5 +1,3 @@
--m Test
+compile-generic.hxml
 -D HXCPP_M64
--L hx4compat
--L utest
 --cpp cpp64
