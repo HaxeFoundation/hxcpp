@@ -270,6 +270,7 @@ struct HashRoot : public Object
     HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdHash };
 
    virtual void updateAfterGc() = 0;
+   virtual bool markWeakValues(MarkContext *__inCtx) = 0;
 
    inline int getSize() { return size; }
 };
@@ -351,6 +352,46 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    bool TIsWeakRefValid(T &) { return true; }
    bool TIsWeakRefValid(Dynamic &key) { return IsWeakRefValid(key.mPtr); }
    bool TIsWeakRefValid(String &key) { return IsWeakRefValid(key.raw_ptr()); }
+
+   template<typename T>
+   bool TMarkWeakValue(T &, MarkContext *) { return false; }
+   bool TMarkWeakValue(Dynamic &inValue, MarkContext *__inCtx)
+   {
+      hx::Object *value = inValue.mPtr;
+      if (!value || (((unsigned int *)value)[-1] & hx::gPrevMarkIdMask))
+         return false;
+
+      HX_MARK_MEMBER(inValue);
+      return true;
+   }
+   bool TMarkWeakValue(String &inValue, MarkContext *__inCtx)
+   {
+      const HX_CHAR *value = inValue.raw_ptr();
+      if (!value || (((unsigned int *)value)[-1] & hx::gPrevMarkIdMask))
+         return false;
+
+      HX_MARK_MEMBER(inValue);
+      return true;
+   }
+
+   bool markWeakValues(MarkContext *__inCtx) HXCPP_OVERRIDE
+   {
+      if (!Element::WeakKeys || !Element::ManageKeys)
+         return false;
+
+      bool marked = false;
+      for(int b=0;b<bucketCount;b++)
+      {
+         Element *element = bucket[b];
+         while(element)
+         {
+            if (TIsWeakRefValid(element->key))
+               marked = TMarkWeakValue(element->value, __inCtx) || marked;
+            element = element->next;
+         }
+      }
+      return marked;
+   }
 
 
    void updateAfterGc() HXCPP_OVERRIDE
@@ -787,8 +828,8 @@ struct Hash : public HashBase< typename ELEMENT::Key >
          if (!Hash::Element::WeakKeys)
          {
             HX_MARK_MEMBER(inElem->key);
+            HX_MARK_MEMBER(inElem->value);
          }
-         HX_MARK_MEMBER(inElem->value);
       }
    };
 
