@@ -1,7 +1,7 @@
 #ifndef HX_NULL_H
 #define HX_NULL_H
 
-
+#include <hx/OS.h>
 
 // --- null value  ---------------------------------------------------------
 //
@@ -96,6 +96,9 @@ class null
      operator char32_t () { return 0; }
      operator short () { return 0; }
      operator unsigned short () { return 0; }
+     #if defined(NEKO_MAC) || defined(NEKO_BSD)
+     operator unsigned long () { return 0; }
+     #endif
      operator cpp::UInt64 () { return 0; }
      operator cpp::Int64 () { return 0; }
      template<typename T>

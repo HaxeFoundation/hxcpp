@@ -1,6 +1,8 @@
 #ifndef HX_DYNAMIC_H
 #define HX_DYNAMIC_H
 
+#include <hx/OS.h>
+
 // --- Dynamic ---------------------------------------------------------------
 //
 // The Dynamic class views all classes through the hx::Object interface, and
@@ -42,6 +44,8 @@ public:
    Dynamic(const hx::Native<T *> &inInterface):super(inInterface.ptr ? inInterface->__GetRealObject() : (hx::Object *)0 ) { }
    #if !defined(__GNUC__) || defined(__MINGW32__) || (defined(__WORDSIZE) && (__WORDSIZE != 64))
    Dynamic(long inVal);
+   #endif
+   #if defined(NEKO_MAC) || defined(NEKO_BSD)
    Dynamic(unsigned long inVal);
    #endif
 #ifdef __OBJC__
@@ -79,6 +83,9 @@ public:
    inline operator cpp::Int64() const { return mPtr ? mPtr->__ToInt64() : 0; }
    inline operator cpp::UInt64() const { return mPtr ? mPtr->__ToInt64() : 0; }
    inline operator ::hx::Object*() const { return mPtr; }
+   #if defined(NEKO_MAC) || defined(NEKO_BSD)
+   inline operator unsigned long() const { return mPtr ? mPtr->__ToInt64() : 0; }
+    #endif
 
    // Conversion to generic pointer requires you to tag the class with a typedef
    template<typename T>
