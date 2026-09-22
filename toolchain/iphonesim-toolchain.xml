@@ -70,7 +70,8 @@
 
   <outflag value="-o"/>
   <ext value=".o"/>
-  <objdir value="obj/iphonesim${OBJGCC}${OBJDBG}/" />
+  <objdir value="obj/iphonesim${OBJGCC}${OBJDBG}-arm64/" if="HXCPP_ARM64" />
+  <objdir value="obj/iphonesim${OBJGCC}${OBJDBG}/" unless="HXCPP_ARM64" />
 </compiler>
 
 <linker id="dll" exe="g++" >
@@ -78,8 +79,9 @@
   <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} clang++" />
   <flag value="-dynamiclib"/>
   <flag value="-arch"/>
-  <flag value="i386" unless="HXCPP_M64"/>
-  <flag value="x86_64" if="HXCPP_M64"/>
+  <flag value="i386" unless="HXCPP_M64 || HXCPP_ARM64"/>
+  <flag value="x86_64" if="HXCPP_M64" unless="HXCPP_ARM64"/>
+  <flag value="arm64" if="HXCPP_ARM64"/>
   <flag value="-isysroot"/>
   <flag value="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator${IPHONE_VER}.sdk"/>
   <flag value="-Wl,-undefined,dynamic_lookup"/>
