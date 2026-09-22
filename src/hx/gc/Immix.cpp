@@ -24,6 +24,30 @@
 #include <string>
 #include <stdlib.h>
 
+namespace
+{
+    // It took until C++26 for them to add saturating arithmetic!
+    // So lets have some very basic saturating maths helpers.
+    // Funky branchless saturating from https://web.archive.org/web/20190213215419/https://locklessinc.com/articles/sat_arithmetic/
+
+    template<class T>
+    T saturating_add(T x, T delta)
+    {
+        T res = x + delta;
+        res |= -(res < x);
+
+        return res;
+    }
+
+    template<class T>
+    T saturating_sub(T x, T delta)
+    {
+        T res = x - delta;
+        res &= -(res <= x);
+
+        return res;
+    }
+}
 
 static bool sgIsCollecting = false;
 
@@ -648,12 +672,12 @@ struct BlockDataStats
       fraggedRows += inOther.fraggedRows;
    }
 
-   int rowsInUse;
+   size_t rowsInUse;
    size_t bytesInUse;
-   int emptyBlocks;
-   int fragScore;
-   int fraggedBlocks;
-   int fraggedRows;
+   size_t emptyBlocks;
+   size_t fragScore;
+   size_t fraggedBlocks;
+   size_t fraggedRows;
 };
 
 static BlockDataStats sThreadBlockDataStats[MAX_GC_THREADS];
@@ -728,13 +752,13 @@ struct BlockDataInfo
    unsigned int allocStart[IMMIX_LINES];
 
    HoleRange    mRanges[MAX_HOLES];
-   int          mHoles;
+   uint8_t      mHoles;
 
-   int          mUsedRows;
-   int          mMaxHoleSize;
+   uint8_t      mUsedRows;
+   uint16_t     mMaxHoleSize;
    int          mMoveScore;
-   int          mUsedBytes;
-   int          mFraggedRows;
+   uint16_t     mUsedBytes;
+   uint8_t      mFraggedRows;
    bool         mPinned;
    unsigned char mZeroed;
    bool         mReclaimed;
@@ -800,7 +824,7 @@ struct BlockDataInfo
    void makeFull()
    {
       mUsedRows = IMMIX_USEFUL_LINES;
-      mUsedBytes = mUsedRows<<IMMIX_LINE_BITS;
+      mUsedBytes = uint16_t{ mUsedRows } << IMMIX_LINE_BITS;
       mFraggedRows = 0;
       memset(mPtr->mRowMarked+IMMIX_HEADER_LINES, 1,IMMIX_USEFUL_LINES); 
       mRanges[0].start = 0;
@@ -841,7 +865,7 @@ struct BlockDataInfo
          if (!mReclaimed)
             reclaim<false>(0);
 
-         for(int i=0;i<mHoles;i++)
+         for (uint8_t i{ 0 }; i < mHoles; i++)
              ZERO_MEM( (char *)mPtr+mRanges[i].start, mRanges[i].length );
          mZeroed = ZEROED_THREAD;
       }
@@ -952,7 +976,7 @@ struct BlockDataInfo
       #endif
 
       mUsedRows = (total & 0xff) + ((total>>8) & 0xff) + ((total>>16)&0xff) + ((total>>24)&0xff);
-      mUsedBytes = mUsedRows<<IMMIX_LINE_BITS;
+      mUsedBytes = uint16_t{ mUsedRows } << IMMIX_LINE_BITS;
 
       mZeroLock = 0;
       mOwned = false;
@@ -975,7 +999,7 @@ struct BlockDataInfo
          mReclaimed = false;
       }
 
-      int left = (IMMIX_USEFUL_LINES - mUsedRows) << IMMIX_LINE_BITS;
+      uint16_t left{ static_cast<uint16_t>((IMMIX_USEFUL_LINES - mUsedRows) << IMMIX_LINE_BITS) };
       if (left<mMaxHoleSize)
          mMaxHoleSize = left;
    }
@@ -1010,7 +1034,7 @@ struct BlockDataInfo
       {
          ranges[0].start  = IMMIX_HEADER_LINES<<IMMIX_LINE_BITS;
          ranges[0].length = (IMMIX_USEFUL_LINES)<<IMMIX_LINE_BITS;
-         mMaxHoleSize = (IMMIX_USEFUL_LINES)<<IMMIX_LINE_BITS;
+         mMaxHoleSize = static_cast<uint16_t>(IMMIX_USEFUL_LINES << IMMIX_LINE_BITS);
          mUsedRows = 0;
          mHoles = 1;
          mMoveScore = 0;
@@ -1101,15 +1125,15 @@ struct BlockDataInfo
          mMaxHoleSize = 0;
          for(int h=0;h<hole;h++)
          {
-            int s = ranges->start;
-            int l = ranges->length;
+            uint16_t s{ ranges->start };
+            uint16_t l{ ranges->length };
             freeLines += l;
             ZERO_MEM(allocStart+s, l*sizeof(int));
 
-            int sBytes = s<<IMMIX_LINE_BITS;
+            uint16_t sBytes{ static_cast<uint16_t>(s << IMMIX_LINE_BITS) };
             ranges->start = sBytes;
 
-            int lBytes = l<<IMMIX_LINE_BITS;
+            uint16_t lBytes{ static_cast<uint16_t>(l << IMMIX_LINE_BITS) };
             ranges->length = lBytes;
 
             if (lBytes>mMaxHoleSize)
@@ -1121,7 +1145,7 @@ struct BlockDataInfo
          mHoles = hole;
       }
 
-      mUsedBytes =  FULL ? usedBytes : (mUsedRows<<IMMIX_LINE_BITS);
+      mUsedBytes = FULL ? usedBytes : uint16_t{ mUsedRows } << IMMIX_LINE_BITS;
       mMoveScore = calcFragScore();
       mReclaimed = true;
 
@@ -1141,9 +1165,9 @@ struct BlockDataInfo
       mFraggedRows = 0;
    }
 
-   int calcFragScore()
+   int calcFragScore() const
    {
-      return mPinned ? 0 : (mHoles>3 ? mHoles-3 : 0) + 8 * (mUsedRows<<IMMIX_LINE_BITS) / (mUsedBytes+IMMIX_LINE_LEN);
+      return mPinned ? 0 : saturating_sub<uint8_t>(mHoles, 3) + 8 * (mUsedRows<<IMMIX_LINE_BITS) / (mUsedBytes+IMMIX_LINE_LEN);
    }
 
 
@@ -1184,7 +1208,7 @@ struct BlockDataInfo
          return allocNone;
       // For the nursery(generational) case, the allocStart markers are not set
       // So trace tne new object links through the new allocation holes
-      for(int h=0;h<mHoles;h++)
+      for (uint8_t h{ 0 }; h < mHoles; h++)
       {
          size_t scan{ mRanges[h].start };
          if (inOffset<scan)
@@ -1394,37 +1418,15 @@ struct BlockDataInfo
    #endif
 };
 
-
-
-
-
-bool MostUsedFirst(BlockDataInfo *inA, BlockDataInfo *inB)
-{
-   return inA->getUsedRows() > inB->getUsedRows();
-}
-
-bool BiggestFreeFirst(BlockDataInfo *inA, BlockDataInfo *inB)
-{
-   return inA->mMaxHoleSize > inB->mMaxHoleSize;
-}
-bool SmallestFreeFirst(BlockDataInfo *inA, BlockDataInfo *inB)
+static bool SmallestFreeFirst(BlockDataInfo *inA, BlockDataInfo *inB)
 {
    return inA->mMaxHoleSize < inB->mMaxHoleSize;
 }
 
-
-bool LeastUsedFirst(BlockDataInfo *inA, BlockDataInfo *inB)
-{
-   return inA->getUsedRows() < inB->getUsedRows();
-}
-
-
-
-bool SortMoveOrder(BlockDataInfo *inA, BlockDataInfo *inB)
+static bool SortMoveOrder(BlockDataInfo *inA, BlockDataInfo *inB)
 {
    return inA->mMoveScore > inB->mMoveScore;
 }
-
 
 namespace hx
 {
@@ -3955,7 +3957,7 @@ public:
          unsigned int *srcStart = from->allocStart;
 
          // Scan nursery for survivors
-         for(int hole = 0; hole<from->mHoles; hole++)
+         for (uint8_t hole{ 0 }; hole < from->mHoles; hole++)
          {
             int start = from->mRanges[hole].start;
             int len = from->mRanges[hole].length;
@@ -5443,7 +5445,7 @@ public:
          }
       }
 
-      int extra = std::max( mAllBlocks.size(), 8<<IMMIX_BLOCK_GROUP_BITS);
+      size_t extra{ std::max(mAllBlocks.size(), static_cast<size_t>(8 << IMMIX_BLOCK_GROUP_BITS)) };
       mFreeBlocks.safeReserveExtra(extra);
 
       std::sort(&mFreeBlocks[0], &mFreeBlocks[0] + mFreeBlocks.size(), SmallestFreeFirst );
@@ -5763,10 +5765,10 @@ static int sFragIgnore=0;
 
 class LocalAllocator : public hx::StackContext
 {
-   int            mCurrentHole;
-   int            mCurrentHoles;
+   uint8_t        mCurrentHole;
+   uint8_t        mCurrentHoles;
    HoleRange     *mCurrentRange;
-   int           *mFraggedRows;
+   uint8_t       *mFraggedRows;
 
    bool           mMoreHoles;
 
@@ -6257,7 +6259,7 @@ public:
             // spaceOversize might have been set to zero for quick-termination of alloc.
             unsigned char* s{ spaceOversize };
             if (s>spaceFirst && mFraggedRows)
-               *mFraggedRows += (s - spaceFirst)>>IMMIX_LINE_BITS;
+               *mFraggedRows += static_cast<uint8_t>((s - spaceFirst) >> IMMIX_LINE_BITS);
          #else
             #ifdef HXCPP_ALIGN_ALLOC
             if (!(size_t{ spaceStart } & 0x4))
@@ -6294,7 +6296,7 @@ public:
             }
             if (mFraggedRows && spaceEnd > spaceStart)
             {
-               *mFraggedRows += static_cast<int>((spaceEnd - spaceStart) >> IMMIX_LINE_BITS);
+               *mFraggedRows += static_cast<uint8_t>((spaceEnd - spaceStart) >> IMMIX_LINE_BITS);
             }
          #endif
 
@@ -6308,7 +6310,7 @@ public:
             spaceStart = mCurrentRange[mCurrentHole].start;
             spaceEnd = spaceStart + mCurrentRange[mCurrentHole].length;
             #endif
-            mCurrentHole++;
+            mCurrentHole = saturating_add<uint8_t>(mCurrentHole, 1);
             mMoreHoles = mCurrentHole<mCurrentHoles;
 
          }
