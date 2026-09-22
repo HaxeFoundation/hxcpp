@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Install pcre2grep
       run: sudo apt-get update && sudo apt-get install -y pcre2-utils
@@ -102,3 +102,17 @@ jobs:
       sep: /
       ext: .dso
       os: ubuntu-latest
+
+  LinuxArm64:
+    strategy:
+      fail-fast: false
+      matrix:
+        haxe: [ latest ] # 4.3.7 doesn't have a linux arm build
+    uses: ./.github/workflows/test.yml
+    name: Test Linux (Arm64)
+    with:
+      haxe: ${{ matrix.haxe  }}
+      arch: Arm64
+      sep: /
+      ext: .dso
+      os: ubuntu-24.04-arm

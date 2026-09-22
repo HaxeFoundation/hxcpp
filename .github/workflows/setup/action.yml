@@ -3,6 +3,9 @@ inputs:
   haxe:
     required: true
     type: string
+  arch:
+    required: true
+    type: string
 runs:
   using: composite
   steps:
@@ -20,7 +23,7 @@ runs:
         haxelib list
 
     - name: install native libraries
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && inputs.arch == 32
       shell: pwsh
       run: |
         sudo apt-get update -qqy
