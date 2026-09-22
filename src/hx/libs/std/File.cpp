@@ -149,7 +149,10 @@ int _hx_std_file_write( Dynamic handle, Array<unsigned char> s, int p, int n )
 
    hx::AutoGCFreeZone zone;
 #ifdef HX_WINDOWS
-   if (_isatty(_fileno(f->io))) {
+   // _isatty is true for ANY character device - NUL, a serial port, a printer - and none of
+   // those accept WriteConsoleW. Only a real console has a console mode.
+   DWORD console_mode;
+   if (_isatty(_fileno(f->io)) && GetConsoleMode((HANDLE)_get_osfhandle(_fileno(f->io)), &console_mode)) {
       fflush(f->io);
       HANDLE win_handle = (HANDLE)_get_osfhandle(_fileno(f->io));
       static const int MAX_BUFFER_SIZE = 8192;

@@ -16,6 +16,7 @@
 * Updated sqlite to 3.40.1
 * Updated zlib to 1.2.13
 
+* Fixed crash writing to the null device on Windows
 * Fixed SSL socket non blocking handshake throwing an exception on 64bit Windows
 * Fixed Windows 64bit architecture detection
 * Fixed critial error handler returning the wrong callstack
