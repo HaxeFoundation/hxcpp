@@ -431,7 +431,11 @@ String __hxcpp_get_bin_dir()
 #elif defined(APPLETVOS)
     HX_CSTRING("AppleTVOS");
 #else
-  #ifdef HXCPP_M64
+  #ifdef HXCPP_ARM64
+    HX_CSTRING("LinuxArm64");
+  #elif defined(HXCPP_ARMV7)
+    HX_CSTRING("LinuxArm");
+  #elif defined(HXCPP_M64)
     HX_CSTRING("Linux64");
   #else
     HX_CSTRING("Linux");
@@ -454,7 +458,7 @@ String __hxcpp_get_dll_extension()
     HX_CSTRING(".sim.dylib");
 #elif defined(__APPLE__)
     HX_CSTRING(".dylib");
-#elif defined(ANDROID) || defined(GPH) || defined(WEBOS)  || defined(BLACKBERRY) || defined(__EMSCRIPTEN__) || defined(TIZEN)
+#elif defined(ANDROID) || defined(GPH) || defined(WEBOS) || defined(BLACKBERRY) || defined(__EMSCRIPTEN__) || defined(TIZEN)
     HX_CSTRING(".so");
 #else
     HX_CSTRING(".dso");
