@@ -220,6 +220,24 @@ void __Visit(HX_VISIT_PARAMS) HXCPP_OVERRIDE { super::__Visit(HX_VISIT_ARG); ::h
 #endif
 
 
+/*
+ * `toString` with a default argument is one C++ parameter (`hx::Null<int>`), not a
+ * zero-argument method. Calling `__superString::toString()` then fails to compile.
+ * The zero-argument form is preferred when it exists; otherwise the default is null.
+ */
+template<typename T>
+inline auto _hx_scriptable_super_toString(T *inSelf, int) -> decltype(inSelf->T::toString(), ::String())
+{
+   return inSelf->T::toString();
+}
+
+template<typename T>
+inline ::String _hx_scriptable_super_toString(T *inSelf, ...)
+{
+   return inSelf->T::toString(null());
+}
+
+
 #define HX_DEFINE_SCRIPTABLE(ARG_LIST) \
    inline void *operator new( size_t inSize, int inExtraDataSize ) \
    { \
@@ -235,7 +253,7 @@ void __Visit(HX_VISIT_PARAMS) HXCPP_OVERRIDE { super::__Visit(HX_VISIT_ARG); ::h
    void ** __GetScriptVTable() HXCPP_OVERRIDE { return __scriptVTable; } \
    ::String toString() HXCPP_OVERRIDE {  if (__scriptVTable[0] ) \
      { ::hx::CppiaCtx *ctx = ::hx::CppiaCtx::getCurrent(); ::hx::AutoStack a(ctx); ctx->pushObject(this); return ctx->runString(__scriptVTable[0]); } \
-      else return __superString::toString(); } \
+      else return _hx_scriptable_super_toString<__superString>(static_cast<__superString *>(this), 0); } \
    ::String __ToString() const HXCPP_OVERRIDE { return ::hx::ScriptableToString(__scriptVTable[-1]); } \
    ::hx::Class __GetClass() const HXCPP_OVERRIDE { return ::hx::ScriptableGetClass(__scriptVTable[-1]); } \
    int __GetType() const HXCPP_OVERRIDE { return ::hx::ScriptableGetType(__scriptVTable[-1]); } \
