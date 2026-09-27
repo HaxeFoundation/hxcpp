@@ -79,7 +79,7 @@ public:
       store = inStore;
    }
 
-   hx::Object *__GetRealObject() { return base?(hx::Object *)base:(hx::Object *)this; }
+   hx::Object *__GetRealObject() HXCPP_OVERRIDE { return base?(hx::Object *)base:(hx::Object *)this; }
 
    inline static VirtualArray __new(int inSize=0,int inReserve=0)
    {
@@ -91,7 +91,7 @@ public:
       return result;
    }
 
-   int __Compare(const hx::Object *inRHS) const;
+   int __Compare(const hx::Object *inRHS) const HXCPP_OVERRIDE;
 
    inline int get_length() const
    {
@@ -316,12 +316,12 @@ public:
    void EnsureArrayStorage(ArrayStore inValue);
    void EnsureArrayStorage(VirtualArray inValue);
 
-   void __Mark(hx::MarkContext *__inCtx)
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE
    {
       HX_MARK_OBJECT(base);
    }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
    {
       if (base)
         __inCtx->visitObject( (hx::Object **)&base);
@@ -333,24 +333,24 @@ public:
    inline int getElementSize() const { return base ? base->GetElementSize() : 0; }
    inline int getByteCount() const { return base ? base->getByteCount() : 0; }
    inline char * getBase() const { return base ? base->GetBase() : 0; }
-   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp) { return null(); }
+   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp) HXCPP_OVERRIDE { return null(); }
 
    static hx::Class &__SGetClass() { return hx::ArrayBase::__mClass; }
-   hx::Class __GetClass() const;
-   String toString();
-   String __ToString() const { return const_cast<VirtualArray_obj *>(this)->toString(); }
+   hx::Class __GetClass() const HXCPP_OVERRIDE;
+   String toString() HXCPP_OVERRIDE;
+   String __ToString() const HXCPP_OVERRIDE { return const_cast<VirtualArray_obj *>(this)->toString(); }
 
    void setData(void *inData, int inElements) { EnsureBase(); base->setData(inData, inElements); }
    void setUnmanagedData(void *inData, int inElements) { EnsureBase(); base->setUnmanagedData(inData, inElements); }
 
-   int __GetType() const { return vtArray; }
+   int __GetType() const HXCPP_OVERRIDE { return vtArray; }
 
    inline size_t size() const { checkBase(); return store==hx::arrayEmpty ? 0 : base->length; }
-   inline int __length() const { checkBase(); return store==hx::arrayEmpty ? 0 : (int)base->length; }
+   inline int __length() const HXCPP_OVERRIDE { checkBase(); return store==hx::arrayEmpty ? 0 : (int)base->length; }
 
    String ItemString(int inI) { checkBase(); return store==hx::arrayEmpty ? null() : base->ItemString(inI); }
 
-   const char * __CStr() const { return store==hx::arrayEmpty ? "[]" : store==hx::arrayNull ? "null" : base->__CStr(); }
+   const char * __CStr() const HXCPP_OVERRIDE { return store==hx::arrayEmpty ? "[]" : store==hx::arrayNull ? "null" : base->__CStr(); }
    inline const char *GetBase() const { return base ? base->GetBase() : 0; }
    inline char *GetBase() { return base ? base->GetBase() : 0; }
 
@@ -392,9 +392,9 @@ public:
    inline void __unsafeStringReference(String inString) { if (base) base->__unsafeStringReference(inString); }
 
 
-   Dynamic __GetItem(int inIndex) const;
-   Dynamic __SetItem(int inIndex,Dynamic inValue);
-   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp);
+   Dynamic __GetItem(int inIndex) const HXCPP_OVERRIDE;
+   Dynamic __SetItem(int inIndex,Dynamic inValue) HXCPP_OVERRIDE;
+   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp) HXCPP_OVERRIDE;
 
    template<typename T>
    inline const T &set(int inIdx, const T &inVal)

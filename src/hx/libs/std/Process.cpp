@@ -11,7 +11,7 @@
 #   include <memory.h>
 #   include <errno.h>
 #   include <signal.h>
-#   if defined(ANDROID) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
+#   if defined(ANDROID) || defined(BLACKBERRY) || defined(__EMSCRIPTEN__)
 #      include <sys/wait.h>
 #   elif !defined(NEKO_MAC)
 #      include <wait.h>
@@ -97,7 +97,7 @@ struct vprocess : public hx::Object
       ((vprocess *)(obj.mPtr))->destroy();
    }
 
-   String toString() { return HX_CSTRING("vprocess"); }
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING("vprocess"); }
 };
 
 vprocess *getProcess(Dynamic handle)
@@ -121,6 +121,7 @@ vprocess *getProcess(Dynamic handle)
 } // end anon namespace
 
 
+#ifdef NEKO_WINDOWS
 
 template<typename T>
 static String TQuoted(const T *ptr, int len)
@@ -173,6 +174,7 @@ static String quoteString(String v)
    return TQuoted(v.raw_ptr(),v.length);
 }
 
+#endif
 
 
 /**

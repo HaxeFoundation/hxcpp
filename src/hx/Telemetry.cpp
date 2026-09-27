@@ -8,7 +8,8 @@
 #include <hx/Telemetry.h>
 #include <hx/OS.h>
 #include <mutex>
-
+#include <thread>
+#include <chrono>
 
 namespace hx
 {
@@ -67,7 +68,9 @@ public:
    
         gThreadRefCount += 1;
         if (gThreadRefCount == 1) {
-            HxCreateDetachedThread(ProfileMainLoop, 0);
+            std::thread thread(ProfileMainLoop);
+
+            thread.detach();
         }
     }
 
@@ -284,26 +287,16 @@ private:
     int GetNameIdx(const char *fullName);
     int ComputeCallStackId();
 
-    static THREAD_FUNC_TYPE ProfileMainLoop(void *)
+    static void ProfileMainLoop()
     {
         int millis = 1;
 
-        while (gThreadRefCount > 0) { 
-#ifdef HX_WINDOWS
-            Sleep(millis);
-#else
-            struct timespec t;
-            struct timespec tmp;
-            t.tv_sec = 0;
-            t.tv_nsec = millis * 1000000;
-            nanosleep(&t, &tmp);
-#endif
+        while (gThreadRefCount > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(millis));
 
             int count = gProfileClock + 1;
             gProfileClock = (count < 0) ? 0 : count;
         }
-
-        THREAD_FUNC_RET
     }
 
     StackContext *stack;

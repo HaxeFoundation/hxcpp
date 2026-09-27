@@ -148,6 +148,10 @@ class BuildTool
             m32 = arch=="x86";
             arm64 = arch=="arm64";
          }
+         else if (mDefines.exists("android"))
+         {
+            arm64 = true;
+         }
          else
          {
             var hostArch = getArch();
@@ -1237,6 +1241,8 @@ class BuildTool
                     if (el.has.name)
                        s.mFlags.push(substitute(el.att.name));
                     s.mFlags.push(substitute(el.att.value));
+                case "outPre" : s.mOutPre = substitute(el.att.value);
+                case "outPost" : s.mOutPost = substitute(el.att.value);
                 case "exe" : s.mExe = substitute((el.att.name));
             }
       }
@@ -1257,6 +1263,7 @@ class BuildTool
                     if (el.has.name)
                        s.mFlags.push(substitute(el.att.name));
                     s.mFlags.push(substitute(el.att.value));
+                case "ext" : s.mExt = substitute(el.att.value);
                 case "exe" : s.mExe = substitute((el.att.name));
             }
       }
@@ -2159,7 +2166,15 @@ class BuildTool
       {
          set64(defines,m64, arm64);
          // Cross-compile?
-         if (defines.exists("linux"))
+         if (defines.exists("windows"))
+         {
+            defines.set("mac_host","1");
+            defines.set("mingw", "mingw");
+            defines.set("toolchain","mingw");
+            defines.set("xcompile","1");
+            defines.set("BINDIR", arm64 ? "WindowsArm64" : m64 ? "Windows64":"Windows");
+         }
+         else if (defines.exists("linux"))
          {
             defines.set("mac_host","1");
             defines.set("linux","linux");

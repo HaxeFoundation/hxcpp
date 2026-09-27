@@ -9,7 +9,7 @@
 <set name="ARCH" value ="-64" if="HXCPP_ARM64" />
 
 <set name="HXCPP_USE_LIBTOOL" value="1" />
-<set name="HXCPP_LIBTOOL" value="xcrun --sdk iphoneos${IPHONE_VER} libtool" />
+<set name="HXCPP_LIBTOOL" value="xcrun --sdk iphoneos${IPHONE_VER} libtool -no_warning_for_no_symbols" />
 <include name="toolchain/gcc-toolchain.xml"/>
 <!--<path name="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/usr/bin" />-->
 

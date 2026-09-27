@@ -7,7 +7,6 @@
  <flag value="-DHXCPP_ARMV7" if="HXCPP_ARMV7"/>
  <flag value="-DHXCPP_M64" if="HXCPP_M64||HXCPP_ARM64||HXCPP_X86_64"/>
  <flag value="-DHXCPP_VISIT_ALLOCS" tag="haxe" />
- <flag value="-Dhaxe_210" if="haxe_210" tag="haxe" />
  <flag value="-DHXCPP_FLOAT32" if="HXCPP_FLOAT32" tag="haxe" />
  <flag value="-DHXCPP_CHECK_POINTER" if="HXCPP_CHECK_POINTER" tag="haxe" />
  <flag value="-DHXCPP_STACK_TRACE" if="HXCPP_STACK_TRACE" tag="haxe" />

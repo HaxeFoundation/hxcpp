@@ -3,7 +3,7 @@
 
 #include <hx/Scriptable.h>
 #include <hx/GC.h>
-#include <hx/Unordered.h>
+#include <unordered_set>
 #include <stdio.h>
 #include <vector>
 #include <string>
@@ -217,12 +217,12 @@ typedef std::vector<CppiaExpr *> Expressions;
 struct CppiaDynamicExpr : public CppiaExpr
 {
    inline CppiaDynamicExpr(const CppiaExpr *inSrc=0) : CppiaExpr(inSrc) {}
-   const char *getName() = 0;
-   int         runInt(CppiaCtx *ctx);
-   Float       runFloat(CppiaCtx *ctx);
-   ::String    runString(CppiaCtx *ctx);
-   void        runVoid(CppiaCtx *ctx);
-   hx::Object *runObject(CppiaCtx *ctx) = 0;
+   const char *getName() HXCPP_OVERRIDE = 0;
+   int         runInt(CppiaCtx *ctx) HXCPP_OVERRIDE;
+   Float       runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE;
+   ::String    runString(CppiaCtx *ctx) HXCPP_OVERRIDE;
+   void        runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE;
+   hx::Object *runObject(CppiaCtx *ctx)  HXCPP_OVERRIDE= 0;
 };
 
 
@@ -232,8 +232,8 @@ struct ArrayBuiltinBase : public CppiaExpr
    Expressions args;
 
    ArrayBuiltinBase(CppiaExpr *inSrc, CppiaExpr *inThisExpr, Expressions &ioExpressions);
-   const char *getName();
-   CppiaExpr *link(CppiaModule &inData);
+   const char *getName() HXCPP_OVERRIDE;
+   CppiaExpr *link(CppiaModule &inData) HXCPP_OVERRIDE;
 };
 
 CppiaExpr *createArrayAnyBuiltin(CppiaExpr *src,
@@ -288,7 +288,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    ScriptCallable(CppiaModule &inModule,ScriptNamedFunction *inFunction);
    ~ScriptCallable();
 
-   CppiaExpr *link(CppiaModule &inModule);
+   CppiaExpr *link(CppiaModule &inModule) HXCPP_OVERRIDE;
 
    #ifdef HXCPP_STACK_SCRIPTABLE
    void getScriptableVariables(unsigned char *inFrame, Array<Dynamic> outNames);
@@ -298,14 +298,14 @@ struct ScriptCallable : public CppiaDynamicExpr
 
    static int Hash(int value, const char *inString);
    ExprType getReturnType() { return returnType; }
-   ExprType getType() { return etObject; }
+   ExprType getType() HXCPP_OVERRIDE { return etObject; }
 
 
    #ifdef CPPIA_JIT
    void compile();
    void genDefaults(CppiaCompiler *compiler);
    void genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Expressions &inArgs, const JitVal &inThisVal);
-   void genCode(CppiaCompiler *compiler,const JitVal &inDest=JitVal(),ExprType type=etNull);
+   void genCode(CppiaCompiler *compiler,const JitVal &inDest=JitVal(),ExprType type=etNull) HXCPP_OVERRIDE;
    #endif
 
 
@@ -313,11 +313,11 @@ struct ScriptCallable : public CppiaDynamicExpr
    void pushArgsDynamic(CppiaCtx *ctx, hx::Object *inThis, Array<Dynamic> &inArgs);
 
    // Return the closure
-   hx::Object *runObject(CppiaCtx *ctx);
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE;
 
-   const char *getName();
-   String runString(CppiaCtx *ctx);
-   void runVoid(CppiaCtx *ctx);
+   const char *getName() HXCPP_OVERRIDE;
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE;
+   void runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE;
 
 
    // Run the actual function
@@ -372,7 +372,7 @@ public:
    std::vector< TypeData * >       types;
    std::vector< CppiaClassInfo * > classes;
    std::vector< CppiaExpr * >      markable;
-   hx::UnorderedSet<int>           allFileIds;
+   std::unordered_set<int>           allFileIds;
    typedef std::map< std::string, int > InterfaceSlots;
    InterfaceSlots                  interfaceSlots;
 
@@ -601,7 +601,7 @@ public:
    static void link();
 #ifndef NATIVE_CLASS_OVERRIDES_MARKED
 private:
-   void addVtableEntries( std::vector<std::string> &outVtable, hx::UnorderedSet<std::string> &outMethodsSet);
+   void addVtableEntries( std::vector<std::string> &outVtable, std::unordered_set<std::string> &outMethodsSet);
 #endif
 };
 

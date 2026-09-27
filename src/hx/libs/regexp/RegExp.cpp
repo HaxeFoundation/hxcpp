@@ -133,9 +133,9 @@ struct pcredata : public hx::Object
       #endif
    }
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(string); HX_MARK_MEMBER(expr); }
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER(string); HX_MARK_MEMBER(expr); }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(string); HX_VISIT_MEMBER(expr); }
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(string); HX_VISIT_MEMBER(expr); }
    #endif
 
    static void finalize(Dynamic obj)
@@ -143,7 +143,7 @@ struct pcredata : public hx::Object
       ((pcredata *)(obj.mPtr))->destroy();
    }
 
-   String toString() { return expr; }
+   String toString() HXCPP_OVERRIDE { return expr; }
 };
 
 

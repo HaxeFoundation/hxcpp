@@ -1,6 +1,10 @@
 #include <hxcpp.h>
 #include "Cppia.h"
 
+#if (HXCPP_API_LEVEL>=500)
+#include <hx/thread/Thread.hpp>
+#endif
+
 namespace hx
 {
 
@@ -19,15 +23,15 @@ public:
 
    IntBuiltin1(CppiaExpr *inSrc, Expressions &inArgs) : CppiaExpr(inSrc), args(inArgs) { }
 
-   const char *getName() { return "IntBuiltin1"; }
-   ExprType getType() { return etInt; }
+   const char *getName() HXCPP_OVERRIDE { return "IntBuiltin1"; }
+   ExprType getType() HXCPP_OVERRIDE { return etInt; }
 
-   void runVoid(CppiaCtx *ctx) { runInt(ctx); }
-   Float runFloat(CppiaCtx *ctx) { return runInt(ctx); }
-   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx)).mPtr; }
-   String runString(CppiaCtx *ctx) { return String(runInt(ctx)); }
+   void runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE { runInt(ctx); }
+   Float runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE { return runInt(ctx); }
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE { return Dynamic(runInt(ctx)).mPtr; }
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE { return String(runInt(ctx)); }
 
-   int runInt(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       ARG0 val0;
       runValue(val0, ctx, args[0]);
@@ -45,15 +49,15 @@ public:
 
    IntBuiltin2(CppiaExpr *inSrc, Expressions &inArgs) : CppiaExpr(inSrc), args(inArgs) { }
 
-   const char *getName() { return "IntBuiltin2"; }
-   ExprType getType() { return etInt; }
+   const char *getName() HXCPP_OVERRIDE { return "IntBuiltin2"; }
+   ExprType getType() HXCPP_OVERRIDE { return etInt; }
 
-   void runVoid(CppiaCtx *ctx) { runInt(ctx); }
-   Float runFloat(CppiaCtx *ctx) { return runInt(ctx); }
-   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx)).mPtr; }
-   String runString(CppiaCtx *ctx) { return String(runInt(ctx)); }
+   void runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE { runInt(ctx); }
+   Float runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE { return runInt(ctx); }
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE { return Dynamic(runInt(ctx)).mPtr; }
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE { return String(runInt(ctx)); }
 
-   int runInt(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       ARG0 val0;
       runValue(val0, ctx, args[0]);
@@ -75,14 +79,14 @@ public:
 
    VoidBuiltin1(CppiaExpr *inSrc, Expressions &inArgs) : CppiaExpr(inSrc), args(inArgs) { }
 
-   const char *getName() { return "VoidBuiltin1"; }
-   ExprType getType() { return etVoid; }
+   const char *getName() HXCPP_OVERRIDE { return "VoidBuiltin1"; }
+   ExprType getType() HXCPP_OVERRIDE { return etVoid; }
 
-   int runInt(CppiaCtx *ctx) { runVoid(ctx); return 0; }
-   Float runFloat(CppiaCtx *ctx) { runVoid(ctx); return 0;}
-   hx::Object *runObject(CppiaCtx *ctx) { runVoid(ctx); return 0; }
-   String runString(CppiaCtx *ctx) { runVoid(ctx); return String(); }
-   void runVoid(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE { runVoid(ctx); return 0; }
+   Float runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE { runVoid(ctx); return 0;}
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE { runVoid(ctx); return 0; }
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE { runVoid(ctx); return String(); }
+   void runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       ARG0 val0;
       runValue(val0, ctx, args[0]);
@@ -101,14 +105,14 @@ public:
 
    VoidBuiltin2(CppiaExpr *inSrc, Expressions &inArgs) : CppiaExpr(inSrc), args(inArgs) { }
 
-   const char *getName() { return "VoidBuiltin2"; }
-   ExprType getType() { return etVoid; }
+   const char *getName() HXCPP_OVERRIDE { return "VoidBuiltin2"; }
+   ExprType getType() HXCPP_OVERRIDE { return etVoid; }
 
-   int runInt(CppiaCtx *ctx) { runVoid(ctx); return 0; }
-   Float runFloat(CppiaCtx *ctx) { runVoid(ctx); return 0;}
-   hx::Object *runObject(CppiaCtx *ctx) { runVoid(ctx); return 0; }
-   String runString(CppiaCtx *ctx) { runVoid(ctx); return String(); }
-   void runVoid(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE { runVoid(ctx); return 0; }
+   Float runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE { runVoid(ctx); return 0;}
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE { runVoid(ctx); return 0; }
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE { runVoid(ctx); return String(); }
+   void runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       ARG0 val0;
       runValue(val0, ctx, args[0]);
@@ -129,14 +133,14 @@ public:
 
    VoidBuiltin3(CppiaExpr *inSrc, Expressions &inArgs) : CppiaExpr(inSrc), args(inArgs) { }
 
-   const char *getName() { return "VoidBuiltin3"; }
-   ExprType getType() { return etVoid; }
+   const char *getName() HXCPP_OVERRIDE { return "VoidBuiltin3"; }
+   ExprType getType() HXCPP_OVERRIDE { return etVoid; }
 
-   int runInt(CppiaCtx *ctx) { runVoid(ctx); return 0; }
-   Float runFloat(CppiaCtx *ctx) { runVoid(ctx); return 0;}
-   hx::Object *runObject(CppiaCtx *ctx) { runVoid(ctx); return 0; }
-   String runString(CppiaCtx *ctx) { runVoid(ctx); return String(); }
-   void runVoid(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE { runVoid(ctx); return 0; }
+   Float runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE { runVoid(ctx); return 0;}
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE { runVoid(ctx); return 0; }
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE { runVoid(ctx); return String(); }
+   void runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       ARG0 val0;
       runValue(val0, ctx, args[0]);
@@ -159,7 +163,7 @@ public:
          __hxcpp_memory_set_double(inBuffer,inAddr,*inValue);
    }
 
-   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType) HXCPP_OVERRIDE
    {
       JitTemp obj(compiler,jtPointer);
       args[0]->genCode(compiler, obj, etObject);
@@ -185,14 +189,14 @@ public:
 
    FloatBuiltin0(CppiaExpr *inSrc, Expressions &inArgs) : CppiaExpr(inSrc), args(inArgs) { }
 
-   const char *getName() { return "FloatBuiltin0"; }
-   ExprType getType() { return etFloat; }
+   const char *getName() HXCPP_OVERRIDE { return "FloatBuiltin0"; }
+   ExprType getType() HXCPP_OVERRIDE { return etFloat; }
 
-   int runInt(CppiaCtx *ctx) { return runFloat(ctx); }
-   void runVoid(CppiaCtx *ctx) { runFloat(ctx); }
-   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
-   String runString(CppiaCtx *ctx) { return String(runFloat(ctx)); }
-   Float runFloat(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE { return runFloat(ctx); }
+   void runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE { runFloat(ctx); }
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE { return Dynamic(runFloat(ctx)).mPtr; }
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE { return String(runFloat(ctx)); }
+   Float runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       return  FUNC();
    }
@@ -202,7 +206,7 @@ public:
       *outResult = FUNC();
    }
 
-   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType) HXCPP_OVERRIDE
    {
       if (destType==etFloat && isMemoryVal(inDest) )
       {
@@ -226,14 +230,14 @@ public:
 
    FloatBuiltin1(CppiaExpr *inSrc, Expressions &inArgs) : CppiaExpr(inSrc), args(inArgs) { }
 
-   const char *getName() { return "FloatBuiltin1"; }
-   ExprType getType() { return etFloat; }
+   const char *getName() HXCPP_OVERRIDE { return "FloatBuiltin1"; }
+   ExprType getType() HXCPP_OVERRIDE { return etFloat; }
 
-   int runInt(CppiaCtx *ctx) { return runFloat(ctx); }
-   void runVoid(CppiaCtx *ctx) { runFloat(ctx); }
-   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
-   String runString(CppiaCtx *ctx) { return String(runFloat(ctx)); }
-   Float runFloat(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE { return runFloat(ctx); }
+   void runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE { runFloat(ctx); }
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE { return Dynamic(runFloat(ctx)).mPtr; }
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE { return String(runFloat(ctx)); }
+   Float runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       ARG0 val0;
       runValue(val0, ctx, args[0]);
@@ -252,14 +256,14 @@ public:
 
    FloatBuiltin2(CppiaExpr *inSrc, Expressions &inArgs) : CppiaExpr(inSrc), args(inArgs) { }
 
-   const char *getName() { return "FloatBuiltin2"; }
-   ExprType getType() { return etFloat; }
+   const char *getName() HXCPP_OVERRIDE { return "FloatBuiltin2"; }
+   ExprType getType() HXCPP_OVERRIDE { return etFloat; }
 
-   int runInt(CppiaCtx *ctx) { return runFloat(ctx); }
-   void runVoid(CppiaCtx *ctx) { runFloat(ctx); }
-   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
-   String runString(CppiaCtx *ctx) { return String(runFloat(ctx)); }
-   Float runFloat(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE { return runFloat(ctx); }
+   void runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE { runFloat(ctx); }
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE { return Dynamic(runFloat(ctx)).mPtr; }
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE { return String(runFloat(ctx)); }
+   Float runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       ARG0 val0;
       runValue(val0, ctx, args[0]);
@@ -280,14 +284,14 @@ public:
 
    FloatBuiltin3(CppiaExpr *inSrc, Expressions &inArgs) : CppiaExpr(inSrc), args(inArgs) { }
 
-   const char *getName() { return "FloatBuiltin3"; }
-   ExprType getType() { return etFloat; }
+   const char *getName() HXCPP_OVERRIDE { return "FloatBuiltin3"; }
+   ExprType getType() HXCPP_OVERRIDE { return etFloat; }
 
-   int runInt(CppiaCtx *ctx) { return runFloat(ctx); }
-   void runVoid(CppiaCtx *ctx) { runFloat(ctx); }
-   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
-   String runString(CppiaCtx *ctx) { return String(runFloat(ctx)); }
-   Float runFloat(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx) HXCPP_OVERRIDE { return runFloat(ctx); }
+   void runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE { runFloat(ctx); }
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE { return Dynamic(runFloat(ctx)).mPtr; }
+   String runString(CppiaCtx *ctx) HXCPP_OVERRIDE { return String(runFloat(ctx)); }
+   Float runFloat(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       ARG0 val0;
       runValue(val0, ctx, args[0]);
@@ -326,10 +330,10 @@ public:
 
    ObjectBuiltin1(CppiaExpr *inSrc, Expressions &inArgs) : CppiaDynamicExpr(inSrc), args(inArgs) { }
 
-   const char *getName() { return "ObjectBuiltin1"; }
-   ExprType getType() { return etObject; }
+   const char *getName() HXCPP_OVERRIDE { return "ObjectBuiltin1"; }
+   ExprType getType() HXCPP_OVERRIDE { return etObject; }
 
-   hx::Object *runObject(CppiaCtx *ctx)
+   hx::Object *runObject(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
       ARG0 val0;
       runValue(val0, ctx, args[0]);
@@ -382,17 +386,11 @@ CppiaExpr *createGlobalBuiltin(CppiaExpr *src, String function, Expressions &ioE
    {
       if (ioExpressions.size()==1)
 #if (HXCPP_API_LEVEL>=500)
-         return new ObjectBuiltin1<Callable<void(void)>, Dynamic, __hxcpp_thread_create>(src, ioExpressions);
+          return new ObjectBuiltin1<hx::Callable<void(void)>, hx::thread::Thread, hx::thread::Thread_obj::create>(src, ioExpressions);
 #else
-         return new ObjectBuiltin1<Dynamic, Dynamic, __hxcpp_thread_create>(src, ioExpressions);
+          return new ObjectBuiltin1<Dynamic, Dynamic, __hxcpp_thread_create>(src, ioExpressions);
 #endif
    }
-   if (function==HX_CSTRING("__hxcpp_thread_send") )
-   {
-      if (ioExpressions.size()==2)
-         return new VoidBuiltin2<Dynamic,Dynamic,__hxcpp_thread_send>(src,ioExpressions);
-   }
-
 
    printf("Unknown function : %s(%d)\n", function.out_str(), (int)ioExpressions.size() );
    throw (HX_CSTRING("Unknown global:") + function).utf8_str();

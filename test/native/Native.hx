@@ -18,6 +18,8 @@ class Native
 			new tests.TestNativeEnum(),
 
 			#if (haxe_ver>=5)
+            new tests.TestScratch(),
+
             new tests.marshalling.classes.TestLocalValueType(),
             new tests.marshalling.classes.TestClassValueType(),
             new tests.marshalling.classes.TestInterfaceValueType(),

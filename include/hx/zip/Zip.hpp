@@ -4,6 +4,8 @@
 #include <hxcpp.h>
 #endif
 
+#include <cpp/marshal/View.hpp>
+
 HX_DECLARE_CLASS2(hx, zip, Zip)
 
 namespace hx

@@ -80,4 +80,26 @@ class TestStringHash extends Test
       Assert.pass();
    }
 
+   public function testUnicode()
+   {
+		for (literal in ["á", "👍"]) {
+			var fromJson:String = haxe.Json.parse('\"$literal\"');
+			var fromBytes = haxe.io.Bytes.ofString(literal).toString();
+
+			Assert.equals(literal, fromJson);
+			Assert.equals(fromJson, fromBytes);
+			Assert.equals(literal, fromBytes);
+
+			var m = new Map<String, Int>();
+			m[literal] = 1;
+
+			Assert.isTrue(m.exists(literal));
+			Assert.isTrue(m.exists(fromJson));
+			Assert.isTrue(m.exists(fromBytes));
+
+			Assert.equals(1, m[literal]);
+			Assert.equals(1, m[fromJson]);
+			Assert.equals(1, m[fromBytes]);
+      }
+   }
 }

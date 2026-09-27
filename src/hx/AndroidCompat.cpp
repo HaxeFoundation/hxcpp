@@ -1,3 +1,5 @@
+#if (HXCPP_ANDROID_PLATFORM>=21) && !defined(HXCPP_M64)
+
 #include <hxcpp.h>
 #include <limits>
 #include <stdlib.h>
@@ -6,12 +8,12 @@
 #include <dlfcn.h>
 #include <android/log.h>
 
-// These functions are inlined prior to android-ndk-platform-21, which means they
-// are missing from the libc functions on those phones, and you will get link errors.
-
-#if (HXCPP_ANDROID_PLATFORM>=21) && !defined(HXCPP_ARM64)
 extern "C" {
 
+// These functions are inlined prior to android-ndk-platform-21, which means they
+// are missing from the libc functions on those older versions.
+// If platform 21+ binaries are included in a build targetting an older platform,
+// this file adds those missing symbols so the platform 21+ objects link without errors.
 
 char * stpcpy(char *dest, const char *src)
 {
@@ -33,8 +35,11 @@ double atof(const char *nptr)
 {
     return (strtod(nptr, 0));
 }
-// extern __sighandler_t bsd_signal(int, __sighandler_t);
 
+// For bsd_signal, the problem was that it was missing from libc versions for platform 21
+// and above, until it was restored in ndk r13 for compatibilty.
+
+#ifdef HXCPP_ANDROID_COMPAT_BSD_SIGNAL
 
 typedef __sighandler_t (*bsd_signal_func_t)(int, __sighandler_t);
 bsd_signal_func_t bsd_signal_func = 0;
@@ -43,7 +48,7 @@ __sighandler_t bsd_signal(int s, __sighandler_t f)
 {
  if (bsd_signal_func == 0)
  {
-   // For now (up to Android 7.0) this is always available 
+   // For now (up to Android 7.0) this is always available
    bsd_signal_func = (bsd_signal_func_t) dlsym(RTLD_DEFAULT, "bsd_signal");
 
    if (bsd_signal_func == 0)
@@ -65,5 +70,8 @@ __sighandler_t signal(int s, __sighandler_t f)
 }
 
 }
+
+#endif
+
 #endif
 

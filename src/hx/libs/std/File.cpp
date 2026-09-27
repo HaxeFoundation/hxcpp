@@ -48,9 +48,9 @@ struct fio : public hx::Object
       name = String();
    }
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(name); }
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER(name); }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(name); }
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(name); }
    #endif
 
    static void finalize(Dynamic inObj)
@@ -58,7 +58,7 @@ struct fio : public hx::Object
       ((fio *)(inObj.mPtr))->destroy();
    }
 
-   String toString() { return HX_CSTRING("fio:") + name; }
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING("fio:") + name; }
 
 };
 

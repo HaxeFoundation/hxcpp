@@ -21,7 +21,7 @@
 #else
 
 #include <wchar.h>
-#ifndef EMSCRIPTEN
+#ifndef __EMSCRIPTEN__
 typedef  int64_t  __int64;
 #endif
 

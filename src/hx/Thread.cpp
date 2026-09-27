@@ -1,5 +1,7 @@
 #include <hxcpp.h>
 
+#if (HXCPP_API_LEVEL<500)
+
 #include <hx/Thread.h>
 #include <time.h>
 #include <hx/thread/ConditionVariable.hpp>
@@ -34,7 +36,7 @@ struct Deque : public Array_obj<Dynamic>
 	}
 
    #ifdef HXCPP_VISIT_ALLOCS
-  	void __Visit(hx::VisitContext *__inCtx)
+	void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE
 	{
 		Array_obj<Dynamic>::__Visit(__inCtx);
 		mFinalizer->Visit(__inCtx);
@@ -63,7 +65,7 @@ struct Deque : public Array_obj<Dynamic>
 		mSemaphore.Set();
 	}
 
-	
+
 	Dynamic PopFront(bool inBlock)
 	{
 		hx::EnterGCFreeZone();
@@ -104,7 +106,7 @@ struct Deque : public Array_obj<Dynamic>
 		mSemaphore.QSet();
 	}
 
-	
+
 	Dynamic PopFront(bool inBlock)
 	{
 		hx::EnterGCFreeZone();
@@ -154,11 +156,7 @@ Dynamic __hxcpp_deque_pop(Dynamic q,bool block)
 
 // --- Thread ----------------------------------------------------------
 
-#if (HXCPP_API_LEVEL>=500)
-Dynamic __hxcpp_thread_create(hx::Callable<void()> inStart)
-#else
 Dynamic __hxcpp_thread_create(Dynamic inStart)
-#endif
 {
 	return hx::thread::Thread_obj::create(inStart);
 }
@@ -250,7 +248,7 @@ Dynamic __hxcpp_condition_create(void)
 void __hxcpp_condition_acquire(Dynamic inCond)
 {
 	auto condition = inCond.Cast<hx::thread::ConditionVariable>();
-  
+
 	condition->acquire();
 }
 bool __hxcpp_condition_try_acquire(Dynamic inCond)
@@ -303,7 +301,7 @@ public:
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdLock };
 
    #ifdef HXCPP_VISIT_ALLOCS
-	void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
+	void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { mFinalizer->Visit(__inCtx); }
    #endif
 
 	hx::InternalFinalizer *mFinalizer;
@@ -404,6 +402,8 @@ int __hxcpp_GetCurrentThreadNumber()
 	return hx::thread::Thread_obj::id();
 }
 
+#endif
+
 // --- Atomic ---
 
 bool _hx_atomic_exchange_if(::cpp::Pointer<cpp::AtomicInt> inPtr, int test, int  newVal )
@@ -420,5 +420,3 @@ int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr )
 {
    return _hx_atomic_sub(inPtr, 1);
 }
-
-

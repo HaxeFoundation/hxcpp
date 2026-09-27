@@ -189,30 +189,6 @@ namespace cpp
             void set(int64_t index, K value);
         };
 
-        template<class T>
-        struct View final
-        {
-            ::cpp::Pointer<T> ptr;
-            int64_t length;
-
-            View(::cpp::Pointer<T> _ptr, int64_t _length);
-
-            void clear() const;
-            void fill(T value) const;
-            bool isEmpty() const;
-            View<T> slice(int64_t index) const;
-            View<T> slice(int64_t index, int64_t length) const;
-            void copyTo(const View<T>& destination) const;
-            bool tryCopyTo(const View<T>& destination) const;
-            template<class K> View<K> reinterpret() const;
-            int compare(const View<T>& inRHS) const;
-
-            bool operator==(const View<T>& inRHS) const;
-            bool operator!=(const View<T>& inRHS) const;
-
-            T& operator[] (int64_t index) const;
-        };
-
         class RootHandle
         {
             ::hx::Object** object;

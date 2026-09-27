@@ -1,7 +1,10 @@
+import haxe.io.Path;
+
 class Stripper
 {
    public var mExe:String;
    public var mFlags:Array<String>;
+   public var mExt:String;
 
    public function new(inExe:String)
    {
@@ -11,6 +14,9 @@ class Stripper
 
    public function strip(inTarget:String)
    {
+      if (mExt!=null)
+         inTarget = Path.withoutExtension(inTarget) + "." + mExt;
+
       var args = new Array<String>();
       args = args.concat(mFlags);
       args.push(inTarget);

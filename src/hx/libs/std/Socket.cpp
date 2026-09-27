@@ -69,7 +69,7 @@ struct SocketWrapper : public hx::Object
 
    SOCKET socket;
 
-   int __GetType() const { return socketType; }
+   int __GetType() const HXCPP_OVERRIDE { return socketType; }
 };
 
 
@@ -384,7 +384,7 @@ int _hx_std_host_resolve( String host )
       struct hostent *h = 0;
       hx::strbuf hostBuf;
 
-#   if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
+#   if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(BLACKBERRY) || defined(__EMSCRIPTEN__)
       h = gethostbyname(host.utf8_str(&hostBuf));
 #   else
       struct hostent hbase;
@@ -522,7 +522,7 @@ String _hx_std_host_reverse( int host )
    struct hostent *h = 0;
    unsigned int ip = host;
    hx::EnterGCFreeZone();
-   #if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(ANDROID) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
+   #if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(ANDROID) || defined(BLACKBERRY) || defined(__EMSCRIPTEN__)
    h = gethostbyaddr((char *)&ip,4,AF_INET);
    #else
    struct hostent htmp;
@@ -543,7 +543,7 @@ String _hx_std_host_reverse_ipv6( Array<unsigned char> host )
 
    struct hostent *h = 0;
    hx::EnterGCFreeZone();
-   #if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(ANDROID) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
+   #if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(ANDROID) || defined(BLACKBERRY) || defined(__EMSCRIPTEN__)
    h = gethostbyaddr((char *)&host[0],16,AF_INET6);
    #else
    struct hostent htmp;
@@ -1122,19 +1122,19 @@ struct polldata : public hx::Object
       }
    }
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(ridx); HX_MARK_MEMBER(widx); }
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER(ridx); HX_MARK_MEMBER(widx); }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(ridx); HX_VISIT_MEMBER(widx); }
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(ridx); HX_VISIT_MEMBER(widx); }
    #endif
 
-   int __GetType() const { return pollType; }
+   int __GetType() const HXCPP_OVERRIDE { return pollType; }
 
    static void finalize(Dynamic obj)
    {
       ((polldata *)(obj.mPtr))->destroy();
    }
 
-   String toString() { return HX_CSTRING("polldata"); }
+   String toString() HXCPP_OVERRIDE { return HX_CSTRING("polldata"); }
 };
 
 polldata *val_poll(Dynamic o)

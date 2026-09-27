@@ -43,11 +43,11 @@ void HaxeNativeClass::addVtableEntries( std::vector<std::string> &outVtable)
 }
 #else
 void HaxeNativeClass::addVtableEntries(std::vector<std::string>& outVtable) {
-   hx::UnorderedSet<std::string> methodsSet;
+   std::unordered_set<std::string> methodsSet;
    addVtableEntries(outVtable, methodsSet);
 }
 
-void HaxeNativeClass::addVtableEntries( std::vector<std::string> &outVtable,  hx::UnorderedSet<std::string>& outMethodsSet)
+void HaxeNativeClass::addVtableEntries( std::vector<std::string> &outVtable,  std::unordered_set<std::string>& outMethodsSet)
 {
    if (haxeSuper)
       haxeSuper->addVtableEntries(outVtable, outMethodsSet);

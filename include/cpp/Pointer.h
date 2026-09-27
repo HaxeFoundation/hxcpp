@@ -215,7 +215,10 @@ public:
       hx::Object *obj = inVariant.asObject();
       ptr = obj  ? (T*)inVariant.valObject->__GetHandle() : 0;
    }
+
+#if (HXCPP_API_LEVEL >= 500)
    inline Pointer(const ::cpp::marshal::PointerReference<T>);
+#endif
 
    template<typename O>
    inline Pointer( const O *inValue ) : ptr( (T*) inValue) { }
@@ -503,7 +506,7 @@ public:
    }
 
    template<typename T>
-	inline static AutoCast ofArray(::Array<T> array)  { return AutoCast(&array[0]); }
+	inline static AutoCast ofArray(::Array<T> array)  { return AutoCast(array->Pointer()); }
 	inline static AutoCast ofArray(Dynamic inVal)
    {
       if (inVal==null() || !inVal->__IsArray())
@@ -512,12 +515,13 @@ public:
       return AutoCast(base->GetBase());
    }
 
-
+#if (HXCPP_API_LEVEL >= 500)
     template<typename T>
     inline static Pointer<T> addressOf(const ::cpp::marshal::ValueReference<T>&);
 
     template<typename T>
     inline static Pointer<T*> addressOf(const ::cpp::marshal::PointerReference<T>&);
+#endif
 
    template<typename T>
 	inline static Pointer<T> addressOf(T &value)  { return Pointer<T>(&value); }

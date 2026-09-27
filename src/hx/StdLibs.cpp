@@ -8,7 +8,7 @@
 #include <io.h>
 #elif defined(__unix__) || defined(__APPLE__)
 #include <sys/time.h>
-#ifndef EMSCRIPTEN
+#ifndef __EMSCRIPTEN__
 typedef int64_t __int64;
 #endif
 #endif
@@ -31,12 +31,6 @@ typedef int64_t __int64;
 #include <time.h>
 #include <clocale>
 #include <mutex>
-
-
-#ifdef HX_ANDROID
-#define rand() lrand48()
-#define srand(x) srand48(x)
-#endif
 
 #ifdef HX_WINRT
 #define PRINTF WINRT_PRINTF
@@ -704,7 +698,7 @@ bool __instanceof(const Dynamic &inValue, const Dynamic &inType)
 
 int __int__(double x)
 {
-   #ifndef EMSCRIPTEN
+   #ifndef __EMSCRIPTEN__
    if (x < -0x7fffffff || x>0x7fffffff )
    {
       __int64 big_int = (__int64)(x);
@@ -815,17 +809,17 @@ struct VarArgFunc : public hx::Object
    }
 #endif
 
-   int __GetType() const { return vtFunction; }
-   ::String __ToString() const { return mRealFunc->__ToString() ; }
+   int __GetType() const HXCPP_OVERRIDE { return vtFunction; }
+   ::String __ToString() const HXCPP_OVERRIDE { return mRealFunc->__ToString(); }
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mRealFunc); }
+   void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE { HX_MARK_MEMBER(mRealFunc); }
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mRealFunc); }
+   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE { HX_VISIT_MEMBER(mRealFunc); }
    #endif
 
-   void *__GetHandle() const { return mRealFunc.GetPtr(); }
-   Dynamic __Run(const Array<Dynamic> &inArgs)
+   void *__GetHandle() const HXCPP_OVERRIDE { return mRealFunc.GetPtr(); }
+   Dynamic __Run(const Array<Dynamic> &inArgs) HXCPP_OVERRIDE
    {
 #if (HXCPP_API_LEVEL>=500)
        return hx::invoker::invoke(mRealFunc.mPtr, inArgs);
@@ -907,7 +901,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
       sgFieldToStringAlloc *= 2;
       String *newData = (String *)malloc(sgFieldToStringAlloc*sizeof(String));
       if (oldAlloc)
-         memcpy(newData, oldData, oldAlloc*sizeof(String));
+         memcpy((void *)newData, oldData, oldAlloc*sizeof(String));
       // Let oldData dangle to keep it thread safe, rather than require mutex on id read.
       sgFieldToString = newData;
    }
