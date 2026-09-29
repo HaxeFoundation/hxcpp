@@ -459,6 +459,10 @@ DECLARE_FAST_TLS_DATA(StackContext, tlsStackContext);
 
 #ifdef HXCPP_SCRIPTABLE
 extern void scriptMarkStack(hx::MarkContext *);
+extern void scriptMarkModules(hx::MarkContext *);
+#ifdef HXCPP_VISIT_ALLOCS
+extern void scriptVisitModules(hx::VisitContext *);
+#endif
 #endif
 }
 
@@ -4268,6 +4272,9 @@ public:
          VisitLocalAlloc(mLocalAllocs[i], inCtx);
 
       hx::VisitClassStatics(inCtx);
+      #ifdef HXCPP_SCRIPTABLE
+      hx::scriptVisitModules(inCtx);
+      #endif
 
       for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
       {
@@ -4712,6 +4719,9 @@ public:
       mMarker.init();
 
       hx::MarkClassStatics(&mMarker);
+      #ifdef HXCPP_SCRIPTABLE
+      hx::scriptMarkModules(&mMarker);
+      #endif
 
       {
       hx::AutoMarkPush info(&mMarker,"Roots","root");
