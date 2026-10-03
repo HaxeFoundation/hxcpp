@@ -14,6 +14,19 @@ class ClientFoo implements IFoo {
    }
 }
 
+class ClientNursery {
+
+   public var value:Dynamic;
+
+   public function new() {}
+
+   // With -jit, the jitted code allocates these in the nursery itself.
+   public static function allocate() {
+      new ClientNursery();
+      new ClientNursery();
+   }
+}
+
 class Client
 {
    public static var clientBool0 = true;
