@@ -1,15 +1,21 @@
 /**
- * A scriptable host whose `toString` takes an optional argument.
- *
- * hxcpp emits that as `toString(hx::Null<int>)`. The scriptable wrapper used to call
- * `toString()` with no arguments, which does not compile. `ZeroArgToString` keeps the
- * zero-argument form compiling too.
+ * Scriptable hosts whose `toString` takes parameters, which hide `hx::Object::toString()`
+ * in C++, and one whose `toString` takes none. The children inherit a hiding `toString`,
+ * so the scriptable wrapper generated for them cannot call `toString()` on its parent.
  */
 class OptionalToString {
 	public function new() {}
 
 	public function toString(indent:Int = 0):String {
 		return "indent" + indent;
+	}
+}
+
+class RequiredToString {
+	public function new() {}
+
+	public function toString(indent:Int, prefix:String):String {
+		return prefix + indent;
 	}
 }
 
@@ -20,3 +26,7 @@ class ZeroArgToString {
 		return "zero";
 	}
 }
+
+class OptionalToStringChild extends OptionalToString {}
+
+class RequiredToStringChild extends RequiredToString {}

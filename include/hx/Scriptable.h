@@ -221,9 +221,11 @@ void __Visit(HX_VISIT_PARAMS) HXCPP_OVERRIDE { super::__Visit(HX_VISIT_ARG); ::h
 
 
 /*
- * `toString` with a default argument is one C++ parameter (`hx::Null<int>`), not a
- * zero-argument method. Calling `__superString::toString()` then fails to compile.
- * The zero-argument form is preferred when it exists; otherwise the default is null.
+ * A Haxe `toString` with parameters, whatever they are, compiles to a C++ overload that
+ * hides `hx::Object::toString()` without overriding it. In a class that inherits it,
+ * `__superString` is that class, so `__superString::toString()` does not compile.
+ * Native code calling `toString()` on such an object reaches `hx::Object::toString()`,
+ * so the scriptable wrapper calls that one in this case.
  */
 template<typename T>
 inline auto _hx_scriptable_super_toString(T *inSelf, int) -> decltype(inSelf->T::toString(), ::String())
@@ -234,7 +236,7 @@ inline auto _hx_scriptable_super_toString(T *inSelf, int) -> decltype(inSelf->T:
 template<typename T>
 inline ::String _hx_scriptable_super_toString(T *inSelf, ...)
 {
-   return inSelf->T::toString(null());
+   return inSelf->::hx::Object::toString();
 }
 
 
