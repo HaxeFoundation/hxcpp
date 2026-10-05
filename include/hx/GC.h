@@ -283,17 +283,16 @@ void GCPrepareMultiThreaded();
 
 // Inline code tied to the immix implementation
 
+// Each line ast 128 bytes (2^7)
+constexpr uint8_t IMMIX_LINE_BITS{ 7 };
+constexpr uint8_t IMMIX_LINE_LEN{ 1 << IMMIX_LINE_BITS };
+
 namespace hx
 {
 
 #define HX_USE_INLINE_IMMIX_OPERATOR_NEW
 
 //#define HX_STACK_CTX ::hx::ImmixAllocator *_hx_stack_ctx =  ::hx::gMultiThreadMode ? ::hx::tlsImmixAllocator : ::hx::gMainThreadAlloc;
-
-
-// Each line ast 128 bytes (2^7)
-#define IMMIX_LINE_BITS    7
-#define IMMIX_LINE_LEN     (1<<IMMIX_LINE_BITS)
 
 #define HX_GC_REMEMBERED          0x40
 
