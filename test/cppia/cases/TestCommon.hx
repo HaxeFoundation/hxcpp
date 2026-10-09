@@ -1,6 +1,7 @@
 package cases;
 
 import cpp.cppia.Host;
+import cpp.vm.Gc;
 import utest.Test;
 import utest.Assert;
 
@@ -57,6 +58,19 @@ class TestCommon extends Test {
         Common.callback();
     
         Assert.equals(2, Common.callbackSet, 'Bad cppia closure');
+    }
+
+    @:depends(testStatus)
+    function testStackObjectAfterScriptAllocations() {
+        final nursery = Type.resolveClass('ClientNursery');
+        Reflect.callMethod(nursery, Reflect.field(nursery, 'allocate'), []);
+        // Only the stack references it, so only the nursery scan finds it.
+        final kept = [42];
+
+        Gc.run(false);
+        final junk = [for (i in 0...100000) [i]];
+
+        Assert.equals(42, kept[0]);
     }
 
     @:depends(testStatus)
