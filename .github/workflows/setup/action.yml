@@ -7,7 +7,7 @@ runs:
   using: composite
   steps:
     - name: install haxe
-      uses: krdlab/setup-haxe@v2
+      uses: krdlab/setup-haxe@9960aa0f0646f51d9f34389d0bbc1869264689c1
       with:
         haxe-version: ${{ inputs.haxe }}
 
