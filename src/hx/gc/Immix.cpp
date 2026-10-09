@@ -899,8 +899,22 @@ struct BlockDataInfo
    bool isEmpty() const { return mUsedRows == 0; }
    int getUsedRows() const { return mUsedRows; }
 
+   // A row count above the block's useful lines is corrupted GC state, about to be
+   // added into the heap stats that size working memory.
+   void checkRowCounts() const
+   {
+      #ifdef HXCPP_DEBUG
+      if (mUsedRows>IMMIX_USEFUL_LINES || mFraggedRows>IMMIX_USEFUL_LINES)
+      {
+         GCLOG("Bad block row counts: used %d, fragged %d, max %d\n", (int)mUsedRows, (int)mFraggedRows, (int)IMMIX_USEFUL_LINES);
+         DebuggerTrap();
+      }
+      #endif
+   }
+
    void getStats(BlockDataStats &outStats)
    {
+      checkRowCounts();
       outStats.rowsInUse += mUsedRows;
       outStats.bytesInUse += mUsedBytes;
       outStats.fraggedRows += mFraggedRows;
@@ -981,6 +995,7 @@ struct BlockDataInfo
 
       mZeroLock = 0;
       mOwned = false;
+      checkRowCounts();
       outStats.rowsInUse += mUsedRows;
       outStats.bytesInUse += mUsedBytes;
       outStats.fraggedRows += mFraggedRows;
@@ -1150,6 +1165,7 @@ struct BlockDataInfo
       mMoveScore = calcFragScore();
       mReclaimed = true;
 
+      checkRowCounts();
       if (outStats)
       {
          outStats->rowsInUse += mUsedRows;
