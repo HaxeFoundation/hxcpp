@@ -60,6 +60,15 @@ class TestCommon extends Test {
     }
 
     @:depends(testStatus)
+    function testHostToStringWithParameters() {
+        // As in native code, a toString with parameters is not the one Std.string calls.
+        Assert.equals('OptionalToStringChild', Std.string(new OptionalToString.OptionalToStringChild()));
+        Assert.equals('ClientOptionalToString', Std.string(Type.createInstance(Type.resolveClass('ClientOptionalToString'), [])));
+        Assert.equals('ClientRequiredToString', Std.string(Type.createInstance(Type.resolveClass('ClientRequiredToString'), [])));
+        Assert.equals('zero', Std.string(Type.createInstance(Type.resolveClass('ClientZeroArgToString'), [])));
+    }
+
+    @:depends(testStatus)
     function testInterfaceCalling() {
         final obj : IFoo = Type.createInstance(Type.resolveClass('ClientFoo'), []);
 
