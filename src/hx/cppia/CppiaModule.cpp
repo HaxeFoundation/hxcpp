@@ -355,6 +355,39 @@ public:
 };
 
 
+/*
+ A loaded module is an ordinary GC object, so a generational collection stops traversing it once it
+ is old. What it holds can still change after that: a literal boxes itself on first use, the JIT
+ embeds that box in its code, a script static is assigned. None of those writes has a barrier, so a
+ minor collection freed the young object while the old module still pointed at it.
+
+ So every loaded module is marked on every collection, the way class statics are.
+*/
+void scriptMarkModules(hx::MarkContext *__inCtx)
+{
+   if (!gAllCppiaModules.mPtr)
+      return;
+   for(int i=0;i<gAllCppiaModules->length;i++)
+   {
+      CppiaObject *module = static_cast<CppiaObject *>(gAllCppiaModules[i].mPtr);
+      if (module)
+         module->cppia->mark(__inCtx);
+   }
+}
+
+#ifdef HXCPP_VISIT_ALLOCS
+void scriptVisitModules(hx::VisitContext *__inCtx)
+{
+   if (!gAllCppiaModules.mPtr)
+      return;
+   for(int i=0;i<gAllCppiaModules->length;i++)
+   {
+      CppiaObject *module = static_cast<CppiaObject *>(gAllCppiaModules[i].mPtr);
+      if (module)
+         module->cppia->visit(__inCtx);
+   }
+}
+#endif
 
 
 CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
