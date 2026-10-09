@@ -40,6 +40,24 @@ jobs:
       - name: run
         run: bin${{ inputs.sep }}TestMain
 
+  big_blocks:
+    runs-on: ${{ inputs.os }}
+    name: haxe (big blocks)
+    defaults:
+      run:
+        working-directory: test/haxe
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
+      - name: build
+        run: haxe compile.hxml --debug -D HXCPP_GC_BIG_BLOCKS -D ${{ env.HXCPP_ARCH_FLAG }}
+      - name: run
+        run: bin${{ inputs.sep }}TestMain-debug
+
   cffi:
     runs-on: ${{ inputs.os }}
     name: cffi

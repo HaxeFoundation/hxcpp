@@ -12,6 +12,7 @@
 #include <thread>
 #include <condition_variable>
 #include <inttypes.h>
+#include <limits>
 
 #ifdef __EMSCRIPTEN__
    #include <emscripten/stack.h>
@@ -494,13 +495,13 @@ extern void scriptMarkStack(hx::MarkContext *);
    using BlockIdType = unsigned short;
 #endif
 
-constexpr uint16_t  IMMIX_BLOCK_SIZE{ 1 << IMMIX_BLOCK_BITS };
+constexpr uint32_t  IMMIX_BLOCK_SIZE{ 1 << IMMIX_BLOCK_BITS };
 constexpr uint16_t  IMMIX_BLOCK_OFFSET_MASK{ IMMIX_BLOCK_SIZE - 1 };
 constexpr uint8_t   IMMIX_LINE_COUNT_BITS{ IMMIX_BLOCK_BITS - IMMIX_LINE_BITS };
 constexpr uint16_t  IMMIX_LINES{ 1 << IMMIX_LINE_COUNT_BITS };
 constexpr uintptr_t IMMIX_BLOCK_BASE_MASK{ ~uintptr_t{ IMMIX_BLOCK_OFFSET_MASK } };
 constexpr uint8_t   IMMIX_HEADER_LINES{ IMMIX_LINES >> IMMIX_LINE_BITS };
-constexpr uint8_t   IMMIX_USEFUL_LINES{ IMMIX_LINES - IMMIX_HEADER_LINES };
+constexpr uint16_t  IMMIX_USEFUL_LINES{ IMMIX_LINES - IMMIX_HEADER_LINES };
 constexpr uint8_t   IMMIX_MAX_ALLOC_GROUPS_SIZE{ 1 << IMMIX_BLOCK_GROUP_BITS };
 
 // Every second line used
@@ -750,11 +751,11 @@ struct BlockDataInfo
    HoleRange    mRanges[MAX_HOLES];
    uint8_t      mHoles;
 
-   uint8_t      mUsedRows;
+   uint16_t     mUsedRows;
    uint16_t     mMaxHoleSize;
    int          mMoveScore;
    uint16_t     mUsedBytes;
-   uint8_t      mFraggedRows;
+   uint16_t     mFraggedRows;
    bool         mPinned;
    unsigned char mZeroed;
    bool         mReclaimed;
@@ -894,8 +895,22 @@ struct BlockDataInfo
    bool isEmpty() const { return mUsedRows == 0; }
    int getUsedRows() const { return mUsedRows; }
 
+   // A row count above the block's useful lines is corrupted GC state, about to be
+   // added into the heap stats that size working memory.
+   void checkRowCounts() const
+   {
+      #ifdef HXCPP_DEBUG
+      if (mUsedRows>IMMIX_USEFUL_LINES || mFraggedRows>IMMIX_USEFUL_LINES)
+      {
+         GCLOG("Bad block row counts: used %d, fragged %d, max %d\n", (int)mUsedRows, (int)mFraggedRows, (int)IMMIX_USEFUL_LINES);
+         DebuggerTrap();
+      }
+      #endif
+   }
+
    void getStats(BlockDataStats &outStats)
    {
+      checkRowCounts();
       outStats.rowsInUse += mUsedRows;
       outStats.bytesInUse += mUsedBytes;
       outStats.fraggedRows += mFraggedRows;
@@ -976,6 +991,7 @@ struct BlockDataInfo
 
       mZeroLock = 0;
       mOwned = false;
+      checkRowCounts();
       outStats.rowsInUse += mUsedRows;
       outStats.bytesInUse += mUsedBytes;
       outStats.fraggedRows += mFraggedRows;
@@ -1145,6 +1161,7 @@ struct BlockDataInfo
       mMoveScore = calcFragScore();
       mReclaimed = true;
 
+      checkRowCounts();
       if (outStats)
       {
          outStats->rowsInUse += mUsedRows;
@@ -1413,6 +1430,11 @@ struct BlockDataInfo
    }
    #endif
 };
+
+static_assert(IMMIX_USEFUL_LINES <= std::numeric_limits<decltype(BlockDataInfo::mUsedRows)>::max(),
+              "BlockDataInfo::mUsedRows must hold IMMIX_USEFUL_LINES");
+static_assert(IMMIX_USEFUL_LINES <= std::numeric_limits<decltype(BlockDataInfo::mFraggedRows)>::max(),
+              "BlockDataInfo::mFraggedRows must hold IMMIX_USEFUL_LINES");
 
 static bool SmallestFreeFirst(BlockDataInfo *inA, BlockDataInfo *inB)
 {
@@ -5764,7 +5786,7 @@ class LocalAllocator : public hx::StackContext
    uint8_t        mCurrentHole;
    uint8_t        mCurrentHoles;
    HoleRange     *mCurrentRange;
-   uint8_t       *mFraggedRows;
+   uint16_t      *mFraggedRows;
 
    bool           mMoreHoles;
 
@@ -6255,7 +6277,7 @@ public:
             // spaceOversize might have been set to zero for quick-termination of alloc.
             unsigned char* s{ spaceOversize };
             if (s>spaceFirst && mFraggedRows)
-               *mFraggedRows += static_cast<uint8_t>((s - spaceFirst) >> IMMIX_LINE_BITS);
+               *mFraggedRows += static_cast<uint16_t>((s - spaceFirst) >> IMMIX_LINE_BITS);
          #else
             #ifdef HXCPP_ALIGN_ALLOC
             if (!(size_t{ spaceStart } & 0x4))
@@ -6292,7 +6314,7 @@ public:
             }
             if (mFraggedRows && spaceEnd > spaceStart)
             {
-               *mFraggedRows += static_cast<uint8_t>((spaceEnd - spaceStart) >> IMMIX_LINE_BITS);
+               *mFraggedRows += static_cast<uint16_t>((spaceEnd - spaceStart) >> IMMIX_LINE_BITS);
             }
          #endif
 
