@@ -1435,8 +1435,6 @@ struct BlockDataInfo
    #endif
 };
 
-// A block's row counts run up to IMMIX_USEFUL_LINES: 254 with the default 32k blocks, but 508 with
-// HXCPP_GC_BIG_BLOCKS' 64k blocks, more than a uint8_t holds.
 static_assert(IMMIX_USEFUL_LINES <= std::numeric_limits<decltype(BlockDataInfo::mUsedRows)>::max(),
               "BlockDataInfo::mUsedRows must hold IMMIX_USEFUL_LINES");
 static_assert(IMMIX_USEFUL_LINES <= std::numeric_limits<decltype(BlockDataInfo::mFraggedRows)>::max(),
