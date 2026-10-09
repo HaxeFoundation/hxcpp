@@ -1007,6 +1007,11 @@ value query_root(gcroot) { return 0; }
 void destroy_root(gcroot) { }
 
 
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
+#endif
+
 String alloc_hxs_wchar(const wchar_t *ptr,int size)
 {
    return String::create(ptr,size);
@@ -1021,6 +1026,10 @@ String alloc_hxs_utf8(const char *ptr,int size)
 {
    return String::create(ptr,size);
 }
+
+#if defined(__clang__)
+#  pragma clang diagnostic pop
+#endif
 
 const char * hxs_utf8(const String &string,hx::IStringAlloc *alloc)
 {

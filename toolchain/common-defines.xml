@@ -51,6 +51,5 @@
  <flag value='-DHXCPP_TRACY_ON_DEMAND' if="HXCPP_TRACY_ON_DEMAND" tag="haxe"/>
  <flag value='-DHXCPP_TRACY_INCLUDE_CALLSTACKS' if="HXCPP_TRACY_INCLUDE_CALLSTACKS" tag="haxe"/>
 
- <mmflag value='-Wno-invalid-offsetof' />
  <mmflag value='-Wno-format-security' />
 </xml>
