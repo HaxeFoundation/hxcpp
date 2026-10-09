@@ -91,3 +91,5 @@ Defines affecting target architecture.
 | *HXCPP_MINGW*           | Compile for windows using mingw |
 | *NO_AUTO_MSVC*          | Do not detect msvc location, use the one already in the executable path |
 | *HXCPP_WINXP_COMPAT*    | Remain compatible with Windows XP. Disables condition variables. No effect on ARM. |
+| *HXCPP_MSVC_LLVM*       | Compile for windows using the LLVM-based MSVC toolchain |
+| *HXCPP_MSVC_ROOT*       | Set the root for MSVC libraries and headers |
