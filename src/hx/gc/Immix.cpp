@@ -280,7 +280,7 @@ static GcMode sGcMode = gcmFull;
 
 // Allocate this many blocks at a time - this will increase memory usage % when rounding to block size must be done.
 // However, a bigger number makes it harder to release blocks due to pinning
-#define IMMIX_BLOCK_GROUP_BITS  5
+constexpr uint8_t IMMIX_BLOCK_GROUP_BITS{ 5 };
 
 
 #ifdef HXCPP_DEBUG
@@ -488,28 +488,24 @@ extern void scriptMarkStack(hx::MarkContext *);
 */
 
 #ifdef HXCPP_GC_BIG_BLOCKS
-   #define IMMIX_BLOCK_BITS      16
-   typedef unsigned int BlockIdType;
+   constexpr uint8_t IMMIX_BLOCK_BITS{ 16 };
+   using BlockIdType = unsigned int;
 #else
-   #define IMMIX_BLOCK_BITS      15
-   typedef unsigned short BlockIdType;
+   constexpr uint8_t IMMIX_BLOCK_BITS{ 15 };
+   using BlockIdType = unsigned short;
 #endif
 
-#define IMMIX_BLOCK_SIZE        (1<<IMMIX_BLOCK_BITS)
-#define IMMIX_BLOCK_OFFSET_MASK (IMMIX_BLOCK_SIZE-1)
-#define IMMIX_BLOCK_BASE_MASK   (~(size_t)(IMMIX_BLOCK_OFFSET_MASK))
-#define IMMIX_LINE_COUNT_BITS   (IMMIX_BLOCK_BITS-IMMIX_LINE_BITS)
-#define IMMIX_LINES             (1<<IMMIX_LINE_COUNT_BITS)
-
-
-#define IMMIX_HEADER_LINES      (IMMIX_LINES>>IMMIX_LINE_BITS)
-#define IMMIX_USEFUL_LINES      (IMMIX_LINES - IMMIX_HEADER_LINES)
-
-#define IMMIX_MAX_ALLOC_GROUPS_SIZE  (1<<IMMIX_BLOCK_GROUP_BITS)
-
+constexpr uint16_t  IMMIX_BLOCK_SIZE{ 1 << IMMIX_BLOCK_BITS };
+constexpr uint16_t  IMMIX_BLOCK_OFFSET_MASK{ IMMIX_BLOCK_SIZE - 1 };
+constexpr uint8_t   IMMIX_LINE_COUNT_BITS{ IMMIX_BLOCK_BITS - IMMIX_LINE_BITS };
+constexpr uint16_t  IMMIX_LINES{ 1 << IMMIX_LINE_COUNT_BITS };
+constexpr uintptr_t IMMIX_BLOCK_BASE_MASK{ ~uintptr_t{ IMMIX_BLOCK_OFFSET_MASK } };
+constexpr uint8_t   IMMIX_HEADER_LINES{ IMMIX_LINES >> IMMIX_LINE_BITS };
+constexpr uint8_t   IMMIX_USEFUL_LINES{ IMMIX_LINES - IMMIX_HEADER_LINES };
+constexpr uint8_t   IMMIX_MAX_ALLOC_GROUPS_SIZE{ 1 << IMMIX_BLOCK_GROUP_BITS };
 
 // Every second line used
-#define MAX_HOLES (IMMIX_USEFUL_LINES>>1)
+constexpr uint8_t   MAX_HOLES{ IMMIX_USEFUL_LINES >> 1 };
 
 /*
 
@@ -4834,7 +4830,7 @@ public:
       {
          if ( mAllBlocks[i-1]->mPtr >= mAllBlocks[i]->mPtr)
          {
-            printf("Bad block order block[%d]=%p >= block[%d]=%p / %d\n", i-1, mAllBlocks[i-1]->mPtr,
+            printf("Bad block order block[%d]=%p >= block[%d]=%p / %zu\n", i-1, mAllBlocks[i-1]->mPtr,
                     i, mAllBlocks[i]->mPtr, mAllBlocks.size() );
             DebuggerTrap();
          }
