@@ -1507,6 +1507,13 @@ struct NewExpr : public CppiaDynamicExpr
       if (!type->cppiaClass && type->haxeClass.mPtr)
          constructor = type->haxeClass.mPtr->mConstructArgs;
 
+      // Nothing to construct: runObject and genCode would dereference the null cppiaClass.
+      if (!type->arrayType && !constructor && !type->cppiaClass)
+      {
+         CPPIALOG("Could not link new %s\n", type->name.c_str());
+         throw "Bad link";
+      }
+
       LinkExpressions(args,inModule);
       return this;
    }
