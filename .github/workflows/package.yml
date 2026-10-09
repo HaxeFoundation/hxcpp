@@ -47,7 +47,13 @@ jobs:
         run: |
           cd project
           haxe compile-cppia.hxml -D HXCPP_M64
-          
+
+      - name: Build Cppia Arm64
+        if: startsWith(matrix.os,'macos')
+        run: |
+          cd project
+          haxe compile-cppia.hxml -D HXCPP_ARM64
+
       - name: Clean Project
         if: startsWith(matrix.os,'ubuntu')
         run: |
@@ -94,6 +100,7 @@ jobs:
           name: mac-64
           path: |
             bin/Mac64/Cppia
+            bin/MacArm64/Cppia
 
   Release:
     needs: Package
