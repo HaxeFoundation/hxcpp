@@ -495,13 +495,13 @@ extern void scriptMarkStack(hx::MarkContext *);
    using BlockIdType = unsigned short;
 #endif
 
-constexpr uint16_t  IMMIX_BLOCK_SIZE{ 1 << IMMIX_BLOCK_BITS };
+constexpr uint32_t  IMMIX_BLOCK_SIZE{ 1 << IMMIX_BLOCK_BITS };
 constexpr uint16_t  IMMIX_BLOCK_OFFSET_MASK{ IMMIX_BLOCK_SIZE - 1 };
 constexpr uint8_t   IMMIX_LINE_COUNT_BITS{ IMMIX_BLOCK_BITS - IMMIX_LINE_BITS };
 constexpr uint16_t  IMMIX_LINES{ 1 << IMMIX_LINE_COUNT_BITS };
 constexpr uintptr_t IMMIX_BLOCK_BASE_MASK{ ~uintptr_t{ IMMIX_BLOCK_OFFSET_MASK } };
 constexpr uint8_t   IMMIX_HEADER_LINES{ IMMIX_LINES >> IMMIX_LINE_BITS };
-constexpr uint8_t   IMMIX_USEFUL_LINES{ IMMIX_LINES - IMMIX_HEADER_LINES };
+constexpr uint16_t  IMMIX_USEFUL_LINES{ IMMIX_LINES - IMMIX_HEADER_LINES };
 constexpr uint8_t   IMMIX_MAX_ALLOC_GROUPS_SIZE{ 1 << IMMIX_BLOCK_GROUP_BITS };
 
 // Every second line used
