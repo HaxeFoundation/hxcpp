@@ -69,9 +69,9 @@ __sighandler_t signal(int s, __sighandler_t f)
     return bsd_signal(s,f);
 }
 
-}
-
 #endif
+
+}
 
 #endif
 
