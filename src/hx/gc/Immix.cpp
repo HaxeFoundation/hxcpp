@@ -489,19 +489,21 @@ extern void scriptMarkStack(hx::MarkContext *);
 #ifdef HXCPP_GC_BIG_BLOCKS
    constexpr uint8_t IMMIX_BLOCK_BITS{ 16 };
    using BlockIdType = unsigned int;
+   using BlockRowType = uint16_t;
 #else
    constexpr uint8_t IMMIX_BLOCK_BITS{ 15 };
    using BlockIdType = unsigned short;
+   using BlockRowType = uint8_t;
 #endif
 
-constexpr uint16_t  IMMIX_BLOCK_SIZE{ 1 << IMMIX_BLOCK_BITS };
-constexpr uint16_t  IMMIX_BLOCK_OFFSET_MASK{ IMMIX_BLOCK_SIZE - 1 };
-constexpr uint8_t   IMMIX_LINE_COUNT_BITS{ IMMIX_BLOCK_BITS - IMMIX_LINE_BITS };
-constexpr uint16_t  IMMIX_LINES{ 1 << IMMIX_LINE_COUNT_BITS };
-constexpr uintptr_t IMMIX_BLOCK_BASE_MASK{ ~uintptr_t{ IMMIX_BLOCK_OFFSET_MASK } };
-constexpr uint8_t   IMMIX_HEADER_LINES{ IMMIX_LINES >> IMMIX_LINE_BITS };
-constexpr uint8_t   IMMIX_USEFUL_LINES{ IMMIX_LINES - IMMIX_HEADER_LINES };
-constexpr uint8_t   IMMIX_MAX_ALLOC_GROUPS_SIZE{ 1 << IMMIX_BLOCK_GROUP_BITS };
+constexpr uint8_t      IMMIX_LINE_COUNT_BITS{ IMMIX_BLOCK_BITS - IMMIX_LINE_BITS };
+constexpr size_t       IMMIX_BLOCK_BYTE_COUNT{ 1 << IMMIX_BLOCK_BITS };
+constexpr size_t       IMMIX_BLOCK_LINE_COUNT{ 1 << IMMIX_LINE_COUNT_BITS };
+constexpr uintptr_t    IMMIX_BLOCK_OFFSET_MASK{ IMMIX_BLOCK_BYTE_COUNT - 1 };
+constexpr uintptr_t    IMMIX_BLOCK_BASE_MASK{ ~IMMIX_BLOCK_OFFSET_MASK };
+constexpr uint8_t      IMMIX_HEADER_LINES{ IMMIX_BLOCK_LINE_COUNT >> IMMIX_LINE_BITS };
+constexpr BlockRowType IMMIX_USEFUL_LINES{ IMMIX_BLOCK_LINE_COUNT - IMMIX_HEADER_LINES };
+constexpr uint8_t      IMMIX_MAX_ALLOC_GROUPS_SIZE{ 1 << IMMIX_BLOCK_GROUP_BITS };
 
 // Every second line used
 constexpr uint8_t   MAX_HOLES{ IMMIX_USEFUL_LINES >> 1 };
@@ -645,13 +647,13 @@ union BlockData
    BlockIdType mId;
 
    // First 2/4 rows contain a byte-flag-per-row 
-   unsigned char mRowMarked[IMMIX_LINES];
+   unsigned char mRowMarked[IMMIX_BLOCK_LINE_COUNT];
    // Row data as union - don't use first 2/4 rows
-   unsigned char mData[IMMIX_LINES * IMMIX_LINE_LEN];
+   unsigned char mData[IMMIX_BLOCK_LINE_COUNT * IMMIX_LINE_LEN];
 
-   inline unsigned char* row(size_t r)
+   inline unsigned char* row(BlockRowType r)
    {
-       return mData + (r * IMMIX_LINE_LEN);
+       return mData + (size_t{ r } * IMMIX_LINE_LEN);
    }
 };
 
@@ -745,16 +747,16 @@ struct BlockDataInfo
    int             mGroupId;
    BlockData       *mPtr;
 
-   unsigned int allocStart[IMMIX_LINES];
+   unsigned int allocStart[IMMIX_BLOCK_LINE_COUNT];
 
    HoleRange    mRanges[MAX_HOLES];
    uint8_t      mHoles;
 
-   uint8_t      mUsedRows;
+   BlockRowType mUsedRows;
    uint16_t     mMaxHoleSize;
    int          mMoveScore;
    uint16_t     mUsedBytes;
-   uint8_t      mFraggedRows;
+   BlockRowType mFraggedRows;
    bool         mPinned;
    unsigned char mZeroed;
    bool         mReclaimed;
@@ -804,7 +806,7 @@ struct BlockDataInfo
       mUsedBytes = 0;
       mFraggedRows = 0;
       mPinned = false;
-      ZERO_MEM(allocStart,sizeof(int)*IMMIX_LINES);
+      ZERO_MEM(allocStart,sizeof(int)*IMMIX_BLOCK_LINE_COUNT);
       ZERO_MEM(mPtr->mRowMarked+IMMIX_HEADER_LINES, IMMIX_USEFUL_LINES); 
       mRanges[0].start = IMMIX_HEADER_LINES << IMMIX_LINE_BITS;
       mRanges[0].length = IMMIX_USEFUL_LINES << IMMIX_LINE_BITS;
@@ -913,8 +915,10 @@ struct BlockDataInfo
    {
       unsigned char *rowMarked = mPtr->mRowMarked;
 
-      for(int r = IMMIX_HEADER_LINES; r<IMMIX_LINES; r++)
+      for (BlockRowType i{ 0 }; i < IMMIX_USEFUL_LINES; i++)
       {
+         BlockRowType r{ saturating_add(i, IMMIX_HEADER_LINES) };
+
          if (!rowMarked[r] && allocStart[r])
          {
             printf("allocStart set without marking\n");
@@ -1020,13 +1024,13 @@ struct BlockDataInfo
       if (!rowMarked[r])
       #endif
       {
-         while(r<(IMMIX_LINES-4) && *(int *)(rowMarked+r)==0 )
+         while(r<(IMMIX_BLOCK_LINE_COUNT-4) && *(int *)(rowMarked+r)==0 )
             r += 4;
-         while(r<(IMMIX_LINES) && rowMarked[r]==0)
+         while(r<(IMMIX_BLOCK_LINE_COUNT) && rowMarked[r]==0)
             r++;
       }
 
-      if (r==IMMIX_LINES)
+      if (r== IMMIX_BLOCK_LINE_COUNT)
       {
          ranges[0].start  = IMMIX_HEADER_LINES<<IMMIX_LINE_BITS;
          ranges[0].length = (IMMIX_USEFUL_LINES)<<IMMIX_LINE_BITS;
@@ -1047,7 +1051,7 @@ struct BlockDataInfo
             hole++;
          }
 
-         while(r<IMMIX_LINES)
+         while(r< IMMIX_BLOCK_LINE_COUNT)
          {
             if (rowMarked[r])
             {
@@ -1105,9 +1109,9 @@ struct BlockDataInfo
                if (!rowMarked[r])
                #endif
                {
-                  while(r<(IMMIX_LINES-4) && *(int *)(rowMarked+r)==0 )
+                  while(r<(IMMIX_BLOCK_LINE_COUNT-4) && *(int *)(rowMarked+r)==0 )
                      r += 4;
-                  while(r<(IMMIX_LINES) && rowMarked[r]==0)
+                  while(r<(IMMIX_BLOCK_LINE_COUNT) && rowMarked[r]==0)
                      r++;
                }
                ranges[hole].length = r-start;
@@ -1278,7 +1282,7 @@ struct BlockDataInfo
       uintptr_t r{ inOffset >> IMMIX_LINE_BITS };
 
       // Out of bounds - can't be a new object start
-      if (r < IMMIX_HEADER_LINES || r >= IMMIX_LINES)
+      if (r < IMMIX_HEADER_LINES || r >= IMMIX_BLOCK_LINE_COUNT)
       {
          return allocNone;
       }
@@ -1304,7 +1308,7 @@ struct BlockDataInfo
          if (blockOffset >= 0)
          {
             uintptr_t r{ blockOffset >> IMMIX_LINE_BITS };
-            if (r >= IMMIX_HEADER_LINES && r < IMMIX_LINES)
+            if (r >= IMMIX_HEADER_LINES && r < IMMIX_BLOCK_LINE_COUNT)
             {
                // Normal, good alloc
                unsigned int rowPos{ hx::gImmixStartFlag[blockOffset & 127] };
@@ -1355,14 +1359,15 @@ struct BlockDataInfo
          return;
 
       unsigned char *rowMarked = mPtr->mRowMarked;
-      for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
+      for (BlockRowType i{ 0 }; i < IMMIX_USEFUL_LINES; i++)
       {
+         BlockRowType r{ saturating_add(i, BlockRowType{ IMMIX_HEADER_LINES }) };
          if (rowMarked[r])
          {
             unsigned int starts{ allocStart[r] };
             if (!starts)
                continue;
-            unsigned char* row{ mPtr->row(static_cast<size_t>(r)) };
+            unsigned char* row{ mPtr->row(r) };
             for(int i=0;i<32;i++)
             {
                int pos = i<<2;
@@ -1386,8 +1391,10 @@ struct BlockDataInfo
    #ifdef HXCPP_GC_VERIFY
    void verify(const char *inWhere)
    {
-      for(int i=IMMIX_HEADER_LINES;i<IMMIX_LINES;i++)
+      for (BlockRowType idx{ 0 }; idx < IMMIX_USEFUL_LINES; idx++)
       {
+         BlockRowType i{ saturating_add(idx, BlockRowType{ IMMIX_HEADER_LINES }) };
+
          for(int j=0;j<32;j++)
             if (allocStart[i] & (1<<j))
             {
@@ -1409,7 +1416,6 @@ struct BlockDataInfo
                }
             }
          }
-
    }
    #endif
 };
@@ -3044,7 +3050,7 @@ void *HxAllocGCBlock(size_t inSize)
    if (!chunkData)
    {
       size_t size = 65536;
-      size *= IMMIX_BLOCK_SIZE;
+      size *= IMMIX_BLOCK_BYTE_COUNT;
       #if defined(HX_WINDOWS) && defined(HXCPP_M64)
       chunkData = (unsigned char *)0x100000000;
       VirtualAlloc(chunkData,size,MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE);
@@ -3519,7 +3525,7 @@ public:
          return false;
       }
 
-      char *aligned = (char *)( (((size_t)chunk) + IMMIX_BLOCK_SIZE-1) & IMMIX_BLOCK_BASE_MASK);
+      char *aligned = (char *)( (((size_t)chunk) + IMMIX_BLOCK_BYTE_COUNT-1) & IMMIX_BLOCK_BASE_MASK);
       if (aligned!=chunk)
          n--;
       gAllocGroups[gid].alloc = chunk;
@@ -3529,7 +3535,7 @@ public:
       int newSize = mFreeBlocks.size();
       for(int i=0;i<n;i++)
       {
-         BlockData *block = (BlockData *)(aligned + i*IMMIX_BLOCK_SIZE);
+         BlockData *block = (BlockData *)(aligned + i*IMMIX_BLOCK_BYTE_COUNT);
          BlockDataInfo *info = new BlockDataInfo(gid,block);
 
          mAllBlocks.push(info);
@@ -3746,8 +3752,9 @@ public:
          #endif
 
          const unsigned char *rowMarked = from->mPtr->mRowMarked;
-         for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
+         for (BlockRowType idx{ 0 }; idx < IMMIX_USEFUL_LINES; idx++)
          {
+            BlockRowType r{ saturating_add(idx, BlockRowType{ IMMIX_HEADER_LINES }) };
             if (rowMarked[r])
             {
                unsigned int starts = allocStart[r];
@@ -3757,7 +3764,7 @@ public:
                {
                   if ( starts & (1<<i))
                   {
-                     unsigned int* row{ reinterpret_cast<unsigned int*>(from->mPtr->row(static_cast<size_t>(r))) };
+                     unsigned int* row{ reinterpret_cast<unsigned int*>(from->mPtr->row(r)) };
                      unsigned int &header{ row[i] };
 
                      if ((header&IMMIX_ALLOC_MARK_ID) == hx::gMarkID)
@@ -3785,7 +3792,7 @@ public:
                               } while(destInfo->mHoles==0);
 
 
-                              ioStats.rowsInUse += IMMIX_USEFUL_LINES - destInfo->mUsedRows;
+                              ioStats.rowsInUse += saturating_sub(IMMIX_USEFUL_LINES, destInfo->mUsedRows);
                               //destInfo->zero();
                               dest = destInfo->mPtr;
                               destStarts = destInfo->allocStart;
@@ -5139,7 +5146,7 @@ public:
             if ( allMem > sWorkingMemorySize + allowExtra )
             {
                #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-               int releaseGroups = (int)((allMem - sWorkingMemorySize) / (IMMIX_BLOCK_SIZE<<IMMIX_BLOCK_GROUP_BITS));
+               int releaseGroups = (int)((allMem - sWorkingMemorySize) / (IMMIX_BLOCK_BYTE_COUNT<<IMMIX_BLOCK_GROUP_BITS));
                if (releaseGroups)
                   GCLOG("Try to release %d groups\n", releaseGroups );
                #endif
@@ -5764,7 +5771,7 @@ class LocalAllocator : public hx::StackContext
    uint8_t        mCurrentHole;
    uint8_t        mCurrentHoles;
    HoleRange     *mCurrentRange;
-   uint8_t       *mFraggedRows;
+   BlockRowType  *mFraggedRows;
 
    bool           mMoreHoles;
 
@@ -6255,7 +6262,7 @@ public:
             // spaceOversize might have been set to zero for quick-termination of alloc.
             unsigned char* s{ spaceOversize };
             if (s>spaceFirst && mFraggedRows)
-               *mFraggedRows += static_cast<uint8_t>((s - spaceFirst) >> IMMIX_LINE_BITS);
+               *mFraggedRows = saturating_add(*mFraggedRows, static_cast<BlockRowType>((s - spaceFirst) >> IMMIX_LINE_BITS));
          #else
             #ifdef HXCPP_ALIGN_ALLOC
             if (!(size_t{ spaceStart } & 0x4))
@@ -6292,7 +6299,7 @@ public:
             }
             if (mFraggedRows && spaceEnd > spaceStart)
             {
-               *mFraggedRows += static_cast<uint8_t>((spaceEnd - spaceStart) >> IMMIX_LINE_BITS);
+               *mFraggedRows = saturating_add(*mFraggedRows, static_cast<BlockRowType>((spaceEnd - spaceStart) >> IMMIX_LINE_BITS));
             }
          #endif
 
