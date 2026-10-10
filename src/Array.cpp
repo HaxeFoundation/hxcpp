@@ -42,7 +42,8 @@ namespace
                 index[i] = static_cast<STORE>(i);
             }
 
-            std::stable_sort(index.begin(), index.end(), ArraySorter(inArray, inSorter));
+            ArraySorter sorter(inArray, inSorter);
+            hx::StableSort(index.data(), inLength, sorter);
 
             // Put the results back ...
             for (int i = 0; i < inLength; i++)

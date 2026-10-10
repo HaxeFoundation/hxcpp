@@ -475,6 +475,7 @@ template<> struct ArrayClassId< ::cpp::Int64> { enum { id=hx::clsIdArrayInt64 };
 
 // sort...
 #include <algorithm>
+#include <memory>
 
 namespace hx
 {
@@ -484,6 +485,77 @@ inline bool arrayElemEq(const T &a, const T &b) { return a==b; }
 template<>
 inline bool arrayElemEq<Dynamic>(const Dynamic &a, const Dynamic &b) {
    return hx::DynamicEq(a,b);
+}
+
+// Stable merge sort for Array.sort.  The comparator is user code and need not
+// be consistent (it may answer at random), which std::stable_sort does not
+// allow: libstdc++'s insertion step then runs off the front of the range.
+// Here such a comparator only leaves the order unspecified.  Every access
+// stays in range and every element is kept.
+template<typename T, typename LESS>
+void StableSortRange(T *ioData, int inFrom, int inTo, T *ioBuffer, LESS &inLess)
+{
+   if (inTo-inFrom<=16)
+   {
+      // Binary insertion, after any equal elements
+      for(int i=inFrom+1;i<inTo;i++)
+      {
+         T value = ioData[i];
+         int lo = inFrom;
+         int hi = i;
+         while(lo<hi)
+         {
+            int mid = lo + ((hi-lo)>>1);
+            if (inLess(value, ioData[mid]))
+               hi = mid;
+            else
+               lo = mid+1;
+         }
+         for(int j=i;j>lo;j--)
+            ioData[j] = ioData[j-1];
+         ioData[lo] = value;
+      }
+      return;
+   }
+
+   int mid = inFrom + ((inTo-inFrom)>>1);
+   StableSortRange(ioData, inFrom, mid, ioBuffer, inLess);
+   StableSortRange(ioData, mid, inTo, ioBuffer, inLess);
+
+   // Already in order, or in reverse order
+   if (!inLess(ioData[mid], ioData[mid-1]))
+      return;
+   if (inLess(ioData[inTo-1], ioData[inFrom]))
+   {
+      std::rotate(ioData+inFrom, ioData+mid, ioData+inTo);
+      return;
+   }
+
+   int leftLength = mid-inFrom;
+   for(int i=0;i<leftLength;i++)
+      ioBuffer[i] = ioData[inFrom+i];
+   int left = 0;
+   int right = mid;
+   int out = inFrom;
+   while(left<leftLength && right<inTo)
+   {
+      if (inLess(ioData[right], ioBuffer[left]))
+         ioData[out++] = ioData[right++];
+      else
+         ioData[out++] = ioBuffer[left++];
+   }
+   while(left<leftLength)
+      ioData[out++] = ioBuffer[left++];
+}
+
+template<typename T, typename LESS>
+void StableSort(T *ioData, int inLength, LESS &inLess)
+{
+   if (inLength<2)
+      return;
+   // No left half is longer than inLength/2
+   std::unique_ptr<T[]> buffer(inLength>16 ? new T[inLength/2] : nullptr);
+   StableSortRange(ioData, 0, inLength, buffer.get(), inLess);
 }
 }
 
@@ -905,7 +977,8 @@ public:
       else
       {
          ELEM_ *e = (ELEM_ *)mBase;
-         std::stable_sort(e, e+length, Sorter(inSorter) );
+         Sorter sorter(inSorter);
+         hx::StableSort(e, length, sorter);
       }
    }
 
