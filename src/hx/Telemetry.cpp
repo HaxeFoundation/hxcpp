@@ -472,8 +472,8 @@ void hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
     // for every external call, hashes for every SDL event (Lime's
     // ExternalInterface.external_handler()), etc
 #ifndef HXCPP_PROFILE_EXTERNS
-    if (stack->getCurrentStackFrame()->position->className==hx::EXTERN_CLASS_NAME) {
-      alloc_mutex.unlock();
+    // alloc_mutex is not locked yet, and an empty stack has no current frame.
+    if (stack->getDepth() > 0 && stack->getCurrentStackFrame()->position->className==hx::EXTERN_CLASS_NAME) {
       return;
     }
 #endif
