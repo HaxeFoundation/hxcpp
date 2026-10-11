@@ -47,6 +47,14 @@ namespace
 
         return res;
     }
+
+    template<class T>
+    bool atomic_compare_exchange_strong_discard(std::atomic<T>* obj, typename std::atomic<T>::value_type expected, typename std::atomic<T>::value_type desired)
+    {
+        typename std::atomic<T>::value_type v{ expected };
+
+        return obj->compare_exchange_strong(v, desired);
+    }
 }
 
 static bool sgIsCollecting = false;
@@ -874,8 +882,7 @@ struct BlockDataInfo
       if (mZeroed)
          return false;
 
-      int expected{ 0 };
-      if (mZeroLock.compare_exchange_strong(expected, 1))
+      if (atomic_compare_exchange_strong_discard(&mZeroLock, 0, 1))
          return zeroAndUnlock();
 
       return false;
@@ -1648,8 +1655,7 @@ struct GlobalChunks
       if (inChunk)
          release(inChunk);
 
-      int expected{ 0 };
-      while(false == processListPopLock.compare_exchange_strong(expected, 1))
+      while(false == atomic_compare_exchange_strong_discard(&processListPopLock, 0, 1))
       {
          // Spin
          #ifdef PROFILE_THREAD_USAGE
@@ -1732,8 +1738,7 @@ struct GlobalChunks
 
    inline MarkChunk *alloc()
    {
-      int expected{ 0 };
-      while(false == freeListPopLock.compare_exchange_strong(expected, 1))
+      while(false == atomic_compare_exchange_strong_discard(&freeListPopLock, 0, 1))
       {
          // Spin
          #ifdef PROFILE_THREAD_USAGE
@@ -3386,8 +3391,7 @@ public:
              if (!info->mOwned && info->mMaxHoleSize>=inRequiredBytes)
              {
                 // Acquire the zero-lock
-                int expected{ 0 };
-                if (info->mZeroLock.compare_exchange_strong(expected, 1))
+                if (atomic_compare_exchange_strong_discard(&info->mZeroLock, 0, 1))
                 {
                    // Acquire ownership...
                    if (info->mOwned)
@@ -4823,8 +4827,7 @@ public:
       #ifndef HXCPP_SINGLE_THREADED_APP
       // If we set the flag from 0 -> 0xffffffff then we are the collector
       //  otherwise, someone else is collecting at the moment - so wait...
-      unsigned int expected{ 0 };
-      if (false == hx::gPauseForCollect.compare_exchange_strong(expected, std::numeric_limits<unsigned int>::max()))
+      if (false == atomic_compare_exchange_strong_discard(&hx::gPauseForCollect, 0, std::numeric_limits<unsigned int>::max()))
       {
          if (inLocked)
          {
