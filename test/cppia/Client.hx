@@ -14,6 +14,23 @@ class ClientFoo implements IFoo {
    }
 }
 
+class ClientBoolConst {
+
+   public static function constToDynamic():String {
+      var d:Dynamic = true;
+
+      return Std.string(d);
+   }
+
+   public static function anyArrayWithConsts():Array<Any> {
+      return [true, false];
+   }
+
+   public static function anyArrayWithComparison(i:Int):Array<Any> {
+      return [i > 1];
+   }
+}
+
 class Client
 {
    public static var clientBool0 = true;
