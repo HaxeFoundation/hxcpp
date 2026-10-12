@@ -1619,6 +1619,12 @@ struct NewExpr : public CppiaDynamicExpr
             // sJitReturnReg = alloc->spaceFirst - will be the result if all goes well
             compiler->move(sJitReturnReg, sJitCtx.star(jtPointer, offsetof(hx::StackContext,spaceFirst) ) );
 
+            #ifdef HXCPP_ALIGN_ALLOC
+            // As ImmixAllocator::alloc: skip 4 bytes to align the object, which the nursery scan expects
+            compiler->bitOp(bitOpAnd, sJitTemp1.as(jtInt), sJitReturnReg.as(jtInt), (int)4 );
+            compiler->add(sJitReturnReg.as(jtPointer), sJitReturnReg.as(jtPointer), sJitTemp1.as(jtPointer) );
+            #endif
+
             // sJitTemp1 = end = spaceFirst + size + sizeof(int)
             compiler->add(sJitTemp1.as(jtPointer), sJitReturnReg.as(jtPointer), (int)(size + sizeof(int) ) );
 
