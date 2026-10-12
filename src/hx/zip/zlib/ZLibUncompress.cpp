@@ -85,11 +85,12 @@ hx::zip::Result hx::zip::zlib::ZLibUncompress::execute(cpp::marshal::View<uint8_
 		hx::Throw(HX_CSTRING("ZLib Error"));
 	}
 
+	// Per-call counts, as haxe.zip expects; total_in/total_out accumulate across calls.
 	return
 		Result(
 			error == Z_STREAM_END,
-			static_cast<int>(handle->total_in),
-			static_cast<int>(handle->total_out));
+			static_cast<int>(src.length - handle->avail_in),
+			static_cast<int>(dst.length - handle->avail_out));
 }
 
 void hx::zip::zlib::ZLibUncompress::setFlushMode(Flush mode)
