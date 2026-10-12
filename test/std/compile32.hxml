@@ -1,6 +1,3 @@
--m Test
+compile-generic.hxml
 -D HXCPP_M32
--D HXCPP_DEBUGGER
--L hx4compat
--L utest
 --cpp cpp32
