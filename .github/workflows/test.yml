@@ -30,11 +30,12 @@ jobs:
         working-directory: test/haxe
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: build
         run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: run
@@ -48,11 +49,12 @@ jobs:
         working-directory: test/cffi
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: build project
         working-directory: test/cffi/project
         run: haxelib run hxcpp build.xml -Ddebug -D${{ env.HXCPP_ARCH_FLAG }}
@@ -88,11 +90,12 @@ jobs:
         working-directory: test/telemetry
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: build
         run: haxe compile.hxml ${{ matrix.suffix }} -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: run
@@ -106,11 +109,12 @@ jobs:
         working-directory: test/debugger
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: build
         run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: run
@@ -124,11 +128,12 @@ jobs:
           working-directory: test/native
       steps:
         - name: checkout
-          uses: actions/checkout@v4
+          uses: actions/checkout@v7
         - name: setup
           uses: ./.github/workflows/setup
           with:
             haxe: ${{ inputs.haxe }}
+            arch: ${{ inputs.arch }}
         - name: build
           run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
         - name: run
@@ -142,11 +147,12 @@ jobs:
           working-directory: test/std
       steps:
         - name: checkout
-          uses: actions/checkout@v4
+          uses: actions/checkout@v7
         - name: setup
           uses: ./.github/workflows/setup
           with:
             haxe: ${{ inputs.haxe }}
+            arch: ${{ inputs.arch }}
         - name: setup mariadb
           if: runner.os == 'Linux'
           run: |
@@ -175,11 +181,12 @@ jobs:
         working-directory: test/cppia
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: build host
         run: haxe compile-host.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: build client
@@ -195,11 +202,12 @@ jobs:
         working-directory: haxe/tests/unit
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: Get Haxe commit SHA
         if: inputs.haxe == 'latest'
         id: haxe_sha
@@ -217,14 +225,14 @@ jobs:
           echo "Commit SHA: $short_sha, Full SHA: $full_sha"
       - name: checkout haxe (latest)
         if: inputs.haxe == 'latest'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.haxe_sha.outputs.sha }}
           repository: HaxeFoundation/haxe
           path: haxe
       - name: checkout haxe (stable)
         if: inputs.haxe != 'latest'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: HaxeFoundation/haxe
           path: haxe
@@ -243,11 +251,12 @@ jobs:
     name: build tool tests
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: test c/cxx_standard attributes
         working-directory: test/cxx_standard
         shell: bash
@@ -265,10 +274,11 @@ jobs:
         working-directory: test/regression
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: setup
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
       - name: run
         run: haxe --run Run -D ${{ env.HXCPP_ARCH_FLAG }}
