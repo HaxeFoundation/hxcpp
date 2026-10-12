@@ -9,16 +9,20 @@
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
   <cache value="true" asLibrary="true" />
 
-  <compilerflag value="-I${SQLITE_DIR}"/>
-
   <file name="Sqlite.cpp"/>
 
-  <depend name="${SQLITE_DIR}/sqlite3.h" />
-  <file name="${SQLITE_DIR}/sqlite3.c" tags="" />
+  <section unless="HXCPP_NO_VENDORED" >
+    <compilerflag value="-I${SQLITE_DIR}" unless="HXCPP_NO_VENDORED" />
+
+    <depend name="${SQLITE_DIR}/sqlite3.h" />
+    <file name="${SQLITE_DIR}/sqlite3.c" tags="" />
+  </section>
+
 </files>
 
 <target id="haxe">
   <files id="hxcpp_sqlite"/>
+  <lib name="-lsqlite3" if="HXCPP_NO_VENDORED" unless="static_link" />
   <lib name="-lpthread" if="linux" unless="static_link" />
 </target>
 
