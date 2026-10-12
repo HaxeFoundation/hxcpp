@@ -917,7 +917,7 @@ struct BlockDataInfo
 
       for (BlockRowType i{ 0 }; i < IMMIX_USEFUL_LINES; i++)
       {
-         BlockRowType r{ saturating_add(i, IMMIX_HEADER_LINES) };
+         BlockRowType r{ saturating_add(i, BlockRowType{ IMMIX_HEADER_LINES }) };
 
          if (!rowMarked[r] && allocStart[r])
          {
