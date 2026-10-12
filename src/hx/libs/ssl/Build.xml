@@ -5,6 +5,7 @@
 <include name="${HXCPP}/project/thirdparty/mbedtls-files.xml" />
 
 <files id="hxcpp_ssl" >
+  <options name="Options.txt" ifExists="Options.txt"/>
 	<depend files="hxcpp-depends"/>
 	<depend name="${this_dir}/Build.xml" dateOnly="true" />
 	<cache value="true" asLibrary="true" />
