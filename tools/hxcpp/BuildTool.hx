@@ -1123,7 +1123,13 @@ class BuildTool
                case "hlsl" :
                   group.addHLSL( substitute(el.att.name), substitute(el.att.profile),
                   substitute(el.att.variable), substitute(el.att.target)  );
-               case "options" : group.addOptions( substitute(el.att.name) );
+               case "options" :
+                  // Resolved now, where ifExists is checked: an imported group is built from its own
+                  // directory, where a relative Options.txt would not be found.
+                  var options = substitute(el.att.name);
+                  if (!PathManager.isAbsolute(options))
+                     options = PathManager.combine(Sys.getCwd(), options);
+                  group.addOptions(options);
                case "config" : group.mConfig = substitute(el.att.name);
                case "assembler" : group.mAssembler = substitute(el.att.name);
                case "compilerflag" :
