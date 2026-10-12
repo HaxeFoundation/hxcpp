@@ -8,6 +8,7 @@
   <import name="${HXCPP_ZIP_XML}"/>
 
   <files id="hxcpp_zip_api">
+    <options name="Options.txt" />
     <cache value="true" asLibrary="true" />
 
     <depend files="hxcpp-depends"/>

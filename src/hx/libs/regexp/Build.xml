@@ -27,6 +27,7 @@
 </files>
 
 <files id="hxcpp_regexp">
+  <options name="Options.txt" />
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
   <cache value="true" asLibrary="true" />
