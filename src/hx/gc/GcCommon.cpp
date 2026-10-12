@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 #include <set>
+#include <cstdio>
 #include <stdlib.h>
 
 #if defined(HXCPP_CAPTURE_x64) && !defined(__GNUC__)
