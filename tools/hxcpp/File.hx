@@ -22,10 +22,10 @@ class File
    public var mFilterOut:String;
    public var mEmbedName:String;
    public var mScramble:String;
-   public var mCStandard:Int;
-   public var mCxxStandard:Int;
-   public var mObjCStandard:Int;
-   public var mObjCxxStandard:Int;
+   public var mCStandard:Null<Int>;
+   public var mCxxStandard:Null<Int>;
+   public var mObjCStandard:Null<Int>;
+   public var mObjCxxStandard:Null<Int>;
    static public var mDependMutex = new Mutex();
 
    public function new(inName:String, inGroup:FileGroup)
