@@ -14,6 +14,24 @@ class ClientFoo implements IFoo {
    }
 }
 
+class ClientModuleValues {
+
+   static var kept:Array<String>;
+
+   // Read as Dynamic, the literal is boxed on first use, and the module keeps the box.
+   public static function literal():Dynamic {
+      var boxed:Dynamic = "a string literal";
+      return boxed;
+   }
+
+   // Assigned after load: the module holds the only reference.
+   public static function assigned():Dynamic {
+      if (kept == null)
+         kept = ["assigned after load"];
+      return kept;
+   }
+}
+
 class Client
 {
    public static var clientBool0 = true;
