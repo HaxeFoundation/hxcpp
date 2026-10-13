@@ -13,7 +13,7 @@ setlocal enabledelayedexpansion
 		@set InstallDir=%%i
 	)
 	@if exist "!InstallDir!\Common7\Tools\VsDevCmd.bat" (
-		@call "!InstallDir!\Common7\Tools\VsDevCmd.bat" -host_arch=%msvc_host_arch% -arch=arm64 -app_platform=Desktop -no_logo
+		@call "!InstallDir!\Common7\Tools\VsDevCmd.bat" -arch=arm64 -app_platform=Desktop -no_logo
 		@echo HXCPP_VARS
 		@set
 	) else (
