@@ -836,7 +836,6 @@ class Setup
             Sys.putEnv("HXCPP_WINXP_COMPAT","1");
             xpCompat = true;
          }
-         Sys.putEnv("msvc_host_arch", ioDefines.exists("windows_arm_host") ? "x86" : "x64" );
 
          var vc_setup_proc = new Process("cmd.exe", ["/C", BuildTool.HXCPP + "\\toolchain\\msvc" + extra + "-setup.bat" ]);
          var vars_found = false;

@@ -1,14 +1,5 @@
 setlocal enabledelayedexpansion
-@if exist "%HXCPP_MSVC%\..\..\VC\" (
-	@if not exist "%hxcpp_msvc%\..\..\VC\Auxiliary\Build\vcvars%msvc_host_arch%_arm64.bat" (
-		@echo Error: the specified MSVC version does not have vcvars%msvc_host_arch%_arm64.bat setup script
-	) else (
-		@echo "%HXCPP_MSVC%"
-		@call "%HXCPP_MSVC%\..\..\VC\Auxiliary\Build\vcvars%msvc_host_arch%_amd64.bat"
-		@echo HXCPP_VARS
-		@set
-	)
-) else if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" (
+@if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" (
 	for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.arm64 -property installationPath`) do (
 		@set InstallDir=%%i
 	)
