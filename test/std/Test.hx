@@ -38,6 +38,38 @@ extern class SslTest
    extern public static function socket_init():Void;
 }
 
+// A server listening on loopback with a client connected to it, for the poll
+// tests. The connection is left pending unless the test accepts it.
+class LoopbackSockets
+{
+   public var server(default,null):Socket;
+   public var client(default,null):Socket;
+   var peer:Socket;
+
+   public function new()
+   {
+      server = new Socket();
+      server.bind(new Host("127.0.0.1"), 0);
+      server.listen(1);
+
+      client = new Socket();
+      client.connect(new Host("127.0.0.1"), server.host().port);
+   }
+
+   public function accept()
+   {
+      peer = server.accept();
+   }
+
+   public function close()
+   {
+      if (peer != null)
+         peer.close();
+      client.close();
+      server.close();
+   }
+}
+
 class Test extends utest.Test
 {
    var x:Int;
@@ -502,6 +534,20 @@ class Test extends utest.Test
    }
 
 
+   // Readiness is not required to be visible on the first pass, only to become
+   // visible at all, so poll a few times before giving up.
+   static function pollUntilReady(poll:Poll, read:Array<Socket>, write:Array<Socket>)
+   {
+      for(attempt in 0...20)
+      {
+         poll.prepare(read, write);
+         poll.events(0.05);
+         if (poll.readIndexes[0] == 0 || poll.writeIndexes[0] == 0)
+            return;
+         Sys.sleep(0.01);
+      }
+   }
+
    // A listening socket with a connection waiting to be accepted is readable.
    // _hx_std_socket_poll_events used to be able to return without reporting it,
    // leaving the caller to conclude nothing had arrived.
@@ -509,33 +555,14 @@ class Test extends utest.Test
    {
       log("Test poll reports a readable socket");
 
-      var server = new Socket();
-      server.bind(new Host("127.0.0.1"), 0);
-      server.listen(1);
-
-      var client = new Socket();
-      client.connect(new Host("127.0.0.1"), server.host().port);
-
+      var sockets = new LoopbackSockets();
       var poll = new Poll(4);
-      var readable = -1;
+      pollUntilReady(poll, [sockets.server], []);
 
-      // Polled in a loop because the connection is not required to be visible
-      // on the first pass; the point is that it becomes visible at all.
-      for(attempt in 0...20)
-      {
-         poll.prepare([server], []);
-         poll.events(0.05);
-         readable = poll.readIndexes[0];
-         if (readable == 0)
-            break;
-         Sys.sleep(0.01);
-      }
+      v('readIndexes[0] = ${poll.readIndexes[0]}');
+      Assert.equals(0, poll.readIndexes[0], "Listening socket with a pending connection was not reported readable");
 
-      v('readIndexes[0] = ${readable}');
-      Assert.equals(0, readable, "Listening socket with a pending connection was not reported readable");
-
-      client.close();
-      server.close();
+      sockets.close();
    }
 
    // The ready lists are the caller's only result, so they have to describe the
@@ -545,23 +572,9 @@ class Test extends utest.Test
    {
       log("Test poll clears stale indexes");
 
-      var server = new Socket();
-      server.bind(new Host("127.0.0.1"), 0);
-      server.listen(1);
-
-      var client = new Socket();
-      client.connect(new Host("127.0.0.1"), server.host().port);
-
+      var sockets = new LoopbackSockets();
       var poll = new Poll(4);
-
-      for(attempt in 0...20)
-      {
-         poll.prepare([server], []);
-         poll.events(0.05);
-         if (poll.readIndexes[0] == 0)
-            break;
-         Sys.sleep(0.01);
-      }
+      pollUntilReady(poll, [sockets.server], []);
       Assert.equals(0, poll.readIndexes[0], "Setup failed: socket never became readable");
 
       // Nothing is registered now, so nothing can be ready.
@@ -572,8 +585,7 @@ class Test extends utest.Test
       Assert.equals(-1, poll.readIndexes[0], "Read index survived a poll with no sockets registered");
       Assert.equals(-1, poll.writeIndexes[0], "Write index survived a poll with no sockets registered");
 
-      client.close();
-      server.close();
+      sockets.close();
    }
 
    // A connected socket with room in its send buffer is writable, and the
@@ -582,33 +594,15 @@ class Test extends utest.Test
    {
       log("Test poll reports a writable socket");
 
-      var server = new Socket();
-      server.bind(new Host("127.0.0.1"), 0);
-      server.listen(1);
-
-      var client = new Socket();
-      client.connect(new Host("127.0.0.1"), server.host().port);
-      var peer = server.accept();
-
+      var sockets = new LoopbackSockets();
+      sockets.accept();
       var poll = new Poll(4);
-      var writable = -1;
+      pollUntilReady(poll, [], [sockets.client]);
 
-      for(attempt in 0...20)
-      {
-         poll.prepare([], [client]);
-         poll.events(0.05);
-         writable = poll.writeIndexes[0];
-         if (writable == 0)
-            break;
-         Sys.sleep(0.01);
-      }
+      v('writeIndexes[0] = ${poll.writeIndexes[0]}');
+      Assert.equals(0, poll.writeIndexes[0], "Connected socket was not reported writable");
 
-      v('writeIndexes[0] = ${writable}');
-      Assert.equals(0, writable, "Connected socket was not reported writable");
-
-      peer.close();
-      client.close();
-      server.close();
+      sockets.close();
    }
 
    // Readiness has to mean readiness. When select() failed the error path
@@ -619,25 +613,18 @@ class Test extends utest.Test
    {
       log("Test poll does not invent readability");
 
-      var server = new Socket();
-      server.bind(new Host("127.0.0.1"), 0);
-      server.listen(1);
-
-      var client = new Socket();
-      client.connect(new Host("127.0.0.1"), server.host().port);
-      var peer = server.accept();
+      var sockets = new LoopbackSockets();
+      sockets.accept();
 
       // Nothing has been sent either way, so neither end has anything to read.
       var poll = new Poll(4);
-      poll.prepare([client], []);
+      poll.prepare([sockets.client], []);
       poll.events(0.05);
 
       v('readIndexes[0] = ${poll.readIndexes[0]}');
       Assert.equals(-1, poll.readIndexes[0], "Idle socket with no pending data was reported readable");
 
-      peer.close();
-      client.close();
-      server.close();
+      sockets.close();
    }
 
    function testUdpSocket()
