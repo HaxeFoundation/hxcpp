@@ -59,6 +59,7 @@ class TestCommon extends Test {
         Assert.equals(2, Common.callbackSet, 'Bad cppia closure');
     }
 
+    // Loads its own module, so it does not need client.cppia to have run (testStatus).
     function testNewOfUnlinkedClass() {
         final source = sys.io.File.getBytes('bin/unlinked.cppia');
 
