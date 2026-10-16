@@ -1,5 +1,6 @@
 -m CppiaHost
 HostExtendedRoot
+OptionalToString
 -D scriptable
 -D dll_export=host_classes.info
 -L utest

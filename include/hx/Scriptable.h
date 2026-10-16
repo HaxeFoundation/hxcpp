@@ -2,6 +2,8 @@
 #define INCLUDED_HX_SCRIPTABLE
 
 #include <typeinfo>
+#include <type_traits>
+#include <utility>
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #endif
@@ -220,6 +222,29 @@ void __Visit(HX_VISIT_PARAMS) HXCPP_OVERRIDE { super::__Visit(HX_VISIT_ARG); ::h
 #endif
 
 
+/*
+ * A Haxe `toString` with parameters, whatever they are, compiles to a C++ overload that
+ * hides `hx::Object::toString()` without overriding it. In a class that inherits it,
+ * `__superString` is that class, so `__superString::toString()` does not compile.
+ * Native code calling `toString()` on such an object reaches `hx::Object::toString()`,
+ * so the scriptable wrapper calls that one in this case.
+ */
+namespace hx
+{
+template<typename T, typename = void>
+struct ScriptableHasToString : std::false_type {};
+
+template<typename T>
+struct ScriptableHasToString<T, decltype(void(std::declval<T &>().T::toString()))> : std::true_type {};
+
+template<typename T>
+inline ::String ScriptableSuperToString(T *inSelf, std::true_type) { return inSelf->T::toString(); }
+
+template<typename T>
+inline ::String ScriptableSuperToString(T *inSelf, std::false_type) { return inSelf->::hx::Object::toString(); }
+}
+
+
 #define HX_DEFINE_SCRIPTABLE(ARG_LIST) \
    inline void *operator new( size_t inSize, int inExtraDataSize ) \
    { \
@@ -235,7 +260,7 @@ void __Visit(HX_VISIT_PARAMS) HXCPP_OVERRIDE { super::__Visit(HX_VISIT_ARG); ::h
    void ** __GetScriptVTable() HXCPP_OVERRIDE { return __scriptVTable; } \
    ::String toString() HXCPP_OVERRIDE {  if (__scriptVTable[0] ) \
      { ::hx::CppiaCtx *ctx = ::hx::CppiaCtx::getCurrent(); ::hx::AutoStack a(ctx); ctx->pushObject(this); return ctx->runString(__scriptVTable[0]); } \
-      else return __superString::toString(); } \
+      else return ::hx::ScriptableSuperToString<__superString>(this, ::hx::ScriptableHasToString<__superString>{}); } \
    ::String __ToString() const HXCPP_OVERRIDE { return ::hx::ScriptableToString(__scriptVTable[-1]); } \
    ::hx::Class __GetClass() const HXCPP_OVERRIDE { return ::hx::ScriptableGetClass(__scriptVTable[-1]); } \
    int __GetType() const HXCPP_OVERRIDE { return ::hx::ScriptableGetType(__scriptVTable[-1]); } \
