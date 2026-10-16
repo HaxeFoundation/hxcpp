@@ -929,7 +929,6 @@ class Setup
             }
          }
       } catch(e:Dynamic){}
-      //if (cl_version!="") BuildTool.println("Using cl version: " + cl_version);
    }
 
    static function toPath(inPath:String)
