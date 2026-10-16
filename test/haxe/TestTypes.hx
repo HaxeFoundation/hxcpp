@@ -12,6 +12,7 @@ class TestTypes extends Test
    var i6:cpp.UInt8 = 1;
    var i7:cpp.Int16 = 1;
    var i8:cpp.UInt16 = 1;
+   var callback:cpp.Function<Int->Int, cpp.abi.Abi>;
 
    public function new() super();
 
@@ -48,5 +49,16 @@ class TestTypes extends Test
       Assert.equals(d.i5, 1);
       Assert.equals(d.i6, 1);
       Assert.equals(d.i7, 1);
+   }
+
+   static function increment(value:Int):Int
+   {
+      return value + 1;
+   }
+
+   public function testFunctionField()
+   {
+      callback = cpp.Function.fromStaticFunction(increment);
+      Assert.equals(callback.call(41), 42);
    }
 }
