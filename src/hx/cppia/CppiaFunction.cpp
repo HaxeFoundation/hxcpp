@@ -201,11 +201,30 @@ CppiaExpr *ScriptCallable::link(CppiaModule &inModule)
 }
 
 #ifdef HXCPP_STACK_SCRIPTABLE
+
+// Stack layout for CPPIA functions (both vtable dispatch and CppiaClosure paths):
+//   ctx->frame (= base) = P
+//   P+0:             'this' pointer (pushed by host or written by doRun)
+//   P+8:             arg0  (stackPos=8)
+//   P+8+argBytes:    arg1... locals (stackPos=8+argBytes...)
+//   P+8+argBytes+stackSize: StackFrame  <- inStack
+//
+// So: base = inStack - stackSize - sizeof(Object*) - argBytes = ctx->frame
+// Variables are at base + var->stackPos.
+static unsigned char *scriptableBase(unsigned char *inStack, int stackSize,
+                                     const std::vector<CppiaStackVar> &args)
+{
+   int argBytes = 0;
+   for (int i = 0; i < (int)args.size(); i++)
+      argBytes += sTypeSize[args[i].argType];
+   return inStack - stackSize - sizeof(hx::Object *) - argBytes;
+}
+
 void ScriptCallable::getScriptableVariables(unsigned char *inStack, Array<Dynamic> outNames)
 {
-   unsigned char *frame = inStack - stackSize;
+   unsigned char *base = scriptableBase(inStack, stackSize, args);
 
-   hx::Object *thizz = *(hx::Object **)frame;
+   hx::Object *thizz = *(hx::Object **)base;
    if (thizz)
       outNames->push(HX_CSTRING("this"));
 
@@ -219,10 +238,10 @@ void ScriptCallable::getScriptableVariables(unsigned char *inStack, Array<Dynami
 
 bool ScriptCallable::getScriptableValue(unsigned char *inStack, String inName, ::Dynamic &outValue)
 {
-   unsigned char *frame = inStack - stackSize;
+   unsigned char *base = scriptableBase(inStack, stackSize, args);
    if (inName == HX_CSTRING("this"))
    {
-      outValue = *(hx::Object **)frame;
+      outValue = *(hx::Object **)base;
       return true;
    }
 
@@ -232,7 +251,7 @@ bool ScriptCallable::getScriptableValue(unsigned char *inStack, String inName, :
       CppiaStackVar *var = i->second;
       if ( var->module->strings[ var->nameId]==inName)
       {
-         outValue = var->getInFrame(frame);
+         outValue = var->getInFrame(base);
          return true;
       }
    }
@@ -243,13 +262,13 @@ bool ScriptCallable::getScriptableValue(unsigned char *inStack, String inName, :
 
 bool ScriptCallable::setScriptableValue(unsigned char *inStack, String inName, ::Dynamic inValue)
 {
-   unsigned char *frame = inStack - stackSize;
+   unsigned char *base = scriptableBase(inStack, stackSize, args);
    for(CppiaStackVarMap::iterator i=varMap.begin();i!=varMap.end();++i)
    {
       CppiaStackVar *var = i->second;
       if ( var->module->strings[ var->nameId]==inName)
       {
-         var->setInFrame(frame,inValue);
+         var->setInFrame(base,inValue);
          return true;
       }
    }
