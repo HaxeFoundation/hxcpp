@@ -17,12 +17,40 @@ namespace
 	hx::QuickVec<void*> largeAllocs;
 	std::mutex largeAllocsLock;
 
+	// Hold a reference to small objects when their thread is destroyed, until Tracy can learn they've been freed.
+	// Only used by tlmDestroy so no mutex is needed.
+	hx::QuickVec<void*> orphanedSmallAllocs;
+
 	bool isLargeObject(void* ptr)
 	{
 		auto ptrHeader = reinterpret_cast<size_t>(ptr) - sizeof(int);
 		auto flags     = *reinterpret_cast<unsigned int*>(ptrHeader);
 
 		return (flags & 0xffff) == 0;
+	}
+
+	// Reports every allocation in the list that was not marked this collection as freed, and removes it from the list.
+	void sweepUnmarked(hx::QuickVec<void*>& allocs, const char* poolName, int byteMarkId, int endianByteMarkId)
+	{
+		hx::QuickVec<void*> retained;
+
+		retained.safeReserveExtra(allocs.size());
+
+		for (auto i = 0; i < allocs.size(); i++)
+		{
+			auto ptr      = allocs[i];
+			auto markByte = reinterpret_cast<unsigned char*>(ptr)[endianByteMarkId];
+			if (markByte != byteMarkId)
+			{
+				TracyFreeN(ptr, poolName);
+			}
+			else
+			{
+				retained.push(ptr);
+			}
+		}
+
+		allocs.swap(retained);
 	}
 }
 
@@ -108,46 +136,12 @@ void __hxt_gc_after_mark(int byteMarkId, int endianByteMarkId)
 	#ifdef HXCPP_TRACY_MEMORY
 		for (auto&& telemetry : created)
 		{
-			hx::QuickVec<void*> smallRetained;
-
-			smallRetained.safeReserveExtra(telemetry->smallAllocs.size());
-
-			for (auto i = 0; i < telemetry->smallAllocs.size(); i++)
-			{
-				auto ptr      = telemetry->smallAllocs[i];
-				auto markByte = reinterpret_cast<unsigned char*>(ptr)[endianByteMarkId];
-				if (markByte != byteMarkId)
-				{
-					TracyFreeN(ptr, sohName);
-				}
-				else
-				{
-					smallRetained.push(ptr);
-				}
-			}
-
-			telemetry->smallAllocs.swap(smallRetained);
+			sweepUnmarked(telemetry->smallAllocs, sohName, byteMarkId, endianByteMarkId);
 		}
 
-		hx::QuickVec<void*> largeRetained;
+		sweepUnmarked(orphanedSmallAllocs, sohName, byteMarkId, endianByteMarkId);
 
-		largeRetained.safeReserveExtra(largeAllocs.size());
-
-		for (auto i = 0; i < largeAllocs.size(); i++)
-		{
-			auto ptr      = largeAllocs[i];
-			auto markByte = reinterpret_cast<unsigned char*>(ptr)[endianByteMarkId];
-			if (markByte != byteMarkId)
-			{
-				TracyFreeN(ptr, lohName);
-			}
-			else
-			{
-				largeRetained.push(ptr);
-			}
-		}
-
-		largeAllocs.swap(largeRetained);
+		sweepUnmarked(largeAllocs, lohName, byteMarkId, endianByteMarkId);
 	#endif
 }
 
@@ -173,6 +167,19 @@ hx::Telemetry* hx::tlmCreate(StackContext* stack)
 void hx::tlmDestroy(hx::Telemetry* telemetry)
 {
 	created.erase(std::find(created.begin(), created.end(), telemetry));
+
+	#ifdef HXCPP_TRACY_MEMORY
+	// If we drop this thread's small allocations here, Tracy doesn't learn they've been freed.
+	// If the GC then reuses those addresses, Tracy will throw an error.
+	// Instead, we hold onto them to free later.
+
+	orphanedSmallAllocs.safeReserveExtra(telemetry->smallAllocs.size());
+
+	for (auto i = 0; i < telemetry->smallAllocs.size(); i++)
+	{
+		orphanedSmallAllocs.push(telemetry->smallAllocs[i]);
+	}
+	#endif
 
 	delete telemetry;
 }
