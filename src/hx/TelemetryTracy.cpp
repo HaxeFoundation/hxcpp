@@ -241,7 +241,7 @@ void __hxcpp_tracy_plot_config(String name, uint8_t format, bool step, bool fill
 void __hxcpp_tracy_message(String msg, int color)
 {
 	hx::strbuf buffer;
-	::tracy::Profiler::MessageColor(msg.utf8_str(&buffer), msg.length, color, 0);
+	::tracy::Profiler::LogString(::tracy::MessageSourceType::User, ::tracy::MessageSeverity::Info, color, 0, msg.length, msg.utf8_str(&buffer));
 }
 
 void __hxcpp_tracy_message_app_info(String info)
