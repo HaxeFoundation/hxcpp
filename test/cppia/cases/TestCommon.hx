@@ -60,6 +60,25 @@ class TestCommon extends Test {
     }
 
     @:depends(testStatus)
+    function testThrowReachesTheCaller() {
+        final cls = Type.resolveClass('ClientThrower');
+
+        if (Assert.notNull(cls, 'Unable to resolve ClientThrower')) {
+            var caught:String = null;
+
+            try {
+                Reflect.callMethod(null, Reflect.field(cls, 'boom'), []);
+            } catch (e:Dynamic) {
+                caught = Std.string(e);
+            }
+
+            Assert.equals('boom', caught, 'The throw did not reach the caller');
+            Assert.equals('still here', Std.string(Reflect.callMethod(null, Reflect.field(cls, 'fine'), [])),
+                'A later call answered null, so the exception was left on the context');
+        }
+    }
+
+    @:depends(testStatus)
     function testInterfaceCalling() {
         final obj : IFoo = Type.createInstance(Type.resolveClass('ClientFoo'), []);
 
