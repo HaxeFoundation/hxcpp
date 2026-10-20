@@ -47,6 +47,20 @@ jobs:
       ext: .dll
       os: windows-latest
 
+  WindowsArm64:
+    strategy:
+      fail-fast: false
+      matrix:
+        haxe: [ 4.3.7, latest ]
+    uses: ./.github/workflows/test.yml
+    name: Test Windows (Arm64)
+    with:
+      haxe: ${{ matrix.haxe  }}
+      arch: Arm64
+      sep: \
+      ext: .dll
+      os: windows-11-arm
+
   MacOS64:
     strategy:
       fail-fast: false
