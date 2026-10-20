@@ -14,6 +14,23 @@
 #include "../../project/thirdparty/tracy-0.14.1/tracy/TracyC.h"
 #include "../../project/thirdparty/tracy-0.14.1/tracy/Tracy.hpp"
 
+#if TRACY_HAS_CALLSTACK == 1 || TRACY_HAS_CALLSTACK == 2 || TRACY_HAS_CALLSTACK == 5
+// Clamp Haxe zone nesting callstack depth based on what Tracy accepts on this platform.
+// Windows and Android throw an error at 63 or above, other platforms have no limit.
+#define HXCPP_TRACY_MAX_CALLSTACK_DEPTH 62
+#endif
+
+inline int __hxcpp_tracy_callstack_depth(size_t zoneDepth)
+{
+	#ifdef HXCPP_TRACY_MAX_CALLSTACK_DEPTH
+	if (zoneDepth > HXCPP_TRACY_MAX_CALLSTACK_DEPTH)
+	{
+		return HXCPP_TRACY_MAX_CALLSTACK_DEPTH;
+	}
+	#endif
+	return static_cast<int>(zoneDepth);
+}
+
 #ifdef HXCPP_TRACY_MEMORY
 	#ifdef HXCPP_GC_MOVING
 		#error "Error: HXCPP_TRACY_MEMORY is not supported when HXCPP_GC_MOVING is active."
@@ -28,7 +45,7 @@
 	::hx::strbuf TracyConcat(_hx_tracy_str_buffer, TracyLine); \
 	int TracyConcat(_hx_tracy_str_length, TracyLine) = 0; \
 	const char *TracyConcat(_hx_tracy_str_buffer_ptr, TracyLine) = name.utf8_str(&TracyConcat(_hx_tracy_str_buffer, TracyLine), false, &TracyConcat(_hx_tracy_str_length, TracyLine)); \
-	::tracy::ScopedZone TracyConcat(_hx_tracy_scoped_zone,TracyLine)(_hx_stackframe.lineNumber, _hx_stackframe.position->fileName, strlen(_hx_stackframe.position->fileName), _hx_stackframe.position->fullName, strlen(_hx_stackframe.position->fullName), TracyConcat(_hx_tracy_str_buffer_ptr, TracyLine), TracyConcat(_hx_tracy_str_length, TracyLine), __hxcpp_tracy_get_zone_count());
+	::tracy::ScopedZone TracyConcat(_hx_tracy_scoped_zone,TracyLine)(_hx_stackframe.lineNumber, _hx_stackframe.position->fileName, strlen(_hx_stackframe.position->fileName), _hx_stackframe.position->fullName, strlen(_hx_stackframe.position->fullName), TracyConcat(_hx_tracy_str_buffer_ptr, TracyLine), TracyConcat(_hx_tracy_str_length, TracyLine), __hxcpp_tracy_callstack_depth(__hxcpp_tracy_get_zone_count()));
 #else
 #define HXCPP_TRACY_ZONE(name) \
 	::hx::strbuf TracyConcat(_hx_tracy_str_buffer, TracyLine); \
