@@ -241,13 +241,17 @@ void __hxcpp_tracy_plot_config(String name, uint8_t format, bool step, bool fill
 void __hxcpp_tracy_message(String msg, int color)
 {
 	hx::strbuf buffer;
-	::tracy::Profiler::LogString(::tracy::MessageSourceType::User, ::tracy::MessageSeverity::Info, color, 0, msg.length, msg.utf8_str(&buffer));
+	int byteLength = 0;
+	const char *utf8 = msg.utf8_str(&buffer, false, &byteLength);
+	::tracy::Profiler::LogString(::tracy::MessageSourceType::User, ::tracy::MessageSeverity::Info, color, 0, byteLength, utf8);
 }
 
 void __hxcpp_tracy_message_app_info(String info)
 {
 	hx::strbuf buffer;
-	::tracy::Profiler::MessageAppInfo(info.utf8_str(&buffer), info.length);
+	int byteLength = 0;
+	const char *utf8 = info.utf8_str(&buffer, false, &byteLength);
+	::tracy::Profiler::MessageAppInfo(utf8, byteLength);
 }
 
 void __hxcpp_tracy_set_thread_name_and_group(String name, int groupHint)
