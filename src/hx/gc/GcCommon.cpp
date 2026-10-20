@@ -27,14 +27,14 @@ extern void __hxt_new_string(void* result, int size);
 namespace hx
 {
 #if defined(HX_MACOS) || defined(HX_WINDOWS) || defined(HX_LINUX) || defined(__ORBIS__)
-size_t sgMinimumWorkingMemory       = 20*1024*1024;
-size_t sgMinimumFreeSpace           = 10*1024*1024;
+int sgMinimumWorkingMemory       = 20*1024*1024;
+int sgMinimumFreeSpace           = 10*1024*1024;
 #else
-size_t sgMinimumWorkingMemory       = 8*1024*1024;
-size_t sgMinimumFreeSpace           = 4*1024*1024;
+int sgMinimumWorkingMemory       = 8*1024*1024;
+int sgMinimumFreeSpace           = 4*1024*1024;
 #endif
 // Once you use more than the minimum, this kicks in...
-size_t sgTargetFreeSpacePercentage  = 100;
+int sgTargetFreeSpacePercentage  = 100;
 
 
 
@@ -44,36 +44,30 @@ size_t sgTargetFreeSpacePercentage  = 100;
 // Called internally before and GC operations
 void CommonInitAlloc()
 {
-    // It is probably safe to use something like strtoull for parsing the size_t values as I'm sure every reasonable implementation treats them as uint64_t.
-    // But just to be pedantic let's use sscanf which is the only "official" way to do this in C++11.
-    // C++17 gives us std::charconv but I haven't twisted enough arms yet to have 17 be the minimum version.
-
    #if !defined(HX_WINRT) && !defined(__SNC__) && !defined(__ORBIS__)
-   const char *minimumWorking{ getenv("HXCPP_MINIMUM_WORKING_MEMORY") };
+   const char *minimumWorking = getenv("HXCPP_MINIMUM_WORKING_MEMORY");
    if (minimumWorking)
    {
-       if (1 != std::sscanf(minimumWorking, "%zu", &sgMinimumWorkingMemory))
-       {
-           hx::CriticalError(HX_CSTRING("Failed to parse number from HXCPP_MINIMUM_WORKING_MEMORY environment variable"));
-       }
+      int mem =  atoi(minimumWorking);
+      if (mem>0)
+         sgMinimumWorkingMemory = mem;
    }
 
-   const char* minimumFreeSpace{ getenv("HXCPP_MINIMUM_FREE_SPACE") };
+   const char *minimumFreeSpace = getenv("HXCPP_MINIMUM_FREE_SPACE");
    if (minimumFreeSpace)
    {
-       if (1 != std::sscanf(minimumFreeSpace, "%zu", &sgMinimumFreeSpace))
-       {
-           hx::CriticalError(HX_CSTRING("Failed to parse number from HXCPP_MINIMUM_FREE_SPACE environment variable"));
-       }
+      int mem =  atoi(minimumFreeSpace);
+      if (mem>0)
+         sgMinimumFreeSpace = mem;
    }
 
-   const char* targetFree{ getenv("HXCPP_TARGET_FREE_SPACE") };
+
+   const char *targetFree = getenv("HXCPP_TARGET_FREE_SPACE");
    if (targetFree)
    {
-       if (1 != std::sscanf(targetFree, "%zu", &sgTargetFreeSpacePercentage))
-       {
-           hx::CriticalError(HX_CSTRING("Failed to parse number from HXCPP_TARGET_FREE_SPACE environment variable"));
-       }
+      int percent =  atoi(targetFree);
+      if (percent>0)
+         sgTargetFreeSpacePercentage = percent;
    }
    #endif
 }
@@ -128,7 +122,7 @@ HX_CHAR *NewString(int inLen)
 
 }
 
-void *NewGCBytes(void *inData, size_t inSize)
+void *NewGCBytes(void *inData,int inSize)
 {
    void *result =  hx::InternalNew(inSize,false);
    if (inData)
@@ -139,7 +133,7 @@ void *NewGCBytes(void *inData, size_t inSize)
 }
 
 
-void *NewGCPrivate(void *inData, size_t inSize)
+void *NewGCPrivate(void *inData,int inSize)
 {
    void *result =  InternalNew(inSize,false);
    if (inData)

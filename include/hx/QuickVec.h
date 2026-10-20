@@ -10,8 +10,8 @@ namespace hx
 template<typename T>
 struct QuickVec
 {
-   size_t mAlloc;
-   size_t mSize;
+   int mAlloc;
+   int mSize;
    T *mPtr;
 
    QuickVec() : mPtr(0), mAlloc(0), mSize(0) { } 
@@ -26,7 +26,7 @@ struct QuickVec
       if (mSize+1>mAlloc)
       {
          mAlloc = 10 + (mSize*3/2);
-         mPtr = static_cast<T*>(realloc(mPtr,sizeof(T)*mAlloc));
+         mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
       }
       mPtr[mSize]=inT;
       mSize++;
@@ -37,31 +37,31 @@ struct QuickVec
       std::swap(mSize, inOther.mSize);
       std::swap(mPtr, inOther.mPtr);
    }
-   T *setSize(size_t inSize)
+   T *setSize(int inSize)
    {
       if (inSize>mAlloc)
       {
          mAlloc = inSize;
-         mPtr = static_cast<T*>(realloc(mPtr,sizeof(T)*mAlloc));
+         mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
       }
       mSize = inSize;
       return mPtr;
    }
    // Can push this many without realloc
-   bool hasExtraCapacity(size_t inN)
+   bool hasExtraCapacity(int inN)
    {
       return mSize+inN<=mAlloc;
    }
 
-   bool safeReserveExtra(size_t inN)
+   bool safeReserveExtra(int inN)
    {
-      size_t want{ mSize + inN };
+      int want = mSize + inN;
       if (want>mAlloc)
       {
-         size_t wantAlloc{ 10 + (mSize * 3 / 2) };
+         int wantAlloc = 10 + (mSize*3/2);
          if (wantAlloc<want)
             wantAlloc = want;
-         T *newBuffer = static_cast<T*>(malloc( sizeof(T)*wantAlloc ));
+         T *newBuffer = (T *)malloc( sizeof(T)*wantAlloc );
          if (!newBuffer)
             return false;
          mAlloc = wantAlloc;
@@ -80,12 +80,12 @@ struct QuickVec
    {
       return mPtr[--mSize];
    }
-   inline void qerase(size_t inPos)
+   inline void qerase(int inPos)
    {
       --mSize;
       mPtr[inPos] = mPtr[mSize];
    }
-   inline void erase(size_t inPos)
+   inline void erase(int inPos)
    {
       --mSize;
       if (mSize>inPos)
@@ -95,33 +95,31 @@ struct QuickVec
 
    inline bool qerase_val(T inVal)
    {
-      for (size_t i{ 0 }; i < mSize; i++)
-      {
-         if (mPtr[i] == inVal)
+      for(int i=0;i<mSize;i++)
+         if (mPtr[i]==inVal)
          {
             --mSize;
             mPtr[i] = mPtr[mSize];
             return true;
          }
-      }
       return false;
    }
 
    inline bool some_left() { return mSize; }
    inline bool empty() const { return !mSize; }
    inline void clear() { mSize = 0; }
-   inline size_t next()
+   inline int next()
    {
       if (mSize+1>=mAlloc)
       {
          mAlloc = 10 + (mSize*3/2);
-         mPtr = static_cast<T*>(realloc(mPtr,sizeof(T)*mAlloc));
+         mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
       }
       return mSize++;
    }
-   inline size_t size() const { return mSize; }
-   inline T &operator[](size_t inIndex) { return mPtr[inIndex]; }
-   inline const T &operator[](size_t inIndex) const { return mPtr[inIndex]; }
+   inline int size() const { return mSize; }
+   inline T &operator[](int inIndex) { return mPtr[inIndex]; }
+   inline const T &operator[](int inIndex) const { return mPtr[inIndex]; }
 
 private:
    QuickVec(const QuickVec<T> &);
@@ -140,8 +138,8 @@ class QuickDeque
     QuickVec<Slab *> mSpare;
     QuickVec<Slab *> mActive;
 
-    size_t mHeadPos;
-    size_t mTailPos;
+    int  mHeadPos;
+    int  mTailPos;
     Slab *mHead;
     Slab *mTail;
 
@@ -155,9 +153,9 @@ public:
    }
    ~QuickDeque()
    {
-      for (size_t i{0}; i < mSpare.size(); i++)
+      for(int i=0;i<mSpare.size();i++)
          delete mSpare[i];
-      for (size_t i{0}; i < mActive.size(); i++)
+      for(int i=0;i<mActive.size();i++)
          delete mActive[i];
       delete mHead;
       if (mTail!=mHead)
