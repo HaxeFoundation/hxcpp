@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <mutex>
+#include <string>
+#include <unordered_set>
 
 namespace
 {
@@ -20,6 +22,30 @@ namespace
 	// Hold a reference to small objects when their thread is destroyed, until Tracy can learn they've been freed.
 	// Only used by tlmDestroy so no mutex is needed.
 	hx::QuickVec<void*> orphanedSmallAllocs;
+
+	// Tracy receives name pointers from HXCPP and reads them from its thread.
+	// If the pointer is then freed, Tracy can't identify the frame set or plot.
+	// (This is mainly an issue for non-ASCII strings!)
+	// We use a set so each unique name is only stored once, and never free it so Tracy can read the names while the program is shutting down.
+	std::unordered_set<std::string>* internedNames = new std::unordered_set<std::string>();
+	std::mutex internedNamesLock;
+
+	// Store the provided name as a UTF-8 pointer that Tracy can always access.
+	const char* internName(const String& name)
+	{
+		if (!name.raw_ptr())
+		{
+			return nullptr;
+		}
+
+		hx::strbuf buffer;
+		int byteLength = 0;
+		const char* utf8 = name.utf8_str(&buffer, false, &byteLength);
+
+		std::lock_guard<std::mutex> lock(internedNamesLock);
+
+		return internedNames->emplace(utf8, byteLength).first->c_str();
+	}
 
 	bool isLargeObject(void* ptr)
 	{
@@ -235,14 +261,12 @@ void __hxcpp_tracy_framemark()
 
 void __hxcpp_tracy_plot(String name, ::Float val)
 {
-	hx::strbuf buffer;
-	::tracy::Profiler::PlotData(name.utf8_str(&buffer), val);
+	::tracy::Profiler::PlotData(internName(name), val);
 }
 
 void __hxcpp_tracy_plot_config(String name, uint8_t format, bool step, bool fill, int color)
 {
-	hx::strbuf buffer;
-	::tracy::Profiler::ConfigurePlot(name.utf8_str(&buffer),::tracy::PlotFormatType(format), step, fill, color);
+	::tracy::Profiler::ConfigurePlot(internName(name), ::tracy::PlotFormatType(format), step, fill, color);
 }
 
 void __hxcpp_tracy_message(String msg, int color)
