@@ -14,6 +14,13 @@ class ClientFoo implements IFoo {
    }
 }
 
+class ClientHolder {
+
+   public var values:Array<Int>;
+
+   public function new() {}
+}
+
 class Client
 {
    public static var clientBool0 = true;
