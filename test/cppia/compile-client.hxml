@@ -1,3 +1,8 @@
 -m Client
 -D dll_import=host_classes.info
 --cppia bin/client.cppia
+
+--next
+
+-m ClientUnlinked
+--cppia bin/unlinked.cppia
