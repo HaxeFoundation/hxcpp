@@ -261,20 +261,17 @@ void __hxcpp_tracy_framemark()
 
 void __hxcpp_tracy_framemark_named(String name)
 {
-	hx::strbuf buffer;
-	::tracy::Profiler::SendFrameMark(name.utf8_str(&buffer));
+	::tracy::Profiler::SendFrameMark(internName(name));
 }
 
 void __hxcpp_tracy_framemark_start(String name)
 {
-	hx::strbuf buffer;
-	___tracy_emit_frame_mark_start(name.utf8_str(&buffer));
+	___tracy_emit_frame_mark_start(internName(name));
 }
 
 void __hxcpp_tracy_framemark_end(String name)
 {
-	hx::strbuf buffer;
-	___tracy_emit_frame_mark_end(name.utf8_str(&buffer));
+	___tracy_emit_frame_mark_end(internName(name));
 }
 
 void __hxcpp_tracy_plot(String name, ::Float val)
