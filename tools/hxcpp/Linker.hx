@@ -151,21 +151,7 @@ class Linker
                }
                else
                {
-                  var v18 = parts[0] + "-18" + parts[1];
-                  if (FileSystem.exists(v18))
-                  {
-                     Log.info("", " - \x1b[1mUsing MSVC18 compatible library:\x1b[0m " + v18);
-                     libs[i]=v18;
-                     if (!v18Added)
-                     {
-                        v18Added=true;
-                        libs.push( BuildTool.HXCPP + "/lib/Windows/libmsvccompat-18.lib");
-                     }
-                  }
-                  else
-                  {
-                     Log.error("Could not find compatible library for " + lib + ", " + v18 + " does not exist");
-                  }
+                  Log.error("Could not find compatible library for " + lib + ", " + current + " does not exist");
                }
             }
             else
