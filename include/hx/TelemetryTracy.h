@@ -6,9 +6,13 @@
 #endif
 
 #define TRACY_ENABLE
+// NOTE: This has to match what TracyClient.cpp uses to build, or Tracy config will fail to link.
+#ifdef HXCPP_TRACY_ON_DEMAND
+#define TRACY_ON_DEMAND
+#endif
 #include <hxcpp.h>
-#include "../../project/thirdparty/tracy-0.13.1/tracy/TracyC.h"
-#include "../../project/thirdparty/tracy-0.13.1/tracy/Tracy.hpp"
+#include "../../project/thirdparty/tracy-0.14.1/tracy/TracyC.h"
+#include "../../project/thirdparty/tracy-0.14.1/tracy/Tracy.hpp"
 
 #ifdef HXCPP_TRACY_MEMORY
 	#ifdef HXCPP_GC_MOVING
