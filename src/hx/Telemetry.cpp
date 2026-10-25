@@ -328,20 +328,22 @@ private:
 
     std::vector<int> *allocation_data;
 
-    static std::recursive_mutex gStashMutex;
-    static std::recursive_mutex gThreadMutex;
+    typedef std::map<void*, Telemetry*> AllocMap;
+
+    HX_IMMORTAL_STATIC_DECL(std::recursive_mutex, gStashMutex);
+    HX_IMMORTAL_STATIC_DECL(std::recursive_mutex, gThreadMutex);
     static int gThreadRefCount;
     static int gProfileClock;
 
-    static std::recursive_mutex alloc_mutex;
-    static std::map<void*, Telemetry*> alloc_map;
+    HX_IMMORTAL_STATIC_DECL(std::recursive_mutex, alloc_mutex);
+    HX_IMMORTAL_STATIC_DECL(AllocMap, alloc_map);
 };
-/* static */ std::recursive_mutex Telemetry::gStashMutex;
-/* static */ std::recursive_mutex Telemetry::gThreadMutex;
+/* static */ HX_IMMORTAL_GLOBAL(std::recursive_mutex, Telemetry::gStashMutex);
+/* static */ HX_IMMORTAL_GLOBAL(std::recursive_mutex, Telemetry::gThreadMutex);
 /* static */ int Telemetry::gThreadRefCount;
 /* static */ int Telemetry::gProfileClock;
-/* static */ std::recursive_mutex Telemetry::alloc_mutex;
-/* static */ std::map<void*, Telemetry*> Telemetry::alloc_map;
+/* static */ HX_IMMORTAL_GLOBAL(std::recursive_mutex, Telemetry::alloc_mutex);
+/* static */ HX_IMMORTAL_GLOBAL(Telemetry::AllocMap, Telemetry::alloc_map);
 
 
 

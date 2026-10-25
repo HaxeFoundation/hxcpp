@@ -9,8 +9,12 @@
 
 struct hx::thread::ThreadLocal_obj::Impl
 {
-	static std::mutex slotLock;
-	static std::list<Impl*> slots;
+	typedef std::list<Impl*> SlotList;
+
+	// finalise() runs from the GC, which may still collect while the process exits:
+	// these must outlive the static destructors (see HXCPP_IMMORTAL_STATICS)
+	HX_IMMORTAL_STATIC_DECL(std::mutex, slotLock);
+	HX_IMMORTAL_STATIC_DECL(SlotList, slots);
 	static int counter;
 
 	const int slot;
@@ -41,9 +45,9 @@ struct hx::thread::ThreadLocal_obj::Impl
 	}
 };
 
-std::mutex hx::thread::ThreadLocal_obj::Impl::slotLock;
+HX_IMMORTAL_GLOBAL(std::mutex, hx::thread::ThreadLocal_obj::Impl::slotLock);
 
-std::list<hx::thread::ThreadLocal_obj::Impl*> hx::thread::ThreadLocal_obj::Impl::slots;
+HX_IMMORTAL_GLOBAL(hx::thread::ThreadLocal_obj::Impl::SlotList, hx::thread::ThreadLocal_obj::Impl::slots);
 
 int hx::thread::ThreadLocal_obj::Impl::counter = 0;
 
