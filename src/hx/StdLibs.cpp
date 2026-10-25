@@ -192,7 +192,7 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
 extern "C" void __hxcpp_lib_main();
 namespace hx
 {
-   static std::string initReturnBuffer;
+   HX_IMMORTAL(std::string, initReturnBuffer);
    const char *Init(bool stayAttached)
    {
       try
