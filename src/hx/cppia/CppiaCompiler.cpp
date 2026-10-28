@@ -337,7 +337,7 @@ public:
          onReturn(this, onReturnStackSize);
 
       sljit_emit_return_void(compiler);
-      CppiaFunc func = (CppiaFunc)sljit_generate_code(compiler);
+      CppiaFunc func = (CppiaFunc)sljit_generate_code(compiler, 0, NULL);
       sljit_free_compiler(compiler);
       compiler = 0;
       return func;
