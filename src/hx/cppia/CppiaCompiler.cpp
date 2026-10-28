@@ -485,7 +485,7 @@ public:
             JumpId passed = sljit_emit_fcmp(compiler, condition, t0, getData(v0), t1, getData(v1) );
 
             // test failed, but test nan
-            JumpId notNan = sljit_emit_jump(compiler,SLJIT_ORDERED_F64);
+            JumpId notNan = sljit_emit_jump(compiler,SLJIT_ORDERED);
 
             // is nan - fallthough
             // test passed, but was nan
@@ -507,7 +507,7 @@ public:
             comeFrom(userCmpPassed);
 
             // Result is not-nan when user test passed
-            JumpId notNan = sljit_emit_jump(compiler,SLJIT_ORDERED_F64);
+            JumpId notNan = sljit_emit_jump(compiler,SLJIT_ORDERED);
             if (andJump)
                sljit_set_label(notNan, andJump);
             // is nan ..
