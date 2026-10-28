@@ -1197,7 +1197,7 @@ public:
 
    void bitNot(const JitVal &inDest, const JitVal &v0) HXCPP_OVERRIDE
    {
-      emit_op1(SLJIT_NOT32, inDest, v0);
+      emit_op2(SLJIT_XOR | SLJIT_32, inDest, v0, JitVal(-1));
    }
 
    void bitOp(BitOp inOp, const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) HXCPP_OVERRIDE
