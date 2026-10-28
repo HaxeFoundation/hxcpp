@@ -661,7 +661,7 @@ void ScriptCallable::compile()
 
       body->genCode(compiler);
 
-      compiler->beginGeneration(1);
+      compiler->beginGeneration();
 
       // Second pass does the job
       genDefaults(compiler);

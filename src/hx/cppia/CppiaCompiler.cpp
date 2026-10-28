@@ -287,15 +287,13 @@ public:
    }
 
 
-   void beginGeneration(int inArgs) HXCPP_OVERRIDE
+   void beginGeneration() HXCPP_OVERRIDE
    {
       compiler = sljit_create_compiler(NULL);
 
       int options = 0;
       // S0 is stack
-      int saveds = inArgs;
-      if (usesCtx && saveds<1)
-         saveds = 1;
+      int saveds = 1;
       if (usesFrame && saveds<2)
          saveds = 2;
       if (usesThis && saveds<3)
@@ -304,15 +302,14 @@ public:
          saveds = 3;
       }
       saveds = 3;
-      int fsaveds = 0;
       #ifdef HXCPP_M64
       // Add shadow space for native calls
-      int scratches = std::max(maxTempCount + (makesNativeCalls?4:0) ,inArgs);
+      int scratches = std::max(maxTempCount + (makesNativeCalls?4:0) ,1);
       #else
-      int scratches = std::max(maxTempCount,inArgs);
+      int scratches = std::max(maxTempCount,1);
       #endif
 
-      sljit_emit_enter(compiler, options, inArgs, scratches, saveds, maxFTempCount, fsaveds, maxLocalSize);
+      sljit_emit_enter(compiler, options, SLJIT_ARGS1V(P), scratches | SLJIT_ENTER_FLOAT(maxFTempCount), saveds, maxLocalSize);
       usesCtx = true;
 
       if (usesFrame)

@@ -328,7 +328,7 @@ public:
    virtual void genVariantValueTemp0(int inOffset, const JitVal &inDest, ExprType destType) = 0;
    virtual void returnNull(const JitVal &inTarget, ExprType inToType) = 0;
 
-   virtual void beginGeneration(int inArgs=1) = 0;
+   virtual void beginGeneration() = 0;
    virtual CppiaFunc finishGeneration() = 0;
 
    virtual void setFunctionDebug() = 0;
