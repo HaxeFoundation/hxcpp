@@ -424,11 +424,11 @@ public:
    }
 
 
-   void emit_ijump(const JitVal &inVal,int inArgs=1)
+   void emit_ijump(const JitVal &inVal,int inArgs=SLJIT_ARGS1V(P))
    {
       sljit_sw t = getTarget(inVal);
       if (compiler)
-         sljit_emit_ijump(compiler, SLJIT_CALL0+inArgs, t, getData(inVal));
+         sljit_emit_icall(compiler, SLJIT_CALL, inArgs, t, getData(inVal));
    }
 
    JumpId jump(LabelId inTo=0) HXCPP_OVERRIDE
@@ -1303,7 +1303,7 @@ public:
    void call(const JitVal &func,const JitVal &inArg0) HXCPP_OVERRIDE
    {
       move(sJitArg0,inArg0);
-      emit_ijump(func,1);
+      emit_ijump(func,SLJIT_ARGS1V(P));
    }
 
    void callNative(void *func) HXCPP_OVERRIDE
@@ -1313,7 +1313,8 @@ public:
          maxTempCount =1;
       if (compiler)
       {
-         sljit_emit_ijump(compiler, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
+         auto call = sljit_emit_call(compiler, SLJIT_CALL, SLJIT_ARGS1V(P));
+         sljit_set_target(call, SLJIT_FUNC_ADDR(func));
       }
    }
    void callNative(void *func, const JitVal &inArg0) HXCPP_OVERRIDE
@@ -1339,7 +1340,10 @@ public:
          move( sJitArg0, inArg0);
 
       if (compiler)
-         sljit_emit_ijump(compiler, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
+      {
+         auto call = sljit_emit_call(compiler, SLJIT_CALL, SLJIT_ARGS1V(P));
+         sljit_set_target(call, SLJIT_FUNC_ADDR(func));
+      }
 
       if (restoreLocal>=0)
          localSize = restoreLocal;
@@ -1398,7 +1402,10 @@ public:
 
 
       if (compiler)
-         sljit_emit_ijump(compiler, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
+      {
+         auto call = sljit_emit_call(compiler, SLJIT_CALL, SLJIT_ARGS2V(P, P));
+         sljit_set_target(call, SLJIT_FUNC_ADDR(func));
+      }
 
       if (restoreLocal>=0)
          localSize = restoreLocal;
@@ -1479,7 +1486,8 @@ public:
 
       if (compiler)
       {
-         sljit_emit_ijump(compiler, SLJIT_CALL3, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
+         auto call = sljit_emit_call(compiler, SLJIT_CALL, SLJIT_ARGS3V(P, P, P));
+         sljit_set_target(call, SLJIT_FUNC_ADDR(func));
       }
 
       if (restoreLocal>=0)
