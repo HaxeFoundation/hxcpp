@@ -1165,7 +1165,7 @@ public:
       }
       else
       {
-         emit_op1(SLJIT_NEG32, inDest,  inSrc);
+         emit_op2(SLJIT_SUB | SLJIT_32, inDest, JitVal(0), inSrc);
       }
    }
 
