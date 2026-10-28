@@ -3696,13 +3696,16 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
          }
          else
          {
-            inExpr->genCode(compiler, sJitTempF0, etFloat);
             if (exprType==etFloat)
+            {
+               inExpr->genCode(compiler, sJitTempF0, etFloat);
                compiler->mult(ioValue, sJitTempF0, ioValue,true);
+            }
             else
             {
                JitTemp fval(compiler, jtFloat);
                compiler->convert(ioValue, exprType, fval, etFloat);
+               inExpr->genCode(compiler, sJitTempF0, etFloat);
                compiler->mult(sJitTempF0, sJitTempF0, fval, true);
                compiler->convert(sJitTempF0, etFloat, ioValue, exprType);
             }
@@ -8247,6 +8250,5 @@ void TypeData::link(CppiaModule &inModule)
 
 
 } // end namespace hx
-
 
 
