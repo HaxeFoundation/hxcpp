@@ -20,6 +20,8 @@ namespace hx
 			int cursor;
 			Array<uint8_t> scratch;
 			Array<Dynamic> slots;
+			// The generation of the ThreadLocal each slot value was stored for
+			Array<int> slotGenerations;
 
 		public:
 			friend class Scratch;
@@ -42,8 +44,8 @@ namespace hx
 			String getName() HXCPP_OVERRIDE;
 			void setName(const String& name) HXCPP_OVERRIDE;
 
-			Dynamic getSlot(const int id);
-			void setSlot(const int id, const Dynamic& obj);
+			Dynamic getSlot(const int id, const int generation = 0);
+			void setSlot(const int id, const Dynamic& obj, const int generation = 0);
 
 			String toString() HXCPP_OVERRIDE;
 
