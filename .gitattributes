@@ -1,1 +1,2 @@
 project/thirdparty/*/** linguist-vendored
+src/hx/cppia/sljit_src/** linguist-vendored
