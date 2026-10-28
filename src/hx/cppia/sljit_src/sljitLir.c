@@ -2485,7 +2485,9 @@ static SLJIT_INLINE CHECK_RETURN_TYPE check_sljit_emit_jump(struct sljit_compile
 		else if ((compiler->last_flags & 0xff) == SLJIT_CARRY) {
 			CHECK_ARGUMENT((type & 0xfe) == SLJIT_CARRY);
 			compiler->last_flags &= ~SLJIT_SET_Z;
-		} else
+		// hughsando -
+		// I think the <= fcmp test also sets the ordered flag, so should not test
+		} else if (type != SLJIT_ORDERED)
 			CHECK_ARGUMENT((type & 0xfe) == (compiler->last_flags & 0xff)
 				|| CHECK_UNORDERED(type, compiler->last_flags));
 	}
