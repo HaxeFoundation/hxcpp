@@ -10,102 +10,102 @@
 namespace hx
 {
 
-static void SLJIT_CALL my_trace_func(const char *inText)
+static void SLJIT_FUNC my_trace_func(const char *inText)
 {
    printf("trace: %s\n", inText);
 }
-static void SLJIT_CALL my_trace_strings(const char *inText, const char *inValue)
+static void SLJIT_FUNC my_trace_strings(const char *inText, const char *inValue)
 {
    printf("%s%s\n", inText, inValue);
 }
-static void SLJIT_CALL my_trace_string(const char *inText, String *inValue)
+static void SLJIT_FUNC my_trace_string(const char *inText, String *inValue)
 {
    printf("%s%s\n", inText, inValue->out_str());
 }
 
-static void SLJIT_CALL my_trace_ptr_func(const char *inText, hx::Object **inPtr)
+static void SLJIT_FUNC my_trace_ptr_func(const char *inText, hx::Object **inPtr)
 {
    printf("%s = %p\n",inText, inPtr);
    //printf("*= %s\n", (*inPtr)->toString().out_str());
    //*(int *)0=0;
 }
-static void SLJIT_CALL my_trace_int_func(const char *inText, int inValue)
+static void SLJIT_FUNC my_trace_int_func(const char *inText, int inValue)
 {
    printf("%s = %d\n",inText, inValue);
 }
-static void SLJIT_CALL my_trace_float_func(const char *inText, double *inValue)
+static void SLJIT_FUNC my_trace_float_func(const char *inText, double *inValue)
 {
    printf("%s = %f\n",inText, *inValue);
 }
 
-static void SLJIT_CALL my_trace_obj_func(const char *inText, hx::Object *inPtr)
+static void SLJIT_FUNC my_trace_obj_func(const char *inText, hx::Object *inPtr)
 {
    printf("%s = %s\n",inText, inPtr ? inPtr->__ToString().out_str() : "NULL" );
 }
 
-static hx::Object *SLJIT_CALL intToObj(int inVal)
+static hx::Object *SLJIT_FUNC intToObj(int inVal)
 {
    return Dynamic(inVal).mPtr;
 }
-static void SLJIT_CALL intToStr(int inVal, String *outString)
+static void SLJIT_FUNC intToStr(int inVal, String *outString)
 {
    *outString = String(inVal);
 }
-static void SLJIT_CALL objToStr(hx::Object *inVal, String *outString)
+static void SLJIT_FUNC objToStr(hx::Object *inVal, String *outString)
 {
    *outString = inVal ? inVal->toString() : String();
 }
-int SLJIT_CALL objToInt(hx::Object *inVal)
+int SLJIT_FUNC objToInt(hx::Object *inVal)
 {
    return inVal ? inVal->__ToInt() : 0;
 }
-static void SLJIT_CALL objToFloat(hx::Object *inVal,double *outFloat)
+static void SLJIT_FUNC objToFloat(hx::Object *inVal,double *outFloat)
 {
    *outFloat =  inVal ? inVal->__ToDouble() : 0.0;
 }
 
-static void *SLJIT_CALL strToObj(String *inStr)
+static void *SLJIT_FUNC strToObj(String *inStr)
 {
    return Dynamic(*inStr).mPtr;
 }
-static void *SLJIT_CALL floatToObj(double *inDouble)
+static void *SLJIT_FUNC floatToObj(double *inDouble)
 {
    return Dynamic(*inDouble).mPtr;
 }
 
-static void SLJIT_CALL floatToStr(double *inDouble, String *outStr)
+static void SLJIT_FUNC floatToStr(double *inDouble, String *outStr)
 {
    *outStr = String(*inDouble);
 
 }
 
-static hx::Object * SLJIT_CALL variantToObject(cpp::Variant *inVariant)
+static hx::Object * SLJIT_FUNC variantToObject(cpp::Variant *inVariant)
 {
    return Dynamic( *inVariant ).mPtr;
 }
 
 
-static int SLJIT_CALL variantToInt(cpp::Variant *inVariant)
+static int SLJIT_FUNC variantToInt(cpp::Variant *inVariant)
 {
    return *inVariant;
 }
 
-static void SLJIT_CALL variantToFloat(cpp::Variant *inVariant, double *outValue)
+static void SLJIT_FUNC variantToFloat(cpp::Variant *inVariant, double *outValue)
 {
    *outValue = *inVariant;
 }
 
-static void SLJIT_CALL variantToString(cpp::Variant *inVariant, String *outValue)
+static void SLJIT_FUNC variantToString(cpp::Variant *inVariant, String *outValue)
 {
    *outValue = *inVariant;
 }
 
-static int SLJIT_CALL strEqual(const String *inS0, const String *inS1)
+static int SLJIT_FUNC strEqual(const String *inS0, const String *inS1)
 {
    return *inS0 == *inS1;
 }
 
-static int SLJIT_CALL strNotEqual(const String *inS0, const String *inS1)
+static int SLJIT_FUNC strNotEqual(const String *inS0, const String *inS1)
 {
    return *inS0 != *inS1;
 }

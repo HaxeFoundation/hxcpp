@@ -155,7 +155,7 @@ public:
    }
 
    #ifdef CPPIA_JIT
-   static void SLJIT_CALL setFloat(Array_obj<unsigned char> *inBuffer, int inAddr, double *inValue)
+   static void SLJIT_FUNC setFloat(Array_obj<unsigned char> *inBuffer, int inAddr, double *inValue)
    {
       if (sizeof(ARG2)==sizeof(float))
          __hxcpp_memory_set_float(inBuffer,inAddr,*inValue);
@@ -201,7 +201,7 @@ public:
       return  FUNC();
    }
    #ifdef CPPIA_JIT
-   static void SLJIT_CALL run(double *outResult)
+   static void SLJIT_FUNC run(double *outResult)
    {
       *outResult = FUNC();
    }

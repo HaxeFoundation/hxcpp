@@ -559,23 +559,23 @@ void CppiaStackVar::setDefault(CppiaCtx *inCxt, const CppiaConst &inDefault)
 
 #ifdef CPPIA_JIT
 
-static int SLJIT_CALL objToInt(hx::Object *inVal)
+static int SLJIT_FUNC objToInt(hx::Object *inVal)
 {
    return inVal->__ToInt();
 }
-static void SLJIT_CALL objToFloat(hx::Object *inVal,double *outFloat)
+static void SLJIT_FUNC objToFloat(hx::Object *inVal,double *outFloat)
 {
    *outFloat =  inVal->__ToDouble();
 }
-static hx::Object *SLJIT_CALL intToObject(int inVal)
+static hx::Object *SLJIT_FUNC intToObject(int inVal)
 {
    return Dynamic(inVal).mPtr;
 }
-static hx::Object *SLJIT_CALL floatToObject(double * inVal)
+static hx::Object *SLJIT_FUNC floatToObject(double * inVal)
 {
    return Dynamic(*inVal).mPtr;
 }
-static hx::Object *SLJIT_CALL stringToObject(String * inVal)
+static hx::Object *SLJIT_FUNC stringToObject(String * inVal)
 {
    return Dynamic(*inVal).mPtr;
 }

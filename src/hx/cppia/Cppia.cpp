@@ -801,7 +801,7 @@ struct CallFunExpr : public CppiaExpr
    }
 
    #ifdef CPPIA_JIT
-   static void SLJIT_CALL callScriptable(CppiaCtx *inCtx, ScriptCallable *inScriptable)
+   static void SLJIT_FUNC callScriptable(CppiaCtx *inCtx, ScriptCallable *inScriptable)
    {
       // compiled?
       CPPIALOG("callScriptable %p(%p) -> %p\n", inCtx, CppiaCtx::getCurrent(), inScriptable );
@@ -864,7 +864,7 @@ struct CppiaExprWithValue : public CppiaDynamicExpr
 
 
 #ifdef CPPIA_JIT
-void SLJIT_CALL callDynamic(CppiaCtx *ctx, hx::Object *inFunction, int inArgs)
+void SLJIT_FUNC callDynamic(CppiaCtx *ctx, hx::Object *inFunction, int inArgs)
 {
    if (!inFunction)
    {
@@ -1270,7 +1270,7 @@ struct CastExpr : public CppiaDynamicExpr
 
    #ifdef CPPIA_JIT
 
-   static hx::Object * SLJIT_CALL callDynamicToArrayType(hx::Object *inObj, int inToType )
+   static hx::Object * SLJIT_FUNC callDynamicToArrayType(hx::Object *inObj, int inToType )
    {
       TRY_NATIVE
       return DynamicToArrayType(inObj, (ArrayType)inToType);
@@ -1279,7 +1279,7 @@ struct CastExpr : public CppiaDynamicExpr
    }
 
 
-   static hx::Object * SLJIT_CALL safeCast(hx::Object *obj, TypeData *typeData )
+   static hx::Object * SLJIT_FUNC safeCast(hx::Object *obj, TypeData *typeData )
    {
       if (!obj || !typeData->isClassOf(obj) )
       {
@@ -1436,36 +1436,36 @@ struct ToInterface : public CppiaDynamicExpr
 
 
 #ifdef CPPIA_JIT
-static void *SLJIT_CALL createArrayBool(int n) { return (Array_obj<bool>::__new(n,n)).mPtr; }
-static void *SLJIT_CALL createArrayUChar(int n) { return (Array_obj<unsigned char>::__new(n,n)).mPtr; }
-static void *SLJIT_CALL createArrayInt(int n) { return (Array_obj<int>::__new(n,n)).mPtr; }
-static void *SLJIT_CALL createArrayFloat(int n) { return (Array_obj<Float>::__new(n,n)).mPtr; }
-static void *SLJIT_CALL createArrayFloat32(int n) { return (Array_obj<float>::__new(n,n)).mPtr; }
-static void *SLJIT_CALL createArrayString(int n) { return (Array_obj<String>::__new(n,n)).mPtr; }
-static void *SLJIT_CALL createArrayObject(int n) { return (Array_obj<Dynamic>::__new(n,n)).mPtr; }
-static void *SLJIT_CALL createArrayAny(int n) {
+static void *SLJIT_FUNC createArrayBool(int n) { return (Array_obj<bool>::__new(n,n)).mPtr; }
+static void *SLJIT_FUNC createArrayUChar(int n) { return (Array_obj<unsigned char>::__new(n,n)).mPtr; }
+static void *SLJIT_FUNC createArrayInt(int n) { return (Array_obj<int>::__new(n,n)).mPtr; }
+static void *SLJIT_FUNC createArrayFloat(int n) { return (Array_obj<Float>::__new(n,n)).mPtr; }
+static void *SLJIT_FUNC createArrayFloat32(int n) { return (Array_obj<float>::__new(n,n)).mPtr; }
+static void *SLJIT_FUNC createArrayString(int n) { return (Array_obj<String>::__new(n,n)).mPtr; }
+static void *SLJIT_FUNC createArrayObject(int n) { return (Array_obj<Dynamic>::__new(n,n)).mPtr; }
+static void *SLJIT_FUNC createArrayAny(int n) {
   return (cpp::VirtualArray_obj::__new(n,n)).mPtr;
 }
-static void SLJIT_CALL varraySetInt(cpp::VirtualArray_obj *varray, int i, int value) { varray->init(i,value); }
-static void SLJIT_CALL varraySetBool(cpp::VirtualArray_obj *varray, int i, int value) { varray->init(i,(bool)value); }
-static void SLJIT_CALL varraySetObject(cpp::VirtualArray_obj *varray, int i, hx::Object *value) { varray->init(i,Dynamic(value)); }
-static void SLJIT_CALL varraySetString(cpp::VirtualArray_obj *varray, int i, String *value) { varray->init(i,*value); }
-static void SLJIT_CALL varraySetFloat(cpp::VirtualArray_obj *varray, int i, double *value) { varray->init(i,*value); }
+static void SLJIT_FUNC varraySetInt(cpp::VirtualArray_obj *varray, int i, int value) { varray->init(i,value); }
+static void SLJIT_FUNC varraySetBool(cpp::VirtualArray_obj *varray, int i, int value) { varray->init(i,(bool)value); }
+static void SLJIT_FUNC varraySetObject(cpp::VirtualArray_obj *varray, int i, hx::Object *value) { varray->init(i,Dynamic(value)); }
+static void SLJIT_FUNC varraySetString(cpp::VirtualArray_obj *varray, int i, String *value) { varray->init(i,*value); }
+static void SLJIT_FUNC varraySetFloat(cpp::VirtualArray_obj *varray, int i, double *value) { varray->init(i,*value); }
 
-static void *SLJIT_CALL runConstructor(void *inConstructor,  Array_obj<Dynamic> *inArgs)
+static void *SLJIT_FUNC runConstructor(void *inConstructor,  Array_obj<Dynamic> *inArgs)
 {
    TRY_NATIVE
    return (((hx::ConstructArgsFunc)inConstructor)(inArgs)).mPtr;
    CATCH_NATIVE
    return 0;
 }
-static void * SLJIT_CALL getScriptVTable(hx::Object *inObject)
+static void * SLJIT_FUNC getScriptVTable(hx::Object *inObject)
 {
    return inObject->__GetScriptVTable();
 }
 
 /*
-static void *SLJIT_CALL runCreateInstance(CppiaCtx *ctx, CppiaClassInfo *info,  Array_obj<Dynamic> *inArgs)
+static void *SLJIT_FUNC runCreateInstance(CppiaCtx *ctx, CppiaClassInfo *info,  Array_obj<Dynamic> *inArgs)
 {
    TRY_NATIVE
    Array<Dynamic> args(inArgs);
@@ -1476,7 +1476,7 @@ static void *SLJIT_CALL runCreateInstance(CppiaCtx *ctx, CppiaClassInfo *info,  
 }
 */
 
-static void *SLJIT_CALL allocHaxe(CppiaCtx *inCtx, CppiaClassInfo *inInfo )
+static void *SLJIT_FUNC allocHaxe(CppiaCtx *inCtx, CppiaClassInfo *inInfo )
 {
    Expressions empty;
    return inInfo->createInstance(inCtx,empty,false);
@@ -1838,7 +1838,7 @@ struct CallHaxe : public CppiaExpr
    }
 
    #ifdef CPPIA_JIT
-   static void SLJIT_CALL tryCallHaxe( void (SLJIT_CALL *func)(StackContext *), StackContext *ctx )
+   static void SLJIT_FUNC tryCallHaxe( void (SLJIT_FUNC *func)(StackContext *), StackContext *ctx )
    {
       TRY_NATIVE
       func(ctx);
@@ -2100,7 +2100,7 @@ struct CallGetField : public CppiaDynamicExpr
 
 
 #ifdef CPPIA_JIT
-static void SLJIT_CALL fixReturnType( hx::CppiaCtx *inCtx, int actualType)
+static void SLJIT_FUNC fixReturnType( hx::CppiaCtx *inCtx, int actualType)
 {
    void *returnPos = inCtx->frame;
 
@@ -2360,7 +2360,7 @@ struct CallGlobal : public CppiaExpr
 
 
 #ifdef CPPIA_JIT
-static int SLJIT_CALL getFieldInt( hx::Object *instance, String *name )
+static int SLJIT_FUNC getFieldInt( hx::Object *instance, String *name )
 {
    TRY_NATIVE
    return instance->__Field(*name, HX_PROP_DYNAMIC);
@@ -2368,7 +2368,7 @@ static int SLJIT_CALL getFieldInt( hx::Object *instance, String *name )
    return 0;
 }
 
-static hx::Object * SLJIT_CALL getFieldObject( hx::Object *instance, String *name )
+static hx::Object * SLJIT_FUNC getFieldObject( hx::Object *instance, String *name )
 {
    TRY_NATIVE
    Dynamic ret =  instance->__Field(*name, HX_PROP_DYNAMIC);
@@ -2377,21 +2377,21 @@ static hx::Object * SLJIT_CALL getFieldObject( hx::Object *instance, String *nam
    return 0;
 }
 
-static void SLJIT_CALL getFieldFloat( hx::Object *instance, String *name, double *outValue )
+static void SLJIT_FUNC getFieldFloat( hx::Object *instance, String *name, double *outValue )
 {
    TRY_NATIVE
    *outValue = instance->__Field(*name, HX_PROP_DYNAMIC);
    CATCH_NATIVE
 }
 
-static void SLJIT_CALL getFieldString( hx::Object *instance, String *name, String *outValue )
+static void SLJIT_FUNC getFieldString( hx::Object *instance, String *name, String *outValue )
 {
    TRY_NATIVE
    *outValue = instance->__Field(*name, HX_PROP_DYNAMIC);
    CATCH_NATIVE
 }
 
-static int SLJIT_CALL setFieldInt( hx::Object *instance, String *name, int inValue )
+static int SLJIT_FUNC setFieldInt( hx::Object *instance, String *name, int inValue )
 {
    TRY_NATIVE
    instance->__SetField(*name, inValue, HX_PROP_DYNAMIC);
@@ -2399,14 +2399,14 @@ static int SLJIT_CALL setFieldInt( hx::Object *instance, String *name, int inVal
    CATCH_NATIVE
    return 0;
 }
-static void SLJIT_CALL setFieldIntV( hx::Object *instance, String *name, int inValue )
+static void SLJIT_FUNC setFieldIntV( hx::Object *instance, String *name, int inValue )
 {
    TRY_NATIVE
    instance->__SetField(*name, inValue, HX_PROP_DYNAMIC);
    CATCH_NATIVE
 }
 
-static hx::Object * SLJIT_CALL setFieldObject( hx::Object *instance, String *name, hx::Object *inValue )
+static hx::Object * SLJIT_FUNC setFieldObject( hx::Object *instance, String *name, hx::Object *inValue )
 {
    TRY_NATIVE
    instance->__SetField(*name, Dynamic(inValue), HX_PROP_DYNAMIC );
@@ -2415,35 +2415,35 @@ static hx::Object * SLJIT_CALL setFieldObject( hx::Object *instance, String *nam
    return 0;
 }
 
-static void SLJIT_CALL setFieldObjectV( hx::Object *instance, String *name, hx::Object *inValue )
+static void SLJIT_FUNC setFieldObjectV( hx::Object *instance, String *name, hx::Object *inValue )
 {
    TRY_NATIVE
    instance->__SetField(*name, Dynamic(inValue), HX_PROP_DYNAMIC );
    CATCH_NATIVE
 }
 
-static void SLJIT_CALL setFieldFloat( hx::Object *instance, String *name, const double *inValue )
+static void SLJIT_FUNC setFieldFloat( hx::Object *instance, String *name, const double *inValue )
 {
    TRY_NATIVE
    instance->__SetField(*name, *inValue, HX_PROP_DYNAMIC);
    CATCH_NATIVE
 }
 
-static void SLJIT_CALL setFieldString( hx::Object *instance, String *name, const String *inValue )
+static void SLJIT_FUNC setFieldString( hx::Object *instance, String *name, const String *inValue )
 {
    TRY_NATIVE
    instance->__SetField(*name, *inValue, HX_PROP_DYNAMIC);
    CATCH_NATIVE
 
 }
-static void SLJIT_CALL setFieldVariantV( hx::Object *instance, String *name, cpp::Variant *value )
+static void SLJIT_FUNC setFieldVariantV( hx::Object *instance, String *name, cpp::Variant *value )
 {
    TRY_NATIVE
    instance->__SetField(*name, *value, HX_PROP_DYNAMIC);
    CATCH_NATIVE
 }
 
-static cpp::Variant * SLJIT_CALL setFieldVariant( hx::Object *instance, String *name, cpp::Variant *value )
+static cpp::Variant * SLJIT_FUNC setFieldVariant( hx::Object *instance, String *name, cpp::Variant *value )
 {
    TRY_NATIVE
    instance->__SetField(*name, *value, HX_PROP_DYNAMIC);
@@ -2453,7 +2453,7 @@ static cpp::Variant * SLJIT_CALL setFieldVariant( hx::Object *instance, String *
 }
 
 
-static void SLJIT_CALL getFieldVariant( hx::Object *instance, String *name, cpp::Variant *outValue )
+static void SLJIT_FUNC getFieldVariant( hx::Object *instance, String *name, cpp::Variant *outValue )
 {
    TRY_NATIVE
    *outValue = instance->__Field(*name, HX_PROP_DYNAMIC);
@@ -2461,7 +2461,7 @@ static void SLJIT_CALL getFieldVariant( hx::Object *instance, String *name, cpp:
 }
 
 
-static void SLJIT_CALL addVariantObject( cpp::Variant *ioVar, hx::Object *inValue )
+static void SLJIT_FUNC addVariantObject( cpp::Variant *ioVar, hx::Object *inValue )
 {
    TRY_NATIVE
    *ioVar = *ioVar + Dynamic(inValue);
@@ -2469,13 +2469,13 @@ static void SLJIT_CALL addVariantObject( cpp::Variant *ioVar, hx::Object *inValu
 }
 
 
-static void SLJIT_CALL addVariantInt( cpp::Variant *ioVar, int inValue )
+static void SLJIT_FUNC addVariantInt( cpp::Variant *ioVar, int inValue )
 {
    *ioVar = *ioVar + inValue;
 }
 
 
-static void SLJIT_CALL addVariantString( cpp::Variant *ioVar, String *inValue )
+static void SLJIT_FUNC addVariantString( cpp::Variant *ioVar, String *inValue )
 {
    TRY_NATIVE
    *ioVar = *ioVar + *inValue;
@@ -2483,71 +2483,71 @@ static void SLJIT_CALL addVariantString( cpp::Variant *ioVar, String *inValue )
 }
 
 
-static void SLJIT_CALL addVariantFloat( cpp::Variant *ioVar, double *inValue )
+static void SLJIT_FUNC addVariantFloat( cpp::Variant *ioVar, double *inValue )
 {
    *ioVar = *ioVar + *inValue;
 }
 
-static void SLJIT_CALL subVariantFloat( cpp::Variant *ioVar, double *inValue )
+static void SLJIT_FUNC subVariantFloat( cpp::Variant *ioVar, double *inValue )
 {
    *ioVar = *ioVar - *inValue;
 }
 
-static void SLJIT_CALL divVariantFloat( cpp::Variant *ioVar, double *inValue )
+static void SLJIT_FUNC divVariantFloat( cpp::Variant *ioVar, double *inValue )
 {
    *ioVar = *ioVar / *inValue;
 }
 
-static void SLJIT_CALL multVariantFloat( cpp::Variant *ioVar, double *inValue )
+static void SLJIT_FUNC multVariantFloat( cpp::Variant *ioVar, double *inValue )
 {
    *ioVar = *ioVar * *inValue;
 }
 
-static void SLJIT_CALL modVariantFloat( cpp::Variant *ioVar, double *inValue )
+static void SLJIT_FUNC modVariantFloat( cpp::Variant *ioVar, double *inValue )
 {
    *ioVar = hx::Mod(*ioVar,*inValue);
 }
 
-static void SLJIT_CALL andVariantInt( cpp::Variant *ioVar, int inValue )
+static void SLJIT_FUNC andVariantInt( cpp::Variant *ioVar, int inValue )
 {
    *ioVar = (int)(*ioVar) & inValue;
 }
 
 
-static void SLJIT_CALL orVariantInt( cpp::Variant *ioVar, int inValue )
+static void SLJIT_FUNC orVariantInt( cpp::Variant *ioVar, int inValue )
 {
    *ioVar = (int)(*ioVar) | inValue;
 }
 
-static void SLJIT_CALL xorVariantInt( cpp::Variant *ioVar, int inValue )
+static void SLJIT_FUNC xorVariantInt( cpp::Variant *ioVar, int inValue )
 {
    *ioVar = (int)(*ioVar) ^ inValue;
 }
 
-static void SLJIT_CALL shlVariantInt( cpp::Variant *ioVar, int inValue )
+static void SLJIT_FUNC shlVariantInt( cpp::Variant *ioVar, int inValue )
 {
    *ioVar = (int)(*ioVar) << inValue;
 }
 
-static void SLJIT_CALL shrVariantInt( cpp::Variant *ioVar, int inValue )
+static void SLJIT_FUNC shrVariantInt( cpp::Variant *ioVar, int inValue )
 {
    *ioVar = (int)(*ioVar) >> inValue;
 }
 
-static void SLJIT_CALL ushrVariantInt( cpp::Variant *ioVar, int inValue )
+static void SLJIT_FUNC ushrVariantInt( cpp::Variant *ioVar, int inValue )
 {
    *ioVar = (unsigned int)(int)(*ioVar) >> inValue;
 }
 
 
-static void SLJIT_CALL incByNameV( hx::Object *inObj, String *inName )
+static void SLJIT_FUNC incByNameV( hx::Object *inObj, String *inName )
 {
    TRY_NATIVE
    inObj->__SetField( *inName, inObj->__Field(*inName, HX_PROP_DYNAMIC) + 1, HX_PROP_DYNAMIC);
    CATCH_NATIVE
 }
 
-static void SLJIT_CALL decByNameV( hx::Object *inObj, String *inName )
+static void SLJIT_FUNC decByNameV( hx::Object *inObj, String *inName )
 {
    TRY_NATIVE
    inObj->__SetField( *inName, inObj->__Field(*inName, HX_PROP_DYNAMIC) - 1, HX_PROP_DYNAMIC);
@@ -2555,7 +2555,7 @@ static void SLJIT_CALL decByNameV( hx::Object *inObj, String *inName )
 }
 
 
-static cpp::Variant * SLJIT_CALL preIncByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
+static cpp::Variant * SLJIT_FUNC preIncByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
 {
    TRY_NATIVE
    *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC) + 1;
@@ -2566,7 +2566,7 @@ static cpp::Variant * SLJIT_CALL preIncByName( hx::Object *inObj, String *inName
 }
 
 
-static cpp::Variant * SLJIT_CALL postIncByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
+static cpp::Variant * SLJIT_FUNC postIncByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
 {
    TRY_NATIVE
    *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC);
@@ -2577,7 +2577,7 @@ static cpp::Variant * SLJIT_CALL postIncByName( hx::Object *inObj, String *inNam
 }
 
 
-static cpp::Variant * SLJIT_CALL postDecByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
+static cpp::Variant * SLJIT_FUNC postDecByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
 {
    TRY_NATIVE
    *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC);
@@ -2588,7 +2588,7 @@ static cpp::Variant * SLJIT_CALL postDecByName( hx::Object *inObj, String *inNam
 }
 
 
-static cpp::Variant * SLJIT_CALL preDecByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
+static cpp::Variant * SLJIT_FUNC preDecByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
 {
    TRY_NATIVE
    *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC) - 1;
@@ -2688,11 +2688,11 @@ struct FieldByName : public CppiaDynamicExpr
    }
 
    #ifdef CPPIA_JIT
-   static int SLJIT_CALL getInt( hx::Object *inSrc, String *inName )
+   static int SLJIT_FUNC getInt( hx::Object *inSrc, String *inName )
    {
       return inSrc->__Field(*inName,HX_PROP_DYNAMIC);
    }
-   static hx::Object * SLJIT_CALL getObject( hx::Object *inSrc, String *inName )
+   static hx::Object * SLJIT_FUNC getObject( hx::Object *inSrc, String *inName )
    {
       return Dynamic(inSrc->__Field(*inName,HX_PROP_DYNAMIC)).mPtr;
    }
@@ -3629,12 +3629,12 @@ CppiaExpr *createStaticAccess(CppiaExpr *inSrc,FieldStorage inType, void *inPtr)
 
 #ifdef CPPIA_JIT
 
-static void SLJIT_CALL stringCat(String *ioValue, String *inValue)
+static void SLJIT_FUNC stringCat(String *ioValue, String *inValue)
 {
    *ioValue += *inValue;
 }
 
-static hx::Object * SLJIT_CALL dynamicCatString(hx::Object *inLeft, String *inRight)
+static hx::Object * SLJIT_FUNC dynamicCatString(hx::Object *inLeft, String *inRight)
 {
    TRY_NATIVE
    return Dynamic( Dynamic(inLeft) + *inRight ).mPtr;
@@ -3643,24 +3643,24 @@ static hx::Object * SLJIT_CALL dynamicCatString(hx::Object *inLeft, String *inRi
 }
 
 
-static hx::Object * SLJIT_CALL dynamicCatDynamic(hx::Object *inLeft, hx::Object *inRight)
+static hx::Object * SLJIT_FUNC dynamicCatDynamic(hx::Object *inLeft, hx::Object *inRight)
 {
    return ( Dynamic(inLeft) + Dynamic(inRight) ).mPtr;
 }
 
-static int SLJIT_CALL modIntFloat(int inI, double *inMod)
+static int SLJIT_FUNC modIntFloat(int inI, double *inMod)
 {
    return hx::Mod(inI, *inMod);
 }
 
 
-static void SLJIT_CALL modFloatFloat(double *ioVal, double *inMod)
+static void SLJIT_FUNC modFloatFloat(double *ioVal, double *inMod)
 {
    *ioVal =  hx::Mod(*ioVal, *inMod);
 }
 
 
-static hx::Object * SLJIT_CALL modObjectFloat(hx::Object *inVal, double *inMod)
+static hx::Object * SLJIT_FUNC modObjectFloat(hx::Object *inVal, double *inMod)
 {
    return Dynamic(hx::Mod(Dynamic(inVal), *inMod)).mPtr;
 }
@@ -3848,7 +3848,7 @@ inline static void * getPointerFrom(String *s) { return (void *)s->raw_ptr(); }
 #endif
 
 #if defined(HXCPP_GC_GENERATIONAL) && defined(CPPIA_JIT)
-static void SLJIT_CALL pushWriteBarrier(hx::StackContext *inCtx, hx::Object *inObj)
+static void SLJIT_FUNC pushWriteBarrier(hx::StackContext *inCtx, hx::Object *inObj)
 {
    unsigned char &mark =  ((unsigned char *)(inObj))[ HX_ENDIAN_MARK_ID_BYTE];
    mark|=HX_GC_REMEMBERED;
@@ -4109,54 +4109,54 @@ CppiaExpr *MemReference<T,REFMODE>::makeSetter(AssignOp op,CppiaExpr *value)
 static double sOne = 1.0;
 static double sMinusOne = -1.0;
 
-static void SLJIT_CALL objDec(hx::Object **ioVal)
+static void SLJIT_FUNC objDec(hx::Object **ioVal)
 {
    *ioVal = (Dynamic(*ioVal)-1).mPtr;
 }
-static void SLJIT_CALL objInc(hx::Object **ioVal)
+static void SLJIT_FUNC objInc(hx::Object **ioVal)
 {
    *ioVal = (Dynamic(*ioVal)+1).mPtr;
 }
 
-static hx::Object * SLJIT_CALL objPostInc(hx::Object **ioVal)
+static hx::Object * SLJIT_FUNC objPostInc(hx::Object **ioVal)
 {
    hx::Object *result = *ioVal;
    *ioVal = (Dynamic(*ioVal)+1).mPtr;
    return result;
 }
-static hx::Object * SLJIT_CALL objPostDec(hx::Object **ioVal)
+static hx::Object * SLJIT_FUNC objPostDec(hx::Object **ioVal)
 {
    hx::Object *result = *ioVal;
    *ioVal = (Dynamic(*ioVal)-1).mPtr;
    return result;
 }
 
-static hx::Object * SLJIT_CALL objPreInc(hx::Object **ioVal)
+static hx::Object * SLJIT_FUNC objPreInc(hx::Object **ioVal)
 {
    *ioVal = (Dynamic(*ioVal)+1).mPtr;
    return *ioVal;
 }
-static hx::Object * SLJIT_CALL objPreDec(hx::Object **ioVal)
+static hx::Object * SLJIT_FUNC objPreDec(hx::Object **ioVal)
 {
    *ioVal = (Dynamic(*ioVal)-1).mPtr;
    return *ioVal;
 }
 
 #ifdef HXCPP_GC_GENERATIONAL
-static void SLJIT_CALL objDecWb(hx::Object *inObj,int inOffset)
+static void SLJIT_FUNC objDecWb(hx::Object *inObj,int inOffset)
 {
    hx::Object ** ioVal = (hx::Object **)( (char *)inObj + inOffset );
    *ioVal = (Dynamic(*ioVal)-1).mPtr;
    HX_OBJ_WB_GET(inObj, *ioVal);
 }
-static void SLJIT_CALL objIncWb(hx::Object *inObj,int inOffset)
+static void SLJIT_FUNC objIncWb(hx::Object *inObj,int inOffset)
 {
    hx::Object ** ioVal = (hx::Object **)( (char *)inObj + inOffset );
    *ioVal = (Dynamic(*ioVal)+1).mPtr;
    HX_OBJ_WB_GET(inObj, *ioVal);
 }
 
-static hx::Object * SLJIT_CALL objPostIncWb(hx::Object *inObj,int inOffset)
+static hx::Object * SLJIT_FUNC objPostIncWb(hx::Object *inObj,int inOffset)
 {
    hx::Object ** ioVal = (hx::Object **)( (char *)inObj + inOffset );
    hx::Object *result = *ioVal;
@@ -4164,7 +4164,7 @@ static hx::Object * SLJIT_CALL objPostIncWb(hx::Object *inObj,int inOffset)
    HX_OBJ_WB_GET(inObj, *ioVal);
    return result;
 }
-static hx::Object * SLJIT_CALL objPostDecWb(hx::Object *inObj,int inOffset)
+static hx::Object * SLJIT_FUNC objPostDecWb(hx::Object *inObj,int inOffset)
 {
    hx::Object ** ioVal = (hx::Object **)( (char *)inObj + inOffset );
    hx::Object *result = *ioVal;
@@ -4173,14 +4173,14 @@ static hx::Object * SLJIT_CALL objPostDecWb(hx::Object *inObj,int inOffset)
    return result;
 }
 
-static hx::Object * SLJIT_CALL objPreIncWb(hx::Object *inObj,int inOffset)
+static hx::Object * SLJIT_FUNC objPreIncWb(hx::Object *inObj,int inOffset)
 {
    hx::Object ** ioVal = (hx::Object **)( (char *)inObj + inOffset );
    *ioVal = (Dynamic(*ioVal)+1).mPtr;
    HX_OBJ_WB_GET(inObj, *ioVal);
    return *ioVal;
 }
-static hx::Object * SLJIT_CALL objPreDecWb(hx::Object *inObj,int inOffset)
+static hx::Object * SLJIT_FUNC objPreDecWb(hx::Object *inObj,int inOffset)
 {
    hx::Object ** ioVal = (hx::Object **)( (char *)inObj + inOffset );
    *ioVal = (Dynamic(*ioVal)-1).mPtr;
@@ -4569,7 +4569,7 @@ struct VirtualArrayLength : public CppiaIntExpr
    }
 
    #ifdef CPPIA_JIT
-   static int SLJIT_CALL getLen(cpp::VirtualArray_obj *inVArray)
+   static int SLJIT_FUNC getLen(cpp::VirtualArray_obj *inVArray)
    {
       return inVArray->get_length();
    }
@@ -4947,12 +4947,12 @@ struct ObjectDef : public CppiaDynamicExpr
    }
 
    #ifdef CPPIA_JIT
-   static hx::Object * SLJIT_CALL createAnon()
+   static hx::Object * SLJIT_FUNC createAnon()
    {
       return hx::Anon_obj::Create().mPtr;
    }
 
-   static void SLJIT_CALL anonAdd(hx::Anon_obj *inAnon, String *inName, hx::Object *inValue)
+   static void SLJIT_FUNC anonAdd(hx::Anon_obj *inAnon, String *inName, hx::Object *inValue)
    {
       inAnon->Add(*inName, Dynamic(inValue), false );
    }
@@ -5226,36 +5226,36 @@ struct ArrayDef : public CppiaDynamicExpr
 
 
 #ifdef CPPIA_JIT
-   hx::Object * SLJIT_CALL getItem(hx::Object *inObj, int inIndex)
+   hx::Object * SLJIT_FUNC getItem(hx::Object *inObj, int inIndex)
    {
       return (inObj->__GetItem(inIndex)).mPtr;
    }
 
-   void SLJIT_CALL incItem(hx::Object *inObj, int inIndex)
+   void SLJIT_FUNC incItem(hx::Object *inObj, int inIndex)
    {
       inObj->__SetItem( inIndex, inObj->__GetItem(inIndex) + 1 );
    }
 
-   void SLJIT_CALL decItem(hx::Object *inObj, int inIndex)
+   void SLJIT_FUNC decItem(hx::Object *inObj, int inIndex)
    {
       inObj->__SetItem( inIndex, inObj->__GetItem(inIndex) - 1 );
    }
 
-   hx::Object * SLJIT_CALL preIncItem(hx::Object *inObj, int inIndex)
+   hx::Object * SLJIT_FUNC preIncItem(hx::Object *inObj, int inIndex)
    {
       Dynamic val = inObj->__GetItem(inIndex) +1;
       inObj->__SetItem( inIndex, val );
       return val.mPtr;
    }
 
-   hx::Object * SLJIT_CALL postIncItem(hx::Object *inObj, int inIndex)
+   hx::Object * SLJIT_FUNC postIncItem(hx::Object *inObj, int inIndex)
    {
       Dynamic val = inObj->__GetItem(inIndex);
       inObj->__SetItem( inIndex, val + 1 );
       return val.mPtr;
    }
 
-   hx::Object * SLJIT_CALL setDynamicI(hx::Object *inObj, int inIndex, hx::Object *inValue)
+   hx::Object * SLJIT_FUNC setDynamicI(hx::Object *inObj, int inIndex, hx::Object *inValue)
    {
       inObj->__SetItem(  inIndex, inValue );
       return inValue;
@@ -5263,14 +5263,14 @@ struct ArrayDef : public CppiaDynamicExpr
 
 
 
-   hx::Object * SLJIT_CALL preDecItem(hx::Object *inObj, int inIndex)
+   hx::Object * SLJIT_FUNC preDecItem(hx::Object *inObj, int inIndex)
    {
       Dynamic val = inObj->__GetItem(inIndex) - 1;
       inObj->__SetItem( inIndex, val );
       return val.mPtr;
    }
 
-   hx::Object * SLJIT_CALL postDecItem(hx::Object *inObj, int inIndex)
+   hx::Object * SLJIT_FUNC postDecItem(hx::Object *inObj, int inIndex)
    {
       Dynamic val = inObj->__GetItem(inIndex);
       inObj->__SetItem( inIndex, val -  1 );
@@ -5287,7 +5287,7 @@ struct ArrayDef : public CppiaDynamicExpr
 
 
    #define DynIndexFunc(name, OP) \
-      hx::Object * SLJIT_CALL name(hx::Object *inObj, DynIndexArgs *args) \
+      hx::Object * SLJIT_FUNC name(hx::Object *inObj, DynIndexArgs *args) \
       { \
          Dynamic result = Dynamic(args->lvalue.obj) OP ; \
          inObj->__SetItem( args->index.ival, result); \
@@ -5295,7 +5295,7 @@ struct ArrayDef : public CppiaDynamicExpr
       }
 
    #define DynIndexIntFunc(name, OP) \
-      hx::Object * SLJIT_CALL name(hx::Object *inObj, DynIndexArgs *args) \
+      hx::Object * SLJIT_FUNC name(hx::Object *inObj, DynIndexArgs *args) \
       { \
          Dynamic result = ((int)Dynamic(args->lvalue.obj)) OP ; \
          inObj->__SetItem( args->index.ival, result); \
@@ -5308,7 +5308,7 @@ struct ArrayDef : public CppiaDynamicExpr
    DynIndexFunc(dynDiv, / args->rvalue.dval );
    DynIndexFunc(dynSub, - args->rvalue.dval );
 
-   hx::Object * SLJIT_CALL dynMod(hx::Object *inObj, DynIndexArgs *args)
+   hx::Object * SLJIT_FUNC dynMod(hx::Object *inObj, DynIndexArgs *args)
    {
       Dynamic result = hx::Mod( Dynamic(args->lvalue.obj), args->rvalue.dval );
       inObj->__SetItem( args->index.ival, result);
@@ -5321,7 +5321,7 @@ struct ArrayDef : public CppiaDynamicExpr
    DynIndexIntFunc(dynShl, << args->rvalue.ival );
    DynIndexIntFunc(dynShr, >> args->rvalue.ival );
 
-   hx::Object * SLJIT_CALL dynUShr(hx::Object *inObj, DynIndexArgs *args)
+   hx::Object * SLJIT_FUNC dynUShr(hx::Object *inObj, DynIndexArgs *args)
    {
       Dynamic result = hx::UShr( Dynamic(args->lvalue.obj), args->rvalue.ival );
       inObj->__SetItem( args->index.ival, result);
@@ -6253,7 +6253,7 @@ struct SwitchExpr : public CppiaExpr
 
    #ifdef CPPIA_JIT
 
-   static int SLJIT_CALL sameObject(hx::Object *o0, hx::Object *o1)
+   static int SLJIT_FUNC sameObject(hx::Object *o0, hx::Object *o1)
    {
       return Dynamic(o0) == Dynamic(o1);
    }
@@ -6413,7 +6413,7 @@ struct TryExpr : public CppiaVoidExpr
    }
 
    #ifdef CPPIA_JIT
-   static int SLJIT_CALL isExceptionCatch(hx::Object *exception, TypeData *inType)
+   static int SLJIT_FUNC isExceptionCatch(hx::Object *exception, TypeData *inType)
    {
       // TODO - HX_STACK_BEGIN_CATCH
       return inType->isClassOf(exception);
@@ -7238,36 +7238,36 @@ struct BitShiftL : public BitOpBase
 
 #ifdef CPPIA_JIT
 
-void SLJIT_CALL dynamicAddStr(hx::Object *inObj1, hx::Object *inObj2, String *outString) {
+void SLJIT_FUNC dynamicAddStr(hx::Object *inObj1, hx::Object *inObj2, String *outString) {
    TRY_NATIVE
    *outString = Dynamic(inObj1) + Dynamic(inObj2);
    CATCH_NATIVE
 }
-void *SLJIT_CALL dynamicAddObj(hx::Object *inObj1, hx::Object *inObj2) {
+void *SLJIT_FUNC dynamicAddObj(hx::Object *inObj1, hx::Object *inObj2) {
    TRY_NATIVE
    return (Dynamic(inObj1) + Dynamic(inObj2)).mPtr;
    CATCH_NATIVE
    return 0;
 }
-int SLJIT_CALL dynamicAddInt(hx::Object *inObj1, hx::Object *inObj2) {
+int SLJIT_FUNC dynamicAddInt(hx::Object *inObj1, hx::Object *inObj2) {
    TRY_NATIVE
    return Dynamic(inObj1) + Dynamic(inObj2);
    CATCH_NATIVE
    return 0;
 }
-void SLJIT_CALL dynamicAddFloat(hx::Object *inObj1, hx::Object *inObj2, double *outResult) {
+void SLJIT_FUNC dynamicAddFloat(hx::Object *inObj1, hx::Object *inObj2, double *outResult) {
    TRY_NATIVE
    *outResult = (Dynamic(inObj1) + Dynamic(inObj2));
    CATCH_NATIVE
 }
 
-void SLJIT_CALL strAddStrToStrOver(String *ioStr, String *inStr1) {
+void SLJIT_FUNC strAddStrToStrOver(String *ioStr, String *inStr1) {
    *ioStr = *ioStr + *inStr1;
 }
-void SLJIT_CALL strAddStrToStr(String *inStr0, String *inStr1, String *outStr) {
+void SLJIT_FUNC strAddStrToStr(String *inStr0, String *inStr1, String *outStr) {
    *outStr = *inStr0 + *inStr1;
 }
-hx::Object *SLJIT_CALL strAddStrToObj(String *inStr0, String *inStr1) {
+hx::Object *SLJIT_FUNC strAddStrToObj(String *inStr0, String *inStr1) {
    TRY_NATIVE
    hx::Object *result = Dynamic(*inStr0 + *inStr1).mPtr;
    return result;
@@ -7590,7 +7590,7 @@ struct OpAdd : public BinOp
 };
 
 #ifdef CPPIA_JIT
-static void SLJIT_CALL double_mod(double *params)
+static void SLJIT_FUNC double_mod(double *params)
 {
    params[0] = hx::DoubleMod(params[0], params[1]);
 }
@@ -7765,12 +7765,12 @@ struct OpCompare : public OpCompareBase
    }
    #ifdef CPPIA_JIT
 
-   static int SLJIT_CALL stringCompare(String *s0, String *s1)
+   static int SLJIT_FUNC stringCompare(String *s0, String *s1)
    {
       return s0->compare(*s1);
    }
 
-   static int SLJIT_CALL dynamicCompare(hx::Object *o0, hx::Object *o1)
+   static int SLJIT_FUNC dynamicCompare(hx::Object *o0, hx::Object *o1)
    {
       COMPARE compare;
 
