@@ -3694,21 +3694,18 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
             inExpr->genCode(compiler, sJitTemp0, etInt);
             compiler->mult(ioValue, sJitTemp0, ioValue,false);
          }
+         else if (exprType==etFloat)
+         {
+            inExpr->genCode(compiler, sJitTempF0, etFloat);
+            compiler->mult(ioValue, sJitTempF0, ioValue,true);
+         }
          else
          {
-            if (exprType==etFloat)
-            {
-               inExpr->genCode(compiler, sJitTempF0, etFloat);
-               compiler->mult(ioValue, sJitTempF0, ioValue,true);
-            }
-            else
-            {
-               JitTemp fval(compiler, jtFloat);
-               compiler->convert(ioValue, exprType, fval, etFloat);
-               inExpr->genCode(compiler, sJitTempF0, etFloat);
-               compiler->mult(sJitTempF0, sJitTempF0, fval, true);
-               compiler->convert(sJitTempF0, etFloat, ioValue, exprType);
-            }
+            JitTemp fval(compiler, jtFloat);
+            compiler->convert(ioValue, exprType, fval, etFloat);
+            inExpr->genCode(compiler, sJitTempF0, etFloat);
+            compiler->mult(sJitTempF0, sJitTempF0, fval, true);
+            compiler->convert(sJitTempF0, etFloat, ioValue, exprType);
          }
          break;
 
