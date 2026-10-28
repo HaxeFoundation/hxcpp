@@ -5818,6 +5818,10 @@ public:
 
    void AttachThread(int *inTopOfStack)
    {
+      // A pooled allocator is neither pooled nor registered between GetPooledAllocator and AddLocal,
+      //  so a collection in that window does not reset it and its holes may be stale.
+      Reset();
+
       #ifndef HXCPP_EXPLICIT_STACK_EXTENT
       mTopOfStack = mBottomOfStack = inTopOfStack;
       #endif
