@@ -60,6 +60,18 @@ class TestCommon extends Test {
     }
 
     @:depends(testStatus)
+    function testBoolMemberStorage() {
+        final cls = Type.resolveClass('ClientBoolField');
+
+        if (Assert.notNull(cls, 'Unable to resolve ClientBoolField')) {
+            final obj = Type.createInstance(cls, []);
+
+            Assert.same(Type.ValueType.TBool, Type.typeof(Reflect.field(obj, 'flag')), 'Member Bool did not read back as a boolean');
+            Assert.same(Type.ValueType.TBool, Type.typeof(Reflect.field(cls, 'staticFlag')), 'Static Bool did not read back as a boolean');
+        }
+    }
+
+    @:depends(testStatus)
     function testInterfaceCalling() {
         final obj : IFoo = Type.createInstance(Type.resolveClass('ClientFoo'), []);
 
