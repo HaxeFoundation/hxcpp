@@ -2,6 +2,7 @@ name: package
 on:
   push:
     branches: [master]
+  workflow_dispatch:
 
 jobs:
   Package:
@@ -96,6 +97,7 @@ jobs:
             bin/Mac64/Cppia
 
   Release:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     needs: Package
     runs-on: ubuntu-latest
     steps:
