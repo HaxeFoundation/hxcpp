@@ -16,8 +16,12 @@ class ReturnExpressions extends Test {
 	}
 
 	function testHostThisReturn() {
-		returnAsCallHaxeThis();
-		Assert.equals(0, Common.count, "Host method executed after return");
+		try {
+			returnAsCallHaxeThis();
+			Assert.equals(0, Common.count, "Host method executed after return");
+		} catch (e) {
+			Assert.fail(e.toString());
+		}
 	}
 
 	@:analyzer(ignore)
@@ -26,8 +30,12 @@ class ReturnExpressions extends Test {
 	}
 
 	function testHostArgReturn() {
-		returnAsCallHaxeArg();
-		Assert.equals(0, Common.count, "Host method executed after return");
+		try {
+			returnAsCallHaxeArg();
+			Assert.equals(0, Common.count, "Host method executed after return");
+		} catch (e) {
+			Assert.fail(e.toString());
+		}
 	}
 
 	@:analyzer(ignore)
@@ -38,8 +46,12 @@ class ReturnExpressions extends Test {
 	}
 
 	function testFuncReturn() {
-		returnAsFunction();
-		Assert.equals(0, Common.count, "Host method executed after return");
+		try {
+			returnAsFunction();
+			Assert.equals(0, Common.count, "Host method executed after return");
+		} catch (e) {
+			Assert.fail(e.toString());
+		}
 	}
 
 	function vtableMethod(_) {}
@@ -52,7 +64,11 @@ class ReturnExpressions extends Test {
 	}
 
 	function testClientThisReturn() {
-		returnAsClientThis();
-		Assert.equals(0, Common.count, "Host method executed after return");
+		try {
+			returnAsClientThis();
+			Assert.equals(0, Common.count, "Host method executed after return");
+		} catch (e) {
+			Assert.fail(e.toString());
+		}
 	}
 }
