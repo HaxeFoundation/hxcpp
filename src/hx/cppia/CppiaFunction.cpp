@@ -14,9 +14,9 @@ String sInvalidArgCount = HX_CSTRING("Invalid arguement count");
 
 
 #ifdef CPPIA_JIT
-void SLJIT_CALL argToInt(CppiaCtx *ctx) { ctx->pushInt( (* (hx::Object **)(ctx->pointer))->__ToInt() ); }
-void SLJIT_CALL argToDouble(CppiaCtx *ctx) { ctx->pushFloat( (* (hx::Object **)(ctx->pointer))->__ToDouble() ); }
-void SLJIT_CALL argToString(CppiaCtx *ctx) { ctx->pushString( (* (hx::Object **)(ctx->pointer))->__ToString() ); }
+void SLJIT_FUNC argToInt(CppiaCtx *ctx) { ctx->pushInt( (* (hx::Object **)(ctx->pointer))->__ToInt() ); }
+void SLJIT_FUNC argToDouble(CppiaCtx *ctx) { ctx->pushFloat( (* (hx::Object **)(ctx->pointer))->__ToDouble() ); }
+void SLJIT_FUNC argToString(CppiaCtx *ctx) { ctx->pushString( (* (hx::Object **)(ctx->pointer))->__ToString() ); }
 #endif
 
 
@@ -273,22 +273,22 @@ int ScriptCallable::Hash(int value, const char *inString)
 #ifdef CPPIA_JIT
 
 
-int SLJIT_CALL objectToInt(hx::Object *obj) { return obj->__ToInt(); }
-void SLJIT_CALL frameToDouble(CppiaCtx *inCtx) { inCtx->returnFloat( inCtx->getObject() ); }
+int SLJIT_FUNC objectToInt(hx::Object *obj) { return obj->__ToInt(); }
+void SLJIT_FUNC frameToDouble(CppiaCtx *inCtx) { inCtx->returnFloat( inCtx->getObject() ); }
 //void objectToInt(CppiaCtx *inCtx) { inCtx->returnInt( inCtx->getObject() ); }
-void SLJIT_CALL objectToDouble(CppiaCtx *inCtx) { inCtx->returnFloat( inCtx->getObject() ); }
-void SLJIT_CALL objectToDoublePointer(CppiaCtx *inCtx)
+void SLJIT_FUNC objectToDouble(CppiaCtx *inCtx) { inCtx->returnFloat( inCtx->getObject() ); }
+void SLJIT_FUNC objectToDoublePointer(CppiaCtx *inCtx)
 {
    *(double *)inCtx->pointer = (*(hx::Object **)inCtx->pointer)->__ToDouble();
 }
-void SLJIT_CALL objectToStringPointer(CppiaCtx *inCtx)
+void SLJIT_FUNC objectToStringPointer(CppiaCtx *inCtx)
 {
    *(String *)inCtx->pointer = (*(hx::Object **)inCtx->pointer)->toString();
 }
-void SLJIT_CALL objectToString(CppiaCtx *inCtx) { inCtx->returnString( inCtx->getObject() ); }
-void SLJIT_CALL stringToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getString() ); }
-void SLJIT_CALL intToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getInt() ); }
-void SLJIT_CALL doubleToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getFloat() ); }
+void SLJIT_FUNC objectToString(CppiaCtx *inCtx) { inCtx->returnString( inCtx->getObject() ); }
+void SLJIT_FUNC stringToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getString() ); }
+void SLJIT_FUNC intToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getInt() ); }
+void SLJIT_FUNC doubleToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getFloat() ); }
 
 
 
@@ -617,12 +617,12 @@ void ScriptCallable::addExtraDefaults(CppiaCtx *ctx,int inHave)
 #ifdef CPPIA_JIT
 
 #ifdef HXCPP_STACK_TRACE
-static void SLJIT_CALL pushFrame(StackContext *inCtx, StackFrame *inFrame )
+static void SLJIT_FUNC pushFrame(StackContext *inCtx, StackFrame *inFrame )
 {
    inCtx->pushFrame(inFrame);
 }
 
-static void SLJIT_CALL popFrame(StackContext *inCtx, StackFrame *inFrame)
+static void SLJIT_FUNC popFrame(StackContext *inCtx, StackFrame *inFrame)
 {
    inCtx->popFrame(inFrame);
 }
@@ -661,7 +661,7 @@ void ScriptCallable::compile()
 
       body->genCode(compiler);
 
-      compiler->beginGeneration(1);
+      compiler->beginGeneration();
 
       // Second pass does the job
       genDefaults(compiler);

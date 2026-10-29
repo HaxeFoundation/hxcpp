@@ -66,7 +66,7 @@ struct CppiaEnumConstructor
    }
 
    #ifdef CPPIA_JIT
-   static EnumBase_obj * SLJIT_CALL createEnumBase( CppiaEnumConstructor *enumCtor)
+   static EnumBase_obj * SLJIT_FUNC createEnumBase( CppiaEnumConstructor *enumCtor)
    {
       EnumBase_obj *result = new ((int)enumCtor->args.size()*sizeof(cpp::Variant)) CppiaEnumBase(enumCtor->classInfo);
       result->_hx_setIdentity(enumCtor->name, enumCtor->index, enumCtor->args.size());
@@ -160,7 +160,7 @@ hx::Object *createEnumClosure(CppiaEnumConstructor &inContructor)
 
 
 #ifdef CPPIA_JIT
-void SLJIT_CALL createEnum(hx::Class_obj *inClass, String *inName, int inArgs)
+void SLJIT_FUNC createEnum(hx::Class_obj *inClass, String *inName, int inArgs)
 {
    StackContext *ctx = StackContext::getCurrent();
 

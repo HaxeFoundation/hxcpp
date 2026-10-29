@@ -10,102 +10,102 @@
 namespace hx
 {
 
-static void SLJIT_CALL my_trace_func(const char *inText)
+static void SLJIT_FUNC my_trace_func(const char *inText)
 {
    printf("trace: %s\n", inText);
 }
-static void SLJIT_CALL my_trace_strings(const char *inText, const char *inValue)
+static void SLJIT_FUNC my_trace_strings(const char *inText, const char *inValue)
 {
    printf("%s%s\n", inText, inValue);
 }
-static void SLJIT_CALL my_trace_string(const char *inText, String *inValue)
+static void SLJIT_FUNC my_trace_string(const char *inText, String *inValue)
 {
    printf("%s%s\n", inText, inValue->out_str());
 }
 
-static void SLJIT_CALL my_trace_ptr_func(const char *inText, hx::Object **inPtr)
+static void SLJIT_FUNC my_trace_ptr_func(const char *inText, hx::Object **inPtr)
 {
    printf("%s = %p\n",inText, inPtr);
    //printf("*= %s\n", (*inPtr)->toString().out_str());
    //*(int *)0=0;
 }
-static void SLJIT_CALL my_trace_int_func(const char *inText, int inValue)
+static void SLJIT_FUNC my_trace_int_func(const char *inText, int inValue)
 {
    printf("%s = %d\n",inText, inValue);
 }
-static void SLJIT_CALL my_trace_float_func(const char *inText, double *inValue)
+static void SLJIT_FUNC my_trace_float_func(const char *inText, double *inValue)
 {
    printf("%s = %f\n",inText, *inValue);
 }
 
-static void SLJIT_CALL my_trace_obj_func(const char *inText, hx::Object *inPtr)
+static void SLJIT_FUNC my_trace_obj_func(const char *inText, hx::Object *inPtr)
 {
    printf("%s = %s\n",inText, inPtr ? inPtr->__ToString().out_str() : "NULL" );
 }
 
-static hx::Object *SLJIT_CALL intToObj(int inVal)
+static hx::Object *SLJIT_FUNC intToObj(int inVal)
 {
    return Dynamic(inVal).mPtr;
 }
-static void SLJIT_CALL intToStr(int inVal, String *outString)
+static void SLJIT_FUNC intToStr(int inVal, String *outString)
 {
    *outString = String(inVal);
 }
-static void SLJIT_CALL objToStr(hx::Object *inVal, String *outString)
+static void SLJIT_FUNC objToStr(hx::Object *inVal, String *outString)
 {
    *outString = inVal ? inVal->toString() : String();
 }
-int SLJIT_CALL objToInt(hx::Object *inVal)
+int SLJIT_FUNC objToInt(hx::Object *inVal)
 {
    return inVal ? inVal->__ToInt() : 0;
 }
-static void SLJIT_CALL objToFloat(hx::Object *inVal,double *outFloat)
+static void SLJIT_FUNC objToFloat(hx::Object *inVal,double *outFloat)
 {
    *outFloat =  inVal ? inVal->__ToDouble() : 0.0;
 }
 
-static void *SLJIT_CALL strToObj(String *inStr)
+static void *SLJIT_FUNC strToObj(String *inStr)
 {
    return Dynamic(*inStr).mPtr;
 }
-static void *SLJIT_CALL floatToObj(double *inDouble)
+static void *SLJIT_FUNC floatToObj(double *inDouble)
 {
    return Dynamic(*inDouble).mPtr;
 }
 
-static void SLJIT_CALL floatToStr(double *inDouble, String *outStr)
+static void SLJIT_FUNC floatToStr(double *inDouble, String *outStr)
 {
    *outStr = String(*inDouble);
 
 }
 
-static hx::Object * SLJIT_CALL variantToObject(cpp::Variant *inVariant)
+static hx::Object * SLJIT_FUNC variantToObject(cpp::Variant *inVariant)
 {
    return Dynamic( *inVariant ).mPtr;
 }
 
 
-static int SLJIT_CALL variantToInt(cpp::Variant *inVariant)
+static int SLJIT_FUNC variantToInt(cpp::Variant *inVariant)
 {
    return *inVariant;
 }
 
-static void SLJIT_CALL variantToFloat(cpp::Variant *inVariant, double *outValue)
+static void SLJIT_FUNC variantToFloat(cpp::Variant *inVariant, double *outValue)
 {
    *outValue = *inVariant;
 }
 
-static void SLJIT_CALL variantToString(cpp::Variant *inVariant, String *outValue)
+static void SLJIT_FUNC variantToString(cpp::Variant *inVariant, String *outValue)
 {
    *outValue = *inVariant;
 }
 
-static int SLJIT_CALL strEqual(const String *inS0, const String *inS1)
+static int SLJIT_FUNC strEqual(const String *inS0, const String *inS1)
 {
    return *inS0 == *inS1;
 }
 
-static int SLJIT_CALL strNotEqual(const String *inS0, const String *inS1)
+static int SLJIT_FUNC strNotEqual(const String *inS0, const String *inS1)
 {
    return *inS0 != *inS1;
 }
@@ -287,15 +287,13 @@ public:
    }
 
 
-   void beginGeneration(int inArgs) HXCPP_OVERRIDE
+   void beginGeneration() HXCPP_OVERRIDE
    {
       compiler = sljit_create_compiler(NULL);
 
       int options = 0;
       // S0 is stack
-      int saveds = inArgs;
-      if (usesCtx && saveds<1)
-         saveds = 1;
+      int saveds = 1;
       if (usesFrame && saveds<2)
          saveds = 2;
       if (usesThis && saveds<3)
@@ -304,15 +302,14 @@ public:
          saveds = 3;
       }
       saveds = 3;
-      int fsaveds = 0;
       #ifdef HXCPP_M64
       // Add shadow space for native calls
-      int scratches = std::max(maxTempCount + (makesNativeCalls?4:0) ,inArgs);
+      int scratches = std::max(maxTempCount + (makesNativeCalls?4:0) ,1);
       #else
-      int scratches = std::max(maxTempCount,inArgs);
+      int scratches = std::max(maxTempCount,1);
       #endif
 
-      sljit_emit_enter(compiler, options, inArgs, scratches, saveds, maxFTempCount, fsaveds, maxLocalSize);
+      sljit_emit_enter(compiler, options, SLJIT_ARGS1V(P), scratches | SLJIT_ENTER_FLOAT(maxFTempCount), saveds, maxLocalSize);
       usesCtx = true;
 
       if (usesFrame)
@@ -339,8 +336,8 @@ public:
       if (onReturn)
          onReturn(this, onReturnStackSize);
 
-      sljit_emit_return(compiler, SLJIT_UNUSED, SLJIT_UNUSED, 0);
-      CppiaFunc func = (CppiaFunc)sljit_generate_code(compiler);
+      sljit_emit_return_void(compiler);
+      CppiaFunc func = (CppiaFunc)sljit_generate_code(compiler, 0, NULL);
       sljit_free_compiler(compiler);
       compiler = 0;
       return func;
@@ -423,15 +420,15 @@ public:
          onReturn(this, onReturnStackSize);
 
       if (compiler)
-         sljit_emit_return(compiler, SLJIT_UNUSED, SLJIT_UNUSED, 0);
+         sljit_emit_return_void(compiler);
    }
 
 
-   void emit_ijump(const JitVal &inVal,int inArgs=1)
+   void emit_ijump(const JitVal &inVal,int inArgs=SLJIT_ARGS1V(P))
    {
       sljit_sw t = getTarget(inVal);
       if (compiler)
-         sljit_emit_ijump(compiler, SLJIT_CALL0+inArgs, t, getData(inVal));
+         sljit_emit_icall(compiler, SLJIT_CALL, inArgs, t, getData(inVal));
    }
 
    JumpId jump(LabelId inTo=0) HXCPP_OVERRIDE
@@ -488,7 +485,7 @@ public:
             JumpId passed = sljit_emit_fcmp(compiler, condition, t0, getData(v0), t1, getData(v1) );
 
             // test failed, but test nan
-            JumpId notNan = sljit_emit_jump(compiler,SLJIT_ORDERED_F64);
+            JumpId notNan = sljit_emit_jump(compiler,SLJIT_ORDERED);
 
             // is nan - fallthough
             // test passed, but was nan
@@ -510,7 +507,7 @@ public:
             comeFrom(userCmpPassed);
 
             // Result is not-nan when user test passed
-            JumpId notNan = sljit_emit_jump(compiler,SLJIT_ORDERED_F64);
+            JumpId notNan = sljit_emit_jump(compiler,SLJIT_ORDERED);
             if (andJump)
                sljit_set_label(notNan, andJump);
             // is nan ..
@@ -1168,7 +1165,7 @@ public:
       }
       else
       {
-         emit_op1(SLJIT_NEG32, inDest,  inSrc);
+         emit_op2(SLJIT_SUB | SLJIT_32, inDest, JitVal(0), inSrc);
       }
    }
 
@@ -1200,7 +1197,7 @@ public:
 
    void bitNot(const JitVal &inDest, const JitVal &v0) HXCPP_OVERRIDE
    {
-      emit_op1(SLJIT_NOT32, inDest, v0);
+      emit_op2(SLJIT_XOR | SLJIT_32, inDest, v0, JitVal(-1));
    }
 
    void bitOp(BitOp inOp, const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) HXCPP_OVERRIDE
@@ -1306,7 +1303,7 @@ public:
    void call(const JitVal &func,const JitVal &inArg0) HXCPP_OVERRIDE
    {
       move(sJitArg0,inArg0);
-      emit_ijump(func,1);
+      emit_ijump(func,SLJIT_ARGS1V(P));
    }
 
    void callNative(void *func) HXCPP_OVERRIDE
@@ -1316,7 +1313,8 @@ public:
          maxTempCount =1;
       if (compiler)
       {
-         sljit_emit_ijump(compiler, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
+         auto call = sljit_emit_call(compiler, SLJIT_CALL, SLJIT_ARGS1V(P));
+         sljit_set_target(call, SLJIT_FUNC_ADDR(func));
       }
    }
    void callNative(void *func, const JitVal &inArg0) HXCPP_OVERRIDE
@@ -1342,7 +1340,10 @@ public:
          move( sJitArg0, inArg0);
 
       if (compiler)
-         sljit_emit_ijump(compiler, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
+      {
+         auto call = sljit_emit_call(compiler, SLJIT_CALL, SLJIT_ARGS1V(P));
+         sljit_set_target(call, SLJIT_FUNC_ADDR(func));
+      }
 
       if (restoreLocal>=0)
          localSize = restoreLocal;
@@ -1401,7 +1402,10 @@ public:
 
 
       if (compiler)
-         sljit_emit_ijump(compiler, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
+      {
+         auto call = sljit_emit_call(compiler, SLJIT_CALL, SLJIT_ARGS2V(P, P));
+         sljit_set_target(call, SLJIT_FUNC_ADDR(func));
+      }
 
       if (restoreLocal>=0)
          localSize = restoreLocal;
@@ -1482,7 +1486,8 @@ public:
 
       if (compiler)
       {
-         sljit_emit_ijump(compiler, SLJIT_CALL3, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
+         auto call = sljit_emit_call(compiler, SLJIT_CALL, SLJIT_ARGS3V(P, P, P));
+         sljit_set_target(call, SLJIT_FUNC_ADDR(func));
       }
 
       if (restoreLocal>=0)
