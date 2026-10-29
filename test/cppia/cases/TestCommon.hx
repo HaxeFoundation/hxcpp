@@ -1,6 +1,5 @@
 package cases;
 
-import cpp.cppia.Host;
 import utest.Test;
 import utest.Assert;
 
@@ -22,29 +21,27 @@ private class HostOne implements pack.HostInterface
 }
 
 class TestCommon extends Test {
-    function setupClass() {  
+    function setupClass() {
         Common.hostImplementation = new HostOne();
-    
+
         Common.callback = () -> Common.callbackSet = 1;
 
-        Host.main();
+        Reflect.field(Type.resolveClass("Client"), "setupCommon")();
     }
 
-    function testStatus() {
-        Assert.equals('ok', Common.status);
-    }
+    function testClientCalled() {
+        Reflect.field(Type.resolveClass("Client"), "useHostImplementation")();
 
-    @:depends(testStatus)
-    function testClientImplementation() {
         Assert.equals(2, HostOne.called, 'No client implementation call');
+    }
 
+    function testClientImplementation() {
         if (Assert.notNull(Common.clientImplementation, 'No client implementation')) {
             Assert.equals(1, Common.clientImplementation.getOne(), 'Bad client Int implementation');
             Assert.equals('1', Common.clientImplementation.getOneString(), 'Bad client String implementation');
         }
     }
 
-    @:depends(testStatus)
     function testResolvingScriptType() {
         var hostBase:HostBase = Type.createInstance(Type.resolveClass("ClientExtends2"),[]);
         if (Assert.notNull(hostBase, 'Failed to create client type')) {
@@ -52,14 +49,12 @@ class TestCommon extends Test {
         }
     }
 
-    @:depends(testStatus)
     function testCallback() {
         Common.callback();
-    
+
         Assert.equals(2, Common.callbackSet, 'Bad cppia closure');
     }
 
-    @:depends(testStatus)
     function testInterfaceCalling() {
         final obj : IFoo = Type.createInstance(Type.resolveClass('ClientFoo'), []);
 
@@ -69,7 +64,6 @@ class TestCommon extends Test {
     }
 
 #if (haxe >= version("4.3.6"))
-    @:depends(testStatus)
     function testMultiLevelInheritance() {
         if (Assert.notNull(Common.clientRoot, 'Null client root class')) {
             if (Assert.equals(3, Common.clientRoot.values.length, 'Expected three items in the array')) {

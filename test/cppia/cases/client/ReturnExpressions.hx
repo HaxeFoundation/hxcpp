@@ -1,19 +1,23 @@
-import LocalFunctionExceptions.Status;
+package cases.client;
 
-class ReturnExpressions {
+class ReturnExpressions extends Test {
+	function setup() {
+		Common.count = 0;
+	}
+
+	function teardown() {
+		Common.count = 0;
+	}
+
 	// prevent the call from being optimised out due to unconditional return
 	@:analyzer(ignore)
 	static function returnAsCallHaxeThis() {
 		(cast return:Common).dummyMethodArg(Common.incrementCount());
 	}
 
-	public static function testHostThisReturn() {
-		Common.count = 0;
+	function testHostThisReturn() {
 		returnAsCallHaxeThis();
-		if (Common.count == 0) {
-			return Ok;
-		}
-		return Error("Host method executed after return");
+		Assert.equals(0, Common.count, "Host method executed after return");
 	}
 
 	@:analyzer(ignore)
@@ -21,13 +25,9 @@ class ReturnExpressions {
 		new Common().instanceIncrementCount(return);
 	}
 
-	public static function testHostArgReturn() {
-		Common.count = 0;
+	function testHostArgReturn() {
 		returnAsCallHaxeArg();
-		if (Common.count == 0) {
-			return Ok;
-		}
-		return Error("Host method executed after return");
+		Assert.equals(0, Common.count, "Host method executed after return");
 	}
 
 	@:analyzer(ignore)
@@ -37,30 +37,22 @@ class ReturnExpressions {
 		(cast return : (Int) -> Void)(Common.incrementCount());
 	}
 
-	public static function testFuncReturn() {
-		Common.count = 0;
+	function testFuncReturn() {
 		returnAsFunction();
-		if (Common.count == 0) {
-			return Ok;
-		}
-		return Error("Host method executed after return");
+		Assert.equals(0, Common.count, "Host method executed after return");
 	}
 
 	function vtableMethod(_) {}
 
 	@:analyzer(ignore)
-	public static function returnAsClientThis() {
+	static function returnAsClientThis() {
 		// if return is not handled, there is no instance to run the method with
 		// so this will give a null function exception
 		(cast return:ReturnExpressions).vtableMethod(Common.incrementCount());
 	}
 
-	public static function testClientThisReturn() {
-		Common.count = 0;
+	function testClientThisReturn() {
 		returnAsClientThis();
-		if (Common.count == 0) {
-			return Ok;
-		}
-		return Error("Host method executed after return");
+		Assert.equals(0, Common.count, "Host method executed after return");
 	}
 }
