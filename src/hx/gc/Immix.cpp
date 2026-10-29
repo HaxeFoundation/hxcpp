@@ -437,6 +437,10 @@ DECLARE_FAST_TLS_DATA(StackContext, tlsStackContext);
 
 #ifdef HXCPP_SCRIPTABLE
 extern void scriptMarkStack(hx::MarkContext *);
+extern void scriptMarkModules(hx::MarkContext *);
+#ifdef HXCPP_VISIT_ALLOCS
+extern void scriptVisitModules(hx::VisitContext *);
+#endif
 #endif
 }
 
@@ -4265,6 +4269,9 @@ public:
          VisitLocalAlloc(mLocalAllocs[i], inCtx);
 
       hx::VisitClassStatics(inCtx);
+      #ifdef HXCPP_SCRIPTABLE
+      hx::scriptVisitModules(inCtx);
+      #endif
 
       {
       // Threads in GC free zones, or not registered at all, can still add and remove roots
@@ -4714,6 +4721,9 @@ public:
       mMarker.init();
 
       hx::MarkClassStatics(&mMarker);
+      #ifdef HXCPP_SCRIPTABLE
+      hx::scriptMarkModules(&mMarker);
+      #endif
 
       {
       hx::AutoMarkPush info(&mMarker,"Roots","root");

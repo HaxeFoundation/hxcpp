@@ -1,6 +1,8 @@
 package cases;
 
 import cpp.cppia.Host;
+import cpp.vm.Gc;
+import cpp.vm.WeakRef;
 import utest.Test;
 import utest.Assert;
 
@@ -57,6 +59,27 @@ class TestCommon extends Test {
         Common.callback();
     
         Assert.equals(2, Common.callbackSet, 'Bad cppia closure');
+    }
+
+    @:depends(testStatus)
+    function testModuleValuesCreatedWhenOld() {
+        final values = Type.resolveClass('ClientModuleValues');
+
+        // Full collections make the module old: a generational collection no longer traverses it.
+        for (_ in 0...3) {
+            Gc.run(true);
+        }
+        final created = createValues(values);
+        Gc.run(false);
+
+        for (value in created) {
+            Assert.notNull(value.get(), 'Freed a value that the old module holds');
+        }
+    }
+
+    // Only weak references to the values leave this frame, so that the stack does not keep them.
+    static function createValues(values:Dynamic):Array<WeakRef<Dynamic>> {
+        return [for (name in ['literal', 'assigned']) new WeakRef<Dynamic>(Reflect.callMethod(values, Reflect.field(values, name), []))];
     }
 
     @:depends(testStatus)
