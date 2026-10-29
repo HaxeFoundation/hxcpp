@@ -72,7 +72,8 @@ class LocalFunctionExceptions extends Test {
 		Assert.fail("No exception caught");
 	}
 
-	function testClassMethodOnReturn() {
+	// this test has to be run from a static method to avoid obscuring the original failure
+	static function testClassMethodOnReturn_impl() {
 		function localFunction() {
 			(staticFunction() : DummyClass).run();
 		}
@@ -86,7 +87,12 @@ class LocalFunctionExceptions extends Test {
 		Assert.fail("No exception caught");
 	}
 
-	function testHostClassMethodOnHostReturn() {
+	function testClassMethodOnReturn() {
+		testClassMethodOnReturn_impl();
+	}
+
+	// this test has to be run from a static method to avoid obscuring the original failure
+	static function testHostClassMethodOnHostReturn_impl() {
 		function localFunction() {
 			(staticFunction() : Common).dummyMethod();
 		}
@@ -98,5 +104,9 @@ class LocalFunctionExceptions extends Test {
 			return;
 		}
 		Assert.fail("No exception caught");
+	}
+
+	function testHostClassMethodOnHostReturn() {
+		testHostClassMethodOnHostReturn_impl();
 	}
 }
