@@ -20,12 +20,6 @@ class ClientFoo implements IFoo {
 class Client {
    public static function setupCommon() {
       // client-side setup for host TestCommon
-      final extending = new ClientExtendedExtendedRoot();
-
-      extending.addValue();
-
-      Common.clientRoot = extending;
-
       Common.clientImplementation = new ClientOne();
 
       Common.callback = () -> Common.callbackSet = 2;

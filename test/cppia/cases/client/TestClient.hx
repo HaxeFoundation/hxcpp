@@ -68,4 +68,14 @@ class TestClient extends Test {
 		x *= 1290555;
 		Assert.equals(x, -915102823);
 	}
+
+	#if (haxe >= version("4.3.6"))
+	function testMultiLevelInheritance() {
+		final extending = new ClientExtendedExtendedRoot();
+
+		extending.addValue();
+
+		Assert.same([0, 1, 2], extending.values);
+	}
+	#end
 }

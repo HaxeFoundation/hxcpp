@@ -62,16 +62,4 @@ class TestCommon extends Test {
             Assert.equals('foo', obj.baz());
         }
     }
-
-#if (haxe >= version("4.3.6"))
-    function testMultiLevelInheritance() {
-        if (Assert.notNull(Common.clientRoot, 'Null client root class')) {
-            if (Assert.equals(3, Common.clientRoot.values.length, 'Expected three items in the array')) {
-                Assert.equals(0, Common.clientRoot.values[0]);
-                Assert.equals(1, Common.clientRoot.values[1]);
-                Assert.equals(2, Common.clientRoot.values[2]);
-            }
-        }
-    }
-#end
 }
