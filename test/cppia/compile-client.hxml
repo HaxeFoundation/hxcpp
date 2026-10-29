@@ -1,3 +1,5 @@
 -m Client
+cases.client.TestClient
 -D dll_import=host_classes.info
+-L utest
 --cppia bin/client.cppia
