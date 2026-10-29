@@ -3154,6 +3154,9 @@ public:
       {
          if (!mLocalPool[p])
          {
+            // Pooled allocators hold no holes. Between GetPooledAllocator and AddLocal an allocator
+            //  is neither pooled nor registered, so a collection in that window would not reset it.
+            ClearPooledAlloc(inAlloc);
             mLocalPool[p] = inAlloc;
             return true;
          }
@@ -5818,10 +5821,6 @@ public:
 
    void AttachThread(int *inTopOfStack)
    {
-      // A pooled allocator is neither pooled nor registered between GetPooledAllocator and AddLocal,
-      //  so a collection in that window does not reset it and its holes may be stale.
-      Reset();
-
       #ifndef HXCPP_EXPLICIT_STACK_EXTENT
       mTopOfStack = mBottomOfStack = inTopOfStack;
       #endif
