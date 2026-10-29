@@ -227,7 +227,12 @@ Dynamic CppiaVar::setValue(hx::Object *inThis, Dynamic inValue)
       case fsInt: *(int *)(base) = inValue; return inValue;
       case fsBool: *(bool *)(base) = inValue; return inValue;
       case fsFloat: *(Float *)(base) = inValue; return inValue;
-      case fsString: *(String *)(base) = inValue; return inValue;
+      case fsString:
+         *(String *)(base) = inValue;
+         #ifdef HXCPP_GC_GENERATIONAL
+         HX_OBJ_WB_GET(inThis, hx::PointerOf(*(String *)(base)));
+         #endif
+         return inValue;
       case fsObject:
             switch(type->arrayType)
             {
@@ -259,6 +264,10 @@ Dynamic CppiaVar::setValue(hx::Object *inThis, Dynamic inValue)
                   *(Array<Dynamic> *)(base) = inValue;
                   break;
             }
+            // Every case above stores one object pointer at base.
+            #ifdef HXCPP_GC_GENERATIONAL
+            HX_OBJ_WB_GET(inThis, *(hx::Object **)(base));
+            #endif
             return inValue;
       case fsUnknown:
          break;
