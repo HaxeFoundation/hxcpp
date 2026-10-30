@@ -9,6 +9,7 @@
 <!-- Use value from Build.xml file unless one is specified from the haxe defines -->
 <set name="hxcpp_api_level" value="${HXCPP_API_LEVEL}" unless="hxcpp_api_level" if="HXCPP_API_LEVEL"  />
 <set name="HXCPP_THREAD_XML" value="${HXCPP}/toolchain/haxe-target-threads.xml" unless="HXCPP_THREAD_XML"/>
+<set name="HXCPP_ATOMIC_XML" value="${HXCPP}/toolchain/haxe-target-atomic.xml" unless="HXCPP_ATOMIC_XML"/>
 
 <!-- You can override the exes an "exe" section on your own .hxcpp_config -->
 <!-- You can use replace="1" to change the compiler, or omit to add flags -->
@@ -81,6 +82,8 @@
   <depend name="${HXCPP}/include/hx/thread/Thread.hpp"/>
   <depend name="${HXCPP}/include/hx/thread/ThreadLocal.hpp"/>
   <depend name="${HXCPP}/include/hx/thread/Scratch.hpp"/>
+  <depend name="${HXCPP}/include/hx/atomic/AtomicInt.hpp"/>
+  <depend name="${HXCPP}/include/hx/atomic/AtomicObject.hpp"/>
   <section unless="HXCPP_LINK_NO_TOOL_DEPENDS" >
      <depend name="${HXCPP}/toolchain/haxe-target.xml" dateOnly="true" />
      <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml" dateOnly="true" />
@@ -211,6 +214,7 @@
   <file name = "src/cpp/encoding/Encodings.cpp" />
 
   <include name="${HXCPP_THREAD_XML}"/>
+  <include name="${HXCPP_ATOMIC_XML}"/>
 
   <addTwice if="linux||android" />
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />

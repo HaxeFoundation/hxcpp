@@ -491,89 +491,39 @@ inline void* _hx_atomic_compare_exchange_ptr(volatile void **a, void *expected, 
 #endif
 }
 
+#include "hx/atomic/AtomicObject.hpp"
+
 inline void* _hx_atomic_compare_exchange_cast_ptr(void *a, void *expected, void *replacement) {
    return _hx_atomic_compare_exchange_ptr((volatile void **)a, expected, replacement);
 }
 
-#include <atomic>
-
-struct AtomicObject: hx::Object {
-  std::atomic< ::hx::Object *> aPtr;
-
-  AtomicObject(Dynamic val) { aPtr = val.mPtr; }
-
-  void __Mark(hx::MarkContext *__inCtx) HXCPP_OVERRIDE {
-    Dynamic ptr = load();
-    HX_MARK_MEMBER(ptr);
-  }
-
-#ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) HXCPP_OVERRIDE {
-     hx::Object *obj = aPtr.load();
-     HX_VISIT_MEMBER(obj);
-     aPtr.store(obj);
-   }
-#endif
-
-   Dynamic store(Dynamic val) {
-     aPtr.store(val.mPtr);
-     HX_OBJ_WB_GET(this, val.mPtr);
-     return val;
-   }
-
-   Dynamic load() {
-     return aPtr.load();
-   }
-
-   Dynamic exchange(Dynamic val) {
-      Dynamic ret = aPtr.exchange(val.mPtr);
-      HX_OBJ_WB_GET(this, val.mPtr);
-      return ret;
-   }
-
-   Dynamic compareExchange(Dynamic expected, Dynamic replacement) {
-     // Note: using Dynamic instead of hx::Object* is important
-     // Dynamic has an overloaded == operator, a raw pointer to hx::Object does not.
-     Dynamic original = aPtr.load();
-     while (original == expected) {
-       if (aPtr.compare_exchange_weak(original.mPtr, replacement.mPtr)) {
-         HX_OBJ_WB_GET(this, replacement.mPtr);
-         return original;
-       } else {
-         continue;
-       }
-     }
-     return original;
-   }
-};
-
 inline Dynamic __hxcpp_atomic_object_create(Dynamic value) {
-   return new AtomicObject(value);
+   return new hx::atomic::AtomicObject_obj(value);
 }
 
 inline Dynamic __hxcpp_atomic_object_store(Dynamic dynObj, Dynamic val) {
-  AtomicObject *obj = dynamic_cast<AtomicObject *>(dynObj.mPtr);
+  hx::atomic::AtomicObject_obj* obj{ dynamic_cast<hx::atomic::AtomicObject_obj*>(dynObj.mPtr) };
   if (!obj)
     throw HX_INVALID_OBJECT;
    return obj->store(val);
 }
 
 inline Dynamic __hxcpp_atomic_object_load(Dynamic dynObj) {
-  AtomicObject *obj = dynamic_cast<AtomicObject *>(dynObj.mPtr);
+  hx::atomic::AtomicObject_obj* obj{ dynamic_cast<hx::atomic::AtomicObject_obj*>(dynObj.mPtr) };
   if (!obj)
     throw HX_INVALID_OBJECT;
    return obj->load();
 }
 
 inline Dynamic __hxcpp_atomic_object_exchange(Dynamic dynObj, Dynamic newVal) {
-  AtomicObject *obj = dynamic_cast<AtomicObject *>(dynObj.mPtr);
+  hx::atomic::AtomicObject_obj* obj{ dynamic_cast<hx::atomic::AtomicObject_obj*>(dynObj.mPtr) };
   if (!obj)
     throw HX_INVALID_OBJECT;
    return obj->exchange(newVal);
 }
 
 inline Dynamic __hxcpp_atomic_object_compare_exchange(Dynamic dynObj, Dynamic expected, Dynamic replacement) {
-  AtomicObject *obj = dynamic_cast<AtomicObject *>(dynObj.mPtr);
+  hx::atomic::AtomicObject_obj* obj{ dynamic_cast<hx::atomic::AtomicObject_obj*>(dynObj.mPtr) };
   if (!obj)
     throw HX_INVALID_OBJECT;
   return obj->compareExchange(expected, replacement);
