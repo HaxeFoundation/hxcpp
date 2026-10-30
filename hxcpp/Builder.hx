@@ -146,11 +146,9 @@ class Builder
                case "msvc":
                   if (isStatic)
                   {
-                     validArchs.set("2013m32", ["-D"+target, "-DHXCPP_M32", "HXCPP_MSVC_VER=120"].concat(staticFlags) );
                      validArchs.set("2015m32", ["-D"+target, "-DHXCPP_M32", "HXCPP_MSVC_VER=140"].concat(staticFlags) );
                      if (wantWindows64())
                      {
-                        validArchs.set("2013m64", ["-D"+target, "-DHXCPP_M64", "HXCPP_MSVC_VER=120"].concat(staticFlags) );
                         validArchs.set("2015m64", ["-D"+target, "-DHXCPP_M64", "HXCPP_MSVC_VER=140"].concat(staticFlags) );
                      }
                   }
