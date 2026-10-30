@@ -2,6 +2,9 @@
 #include "hx/atomic/AtomicObject.hpp"
 #include <atomic>
 
+// Atomic operations never block, so they don't enter a GC free zone. Each one is still a GC
+// safe point, so that a loop which spins on atomics without allocating can't stall a collection.
+
 struct hx::atomic::AtomicObject_obj::Impl
 {
 	std::atomic<hx::Object*> atomic;
@@ -34,6 +37,8 @@ void hx::atomic::AtomicObject_obj::__Visit(HX_VISIT_PARAMS)
 
 Dynamic hx::atomic::AtomicObject_obj::store(Dynamic val)
 {
+	__hxcpp_gc_safe_point();
+
 	impl->atomic.store(val);
 
 	HX_OBJ_WB_GET(this, val.mPtr);
@@ -43,11 +48,15 @@ Dynamic hx::atomic::AtomicObject_obj::store(Dynamic val)
 
 Dynamic hx::atomic::AtomicObject_obj::load()
 {
+	__hxcpp_gc_safe_point();
+
 	return impl->atomic.load();
 }
 
 Dynamic hx::atomic::AtomicObject_obj::exchange(Dynamic val)
 {
+	__hxcpp_gc_safe_point();
+
 	Dynamic old{ impl->atomic.exchange(val) };
 
 	HX_OBJ_WB_GET(this, val.mPtr);
@@ -57,6 +66,8 @@ Dynamic hx::atomic::AtomicObject_obj::exchange(Dynamic val)
 
 Dynamic hx::atomic::AtomicObject_obj::compareExchange(Dynamic expected, Dynamic replacement)
 {
+	__hxcpp_gc_safe_point();
+
 	// Note: using Dynamic instead of hx::Object* is important
 	// Dynamic has an overloaded == operator, a raw pointer to hx::Object does not.
 	Dynamic original{ impl->atomic.load() };
