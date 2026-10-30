@@ -8,9 +8,6 @@ on:
       arch:
         required: true
         type: string
-      sep:
-        required: true
-        type: string
       ext:
         required: true
         type: string
@@ -21,161 +18,121 @@ on:
 env:
   HXCPP_ARCH_FLAG: ${{ inputs.arch == 'Arm64' && 'HXCPP_ARM64' || format('HXCPP_M{0}', inputs.arch) }}
 
+defaults:
+  run:
+    shell: bash
+
+# Tests are grouped into a few jobs per platform to avoid paying the setup cost for each of them.
+# Within a job, each test step runs as long as setup succeeded, so one failing test doesn't hide the others.
 jobs:
-  haxe:
+  runtime:
     runs-on: ${{ inputs.os }}
-    name: haxe
-    defaults:
-      run:
+    name: runtime tests
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7
+      - name: setup
+        id: setup
+        uses: ./.github/workflows/setup
+        with:
+          haxe: ${{ inputs.haxe }}
+          arch: ${{ inputs.arch }}
+      - name: setup mariadb
+        if: runner.os == 'Linux'
+        run: |
+          set -ex
+          sudo apt-get update -qqy
+          sudo apt-get install -qqy mariadb-server
+          sudo systemctl start mariadb
+          sudo mariadb -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
+
+      - name: haxe
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         working-directory: test/haxe
+        run: |
+          haxe compile.hxml -D $HXCPP_ARCH_FLAG
+          bin/TestMain
+
+      - name: std
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        working-directory: test/std
+        run: |
+          haxe compile${{ inputs.arch }}.hxml
+          ${{ inputs.arch == 'Arm64' && 'arm64' || format('cpp{0}', inputs.arch) }}/Test
+
+      - name: native
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        working-directory: test/native
+        run: |
+          haxe compile.hxml -D $HXCPP_ARCH_FLAG
+          bin/Native
+
+  tools:
+    runs-on: ${{ inputs.os }}
+    name: tooling tests
     steps:
       - name: checkout
         uses: actions/checkout@v7
       - name: setup
+        id: setup
         uses: ./.github/workflows/setup
         with:
           haxe: ${{ inputs.haxe }}
           arch: ${{ inputs.arch }}
-      - name: build
-        run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
-      - name: run
-        run: bin${{ inputs.sep }}TestMain
 
-  cffi:
-    runs-on: ${{ inputs.os }}
-    name: cffi
-    defaults:
-      run:
+      - name: cffi
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         working-directory: test/cffi
-    steps:
-      - name: checkout
-        uses: actions/checkout@v7
-      - name: setup
-        uses: ./.github/workflows/setup
-        with:
-          haxe: ${{ inputs.haxe }}
-          arch: ${{ inputs.arch }}
-      - name: build project
-        working-directory: test/cffi/project
-        run: haxelib run hxcpp build.xml -Ddebug -D${{ env.HXCPP_ARCH_FLAG }}
-      - name: build
-        run: haxe compile.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }}
-      - name: build (utf8)
-        run: haxe compile-utf8.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }}
-      - name: build (neko)
-        run: haxe compile-neko.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }}
-      - name: copy
-        run: cp project/ndll/*/prime${{ inputs.ext }} bin/neko/prime.ndll
-      - name: run
-        run: bin${{ inputs.sep }}cpp${{ inputs.sep }}TestMain-debug
-      - name: run (utf8)
-        run: bin${{ inputs.sep }}cpp-utf8${{ inputs.sep }}TestMain-debug
-      - name: run (neko)
-        if: inputs.arch == '64'
-        working-directory: test/cffi/bin/neko
-        run: neko TestMain.n
+        run: |
+          (cd project && haxelib run hxcpp build.xml -Ddebug -D$HXCPP_ARCH_FLAG)
+          haxe compile.hxml --debug -D $HXCPP_ARCH_FLAG
+          haxe compile-utf8.hxml --debug -D $HXCPP_ARCH_FLAG
+          haxe compile-neko.hxml --debug -D $HXCPP_ARCH_FLAG
+          cp project/ndll/*/prime${{ inputs.ext }} bin/neko/prime.ndll
+          bin/cpp/TestMain-debug
+          bin/cpp-utf8/TestMain-debug
+          if [ "${{ inputs.arch }}" = "64" ]; then
+            (cd bin/neko && neko TestMain.n)
+          fi
 
-  telemetry:
-    strategy:
-      fail-fast: false
-      matrix:
-        mode: [ debug, release ]
-        include:
-          - suffix: -debug
-            mode: debug
-    runs-on: ${{ inputs.os }}
-    name: telemetry (${{ matrix.mode }})
-    defaults:
-      run:
+      - name: telemetry (debug)
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         working-directory: test/telemetry
-    steps:
-      - name: checkout
-        uses: actions/checkout@v7
-      - name: setup
-        uses: ./.github/workflows/setup
-        with:
-          haxe: ${{ inputs.haxe }}
-          arch: ${{ inputs.arch }}
-      - name: build
-        run: haxe compile.hxml ${{ matrix.suffix }} -D ${{ env.HXCPP_ARCH_FLAG }}
-      - name: run
-        run: bin${{ inputs.sep }}TestMain${{ matrix.suffix }}
+        run: |
+          haxe compile.hxml -debug -D $HXCPP_ARCH_FLAG
+          bin/TestMain-debug
 
-  debugger:
-    runs-on: ${{ inputs.os }}
-    name: debugger
-    defaults:
-      run:
+      - name: telemetry (release)
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        working-directory: test/telemetry
+        run: |
+          haxe compile.hxml -D $HXCPP_ARCH_FLAG
+          bin/TestMain
+
+      - name: debugger
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         working-directory: test/debugger
-    steps:
-      - name: checkout
-        uses: actions/checkout@v7
-      - name: setup
-        uses: ./.github/workflows/setup
-        with:
-          haxe: ${{ inputs.haxe }}
-          arch: ${{ inputs.arch }}
-      - name: build
-        run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
-      - name: run
-        run: bin${{ inputs.sep }}App-debug
+        run: |
+          haxe compile.hxml -D $HXCPP_ARCH_FLAG
+          bin/App-debug
 
-  native:
-      runs-on: ${{ inputs.os }}
-      name: native
-      defaults:
-        run:
-          working-directory: test/native
-      steps:
-        - name: checkout
-          uses: actions/checkout@v7
-        - name: setup
-          uses: ./.github/workflows/setup
-          with:
-            haxe: ${{ inputs.haxe }}
-            arch: ${{ inputs.arch }}
-        - name: build
-          run: haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
-        - name: run
-          run: bin${{ inputs.sep }}Native
+      - name: build tool
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        working-directory: test/cxx_standard
+        run: |
+          for xml in *.xml; do
+            haxelib run hxcpp $xml
+            haxelib run hxcpp $xml clean
+          done
 
-  std:
-      runs-on: ${{ inputs.os }}
-      name: std
-      defaults:
-        run:
-          working-directory: test/std
-      steps:
-        - name: checkout
-          uses: actions/checkout@v7
-        - name: setup
-          uses: ./.github/workflows/setup
-          with:
-            haxe: ${{ inputs.haxe }}
-            arch: ${{ inputs.arch }}
-        - name: setup mariadb
-          if: runner.os == 'Linux'
-          run: |
-            set -ex
-            sudo apt-get update -qqy
-            sudo apt-get install -qqy mariadb-server
-            sudo systemctl start mariadb
-            sudo mariadb -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
-        - name: build
-          run: haxe compile${{ inputs.arch }}.hxml
-        - name: run
-          run: ${{ inputs.arch == 'Arm64' && 'arm64' || format('cpp{0}', inputs.arch) }}${{ inputs.sep }}Test
+      - name: regression
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        working-directory: test/regression
+        run: haxe --run Run -D $HXCPP_ARCH_FLAG
 
   cppia:
-    strategy:
-      fail-fast: false
-      matrix:
-        mode: [ interp, jit ]
-        include:
-          - suffix: -jit
-            mode: jit
     runs-on: ${{ inputs.os }}
-    name: cppia (${{ matrix.mode }})
+    name: cppia
     defaults:
       run:
         working-directory: test/cppia
@@ -188,11 +145,15 @@ jobs:
           haxe: ${{ inputs.haxe }}
           arch: ${{ inputs.arch }}
       - name: build host
-        run: haxe compile-host.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
+        run: haxe compile-host.hxml -D $HXCPP_ARCH_FLAG
       - name: build client
-        run: haxe compile-client.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
-      - name: run
-        run: bin${{ inputs.sep }}CppiaHost bin${{ inputs.sep }}client.cppia ${{ matrix.suffix }}
+        run: haxe compile-client.hxml -D $HXCPP_ARCH_FLAG
+      - name: run (interp)
+        id: interp
+        run: bin/CppiaHost bin/client.cppia
+      - name: run (jit)
+        if: ${{ !cancelled() && steps.interp.outcome != 'skipped' }}
+        run: bin/CppiaHost bin/client.cppia -jit
 
   suite:
     runs-on: ${{ inputs.os }}
@@ -211,7 +172,6 @@ jobs:
       - name: Get Haxe commit SHA
         if: inputs.haxe == 'latest'
         id: haxe_sha
-        shell: bash
         working-directory:
           ${{github.workspace}}
         env:
@@ -242,43 +202,6 @@ jobs:
         # haxe 4 tests don't build with latest utest
         if: inputs.haxe != 'latest'
       - name: build
-        run: haxe compile-cpp.hxml -D ${{ env.HXCPP_ARCH_FLAG }} -D no_http
+        run: haxe compile-cpp.hxml -D $HXCPP_ARCH_FLAG -D no_http
       - name: run
-        run: bin${{ inputs.sep }}cpp${{ inputs.sep }}TestMain-debug
-
-  build_tool:
-    runs-on: ${{ inputs.os }}
-    name: build tool tests
-    steps:
-      - name: checkout
-        uses: actions/checkout@v7
-      - name: setup
-        uses: ./.github/workflows/setup
-        with:
-          haxe: ${{ inputs.haxe }}
-          arch: ${{ inputs.arch }}
-      - name: test c/cxx_standard attributes
-        working-directory: test/cxx_standard
-        shell: bash
-        run: |
-          for xml in *.xml; do
-            haxelib run hxcpp $xml
-            haxelib run hxcpp $xml clean
-          done
-
-  regression:
-    runs-on: ${{ inputs.os }}
-    name: regression tests
-    defaults:
-      run:
-        working-directory: test/regression
-    steps:
-      - name: checkout
-        uses: actions/checkout@v7
-      - name: setup
-        uses: ./.github/workflows/setup
-        with:
-          haxe: ${{ inputs.haxe }}
-          arch: ${{ inputs.arch }}
-      - name: run
-        run: haxe --run Run -D ${{ env.HXCPP_ARCH_FLAG }}
+        run: bin/cpp/TestMain-debug
