@@ -14,8 +14,9 @@ struct hx::thread::ThreadLocal_obj::Impl
 	static int counter;
 
 	const int slot;
+	int generation;
 
-	Impl(const int _slot) : slot(_slot) {}
+	Impl(const int _slot) : slot(_slot), generation(0) {}
 
 	static Impl* get()
 	{
@@ -29,6 +30,9 @@ struct hx::thread::ThreadLocal_obj::Impl
 		auto recycled = slots.front();
 
 		slots.pop_front();
+
+		// Threads might still hold values from the previous owner of this slot.
+		recycled->generation++;
 
 		return recycled;
 	}
@@ -47,7 +51,7 @@ std::list<hx::thread::ThreadLocal_obj::Impl*> hx::thread::ThreadLocal_obj::Impl:
 
 int hx::thread::ThreadLocal_obj::Impl::counter = 0;
 
-hx::thread::ThreadLocal_obj::ThreadLocal_obj() : impl(Impl::get())
+hx::thread::ThreadLocal_obj::ThreadLocal_obj() : impl(Impl::get()), generation(impl->generation)
 {
 	hx::GCSetFinalizer(this, Impl::finalise);
 }
@@ -56,12 +60,12 @@ Dynamic hx::thread::ThreadLocal_obj::get()
 {
 	auto current = reinterpret_cast<hx::thread::ThreadImpl_obj*>(Thread_obj::current().GetPtr());
 
-	return current->getSlot(impl->slot);
+	return current->getSlot(impl->slot, generation);
 }
 
 void hx::thread::ThreadLocal_obj::set(Dynamic obj)
 {
 	auto current = reinterpret_cast<hx::thread::ThreadImpl_obj*>(Thread_obj::current().GetPtr());
 
-	current->setSlot(impl->slot, obj);
+	current->setSlot(impl->slot, obj, generation);
 }

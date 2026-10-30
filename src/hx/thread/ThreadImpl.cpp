@@ -127,13 +127,15 @@ hx::thread::ThreadImpl_obj::ThreadImpl_obj(const int _id)
 	: id(_id)
 	, native(new Native())
 	, scratch(std::numeric_limits<uint16_t>::max(), std::numeric_limits<uint16_t>::max())
-	, slots(0, 0) { }
+	, slots(0, 0)
+	, slotGenerations(0, 0) { }
 
 hx::thread::ThreadImpl_obj::ThreadImpl_obj(const int _id, Thread_obj::CreateFunction _job, CountingSemaphore _semaphore)
 	: id(_id)
 	, native(new Native(_job, this, _semaphore))
 	, scratch(std::numeric_limits<uint16_t>::max(), std::numeric_limits<uint16_t>::max())
 	, slots(0, 0)
+	, slotGenerations(0, 0)
 {
 }
 
@@ -150,20 +152,27 @@ hx::thread::ThreadImpl_obj::Native::Native(Thread_obj::CreateFunction _job, Thre
 #endif
 }
 
-Dynamic hx::thread::ThreadImpl_obj::getSlot(const int id)
+Dynamic hx::thread::ThreadImpl_obj::getSlot(const int id, const int generation)
 {
-	return slots[id];
+	if (slotGenerations->__get(id) != generation)
+	{
+		return null();
+	}
+
+	return slots->__get(id);
 }
 
-void hx::thread::ThreadImpl_obj::setSlot(const int id, const Dynamic& obj)
+void hx::thread::ThreadImpl_obj::setSlot(const int id, const Dynamic& obj, const int generation)
 {
 	slots->__SetItem(id, obj);
+	slotGenerations->__SetItem(id, generation);
 }
 
 void hx::thread::ThreadImpl_obj::__Mark(HX_MARK_PARAMS)
 {
 	HX_MARK_MEMBER(scratch);
 	HX_MARK_MEMBER(slots);
+	HX_MARK_MEMBER(slotGenerations);
 }
 
 #ifdef HXCPP_VISIT_ALLOCS
@@ -172,6 +181,7 @@ void hx::thread::ThreadImpl_obj::__Visit(HX_VISIT_PARAMS)
 {
 	HX_VISIT_MEMBER(scratch);
 	HX_VISIT_MEMBER(slots);
+	HX_VISIT_MEMBER(slotGenerations);
 }
 
 void hx::thread::ThreadImpl_obj::finalise(hx::Object* obj)
