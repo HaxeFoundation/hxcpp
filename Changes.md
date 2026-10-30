@@ -11,10 +11,36 @@
 * Added support for Android NDKs higher than 21
 * Added x86_64 support to older Android NDKs
 * Added optional detaching of main thread
+* Added flushes after each trace and println call
+* Added HXCPP_ANDROID_PLATFORM define which deprecated PLATFORM_NUMBER
+* Added support for ARMv7 ABI in Android GCC NDKs
+* Added HXCPP_NO_IMPLIB to avoid generation of .exp and .lib files on Windows
+* Added hiding CFFI symbols when static linking
+* Added callback function for cppia script loading
+* Added new log level, setup, which is between info and verbose
+* Added custom stack trace support
+* Added millisecond resolution timer
+* Added AtomicObject implementation
+* Added 16KB as the max page size on Android
+* Added HXCPP_ANDROID_NO_16K_PAGES to not use 16KB as the max page size
+* Added allocation alignment with HXCPP_ALIGN_ALLOC by default
+* Added typed zip API
+* Added check for invalid ANDROID_NDK_ROOT
+* Added string encodings API
+* Added Haxe friendly rooting API
+* Added PCH support for clang
+* Added HXCPP_CXX_STANDARD define
+* Added cpp_standard and c_standard xml attributes
+* Added typed semaphore API
+* Added override attributes to relevant functions
+* Added HXCPP_GENERATE_MSVC to generate a Visual Studio solution
+* Added String::fromCharCode to encode UTF16 surrogates unchanged
+* Added typed thread and thread local storage API
 
 * Updated mbedtls to 2.28.2
-* Updated sqlite to 3.40.1
-* Updated zlib to 1.2.13
+* Updated sqlite to 3.51.2
+* Updated zlib to 1.3.1
+* Updated tracey to 0.13.1
 
 * Fixed SSL socket non blocking handshake throwing an exception on 64bit Windows
 * Fixed Windows 64bit architecture detection
@@ -32,6 +58,33 @@
 * Fixed behaviour of indexOf and lastIndexOf on empty strings not aligning with other targets
 * Fixed behaviour of directory reading function not aligning with other targets
 * Fixed haxelib not being invoked with the current working directory
+* Fixed attempting to load ndlls when the name is empty
+* Fixed socket handle being closed twice
+* Fixed sysroot for Android NDK 14+
+* Fixed MinGW define not being set on Linux
+* Fixed empty objects getting passed to the linker
+* Fixed SSL certificate verification failure on Windows
+* Fixed exceptions not being respected in interpreted cppia
+* Fixed index argument for cppia jit array set
+* Fixed memory leak with objects associated with thread creation
+* Fixed multithreaded marking with MSVC
+* Fixed out of bounds access in String::fromCharCode
+* Fixed .so ext not being added on Android clang toolchain
+* Fixed *= in cppia jit with boxed numbers
+* Fixed HXCPP_CPP11 not being respected on Android toolchains
+* Fixed integer overflow arithmetic assignments in cppia
+* Fixed cppia overridden scriptable functions
+* Fixed Pointer.ofArray with empty array
+* Fixed semaphores and condition variables not having GC free zones around blocking calls
+* Fixed HXCPP_DEBUG_LINK and HXCPP_OPTIMIZE_LINK not being respected on Linux
+* Fixed UTF8 output in Windows consoles
+* Fixed HXCPP_M64 being set if you defined HXCPP_X86
+* Fixed base types not being fully qualified in macros
+* Fixed cppia bindir for ARM64
+* Fixed fastcall attribute being added on Linux aarch64
+* Fixed Macsox26 SDK not being located
+* Fixed blocking SQLite calls not being made in a GC free zone
+* Fixed MinGW toolchain RC file handling
 
 * Removed Haxe 3 support
 
