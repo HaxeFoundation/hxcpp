@@ -50,13 +50,15 @@ jobs:
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         working-directory: test/haxe
         run: |
-          haxe compile.hxml -D $HXCPP_ARCH_FLAG
+          set -x
+          haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
           bin/TestMain
 
       - name: std
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         working-directory: test/std
         run: |
+          set -x
           haxe compile${{ inputs.arch }}.hxml
           ${{ inputs.arch == 'Arm64' && 'arm64' || format('cpp{0}', inputs.arch) }}/Test
 
@@ -64,8 +66,14 @@ jobs:
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         working-directory: test/native
         run: |
-          haxe compile.hxml -D $HXCPP_ARCH_FLAG
+          set -x
+          haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
           bin/Native
+
+      - name: regression
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        working-directory: test/regression
+        run: haxe --run Run -D ${{ env.HXCPP_ARCH_FLAG }}
 
   tools:
     runs-on: ${{ inputs.os }}
@@ -84,10 +92,11 @@ jobs:
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         working-directory: test/cffi
         run: |
-          (cd project && haxelib run hxcpp build.xml -Ddebug -D$HXCPP_ARCH_FLAG)
-          haxe compile.hxml --debug -D $HXCPP_ARCH_FLAG
-          haxe compile-utf8.hxml --debug -D $HXCPP_ARCH_FLAG
-          haxe compile-neko.hxml --debug -D $HXCPP_ARCH_FLAG
+          set -x
+          (cd project && haxelib run hxcpp build.xml -Ddebug -D${{ env.HXCPP_ARCH_FLAG }})
+          haxe compile.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }}
+          haxe compile-utf8.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }}
+          haxe compile-neko.hxml --debug -D ${{ env.HXCPP_ARCH_FLAG }}
           cp project/ndll/*/prime${{ inputs.ext }} bin/neko/prime.ndll
           bin/cpp/TestMain-debug
           bin/cpp-utf8/TestMain-debug
@@ -99,42 +108,42 @@ jobs:
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         working-directory: test/telemetry
         run: |
-          haxe compile.hxml -debug -D $HXCPP_ARCH_FLAG
+          set -x
+          haxe compile.hxml -debug -D ${{ env.HXCPP_ARCH_FLAG }}
           bin/TestMain-debug
 
       - name: telemetry (release)
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         working-directory: test/telemetry
         run: |
-          haxe compile.hxml -D $HXCPP_ARCH_FLAG
+          set -x
+          haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
           bin/TestMain
 
       - name: debugger
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         working-directory: test/debugger
         run: |
-          haxe compile.hxml -D $HXCPP_ARCH_FLAG
+          set -x
+          haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
           bin/App-debug
 
       - name: build tool
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         working-directory: test/cxx_standard
         run: |
+          set -x
           for xml in *.xml; do
             haxelib run hxcpp $xml
             haxelib run hxcpp $xml clean
           done
-
-      - name: regression
-        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
-        working-directory: test/regression
-        run: haxe --run Run -D $HXCPP_ARCH_FLAG
 
   cppia:
     runs-on: ${{ inputs.os }}
     name: cppia
     defaults:
       run:
+        shell: bash
         working-directory: test/cppia
     steps:
       - name: checkout
@@ -145,9 +154,9 @@ jobs:
           haxe: ${{ inputs.haxe }}
           arch: ${{ inputs.arch }}
       - name: build host
-        run: haxe compile-host.hxml -D $HXCPP_ARCH_FLAG
+        run: haxe compile-host.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: build client
-        run: haxe compile-client.hxml -D $HXCPP_ARCH_FLAG
+        run: haxe compile-client.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
       - name: run (interp)
         id: interp
         run: bin/CppiaHost bin/client.cppia
@@ -160,6 +169,7 @@ jobs:
     name: haxe test suite
     defaults:
       run:
+        shell: bash
         working-directory: haxe/tests/unit
     steps:
       - name: checkout
@@ -202,6 +212,6 @@ jobs:
         # haxe 4 tests don't build with latest utest
         if: inputs.haxe != 'latest'
       - name: build
-        run: haxe compile-cpp.hxml -D $HXCPP_ARCH_FLAG -D no_http
+        run: haxe compile-cpp.hxml -D ${{ env.HXCPP_ARCH_FLAG }} -D no_http
       - name: run
         run: bin/cpp/TestMain-debug
