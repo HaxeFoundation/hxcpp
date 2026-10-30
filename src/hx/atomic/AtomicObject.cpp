@@ -34,9 +34,7 @@ void hx::atomic::AtomicObject_obj::__Visit(HX_VISIT_PARAMS)
 
 Dynamic hx::atomic::AtomicObject_obj::store(Dynamic val)
 {
-	hx::EnterGCFreeZone();
 	impl->atomic.store(val);
-	hx::ExitGCFreeZone();
 
 	HX_OBJ_WB_GET(this, val.mPtr);
 
@@ -45,16 +43,12 @@ Dynamic hx::atomic::AtomicObject_obj::store(Dynamic val)
 
 Dynamic hx::atomic::AtomicObject_obj::load()
 {
-	hx::AutoGCFreeZone _;
-
 	return impl->atomic.load();
 }
 
 Dynamic hx::atomic::AtomicObject_obj::exchange(Dynamic val)
 {
-	hx::EnterGCFreeZone();
 	Dynamic old{ impl->atomic.exchange(val) };
-	hx::ExitGCFreeZone();
 
 	HX_OBJ_WB_GET(this, val.mPtr);
 
@@ -68,19 +62,11 @@ Dynamic hx::atomic::AtomicObject_obj::compareExchange(Dynamic expected, Dynamic 
 	Dynamic original{ impl->atomic.load() };
 	while (original == expected)
 	{
-		hx::EnterGCFreeZone();
 		if (impl->atomic.compare_exchange_strong(original.mPtr, replacement.mPtr))
 		{
-			hx::ExitGCFreeZone();
-
 			HX_OBJ_WB_GET(this, replacement.mPtr);
 
 			return original;
-		}
-		else
-		{
-			hx::ExitGCFreeZone();
-			continue;
 		}
 	}
 
