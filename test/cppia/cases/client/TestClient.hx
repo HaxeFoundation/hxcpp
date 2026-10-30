@@ -78,4 +78,12 @@ class TestClient extends Test {
 		Assert.same([0, 1, 2], extending.values);
 	}
 	#end
+
+	function testArrays() {		
+		var a:Array<Dynamic> = [1, "two", 3];
+		a.reverse();
+		Assert.same([3, "two", 1], a);
+		a.resize(1);
+		Assert.same([3], a);
+	}
 }
