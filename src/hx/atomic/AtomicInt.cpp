@@ -74,18 +74,9 @@ int hx::atomic::AtomicInt_obj::compareExchange(int expected, int replacement)
 {
 	hx::AutoGCFreeZone _;
 
-	int original{ impl->atomic.load() };
-	while (original == expected)
-	{
-		if (impl->atomic.compare_exchange_strong(expected, replacement))
-		{
-			return original;
-		}
-		else
-		{
-			continue;
-		}
-	}
+	// On failure, compare_exchange_strong stores the current value in `original`.
+	int original{ expected };
+	impl->atomic.compare_exchange_strong(original, replacement);
 
 	return original;
 }
