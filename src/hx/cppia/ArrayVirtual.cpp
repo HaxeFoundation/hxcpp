@@ -254,7 +254,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       if (FUNC==afJoin || FUNC==afToString)
          return Dynamic(runString(ctx)).mPtr;
 
-      if (FUNC==afSort || FUNC==afInsert || FUNC==afUnshift || FUNC==af__SetSizeExact || FUNC==afBlit)
+      if (FUNC==afSort || FUNC==afInsert || FUNC==afUnshift || FUNC==af__SetSizeExact || FUNC==afBlit || FUNC==afReverse || FUNC==afResize)
       {
          runVoid(ctx);
          return 0;
@@ -458,6 +458,24 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          int elemCount = args[3]->runInt(ctx);
          BCR_VCHECK;
          thisVal->blit(destElem, srcArray, srcElem, elemCount);
+         return;
+      }
+      if (FUNC==afReverse)
+      {
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
+         BCR_VCHECK;
+
+         thisVal->reverse();
+         return;
+      }
+      if (FUNC==afResize)
+      {
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
+         BCR_VCHECK;
+         int size = args[0]->runInt(ctx);
+         BCR_VCHECK;
+
+         thisVal->resize(size);
          return;
       }
 
