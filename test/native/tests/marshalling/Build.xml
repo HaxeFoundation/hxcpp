@@ -29,6 +29,10 @@
         <file name="${this_dir}/native/Managed.cpp">
             <depend name="${this_dir}/native/Managed.hpp"/>
         </file>
+
+        <file name="${this_dir}/native/Opaque.cpp">
+            <depend name="${this_dir}/native/Opaque.hpp"/>
+        </file>
     </files>
 
     <files id="haxe">
