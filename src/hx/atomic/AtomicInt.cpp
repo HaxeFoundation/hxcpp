@@ -13,6 +13,13 @@ struct hx::atomic::AtomicInt_obj::Impl
 hx::atomic::AtomicInt_obj::AtomicInt_obj(int val) : impl(new Impl())
 {
 	impl->atomic.store(val);
+
+	GCSetFinalizer(this, [](hx::Object* obj)
+	{
+		auto a = reinterpret_cast<AtomicInt_obj*>(obj);
+
+		delete a->impl;
+	});
 }
 
 int hx::atomic::AtomicInt_obj::fetchAdd(int val)
