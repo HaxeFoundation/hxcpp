@@ -5,7 +5,7 @@
 template<class T>
 inline T* cpp::marshal::PointerType<T>::FromDynamic(const Dynamic& inRHS)
 {
-    return FromBoxed(inRHS.StaticCast<Boxed<T>>());
+    return FromBoxed(inRHS.StaticCast<Boxed<TPtr>>());
 }
 
 template<class T>
