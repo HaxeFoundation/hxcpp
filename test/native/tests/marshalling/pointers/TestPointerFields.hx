@@ -18,6 +18,25 @@ private extern class Holder {
     var pPtr : Point;
 }
 
+@:semantics(value)
+@:include("Opaque.hpp")
+@:cpp.PointerType
+extern class Opaque {}
+
+@:include("Opaque.hpp")
+extern class OpaqueApi {
+    @:native("opaque_create")
+	static function create():Opaque;
+}
+
+private class OpaqueHolder {
+    public var opaque:Opaque;
+
+	public function new(opaque) {
+		this.opaque = opaque;
+	}
+}
+
 class TestPointerFields extends Test {
 
     function test_field_access() {
@@ -71,6 +90,12 @@ class TestPointerFields extends Test {
 
         Assert.equals(100f64, h.pPtr.x);
         Assert.equals(200f64, h.pPtr.y);
+    }
+
+    function test_holding_opaque_pointer() {
+        final h = new OpaqueHolder(OpaqueApi.create());
+
+        Assert.notNull(h.opaque);
     }
 
     function create_holder() : Holder {
