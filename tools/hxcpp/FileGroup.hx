@@ -204,7 +204,7 @@ class FileGroup
       var result = new Array<String>();
       for(def in contents.split("\n"))
       {
-         var name = def.split("=")[0];//.toLowerCase();
+         var name = def.split("=")[0];
          if (name.indexOf("hxcpp_link")>=0)
          {
             // Only effects linking, not compiling
@@ -213,7 +213,7 @@ class FileGroup
          {
             // Does not affect build
          }
-         else if (name.indexOf("hxcpp")>=0 || name=="scriptable" || name.indexOf("dll")>=0 || name=="no_console" ||
+         else if (name.indexOf("hxcpp")>=0 || name.indexOf("HXCPP")>=0 || name=="scriptable" || name.indexOf("dll")>=0 || name=="no_console" ||
             name.substr(0,8)=="android-" || name.substr(0,4)=="ndkv" || name=="toolchain" || name=="platform" ||
               name=="toolchain_version" || name=="android_ndk_root" )
             result.push(def);
