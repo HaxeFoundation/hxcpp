@@ -133,11 +133,16 @@ jobs:
         working-directory: test/tools
         run: |
           set -x
+          # some tests include only xml or only hxml, so do not error if a type doesn't exist
+          shopt -s nullglob
           for dir in */; do
             pushd $dir
             for xml in *.xml; do
               haxelib run hxcpp $xml
               haxelib run hxcpp $xml clean
+            done
+            for hxml in *.hxml; do
+              haxe $hxml
             done
             popd
           done
