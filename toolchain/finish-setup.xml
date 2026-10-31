@@ -98,19 +98,10 @@
       <set name="MSVC_LIB_VERSION" value="-${MSVC_VER}" />
    </section>
 
-   <set name="LIBEXTRA" value="-19" if="MSVC19" />
+   <set name="LIBEXTRA" value="-19" if="MSVC_VER" />
    <set name="LIBEXTRA" value="-arm64" if="HXCPP_ARM64" />
    <set name="HXCPP_M64" value="1" if="HXCPP_ARM64" />
-   <set name="HX_LINK_SUFFIX" value="-19" if="MSVC19" />
-   <set name="HX_TARGET_SUFFIX" value="-19" if="MSVC19 static_link" />
-
-   <section if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug || MSVC19">
-      <echo value="Warning: INCREMENTAL requies Visual Studio 2015+"/>
-      <!-- without INCREMENTAL -->
-      <unset name="HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
-      <set name="HXCPP_OPTIMIZE_LINK" value="1"/> 
-      <set name="OBJOPT" value="-opt" if="HXCPP_OPTIMIZE_LINK || HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug" />
-      <set name="OBJEXT" value="${M64}${F32}${STAT}${OBJDBG}${OBJOPT}${NOCONSOLE}${RPI}${APIFP}${PRIME}" />
-   </section>
+   <set name="HX_LINK_SUFFIX" value="-19" if="MSVC_VER" />
+   <set name="HX_TARGET_SUFFIX" value="-19" if="MSVC_VER static_link" />
 </section>
 </xml>
