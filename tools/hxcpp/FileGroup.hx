@@ -209,7 +209,7 @@ class FileGroup
          {
             // Only effects linking, not compiling
          }
-         else if (name=="HXCPP_VERBOSE" || name=="HXCPP_SILENT" || name=="HXCPP_QUIET" || name=="HXCPP_TIMES" || name=="HXCPP_NEKO_BUILDTOOL" || name=="HXCPP_LINK_NO_TOOL_DEPENDS" )
+         else if (name=="HXCPP_VERBOSE" || name=="HXCPP_SILENT" || name=="HXCPP_QUIET" || name=="HXCPP_TIMES" || name=="HXCPP_NEKO_BUILDTOOL")
          {
             // Does not affect build
          }
