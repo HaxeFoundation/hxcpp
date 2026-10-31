@@ -15,6 +15,13 @@ hx::atomic::AtomicObject_obj::AtomicObject_obj(Dynamic val) : impl(new Impl())
 	impl->atomic.store(val.mPtr);
 
 	HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+
+	GCSetFinalizer(this, [](hx::Object* obj)
+	{
+		auto a = reinterpret_cast<AtomicObject_obj*>(obj);
+
+		delete a->impl;
+	});
 }
 
 void hx::atomic::AtomicObject_obj::__Mark(HX_MARK_PARAMS)
