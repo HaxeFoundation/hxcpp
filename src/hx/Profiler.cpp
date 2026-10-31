@@ -232,11 +232,11 @@ private:
     int mT0;
     std::map<const char *, ProfileEntry> mProfileStats;
 
-    static std::mutex gThreadMutex;
+    HX_IMMORTAL_STATIC_DECL(std::mutex, gThreadMutex);
     static int gThreadRefCount;
     static int gProfileClock;
 };
-/* static */ std::mutex Profiler::gThreadMutex;
+/* static */ HX_IMMORTAL_GLOBAL(std::mutex, Profiler::gThreadMutex);
 /* static */ int Profiler::gThreadRefCount;
 /* static */ int Profiler::gProfileClock;
 

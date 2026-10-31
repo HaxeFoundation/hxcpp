@@ -334,7 +334,8 @@ void CppiaVar::visit(hx::VisitContext *__inCtx)
 // --- CppiaStackVar ----
 
 
-std::map<int,int> sVarIdNameMap;
+typedef std::map<int,int> VarIdNameMap;
+HX_IMMORTAL_GLOBAL(VarIdNameMap, sVarIdNameMap);
 
 
 int getStackVarNameId(int inVarId)
