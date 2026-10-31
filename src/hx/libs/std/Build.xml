@@ -3,6 +3,7 @@
 <pragma once="true" />
 
 <files id="hxcpp_std" dir="${this_dir}" >
+  <options name="Options.txt" />
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
   <cache value="1" asLibrary="true" />

@@ -1,6 +1,7 @@
 <xml>
 
 <files id="hxcpp_mysql" dir="${this_dir}" >
+  <options name="Options.txt" />
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
   <depend name="${this_dir}/sha1.h" />

@@ -130,12 +130,21 @@ jobs:
 
       - name: build tool
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
-        working-directory: test/cxx_standard
+        working-directory: test/tools
         run: |
           set -x
-          for xml in *.xml; do
-            haxelib run hxcpp $xml
-            haxelib run hxcpp $xml clean
+          # some tests include only xml or only hxml, so do not error if a type doesn't exist
+          shopt -s nullglob
+          for dir in */; do
+            pushd $dir
+            for xml in *.xml; do
+              haxelib run hxcpp $xml
+              haxelib run hxcpp $xml clean
+            done
+            for hxml in *.hxml; do
+              haxe $hxml
+            done
+            popd
           done
 
   cppia:
