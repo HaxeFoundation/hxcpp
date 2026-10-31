@@ -43,8 +43,8 @@
     <compilerflag value="-I${ZLIB_DIR}"/>
     <compilerflag value="-I${this_dir}"/>
 
-    <file name="ZLibUncompress.cpp"/>
-    <file name="ZLibCompress.cpp"/>
+    <file name="${this_dir}/ZLibUncompress.cpp" />
+    <file name="${this_dir}/ZLibCompress.cpp" />
   </files>
 
   <target id="haxe">

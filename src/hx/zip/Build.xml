@@ -5,7 +5,7 @@
     <set name="HXCPP_ZIP_XML" value="${this_dir}/zlib/Build.xml"/>
   </section>
   
-  <import name="${HXCPP_ZIP_XML}"/>
+  <include name="${HXCPP_ZIP_XML}"/>
 
   <files id="hxcpp_zip_api">
     <options name="Options.txt" />
