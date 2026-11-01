@@ -55,6 +55,12 @@ class TestCommon extends Test {
         Assert.equals(2, Common.callbackSet, 'Bad cppia closure');
     }
 
+    function testDynamicMethod() {
+        Common.instance.dynamicMethod();
+
+        Assert.equals(3, Common.callbackSet, 'Bad cppia closure');
+    }
+
     function testInterfaceCalling() {
         final obj : IFoo = Type.createInstance(Type.resolveClass('ClientFoo'), []);
 
