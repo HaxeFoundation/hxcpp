@@ -35,7 +35,8 @@ class Client {
       Common.CLIENT_CASES = [
          new TestClient(),
          new LocalFunctionExceptions(),
-         new ReturnExpressions()
+         new ReturnExpressions(),
+         new MemberCrements()
       ];
    }
 }

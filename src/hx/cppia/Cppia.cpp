@@ -4277,7 +4277,7 @@ struct MemReferenceCrement : public CppiaExpr
             break;
 
          case locThis:
-            ioPtr = sJitThis.star() + offset;
+            ioPtr = JitThisPos(offset);
             break;
 
          case locAbsolute:
