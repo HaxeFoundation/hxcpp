@@ -23,6 +23,7 @@ class Client {
       Common.clientImplementation = new ClientOne();
 
       Common.callback = () -> Common.callbackSet = 2;
+      Common.instance.dynamicMethod = () -> Common.callbackSet = 3;
    }
 
    public static function useHostImplementation() {
