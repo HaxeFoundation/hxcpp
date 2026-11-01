@@ -120,6 +120,13 @@ jobs:
           haxe compile.hxml -D ${{ env.HXCPP_ARCH_FLAG }}
           bin/TestMain
 
+      - name: telemetry (tracy compile)
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        working-directory: test/telemetry
+        run: |
+          set -x
+          haxe compile.hxml -D HXCPP_TRACY -D HXCPP_STACK_LINE -D ${{ env.HXCPP_ARCH_FLAG }}
+
       - name: debugger
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         working-directory: test/debugger

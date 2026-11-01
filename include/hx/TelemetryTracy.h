@@ -6,7 +6,9 @@
 #endif
 
 #define TRACY_ENABLE
-#include <hxcpp.h>
+#ifndef HXCPP_H
+	#include <hxcpp.h>
+#endif
 #include "../../project/thirdparty/tracy-0.13.1/tracy/TracyC.h"
 #include "../../project/thirdparty/tracy-0.13.1/tracy/Tracy.hpp"
 
