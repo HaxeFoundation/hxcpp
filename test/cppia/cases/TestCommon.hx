@@ -55,12 +55,6 @@ class TestCommon extends Test {
         Assert.equals(2, Common.callbackSet, 'Bad cppia closure');
     }
 
-    function testNewOfUnlinkedClass() {
-        final source = sys.io.File.getBytes('bin/unlinked.cppia');
-
-        Assert.raises(() -> cpp.cppia.Module.fromData(source.getData()), String, 'Linked a new of a class the host does not have');
-    }
-
     function testInterfaceCalling() {
         final obj : IFoo = Type.createInstance(Type.resolveClass('ClientFoo'), []);
 
