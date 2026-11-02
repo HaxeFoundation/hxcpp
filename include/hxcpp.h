@@ -385,5 +385,22 @@ typedef PropertyAccessMode PropertyAccess;
 #include <hx/Undefine.h>
 #include <hx/LessThanEq.h>
 
+#ifdef HXCPP_IMMORTAL_STATICS
+// Heap-allocate static objects and never delete them. Prevents static
+// destruction order issues where CRT destroys objects in unpredictable
+// order. OS reclaims all heap memory on process exit.
+#define HX_IMMORTAL(Type, name)              static Type &name = *new Type()
+#define HX_IMMORTAL_GLOBAL(Type, name)       Type &name = *new Type()
+#define HX_IMMORTAL_FILE_SCOPE(Type, name)   FILE_SCOPE Type &name = *new Type()
+// Static data member of a class: declare with this inside the class, then define
+// it outside with HX_IMMORTAL_GLOBAL(Type, Owner::name)
+#define HX_IMMORTAL_STATIC_DECL(Type, name)  static Type &name
+#else
+#define HX_IMMORTAL(Type, name)              static Type name
+#define HX_IMMORTAL_GLOBAL(Type, name)       Type name
+#define HX_IMMORTAL_FILE_SCOPE(Type, name)   FILE_SCOPE Type name
+#define HX_IMMORTAL_STATIC_DECL(Type, name)  static Type name
+#endif
+
 #endif
 

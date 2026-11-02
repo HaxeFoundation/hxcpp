@@ -192,7 +192,7 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
 extern "C" void __hxcpp_lib_main();
 namespace hx
 {
-   static std::string initReturnBuffer;
+   HX_IMMORTAL(std::string, initReturnBuffer);
    const char *Init(bool stayAttached)
    {
       try
@@ -848,7 +848,7 @@ Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc)
 
 
 
-static std::mutex sgFieldMapMutex;
+HX_IMMORTAL(std::mutex, sgFieldMapMutex);
 
 typedef std::map<std::string,int> StringToField;
 
