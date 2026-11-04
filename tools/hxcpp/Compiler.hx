@@ -71,6 +71,7 @@ class Compiler
 
    //testing...
    public var useCacheInPlace = true;
+   static inline var CLANG_PCH_CONTENT_CHECK = "-fpch-validate-input-files-content";
    //public var useCacheInPlace = false;
 
    public function new(inID,inExe:String)
@@ -283,6 +284,8 @@ class Compiler
             case "gcc":
                args.unshift("-I"+pchDir);
             case "clang":
+               if (inFile.mGroup.isCached())
+                  args.push(CLANG_PCH_CONTENT_CHECK);
                args.push("-include-pch");
                args.push(pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
          }
@@ -594,7 +597,14 @@ class Compiler
       for(flag in mFlags)
          flag.add(args,tags);
 
-      return  args.concat( mCPPFlags );
+      args = args.concat( mCPPFlags );
+      // A cached PCH is shared by all checkouts whose headers have the same content, but clang
+      // rejects it when the modification times of those headers differ, e.g. in a fresh clone.
+      // Make clang compare the content instead. The flag is part of the PCH directory hash, so
+      // PCHs that were built without it are not reused.
+      if (mPCH=="clang" && inGroup.isCached())
+         args.push(CLANG_PCH_CONTENT_CHECK);
+      return args;
    }
 
    public function getPchDir(inGroup:FileGroup)
