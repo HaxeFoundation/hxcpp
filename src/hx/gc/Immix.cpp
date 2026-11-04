@@ -2372,7 +2372,11 @@ void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx)
 
 FILE_SCOPE std::mutex* sGCRootLock = nullptr;
 typedef std::unordered_set<hx::Object **> RootSet;
-static RootSet sgRootSet;
+// Allocated on first use and never freed. Threads that are still running when the process exits,
+// such as the thread pools of native libraries, remove their roots from thread-local destructors
+// (see ThreadInfoHolder), which can run after the destructors of static objects. A static set
+// would already be destroyed by then.
+static RootSet *sgRootSet=0;
 
 typedef std::unordered_map<void *,int> OffsetRootSet;
 static OffsetRootSet *sgOffsetRootSet=0;
@@ -2380,13 +2384,16 @@ static OffsetRootSet *sgOffsetRootSet=0;
 void GCAddRoot(hx::Object **inRoot)
 {
    std::lock_guard<std::mutex> lock(*sGCRootLock);
-   sgRootSet.insert(inRoot);
+   if (!sgRootSet)
+      sgRootSet = new RootSet();
+   sgRootSet->insert(inRoot);
 }
 
 void GCRemoveRoot(hx::Object **inRoot)
 {
    std::lock_guard<std::mutex> lock(*sGCRootLock);
-   sgRootSet.erase(inRoot);
+   if (sgRootSet)
+      sgRootSet->erase(inRoot);
 }
 
 
@@ -4270,12 +4277,13 @@ public:
       // Threads in GC free zones, or not registered at all, can still add and remove roots
       std::lock_guard<std::mutex> rootLock(*hx::sGCRootLock);
 
-      for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
-      {
-         hx::Object **obj = *i;
-         if (*obj)
-            inCtx->visitObject(obj);
-      }
+      if (hx::sgRootSet)
+         for(hx::RootSet::iterator i = hx::sgRootSet->begin(); i!=hx::sgRootSet->end(); ++i)
+         {
+            hx::Object **obj = *i;
+            if (*obj)
+               inCtx->visitObject(obj);
+         }
 
 
       if (hx::sgOffsetRootSet)
@@ -4720,12 +4728,13 @@ public:
       // Threads in GC free zones, or not registered at all, can still add and remove roots
       std::lock_guard<std::mutex> rootLock(*hx::sGCRootLock);
 
-      for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
-      {
-         hx::Object *&obj = **i;
-         if (obj)
-            hx::MarkObjectAlloc(obj , &mMarker );
-      }
+      if (hx::sgRootSet)
+         for(hx::RootSet::iterator i = hx::sgRootSet->begin(); i!=hx::sgRootSet->end(); ++i)
+         {
+            hx::Object *&obj = **i;
+            if (obj)
+               hx::MarkObjectAlloc(obj , &mMarker );
+         }
 
       if (hx::sgOffsetRootSet)
          for(hx::OffsetRootSet::iterator i = hx::sgOffsetRootSet->begin(); i!=hx::sgOffsetRootSet->end(); ++i)
