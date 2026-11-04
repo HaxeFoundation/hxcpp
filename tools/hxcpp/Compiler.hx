@@ -598,10 +598,7 @@ class Compiler
          flag.add(args,tags);
 
       args = args.concat( mCPPFlags );
-      // A cached PCH is shared by all checkouts whose headers have the same content, but clang
-      // rejects it when the modification times of those headers differ, e.g. in a fresh clone.
-      // Make clang compare the content instead. The flag is part of the PCH directory hash, so
-      // PCHs that were built without it are not reused.
+      // Allow clang to reuse a cached PCH when content matches, even if timestamp differs
       if (usePchContentCheck(inGroup))
          args.push(CLANG_PCH_CONTENT_CHECK);
       return args;
