@@ -284,7 +284,7 @@ class Compiler
             case "gcc":
                args.unshift("-I"+pchDir);
             case "clang":
-               if (inFile.mGroup.isCached())
+               if (usePchContentCheck(inFile.mGroup))
                   args.push(CLANG_PCH_CONTENT_CHECK);
                args.push("-include-pch");
                args.push(pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
@@ -602,9 +602,26 @@ class Compiler
       // rejects it when the modification times of those headers differ, e.g. in a fresh clone.
       // Make clang compare the content instead. The flag is part of the PCH directory hash, so
       // PCHs that were built without it are not reused.
-      if (mPCH=="clang" && inGroup.isCached())
+      if (usePchContentCheck(inGroup))
          args.push(CLANG_PCH_CONTENT_CHECK);
       return args;
+   }
+
+   function usePchContentCheck(inGroup:FileGroup)
+   {
+      return mPCH=="clang" && inGroup.isCached() && clangSupportsPchContentCheck();
+   }
+
+   // -fpch-validate-input-files-content was added in clang 10, which Apple ships as Apple clang 12.
+   // Without a recognisable version, leave it out.
+   function clangSupportsPchContentCheck()
+   {
+      var version = ~/(Apple )?clang version ([0-9]+)\./;
+      if (mCompilerVersionString==null || !version.match(mCompilerVersionString))
+         return false;
+      var major = Std.parseInt(version.matched(2));
+      var isApple = StringTools.startsWith(version.matched(0), "Apple");
+      return major!=null && major >= (isApple ? 12 : 10);
    }
 
    public function getPchDir(inGroup:FileGroup)
