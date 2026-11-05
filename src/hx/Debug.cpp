@@ -207,6 +207,13 @@ StackContext::StackContext()
    #endif
 
    #ifdef HXCPP_SCRIPTABLE
+   // The cppia jit's write barrier compares an object's mark byte with this copy of the
+   //  collector's mark id, so it must match from the start. The collector only updates it at
+   //  the end of each collection, and the main thread's context is created before any of them.
+   //  Left uninitialised (0 in practice), every nursery object - whose mark byte is 0 - looked
+   //  old to the barrier, which flagged it remembered and so hid the nursery objects allocated
+   //  after it from the stack scan (#1196).
+   byteMarkId = ::hx::gByteMarkID;
    stack = new unsigned char[128*1024];
    pointer = &stack[0];
    push((hx::Object *)0);
