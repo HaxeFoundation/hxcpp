@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <mutex>
+#include <string>
+#include <unordered_set>
 
 namespace
 {
@@ -17,12 +19,64 @@ namespace
 	hx::QuickVec<void*> largeAllocs;
 	std::mutex largeAllocsLock;
 
+	// Hold a reference to small objects when their thread is destroyed, until Tracy can learn they've been freed.
+	// Only used by tlmDestroy so no mutex is needed.
+	hx::QuickVec<void*> orphanedSmallAllocs;
+
+	// Tracy receives name pointers from HXCPP and reads them from its thread.
+	// If the pointer is then freed, Tracy can't identify the frame set or plot.
+	// (This is mainly an issue for non-ASCII strings!)
+	// We use a set so each unique name is only stored once, and never free it so Tracy can read the names while the program is shutting down.
+	std::unordered_set<std::string>* internedNames = new std::unordered_set<std::string>();
+	std::mutex internedNamesLock;
+
+	// Store the provided name as a UTF-8 pointer that Tracy can always access.
+	const char* internName(const String& name)
+	{
+		if (!name.raw_ptr())
+		{
+			return nullptr;
+		}
+
+		hx::strbuf buffer;
+		int byteLength = 0;
+		const char* utf8 = name.utf8_str(&buffer, false, &byteLength);
+
+		std::lock_guard<std::mutex> lock(internedNamesLock);
+
+		return internedNames->emplace(utf8, byteLength).first->c_str();
+	}
+
 	bool isLargeObject(void* ptr)
 	{
 		auto ptrHeader = reinterpret_cast<size_t>(ptr) - sizeof(int);
 		auto flags     = *reinterpret_cast<unsigned int*>(ptrHeader);
 
 		return (flags & 0xffff) == 0;
+	}
+
+	// Reports every allocation in the list that was not marked this collection as freed, and removes it from the list.
+	void sweepUnmarked(hx::QuickVec<void*>& allocs, const char* poolName, int byteMarkId, int endianByteMarkId)
+	{
+		hx::QuickVec<void*> retained;
+
+		retained.safeReserveExtra(allocs.size());
+
+		for (auto i = 0; i < allocs.size(); i++)
+		{
+			auto ptr      = allocs[i];
+			auto markByte = reinterpret_cast<unsigned char*>(ptr)[endianByteMarkId];
+			if (markByte != byteMarkId)
+			{
+				TracyFreeN(ptr, poolName);
+			}
+			else
+			{
+				retained.push(ptr);
+			}
+		}
+
+		allocs.swap(retained);
 	}
 }
 
@@ -108,46 +162,12 @@ void __hxt_gc_after_mark(int byteMarkId, int endianByteMarkId)
 	#ifdef HXCPP_TRACY_MEMORY
 		for (auto&& telemetry : created)
 		{
-			hx::QuickVec<void*> smallRetained;
-
-			smallRetained.safeReserveExtra(telemetry->smallAllocs.size());
-
-			for (auto i = 0; i < telemetry->smallAllocs.size(); i++)
-			{
-				auto ptr      = telemetry->smallAllocs[i];
-				auto markByte = reinterpret_cast<unsigned char*>(ptr)[endianByteMarkId];
-				if (markByte != byteMarkId)
-				{
-					TracyFreeN(ptr, sohName);
-				}
-				else
-				{
-					smallRetained.push(ptr);
-				}
-			}
-
-			telemetry->smallAllocs.swap(smallRetained);
+			sweepUnmarked(telemetry->smallAllocs, sohName, byteMarkId, endianByteMarkId);
 		}
 
-		hx::QuickVec<void*> largeRetained;
+		sweepUnmarked(orphanedSmallAllocs, sohName, byteMarkId, endianByteMarkId);
 
-		largeRetained.safeReserveExtra(largeAllocs.size());
-
-		for (auto i = 0; i < largeAllocs.size(); i++)
-		{
-			auto ptr      = largeAllocs[i];
-			auto markByte = reinterpret_cast<unsigned char*>(ptr)[endianByteMarkId];
-			if (markByte != byteMarkId)
-			{
-				TracyFreeN(ptr, lohName);
-			}
-			else
-			{
-				largeRetained.push(ptr);
-			}
-		}
-
-		largeAllocs.swap(largeRetained);
+		sweepUnmarked(largeAllocs, lohName, byteMarkId, endianByteMarkId);
 	#endif
 }
 
@@ -174,6 +194,19 @@ void hx::tlmDestroy(hx::Telemetry* telemetry)
 {
 	created.erase(std::find(created.begin(), created.end(), telemetry));
 
+	#ifdef HXCPP_TRACY_MEMORY
+	// If we drop this thread's small allocations here, Tracy doesn't learn they've been freed.
+	// If the GC then reuses those addresses, Tracy will throw an error.
+	// Instead, we hold onto them to free later.
+
+	orphanedSmallAllocs.safeReserveExtra(telemetry->smallAllocs.size());
+
+	for (auto i = 0; i < telemetry->smallAllocs.size(); i++)
+	{
+		orphanedSmallAllocs.push(telemetry->smallAllocs[i]);
+	}
+	#endif
+
 	delete telemetry;
 }
 
@@ -199,9 +232,9 @@ void hx::tlmSampleEnter(hx::Telemetry* telemetry, hx::StackFrame* frame)
 			0);
 
 	#if HXCPP_TRACY_INCLUDE_CALLSTACKS
-		// Note: Tracy doesnt support Callstacks outside this scope: depth >= 1 && depth < 63
-		// Determine depth from tracyZones vector: +1 since we are about to add one
-		auto depth = telemetry->tracyZones.size() + 1;
+		// Determine depth from tracyZones vector: +1 since we are about to add one.
+		// Clamped when required by Tracy (see __hxcpp_tracy_callstack_depth).
+		auto depth = __hxcpp_tracy_callstack_depth(telemetry->tracyZones.size() + 1);
 
 		telemetry->tracyZones.push_back(___tracy_emit_zone_begin_alloc_callstack(srcloc, depth, true));
 	#else
@@ -226,28 +259,45 @@ void __hxcpp_tracy_framemark()
 	::tracy::Profiler::SendFrameMark(0);
 }
 
+void __hxcpp_tracy_framemark_named(String name)
+{
+	::tracy::Profiler::SendFrameMark(internName(name));
+}
+
+void __hxcpp_tracy_framemark_start(String name)
+{
+	___tracy_emit_frame_mark_start(internName(name));
+}
+
+void __hxcpp_tracy_framemark_end(String name)
+{
+	___tracy_emit_frame_mark_end(internName(name));
+}
+
 void __hxcpp_tracy_plot(String name, ::Float val)
 {
-	hx::strbuf buffer;
-	::tracy::Profiler::PlotData(name.utf8_str(&buffer), val);
+	::tracy::Profiler::PlotData(internName(name), val);
 }
 
 void __hxcpp_tracy_plot_config(String name, uint8_t format, bool step, bool fill, int color)
 {
-	hx::strbuf buffer;
-	::tracy::Profiler::ConfigurePlot(name.utf8_str(&buffer),::tracy::PlotFormatType(format), step, fill, color);
+	::tracy::Profiler::ConfigurePlot(internName(name), ::tracy::PlotFormatType(format), step, fill, color);
 }
 
 void __hxcpp_tracy_message(String msg, int color)
 {
 	hx::strbuf buffer;
-	::tracy::Profiler::MessageColor(msg.utf8_str(&buffer), msg.length, color, 0);
+	int byteLength = 0;
+	const char *utf8 = msg.utf8_str(&buffer, false, &byteLength);
+	::tracy::Profiler::LogString(::tracy::MessageSourceType::User, ::tracy::MessageSeverity::Info, color, 0, byteLength, utf8);
 }
 
 void __hxcpp_tracy_message_app_info(String info)
 {
 	hx::strbuf buffer;
-	::tracy::Profiler::MessageAppInfo(info.utf8_str(&buffer), info.length);
+	int byteLength = 0;
+	const char *utf8 = info.utf8_str(&buffer, false, &byteLength);
+	::tracy::Profiler::MessageAppInfo(utf8, byteLength);
 }
 
 void __hxcpp_tracy_set_thread_name_and_group(String name, int groupHint)
