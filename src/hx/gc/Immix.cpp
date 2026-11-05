@@ -4218,7 +4218,7 @@ public:
    void *GetIDObject(int inIndex)
    {
       std::lock_guard<std::mutex> lock(*gSpecialObjectLock);
-      if (inIndex<0 || inIndex>hx::sIdObjectMap.size())
+      if (inIndex<0 || inIndex>=hx::sIdObjectMap.size())
          return 0;
       return hx::sIdObjectMap[inIndex];
    }

@@ -25,6 +25,7 @@
 * Fixed the cppia jit write barrier treating new objects as old on the main thread until the first collection, which could let a collection free objects that only the stack held (#1196)
 * Fixed HXCPP_GC_VERIFY reporting an unmarked row with the generational collector: the verification mark advanced the mark id twice per collection, so dead objects from 16 marks earlier could read as marked before the next table update cleared them (#1415)
 * Fixed the moving GC updating the object id map through an iterator that the insert of the new address could have invalidated
+* Fixed __hxcpp_id_obj reading one past the end of the id table for an id equal to its size
 * Fixed pthread structured being unaligned
 * Fixed cppia crash on functions with empty bodies
 * Fixed regression parsing integers which wrap around
