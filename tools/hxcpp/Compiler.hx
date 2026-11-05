@@ -610,16 +610,14 @@ class Compiler
 
    // clang rejects a PCH when one of its headers is newer than when the PCH was built. A cached
    // PCH can come from another checkout with the same header contents, e.g. a fresh clone on CI
-   // with a restored cache, so build it again in that case.
+   // with a restored cache, so build it again when the precompiled header itself is newer.
    function isClangPchOutOfDate(inGroup:FileGroup, inPchName:String)
    {
       if (mPCH!="clang")
          return false;
-      var pchStamp = FileSystem.stat(inPchName).mtime.getTime();
-      for(depend in inGroup.mCacheDepends)
-         if (FileSystem.stat(depend).mtime.getTime() > pchStamp)
-            return true;
-      return false;
+      var header = inGroup.mPrecompiledHeaderDir + "/" + inGroup.mPrecompiledHeader + ".h";
+      return FileSystem.exists(header) &&
+         FileSystem.stat(header).mtime.getTime() > FileSystem.stat(inPchName).mtime.getTime();
    }
 
    public function precompile(inGroup:FileGroup, inReuseIfPossible:Bool)
