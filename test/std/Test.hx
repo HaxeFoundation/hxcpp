@@ -154,6 +154,37 @@ class Test extends utest.Test
       Assert.equals(0, decompressed.compare(bytes), "Compress/Uncompress mismatch");
    }
 
+   function testCompressMultipleBuffers()
+   {
+      log("Test compress/uncompress across multiple buffers");
+      // Larger than the 64K default buffer so execute is called more than once.
+      final bytes = haxe.io.Bytes.alloc(300000);
+      for(i in 0...bytes.length)
+         bytes.set(i, (i * 7 + (i >> 9)) & 0xff);
+
+      final compressed = Compress.run(bytes, 9);
+      final decompressed = Uncompress.run(compressed);
+      Assert.equals(bytes.length, decompressed.length, "Uncompress length");
+      Assert.equals(0, decompressed.compare(bytes), "Uncompress mismatch");
+
+      final uncompress = new Uncompress();
+      final chunk = haxe.io.Bytes.alloc(4096);
+      final output = new haxe.io.BytesBuffer();
+      var pos = 0;
+      while(true)
+      {
+         final r = uncompress.execute(compressed, pos, chunk, 0);
+         Assert.isTrue(r.write <= chunk.length, "Per-call write exceeds buffer");
+         output.addBytes(chunk, 0, r.write);
+         pos += r.read;
+         if (r.done)
+            break;
+      }
+      uncompress.close();
+      Assert.equals(compressed.length, pos, "Per-call reads sum to input");
+      Assert.equals(0, output.getBytes().compare(bytes), "Chunked uncompress mismatch");
+   }
+
 
    function testRegexp()
    {
