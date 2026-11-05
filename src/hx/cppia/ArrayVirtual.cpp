@@ -592,6 +592,8 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          case afUnshift:
          case af__SetSizeExact:
          case afBlit:
+         case afReverse:
+         case afResize:
             return etVoid;
 
          case afPush:
