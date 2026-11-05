@@ -23,6 +23,7 @@
 * Fixed generational GC when used with HXCPP_ALIGN_ALLOC
 * Fixed heap corruption in the moving GC (HXCPP_GC_MOVING) with HXCPP_ALIGN_ALLOC: compaction did not charge the alignment padding of each moved object against the destination hole, so a block filled by moved objects overran its end
 * Fixed the cppia jit write barrier treating new objects as old on the main thread until the first collection, which could let a collection free objects that only the stack held (#1196)
+* Fixed HXCPP_GC_VERIFY reporting an unmarked row with the generational collector: the verification mark advanced the mark id twice per collection, so dead objects from 16 marks earlier could read as marked before the next table update cleared them (#1415)
 * Fixed pthread structured being unaligned
 * Fixed cppia crash on functions with empty bodies
 * Fixed regression parsing integers which wrap around

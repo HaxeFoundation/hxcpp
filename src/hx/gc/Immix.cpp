@@ -5058,6 +5058,10 @@ public:
       {
          #ifdef HXCPP_GC_MOVING
          sgTimeToNextTableUpdate = 7;
+         #elif defined(HX_GC_VERIFY_GENERATIONAL)
+         // The verification mark advances the mark id a second time in each collection, so the
+         //  count has to come down one sooner to keep the table update ahead of the 16 mark ids
+         sgTimeToNextTableUpdate = 14;
          #else
          sgTimeToNextTableUpdate = 15;
          #endif
