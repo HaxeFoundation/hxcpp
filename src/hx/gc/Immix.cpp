@@ -411,6 +411,7 @@ static void VisitLocalAlloc(LocalAllocator *inAlloc,hx::VisitContext *__inCtx);
 static void WaitForSafe(LocalAllocator *inAlloc);
 static void ReleaseFromSafe(LocalAllocator *inAlloc);
 static void ClearPooledAlloc(LocalAllocator *inAlloc);
+static void InitReferrersLocked(LocalAllocator *inAlloc);
 static void CollectFromThisThread(bool inMajor,bool inForceCompact);
 
 namespace hx
@@ -3145,6 +3146,10 @@ public:
       // Until we add ourselves, the collector will not wait
       //  on us - ie, we are assumed ot be in a GC free zone.
       std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
+      // The collector switches the gc mode and hands out or collects the referrer chunks of
+      //  the registered allocators under this lock, so decide here, under the same lock,
+      //  whether the new allocator needs one
+      InitReferrersLocked(inAlloc);
       mLocalAllocs.push(inAlloc);
       // TODO Attach debugger
    }
@@ -5865,11 +5870,7 @@ public:
       {
          GCLOG("Uncleaned referrers\n");
       }
-
-      if (sGcMode==gcmGenerational)
-         mOldReferrers = hx::sGlobalChunks.alloc();
-      else
-         mOldReferrers = 0;
+      // mOldReferrers is assigned by AddLocal, under the thread state lock
       #endif
 
 
@@ -6503,6 +6504,14 @@ void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx)
 void ClearPooledAlloc(LocalAllocator *inAlloc)
 {
    inAlloc->Reset();
+}
+
+// Called with gThreadStateChangeLock held, as the allocator is registered
+void InitReferrersLocked(LocalAllocator *inAlloc)
+{
+   #ifdef HXCPP_GC_GENERATIONAL
+   inAlloc->mOldReferrers = sGcMode==gcmGenerational ? hx::sGlobalChunks.alloc() : 0;
+   #endif
 }
 
 #ifdef HXCPP_VISIT_ALLOCS

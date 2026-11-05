@@ -27,6 +27,7 @@
 * Fixed the moving GC updating the object id map through an iterator that the insert of the new address could have invalidated
 * Fixed __hxcpp_id_obj reading one past the end of the id table for an id equal to its size
 * Fixed the large allocation collection threshold overflowing once the block heap passes 2GB with HXCPP_GC_BIG_BLOCKS
+* Fixed a crash in the next collection when a thread registered with the GC while a collection switched the generational collector on
 * Fixed pthread structured being unaligned
 * Fixed cppia crash on functions with empty bodies
 * Fixed regression parsing integers which wrap around
