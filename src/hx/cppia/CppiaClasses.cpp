@@ -1240,6 +1240,143 @@ void CppiaClassInfo::compile()
 }
 #endif
 
+static ExprType signatureExprType(char inSig)
+{
+   switch(inSig)
+   {
+      case sigVoid: return etVoid;
+      case sigBool:
+      case sigInt: return etInt;
+      case sigFloat: return etFloat;
+      case sigString: return etString;
+      default: return etObject;
+   }
+}
+
+// Host code calls native interface functions with the native signature, which uses Dynamic
+//  for type parameters.  Script implementations may use more specific types (eg, String),
+//  so the arguments and return value need converting.
+struct NativeInterfaceAdapter : public CppiaExpr
+{
+   ScriptCallable *function;
+   const char *signature;
+
+   NativeInterfaceAdapter(ScriptCallable *inFunction, const char *inSignature)
+      : function(inFunction), signature(inSignature) { }
+
+   const char *getName() HXCPP_OVERRIDE { return "NativeInterfaceAdapter"; }
+
+   void pushArgs(CppiaCtx *ctx)
+   {
+      int n = strlen(signature)-1;
+      Array<Dynamic> args = Array_obj<Dynamic>::__new(n,n);
+      int pos = sizeof(hx::Object *);
+      for(int a=0;a<n;a++)
+         switch(signature[a+1])
+         {
+            case sigBool: args[a] = ctx->getInt(pos)!=0; pos += sizeof(int); break;
+            case sigInt: args[a] = ctx->getInt(pos); pos += sizeof(int); break;
+            case sigFloat: args[a] = ctx->getFloat(pos); pos += sizeof(Float); break;
+            case sigString: args[a] = ctx->getString(pos); pos += sizeof(String); break;
+            default: args[a] = ctx->getObject(pos); pos += sizeof(hx::Object *);
+         }
+      function->pushArgsDynamic(ctx, ctx->getThis(false), args);
+   }
+
+   void runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE
+   {
+      unsigned char *pointer = ctx->pointer;
+      switch(signature[0])
+      {
+         case sigVoid:
+            {
+               pushArgs(ctx);
+               AutoStack save(ctx,pointer);
+               ctx->runVoid(function);
+            }
+            break;
+         case sigBool:
+         case sigInt:
+            {
+               int result;
+               {
+                  pushArgs(ctx);
+                  AutoStack save(ctx,pointer);
+                  result = runContextConvertInt(ctx, function->getReturnType(), function);
+               }
+               ctx->returnInt(result);
+            }
+            break;
+         case sigFloat:
+            {
+               Float result;
+               {
+                  pushArgs(ctx);
+                  AutoStack save(ctx,pointer);
+                  result = runContextConvertFloat(ctx, function->getReturnType(), function);
+               }
+               ctx->returnFloat(result);
+            }
+            break;
+         case sigString:
+            {
+               String result;
+               {
+                  pushArgs(ctx);
+                  AutoStack save(ctx,pointer);
+                  result = runContextConvertString(ctx, function->getReturnType(), function);
+               }
+               ctx->returnString(result);
+            }
+            break;
+         default:
+            {
+               hx::Object *result;
+               {
+                  pushArgs(ctx);
+                  AutoStack save(ctx,pointer);
+                  result = runContextConvertObject(ctx, function->getReturnType(), function);
+               }
+               ctx->returnObject(result);
+            }
+      }
+   }
+};
+
+static bool signatureMatches(ScriptCallable *inFunction, const char *inSignature)
+{
+   int n = strlen(inSignature)-1;
+   if (n!=inFunction->args.size())
+      return false;
+   if (inSignature[0]!=sigVoid && signatureExprType(inSignature[0])!=inFunction->getReturnType())
+      return false;
+   for(int a=0;a<n;a++)
+      if (signatureExprType(inSignature[a+1])!=inFunction->args[a].argType)
+         return false;
+   return true;
+}
+
+// Returns the function to use for a native interface slot - the script function itself
+//  if its signature matches the native one, or a wrapper that converts the values.
+static ScriptCallable *createNativeInterfaceFunction(CppiaModule &cppia, ScriptCallable *inFunction, ScriptNamedFunction *inNative)
+{
+   if (signatureMatches(inFunction, inNative->signature))
+      return inFunction;
+
+   // Arguments and return type follow the native signature, so script code calling through the slot
+   //  pushes the values the adapter expects
+   ScriptCallable *result = new ScriptCallable(cppia, inNative);
+   result->argCount = result->args.size();
+   result->returnType = signatureExprType(inNative->signature[0]);
+   result->body = new NativeInterfaceAdapter(inFunction, inNative->signature);
+   result->position = inFunction->position;
+   #ifdef CPPIA_JIT
+   result->compiled = 0;
+   #endif
+   return result;
+}
+
+
 void CppiaClassInfo::link()
 {
    int newPos = -1;
@@ -1275,7 +1412,20 @@ void CppiaClassInfo::link()
          int interfaceSlot = cppia.findInterfaceSlot( memberFunctions[i]->name );
          DBGLOG("Set %s : %s to %d @%p\n", name.c_str(), memberFunctions[i]->name.c_str(), interfaceSlot, vtable);
          if (interfaceSlot>0 && interfaceSlot<interfaceSlotSize)
-            vtable[ -interfaceSlot ] = memberFunctions[i]->funExpr;
+         {
+            void *func = memberFunctions[i]->funExpr;
+            if (!isInterface)
+            {
+               std::vector<ScriptNamedFunction *> &nativeInterfaceFuncs = type->cppiaClass->nativeInterfaceFunctions;
+               for(int f=0;f<nativeInterfaceFuncs.size();f++)
+                  if (memberFunctions[i]->name==nativeInterfaceFuncs[f]->name)
+                  {
+                     func = createNativeInterfaceFunction(cppia, memberFunctions[i]->funExpr, nativeInterfaceFuncs[f]);
+                     break;
+                  }
+            }
+            vtable[ -interfaceSlot ] = func;
+         }
       }
    }
 
