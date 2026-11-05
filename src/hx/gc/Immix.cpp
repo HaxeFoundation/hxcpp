@@ -6083,6 +6083,11 @@ public:
       if (sgIsCollecting)
          CriticalGCError("Bad Allocation while collecting - from finalizer?");
 
+      // The collector neither waits for nor releases a thread in a GC-free zone, so waiting
+      //  for mCollectDone from inside one would block this thread for good
+      if (mGCFreeZone)
+         CriticalGCError("PauseForCollect called from a GC-free zone - was ExitGCFreeZone missed?");
+
       mReadyForCollect.Set();
       mCollectDone.Wait();
       #endif

@@ -29,6 +29,7 @@
 * Fixed the large allocation collection threshold overflowing once the block heap passes 2GB with HXCPP_GC_BIG_BLOCKS
 * Fixed a crash in the next collection when a thread registered with the GC while a collection switched the generational collector on
 * Fixed a spurious "Memory exhausted" trap when other threads claimed every block that the collecting thread had just added to the heap
+* Fixed a thread hanging forever when it reached a GC safe point from inside a GC-free zone; it is now reported as a critical error (#947)
 * Fixed pthread structured being unaligned
 * Fixed cppia crash on functions with empty bodies
 * Fixed regression parsing integers which wrap around
