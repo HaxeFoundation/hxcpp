@@ -8,6 +8,6 @@ class CppiaHost extends Test
       // load cppia client
       Host.main();
 
-      UTest.run(Common.CLIENT_CASES.concat([ new cases.TestCommon() ]));
+      UTest.run(Common.CLIENT_CASES.concat([new cases.TestCommon(), new cases.TestLoad()]));
    }
 }
