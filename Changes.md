@@ -28,6 +28,7 @@
 * Fixed __hxcpp_id_obj reading one past the end of the id table for an id equal to its size
 * Fixed the large allocation collection threshold overflowing once the block heap passes 2GB with HXCPP_GC_BIG_BLOCKS
 * Fixed a crash in the next collection when a thread registered with the GC while a collection switched the generational collector on
+* Fixed a spurious "Memory exhausted" trap when other threads claimed every block that the collecting thread had just added to the heap
 * Fixed pthread structured being unaligned
 * Fixed cppia crash on functions with empty bodies
 * Fixed regression parsing integers which wrap around

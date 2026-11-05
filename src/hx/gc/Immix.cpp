@@ -3456,7 +3456,11 @@ public:
    //  malloc/new.  This is not called very often, so the overhead should be minimal.
    //  However, gcc inlines this function!  requiring every alloc the have sjlj overhead.
    //  Making it virtual prevents the overhead.
-   virtual bool AllocMoreBlocks(bool &outForceCompact, bool inJustBorrowing)
+   //
+   // If outReserved is given, the first new block is handed to the caller already owned and
+   //  with its zero-lock held - the state GetNextFree returns blocks in - so that no other
+   //  thread can claim it before the caller does.
+   virtual bool AllocMoreBlocks(bool &outForceCompact, bool inJustBorrowing, BlockDataInfo **outReserved = 0)
    {
       enum { newBlockCount = 1<<(IMMIX_BLOCK_GROUP_BITS) };
 
@@ -3541,6 +3545,13 @@ public:
          BlockData *block = (BlockData *)(aligned + i*IMMIX_BLOCK_SIZE);
          BlockDataInfo *info = new BlockDataInfo(gid,block);
 
+         if (outReserved && !*outReserved)
+         {
+            info->mOwned = true;
+            info->mZeroLock = 1;
+            *outReserved = info;
+         }
+
          mAllBlocks.push(info);
          mFreeBlocks.push(info);
       }
@@ -3614,11 +3625,15 @@ public:
          result = GetNextFree(inRequiredBytes);
          #endif
 
+         // Threads released from a collection, or that never had to stop, keep claiming free
+         //  blocks while this one holds the thread state lock, and can take every block that
+         //  AllocMoreBlocks adds before GetNextFree runs again. So when the heap has to grow
+         //  on this thread's behalf, have AllocMoreBlocks reserve one of the new blocks for it
+         //  rather than reporting the memory as exhausted when the race is lost.
          bool forceCompact = false;
          if (!result && allowMoreBlocks() && (!sgInternalEnable || GetWorkingMemory()<sWorkingMemorySize))
          {
-            if (AllocMoreBlocks(forceCompact,false))
-               result = GetNextFree(inRequiredBytes);
+            AllocMoreBlocks(forceCompact,false,&result);
          }
 
          if (!result)
@@ -3637,8 +3652,7 @@ public:
 
          if (!result)
          {
-            if (AllocMoreBlocks(forceCompact,false))
-               result = GetNextFree(inRequiredBytes);
+            AllocMoreBlocks(forceCompact,false,&result);
          }
 
          if (!result)
