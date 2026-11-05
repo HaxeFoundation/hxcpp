@@ -3802,7 +3802,14 @@ public:
                         }
 
                         #ifdef HXCPP_ALIGN_ALLOC
-                        destPos += ALIGN_PADDING(destPos);
+                        // The fit test above reserved allocSize + padding, so the padding has to
+                        //  come out of destLen as well, or destPos + destLen drifts past the end
+                        //  of the hole and a later object is written over the next block
+                        {
+                           int alignPad = ALIGN_PADDING(destPos);
+                           destPos += alignPad;
+                           destLen -= alignPad;
+                        }
                         #endif
 
                         int startRow = destPos>>IMMIX_LINE_BITS;
@@ -4010,9 +4017,14 @@ public:
 
                            // TODO - not copy + paste
 
-                        printf("Move!\n");
                            #ifdef HXCPP_ALIGN_ALLOC
-                           destPos += ALIGN_PADDING(destPos);
+                           // As in MoveBlocks: the padding was reserved by the fit test, so charge
+                           //  it against destLen too
+                           {
+                              int alignPad = ALIGN_PADDING(destPos);
+                              destPos += alignPad;
+                              destLen -= alignPad;
+                           }
                            #endif
 
                            int startRow = destPos>>IMMIX_LINE_BITS;

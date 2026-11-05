@@ -21,6 +21,7 @@
 * Fixed critial error handler returning the wrong callstack
 * Fixed ARM64 library names on Mac
 * Fixed generational GC when used with HXCPP_ALIGN_ALLOC
+* Fixed heap corruption in the moving GC (HXCPP_GC_MOVING) with HXCPP_ALIGN_ALLOC: compaction did not charge the alignment padding of each moved object against the destination hole, so a block filled by moved objects overran its end
 * Fixed pthread structured being unaligned
 * Fixed cppia crash on functions with empty bodies
 * Fixed regression parsing integers which wrap around
