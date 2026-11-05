@@ -557,13 +557,17 @@ Dynamic _hx_ssl_cert_load_defaults(){
 	if( SecKeychainOpen("/System/Library/Keychains/SystemRootCertificates.keychain",&keychain) != errSecSuccess )
 		return null();
 
-	// Search for certificates
+	// Search for certificates. Every CF object created or copied here is
+	// released: this runs for every TLS connection, and the matching array
+	// alone holds the whole system root store (hundreds of KB).
 	search = CFDictionaryCreateMutable( NULL, 0, NULL, NULL );
+	CFArrayRef searchList = CFArrayCreate(NULL, (const void **)&keychain, 1, NULL);
 	CFDictionarySetValue( search, kSecClass, kSecClassCertificate );
 	CFDictionarySetValue( search, kSecMatchLimit, kSecMatchLimitAll );
 	CFDictionarySetValue( search, kSecReturnRef, kCFBooleanTrue );
-	CFDictionarySetValue( search, kSecMatchSearchList, CFArrayCreate(NULL, (const void **)&keychain, 1, NULL) );
-	if( SecItemCopyMatching( search, (CFTypeRef *)&result ) == errSecSuccess ){
+	CFDictionarySetValue( search, kSecMatchSearchList, searchList );
+	result = NULL;
+	if( SecItemCopyMatching( search, (CFTypeRef *)&result ) == errSecSuccess && result ){
 		CFIndex n = CFArrayGetCount( result );
 		for( CFIndex i = 0; i < n; i++ ){
 			item = (SecCertificateRef)CFArrayGetValueAtIndex( result, i );
@@ -580,6 +584,9 @@ Dynamic _hx_ssl_cert_load_defaults(){
 			}
 		}
 	}
+	if( result ) CFRelease( result );
+	CFRelease( search );
+	CFRelease( searchList );
 	CFRelease(keychain);
 	if( chain != NULL )
 		return chain;
