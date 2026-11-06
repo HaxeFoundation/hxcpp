@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARSHALLING_NATIVE_HOLDER_HPP
+#define MARSHALLING_NATIVE_HOLDER_HPP
 
 #include <point.hpp>
 
@@ -17,3 +18,5 @@ public:
     ::hx::maths::point create();
     ::hx::maths::point* get_static();
 };
+
+#endif

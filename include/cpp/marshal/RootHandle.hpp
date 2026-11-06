@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CPP_MARSHAL_ROOTHANDLE_HPP
+#define CPP_MARSHAL_ROOTHANDLE_HPP
 
 #include "Definitions.inc"
 
@@ -44,3 +45,5 @@ inline cpp::Pointer<void> cpp::marshal::RootHandle::toVoidPointer()
 {
 	return object;
 }
+
+#endif

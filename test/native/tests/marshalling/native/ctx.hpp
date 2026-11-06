@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARSHALLING_NATIVE_CTX_HPP
+#define MARSHALLING_NATIVE_CTX_HPP
 
 struct ctx {
     int number;
@@ -15,3 +16,5 @@ void ctx_ptr(ctx* pCtx);
 void ctx_ptr_ptr(ctx** ppCtx);
 void ctx_void_ptr(void* pCtx);
 void ctx_void_ptr_ptr(void** ppCtx);
+
+#endif

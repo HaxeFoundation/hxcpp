@@ -71,6 +71,7 @@ class Compiler
 
    //testing...
    public var useCacheInPlace = true;
+   static inline var CLANG_PCH_CONTENT_CHECK = "-fpch-validate-input-files-content";
    //public var useCacheInPlace = false;
 
    public function new(inID,inExe:String)
@@ -283,6 +284,8 @@ class Compiler
             case "gcc":
                args.unshift("-I"+pchDir);
             case "clang":
+               if (usePchContentCheck(inFile.mGroup))
+                  args.push(CLANG_PCH_CONTENT_CHECK);
                args.push("-include-pch");
                args.push(pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
          }
@@ -594,7 +597,28 @@ class Compiler
       for(flag in mFlags)
          flag.add(args,tags);
 
-      return  args.concat( mCPPFlags );
+      args = args.concat( mCPPFlags );
+      // Allow clang to reuse a cached PCH when content matches, even if timestamp differs
+      if (usePchContentCheck(inGroup))
+         args.push(CLANG_PCH_CONTENT_CHECK);
+      return args;
+   }
+
+   function usePchContentCheck(inGroup:FileGroup)
+   {
+      return mPCH=="clang" && inGroup.isCached() && clangSupportsPchContentCheck();
+   }
+
+   // -fpch-validate-input-files-content was added in clang 10, which Apple ships as Apple clang 12.
+   // Without a recognisable version, leave it out.
+   function clangSupportsPchContentCheck()
+   {
+      var version = ~/(Apple )?clang version ([0-9]+)\./;
+      if (mCompilerVersionString==null || !version.match(mCompilerVersionString))
+         return false;
+      var major = Std.parseInt(version.matched(2));
+      var isApple = StringTools.startsWith(version.matched(0), "Apple");
+      return major!=null && major >= (isApple ? 12 : 10);
    }
 
    public function getPchDir(inGroup:FileGroup)

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HX_ZIP_ZIP_HPP
+#define HX_ZIP_ZIP_HPP
 
 #ifndef HXCPP_H
 #include <hxcpp.h>
@@ -36,3 +37,5 @@ namespace hx
 		};
 	}
 }
+
+#endif

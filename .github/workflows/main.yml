@@ -25,6 +25,12 @@ jobs:
           include
       name: Check public headers
 
+    - run: |
+        # clang loses track of #pragma once headers when it reuses a cached PCH whose headers have
+        # newer modification times (llvm/llvm-project#239569), so use include guards instead
+        ! grep --recursive --line-number --extended-regexp '^\s*#\s*pragma\s+once' include src test
+      name: Check for pragma once
+
   Test:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     strategy:

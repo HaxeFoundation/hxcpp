@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CPP_MARSHAL_MARSHAL_HPP
+#define CPP_MARSHAL_MARSHAL_HPP
 
 #include "Definitions.inc"
 #include <cstring>
@@ -519,3 +520,5 @@ inline void cpp::marshal::Marshal::writeBigEndianFloat64(const View<uint8_t>& vi
     writeFloat64(view, value);
 #endif
 }
+
+#endif

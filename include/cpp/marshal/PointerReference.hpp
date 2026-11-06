@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CPP_MARSHAL_POINTERREFERENCE_HPP
+#define CPP_MARSHAL_POINTERREFERENCE_HPP
 
 #include "Definitions.inc"
 
@@ -168,3 +169,5 @@ inline T* cpp::marshal::PointerReference<T>::operator->() const
 
     return *Super::ptr;
 }
+
+#endif

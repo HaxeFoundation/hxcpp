@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HX_ZIP_UNCOMPRESS_HPP
+#define HX_ZIP_UNCOMPRESS_HPP
 
 #include "Zip.hpp"
 
@@ -15,3 +16,5 @@ namespace hx
 		};
 	}
 }
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CPP_MARSHAL_VALUEREFERENCE_HPP
+#define CPP_MARSHAL_VALUEREFERENCE_HPP
 
 #include "Definitions.inc"
 
@@ -138,3 +139,5 @@ inline T cpp::marshal::ValueReference<T>::operator*() const
 
     return *Super::ptr;
 }
+
+#endif
