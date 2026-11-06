@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CPP_ENCODING_UTF8_HPP
+#define CPP_ENCODING_UTF8_HPP
 
 namespace cpp
 {
@@ -24,3 +25,5 @@ namespace cpp
         };
 	}
 }
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARSHALLING_NATIVE_MANAGED_HPP
+#define MARSHALLING_NATIVE_MANAGED_HPP
 
 HX_DECLARE_CLASS2(foo,bar,standard_naming)
 
@@ -28,3 +29,5 @@ namespace foo
         ::Dynamic ReturnSeven_dyn();
     };
 }
+
+#endif

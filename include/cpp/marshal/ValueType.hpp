@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CPP_MARSHAL_VALUETYPE_HPP
+#define CPP_MARSHAL_VALUETYPE_HPP
 
 #include "Definitions.inc"
 
@@ -72,3 +73,5 @@ inline cpp::marshal::ValueType<T>& cpp::marshal::ValueType<T>::operator=(const n
 
     return *this;
 }
+
+#endif

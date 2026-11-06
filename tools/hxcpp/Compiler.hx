@@ -71,6 +71,7 @@ class Compiler
 
    //testing...
    public var useCacheInPlace = true;
+   static inline var CLANG_PCH_CONTENT_CHECK = "-fpch-validate-input-files-content";
    //public var useCacheInPlace = false;
 
    public function new(inID,inExe:String)
@@ -283,6 +284,8 @@ class Compiler
             case "gcc":
                args.unshift("-I"+pchDir);
             case "clang":
+               if (usePchContentCheck(inFile.mGroup))
+                  args.push(CLANG_PCH_CONTENT_CHECK);
                args.push("-include-pch");
                args.push(pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
          }
@@ -594,7 +597,28 @@ class Compiler
       for(flag in mFlags)
          flag.add(args,tags);
 
-      return  args.concat( mCPPFlags );
+      args = args.concat( mCPPFlags );
+      // Allow clang to reuse a cached PCH when content matches, even if timestamp differs
+      if (usePchContentCheck(inGroup))
+         args.push(CLANG_PCH_CONTENT_CHECK);
+      return args;
+   }
+
+   function usePchContentCheck(inGroup:FileGroup)
+   {
+      return mPCH=="clang" && inGroup.isCached() && clangSupportsPchContentCheck();
+   }
+
+   // -fpch-validate-input-files-content was added in clang 10, which Apple ships as Apple clang 12.
+   // Without a recognisable version, leave it out.
+   function clangSupportsPchContentCheck()
+   {
+      var version = ~/(Apple )?clang version ([0-9]+)\./;
+      if (mCompilerVersionString==null || !version.match(mCompilerVersionString))
+         return false;
+      var major = Std.parseInt(version.matched(2));
+      var isApple = StringTools.startsWith(version.matched(0), "Apple");
+      return major!=null && major >= (isApple ? 12 : 10);
    }
 
    public function getPchDir(inGroup:FileGroup)
@@ -606,18 +630,6 @@ class Compiler
       var md5 = Md5.encode(args.join(" ") + inGroup.mPrecompiledHeader +
                     inGroup.mDependHash + mCompilerVersion );
       return CompileCache.getPchDir(inGroup.getCacheProject(),md5);
-   }
-
-   // clang rejects a PCH when one of its headers is newer than when the PCH was built. A cached
-   // PCH can come from another checkout with the same header contents, e.g. a fresh clone on CI
-   // with a restored cache, so build it again when the precompiled header itself is newer.
-   function isClangPchOutOfDate(inGroup:FileGroup, inPchName:String)
-   {
-      if (mPCH!="clang")
-         return false;
-      var header = inGroup.mPrecompiledHeaderDir + "/" + inGroup.mPrecompiledHeader + ".h";
-      return FileSystem.exists(header) &&
-         FileSystem.stat(header).mtime.getTime() > FileSystem.stat(inPchName).mtime.getTime();
    }
 
    public function precompile(inGroup:FileGroup, inReuseIfPossible:Bool)
@@ -638,7 +650,7 @@ class Compiler
       {
           // No obj needed for gcc
           var obj = mPCH=="msvc" ? PathManager.combine(dir, file + mExt) : null;
-          if (FileSystem.exists(pch_name) && (obj==null || FileSystem.exists(obj)) && !isClangPchOutOfDate(inGroup, pch_name))
+          if (FileSystem.exists(pch_name) && (obj==null || FileSystem.exists(obj)) )
              return obj;
       }
 

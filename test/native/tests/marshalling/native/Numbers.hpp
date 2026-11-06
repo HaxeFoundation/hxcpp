@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARSHALLING_NATIVE_NUMBERS_HPP
+#define MARSHALLING_NATIVE_NUMBERS_HPP
 
 namespace foo
 {
@@ -8,3 +9,5 @@ namespace foo
         Three
     };
 }
+
+#endif

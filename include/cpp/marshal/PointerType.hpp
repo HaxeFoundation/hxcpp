@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CPP_MARSHAL_POINTERTYPE_HPP
+#define CPP_MARSHAL_POINTERTYPE_HPP
 
 #include "Definitions.inc"
 
@@ -66,3 +67,5 @@ inline cpp::marshal::PointerType<T>& cpp::marshal::PointerType<T>::operator=(con
 
     return *this;
 }
+
+#endif

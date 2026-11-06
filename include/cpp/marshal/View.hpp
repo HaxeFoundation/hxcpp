@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CPP_MARSHAL_VIEW_HPP
+#define CPP_MARSHAL_VIEW_HPP
 
 #include <stddef.h>
 #include <cpp/Pointer.h>
@@ -165,3 +166,5 @@ inline T& cpp::marshal::View<T>::operator[](int64_t index) const
 
     return ptr.ptr[index];
 }
+
+#endif

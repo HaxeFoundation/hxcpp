@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HX_ZIP_ZLIB_ZLIBUNCOMPRESS_HPP
+#define HX_ZIP_ZLIB_ZLIBUNCOMPRESS_HPP
 
 #include <hxcpp.h>
 #include <hx/zip/Uncompress.hpp>
@@ -24,3 +25,5 @@ namespace hx
 		}
 	}
 }
+
+#endif

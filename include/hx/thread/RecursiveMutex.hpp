@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HX_THREAD_RECURSIVEMUTEX_HPP
+#define HX_THREAD_RECURSIVEMUTEX_HPP
 
 #ifndef HXCPP_H
 #include <hxcpp.h>
@@ -25,3 +26,5 @@ namespace hx
 		};
 	}
 }
+
+#endif

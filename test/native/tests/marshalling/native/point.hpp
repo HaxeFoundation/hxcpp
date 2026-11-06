@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MARSHALLING_NATIVE_POINT_HPP
+#define MARSHALLING_NATIVE_POINT_HPP
 #include <vector>
 
 namespace hx {
@@ -14,3 +15,5 @@ namespace hx {
         };
     }
 }
+
+#endif

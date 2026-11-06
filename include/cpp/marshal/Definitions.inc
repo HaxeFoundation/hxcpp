@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CPP_MARSHAL_DEFINITIONS_INC
+#define CPP_MARSHAL_DEFINITIONS_INC
 
 #include <type_traits>
 
@@ -304,3 +305,5 @@ inline cpp::Pointer<T>::Pointer(const ::cpp::marshal::PointerReference<T> ref)
 {
     ptr = *ref.ptr;
 }
+
+#endif

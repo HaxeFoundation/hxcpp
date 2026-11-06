@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HX_ATOMIC_ATOMICINT_HPP
+#define HX_ATOMIC_ATOMICINT_HPP
 
 #ifndef HXCPP_H
 #include <hxcpp.h>
@@ -31,3 +32,5 @@ namespace hx
 		};
 	}
 }
+
+#endif
