@@ -1507,6 +1507,13 @@ struct NewExpr : public CppiaDynamicExpr
       if (!type->cppiaClass && type->haxeClass.mPtr)
          constructor = type->haxeClass.mPtr->mConstructArgs;
 
+      // Nothing to construct: runObject and genCode would dereference the null cppiaClass.
+      if (!type->arrayType && !constructor && !type->cppiaClass)
+      {
+         CPPIALOG("Could not link new %s\n", type->name.c_str());
+         throw "Bad link";
+      }
+
       LinkExpressions(args,inModule);
       return this;
    }
@@ -4654,6 +4661,12 @@ struct GetFieldByLinkage : public CppiaExpr
                      (CppiaExpr*)new MemReference<String,locThis>(this,offset);
                   break;
             case fsObject:
+#if (HXCPP_API_LEVEL<500)
+               replace = object ?
+                     (CppiaExpr*)new MemReference<hx::Object *,locObj>(this,offset,object):
+                     (CppiaExpr*)new MemReference<hx::Object *,locThis>(this,offset);
+                  break;
+#endif
             case fsByte:
             case fsUnknown:
                 forceNamedAccess = true;

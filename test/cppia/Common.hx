@@ -21,4 +21,7 @@ class Common
 	public function instanceIncrementCount(_) {
       count++;
    }
+
+   public static var instance = new Common();
+   public dynamic function dynamicMethod() {}
 }

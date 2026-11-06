@@ -44,6 +44,29 @@ void hx::thread::ConditionVariable_obj::wait()
 	impl->condition.wait(impl->mutex);
 }
 
+bool hx::thread::ConditionVariable_obj::timedWait(double seconds)
+{
+	// Upper bound for the timeout, about 31 years. Larger values would overflow
+	// the integer nanosecond count of the clock once added to the current time.
+	constexpr double maxSeconds = 1e9;
+
+	// `!(seconds > 0)` also catches NaN.
+	if (!(seconds > 0))
+	{
+		seconds = 0;
+	}
+	else if (seconds > maxSeconds)
+	{
+		seconds = maxSeconds;
+	}
+
+	auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(seconds));
+
+	hx::AutoGCFreeZone zone;
+
+	return impl->condition.wait_for(impl->mutex, duration) == std::cv_status::no_timeout;
+}
+
 void hx::thread::ConditionVariable_obj::signal()
 {
 	impl->condition.notify_one();

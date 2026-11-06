@@ -6,6 +6,8 @@ class TestClient extends Test {
 	public static var clientBool2 = true;
 	public static var clientBool3 = false;
 
+	var memberBool = true;
+
 	function testThread() {
 		// See if it compiles
 		Assert.notNull(sys.thread.Thread.current());
@@ -55,6 +57,9 @@ class TestClient extends Test {
 		var hostBools = HostBase.hostBool0 + "/" + HostBase.hostBool1 + "/" + HostBase.hostBool2 + "/" + HostBase.hostBool3;
 		var clientBools = clientBool0 + "/" + clientBool1 + "/" + clientBool2 + "/" + clientBool3;
 		Assert.equals(hostBools, clientBools);
+
+		Assert.same(Type.ValueType.TBool, Type.typeof(clientBool0));
+		Assert.same(Type.ValueType.TBool, Type.typeof(memberBool));
 	}
 
 	function testIssue926() {
