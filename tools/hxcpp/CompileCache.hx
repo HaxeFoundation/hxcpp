@@ -93,6 +93,33 @@ class CompileCache
       return dir + "/" + hash.substr(2) + inExt;
    }
 
+   // When a cache file was last used, for removing the least recently used files.
+   static function getUseTime(inFile:String) : Float
+   {
+      var info = FileSystem.stat(inFile);
+      return info.atime==null ? info.mtime.getTime() : Math.max(info.atime.getTime(), info.mtime.getTime());
+   }
+
+   // Marks a cache file as used now, so that clear() keeps it over files that weren't used for
+   // longer. Not every file system updates the access time when a file is read (Windows doesn't by
+   // default), so this updates the modification time by rewriting the first byte unchanged.
+   public static function markUsed(inFile:String)
+   {
+      try
+      {
+         var input = sys.io.File.read(inFile, true);
+         var first = input.readByte();
+         input.close();
+         var output = sys.io.File.update(inFile, true);
+         output.writeByte(first);
+         output.close();
+      }
+      catch(e:Dynamic)
+      {
+         Log.v('Could not mark $inFile as used: $e');
+      }
+   }
+
    public static function clear(inDays:Int,inMB:Int,inLogInfo:Bool,inProject:String)
    {
       try
@@ -128,6 +155,15 @@ class CompileCache
               }
               var dirFiles = FileSystem.readDirectory(path);
               var allDeleted = true;
+              // The files of a precompiled header are used together, but only the header itself
+              // is marked as used (see markUsed), so they all count as used when it was.
+              var pchTime:Null<Float> = null;
+              if (dir.substr(0,3)=="pch")
+              {
+                 pchTime = 0;
+                 for(file in dirFiles)
+                    pchTime = Math.max(pchTime, getUseTime(path + "/" + file));
+              }
               for(file in dirFiles)
               {
                  total++;
@@ -135,19 +171,14 @@ class CompileCache
                  var doDelete = true;
                  if (inDays>0)
                  {
-                    var info = FileSystem.stat(filename);
-                    var atime = info.atime;
-                    var time = atime==null ? info.mtime.getTime() :
-                                Math.max(info.atime.getTime(),info.mtime.getTime() );
+                    var time = pchTime!=null ? pchTime : getUseTime(filename);
                     if (time>=tooOld)
                        doDelete = false;
                  }
                  else if (inMB>0)
                  {
                     var info = FileSystem.stat(filename);
-                    var atime = info.atime;
-                    var time = atime==null ? info.mtime.getTime() :
-                                Math.max(info.atime.getTime(),info.mtime.getTime() );
+                    var time = pchTime!=null ? pchTime : getUseTime(filename);
                     fileInfo.push( {filename:filename, time:time, size:info.size } );
                     sizeKB += info.size/1024;
                     doDelete = false;
