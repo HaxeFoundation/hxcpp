@@ -49,6 +49,7 @@
   <flag value="-DRASPBERRYPI=RASPBERRYPI" if="rpi"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <include name="toolchain/common-defines.xml" />
+  <flag value="-mfxsr"/>
   <flag value="-m32" unless="noM32"/>
   <flag value="-m64" if="HXCPP_M64" unless="noM64" />
   <flag value="-I${HXCPP}/include"/>

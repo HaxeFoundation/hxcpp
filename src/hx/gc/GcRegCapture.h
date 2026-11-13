@@ -1,6 +1,8 @@
 #ifndef HX_GC_HELPERS_INCLUDED
 #define HX_GC_HELPERS_INCLUDED
 
+#include <cstdint>
+
 #if defined(HX_WINDOWS) && defined(HXCPP_ARM64)
 // Eg, Microsoft Surface 
 #define HXCPP_CAPTURE_SETJMP
@@ -27,10 +29,26 @@
 
 #endif
 
+#include <vector>
 
 namespace hx
 {
+    namespace gc
+    {
+        struct CapturedState
+        {
+            // Base is the address that stack scanning begins and it goes until it reaches the limit value.
+            // I'm avoiding "top" and "bottom" terminology because emscripten has the stack "upside down" in comparison to everything else.
 
+            uintptr_t stackBase;
+            uintptr_t stackLimit;
+            std::vector<uint8_t> registers;
+
+            CapturedState();
+        };
+
+        void Capture(CapturedState& buffer);
+    }
 // Capture Registers
 //
 #ifdef HXCPP_CAPTURE_SETJMP // {
