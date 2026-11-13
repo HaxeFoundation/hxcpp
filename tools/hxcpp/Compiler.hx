@@ -401,6 +401,7 @@ class Compiler
                //Log.info(""," copy cache for " + obj_name );
                if (!useCacheInPlace)
                   sys.io.File.copy(cacheName, obj_name);
+               CompileCache.markUsed(cacheName);
                found = true;
             }
          }
@@ -651,7 +652,12 @@ class Compiler
           // No obj needed for gcc
           var obj = mPCH=="msvc" ? PathManager.combine(dir, file + mExt) : null;
           if (FileSystem.exists(pch_name) && (obj==null || FileSystem.exists(obj)) )
+          {
+             // Not the obj: on msvc, its time decides which cached objects are current.
+             if (inGroup.isCached())
+                CompileCache.markUsed(pch_name);
              return obj;
+          }
       }
 
       args = args.concat( mPCHFlags );
