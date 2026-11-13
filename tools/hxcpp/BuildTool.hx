@@ -75,7 +75,6 @@ class BuildTool
    var defaultObjCxxStandard:Null<Int>;
 
    public static var os="";
-   public static var sAllowNumProcs = true;
    public static var sCompileThreadCount = 1;
    public static var sThreadPool:ThreadPool;
    public static var sReportedThreads = -1;
@@ -201,8 +200,8 @@ class BuildTool
       if (isMsvc())
       {
          mDefines.set("isMsvc","1");
-         if (Std.parseInt(mDefines.get("MSVC_VER"))>=18)
-            mDefines.set("MSVC18+","1");
+         // deprecated
+         mDefines.set("MSVC18+","1");
       }
 
       include("toolchain/finish-setup.xml", false);
@@ -365,19 +364,16 @@ class BuildTool
       if (instance!=null)
       {
          var defs = instance.mDefines;
-         if (sAllowNumProcs)
-         {
-            var thread_var = defs.exists("HXCPP_COMPILE_THREADS") ?
-               defs.get("HXCPP_COMPILE_THREADS") : Sys.getEnv("HXCPP_COMPILE_THREADS");
+         var thread_var = defs.exists("HXCPP_COMPILE_THREADS") ?
+            defs.get("HXCPP_COMPILE_THREADS") : Sys.getEnv("HXCPP_COMPILE_THREADS");
 
-            if (thread_var == null)
-            {
-               sCompileThreadCount = getNumberOfProcesses();
-            }
-            else
-            {
-               sCompileThreadCount = (Std.parseInt(thread_var)<2) ? 1 : Std.parseInt(thread_var);
-            }
+         if (thread_var == null)
+         {
+            sCompileThreadCount = getNumberOfProcesses();
+         }
+         else
+         {
+            sCompileThreadCount = (Std.parseInt(thread_var)<2) ? 1 : Std.parseInt(thread_var);
          }
          if (sCompileThreadCount>1 && sThreadPool==null)
             sThreadPool = new ThreadPool(sCompileThreadCount);

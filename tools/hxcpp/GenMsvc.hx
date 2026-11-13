@@ -58,23 +58,9 @@ class GenMsvc
                platformToolset = "v143";
                vsVersion = "17";
             }
-            else if (ver >= 18)
-            {
-               // cl.exe 18.x = VS 2013
-               platformToolset = "v120";
-               vsVersion = "12";
-            }
-            else if (ver >= 17)
-            {
-               // cl.exe 17.x = VS 2012
-               platformToolset = "v110";
-               vsVersion = "11";
-            }
             else
             {
-               // Older versions
-               platformToolset = "v100";
-               vsVersion = "10";
+               Log.error('Unsupported MSVC_VER: ' + ver);  
             }
          }
       }
