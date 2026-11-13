@@ -204,18 +204,18 @@ class FileGroup
       var result = new Array<String>();
       for(def in contents.split("\n"))
       {
-         var name = def.split("=")[0];//.toLowerCase();
-         if (name.indexOf("hxcpp_link")>=0)
+         var name = def.split("=")[0];
+         if (name.indexOf("HXCPP_LINK")>=0)
          {
             // Only effects linking, not compiling
          }
-         else if (name=="hxcpp_verbose" || name=="hxcpp_silent" || name=="hxcpp_quiet" || name=="hxcpp_times" || name=="hxcpp_neko_buildtool" || name=="hxcpp_link_no_tool_depends" )
+         else if (name=="HXCPP_VERBOSE" || name=="HXCPP_SILENT" || name=="HXCPP_QUIET" || name=="HXCPP_TIMES" || name=="HXCPP_NEKO_BUILDTOOL")
          {
             // Does not affect build
          }
-         else if (name.indexOf("hxcpp")>=0 || name=="scriptable" || name.indexOf("dll")>=0 || name=="no_console" ||
-            name.substr(0,8)=="android-" || name.substr(0,4)=="ndkv" || name=="toolchain" || name=="platform" ||
-              name=="toolchain_version" || name=="android_ndk_root" )
+         else if (name.indexOf("hxcpp")>=0 || name.indexOf("HXCPP")>=0 || name=="scriptable" || name.indexOf("dll")>=0 || name=="no_console" ||
+            name.substr(0,8)=="android-" || name.substr(0,4)=="NDKV" || name=="toolchain" || name=="PLATFORM" ||
+              name=="TOOLCHAIN_VERSION" || name=="ANDROID_NDK_ROOT" )
             result.push(def);
       }
 

@@ -1,0 +1,3 @@
+-m Main
+--cpp bin
+-D HXCPP_DEBUGGER
