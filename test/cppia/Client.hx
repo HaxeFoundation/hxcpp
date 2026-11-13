@@ -37,7 +37,8 @@ class Client {
          new TestClient(),
          new LocalFunctionExceptions(),
          new ReturnExpressions(),
-         new MemberCrements()
+         new MemberCrements(),
+         new NativeInterfaceTypes()
       ];
    }
 }
