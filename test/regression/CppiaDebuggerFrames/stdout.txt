@@ -1,0 +1,12 @@
+method: a=21 b=two c=42 seen=null this=true
+mixed: f=2.5 i=1 j=3 k=4 o=[4] s=s seen=null this=true
+defaults: a=1 b=7 c=null seen=null this=true
+dynamic: f=0.5 i=5 j=6 k=11 o=[] s=d seen=null this=true
+setter: m=99 n=5
+static: seen=null x=1.5 y=2.5
+method: a=21 b=two c=42 seen=null this=true
+mixed: f=2.5 i=1 j=3 k=4 o=[4] s=s seen=null this=true
+defaults: a=1 b=7 c=null seen=null this=true
+dynamic: f=0.5 i=5 j=6 k=11 o=[] s=d seen=null this=true
+setter: m=99 n=5
+static: seen=null x=1.5 y=2.5
