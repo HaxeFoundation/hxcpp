@@ -131,19 +131,28 @@ DEFFUNC_1(value,alloc_raw_string,int)
 
 // Call Function 
 DEFFUNC_1(value,val_call0,value)
+DEFFUNC_2(value,val_call0_catchexcept,value,value)
 DEFFUNC_2(value,val_call1,value,value)
+DEFFUNC_3(value,val_call1_catchexcept,value,value,value)
 DEFFUNC_3(value,val_call2,value,value,value)
+DEFFUNC_4(value,val_call2_catchexcept,value,value,value,value)
 DEFFUNC_4(value,val_call3,value,value,value,value)
+DEFFUNC_5(value,val_call3_catchexcept,value,value,value,value,value)
 DEFFUNC_3(value,val_callN,value,value *,int)
+DEFFUNC_4(value,val_callN_catchexcept,value,value *,int,value)
 
 // Call the function - catch and print any exceptions
 DEFFUNC_1(value,val_call0_traceexcept,value)
 
 // Call object field
 DEFFUNC_2(value,val_ocall0,value,int)
+DEFFUNC_3(value,val_ocall0_catchexcept,value,int,value)
 DEFFUNC_3(value,val_ocall1,value,int,value)
+DEFFUNC_4(value,val_ocall1_catchexcept,value,int,value,value)
 DEFFUNC_4(value,val_ocall2,value,int,value,value)
+DEFFUNC_5(value,val_ocall2_catchexcept,value,int,value,value,value)
 DEFFUNC_4(value,val_ocallN,value,int,value *,int)
+DEFFUNC_5(value,val_ocallN_catchexcept,value,int,value *,int,value)
 
 // Objects access
 DEFFUNC_1(int,val_id,const char *)
