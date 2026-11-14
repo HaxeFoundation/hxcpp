@@ -87,8 +87,10 @@ class RunMain
 
    public static function executeHxcpp()
    {
+      #if neko
       if (!sys.FileSystem.exists("./hxcpp.n"))
          return false;
+      #end
 
       if (Sys.args().indexOf("-DHXCPP_NEKO_BUILDTOOL=1")<0)
       {
@@ -104,6 +106,7 @@ class RunMain
                compiled += ".exe";
             if (FileSystem.exists(compiled))
             {
+               #if neko
                var dotN = FileSystem.stat("hxcpp.n").mtime.getTime();
                var dotExe= FileSystem.stat(compiled).mtime.getTime();
                if (dotExe<dotN)
@@ -112,6 +115,7 @@ class RunMain
                   Sys.println('Warning - $path file is out-of-date.  Please delete or rebuild.');
                }
                else
+               #end
                {
                   Sys.exit( Sys.command( compiled, Sys.args() ) );
                }
@@ -119,7 +123,14 @@ class RunMain
         }
       }
 
+      #if neko
       neko.vm.Loader.local().loadModule("./hxcpp.n");
+      #elseif eval
+      Sys.exit(Sys.command("haxe", ["-cp", "tools/hxcpp", "--run", "BuildTool"].concat(Sys.args())));
+      #else
+      #error
+      #end
+
       return true;
    }
 
