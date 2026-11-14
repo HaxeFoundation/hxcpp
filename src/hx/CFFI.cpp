@@ -153,8 +153,21 @@ static int sgKinds = (int)(vtAbstractBase + 5);
 
 typedef std::map<std::string,int> KindMap;
 typedef std::map<int,std::string> ReverseKindMap;
-static KindMap sgKindMap;
-static ReverseKindMap sgReverseKindMap;
+
+// Created on first use rather than at load time, so that an extension calling
+// hxcpp_kind_share from a static initializer never sees an unconstructed map
+// (with HXCPP_IMMORTAL_STATICS these maps are initialized dynamically)
+static KindMap &GetKindMap()
+{
+   HX_IMMORTAL(KindMap, sgKindMap);
+   return sgKindMap;
+}
+
+static ReverseKindMap &GetReverseKindMap()
+{
+   HX_IMMORTAL(ReverseKindMap, sgReverseKindMap);
+   return sgReverseKindMap;
+}
 
 
 int hxcpp_alloc_kind()
@@ -165,11 +178,11 @@ int hxcpp_alloc_kind()
 
 void hxcpp_kind_share(int &ioKind,const char *inName)
 {
-   int &kind = sgKindMap[inName];
+   int &kind = GetKindMap()[inName];
    if (kind==0)
       kind = hxcpp_alloc_kind();
    ioKind = kind;
-   sgReverseKindMap[kind] = inName;
+   GetReverseKindMap()[kind] = inName;
 }
 
 String __hxcpp_get_kind(Dynamic inObject)
@@ -179,8 +192,9 @@ String __hxcpp_get_kind(Dynamic inObject)
       return null();
    if (type==(int)(size_t)k_cpp_pointer)
       return HX_CSTRING("cpp.Pointer");
-   ReverseKindMap::const_iterator it = sgReverseKindMap.find(type);
-   if (it==sgReverseKindMap.end())
+   const ReverseKindMap &reverseKindMap = GetReverseKindMap();
+   ReverseKindMap::const_iterator it = reverseKindMap.find(type);
+   if (it==reverseKindMap.end())
       return null();
    return String::create(it->second.c_str(), it->second.size());
 }

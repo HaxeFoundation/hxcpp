@@ -13,9 +13,9 @@ namespace
 	const char* sohName = "Small Object Heap";
 	const char* lohName = "Large Object Heap";
 
-	std::vector<hx::Telemetry*> created;
-	hx::QuickVec<void*> largeAllocs;
-	std::mutex largeAllocsLock;
+	HX_IMMORTAL_GLOBAL(std::vector<hx::Telemetry*>, created);
+	HX_IMMORTAL_GLOBAL(hx::QuickVec<void*>, largeAllocs);
+	HX_IMMORTAL_GLOBAL(std::mutex, largeAllocsLock);
 
 	bool isLargeObject(void* ptr)
 	{
