@@ -23,20 +23,20 @@ inline void cpp::marshal::Boxed_obj<T>::setFinaliser(std::false_type) {}
 template<class T>
 inline cpp::marshal::Boxed_obj<T>::Boxed_obj() : value()
 {
-    setFinaliser(std::is_destructible<T>{});
+    setFinaliser(std::integral_constant<bool, std::is_destructible<T>::value && !std::is_trivially_destructible<T>::value>{});
 }
 
 template<class T>
 inline cpp::marshal::Boxed_obj<T>::Boxed_obj(T* ptr) : value(*ptr)
 {
-    setFinaliser(std::is_destructible<T>{});
+    setFinaliser(std::integral_constant<bool, std::is_destructible<T>::value && !std::is_trivially_destructible<T>::value>{});
 }
 
 template<class T>
 template<class ...TArgs>
 inline cpp::marshal::Boxed_obj<T>::Boxed_obj(TArgs... args) : value(std::forward<TArgs>(args)...)
 {
-    setFinaliser(std::is_destructible<T>{});
+    setFinaliser(std::integral_constant<bool, std::is_destructible<T>::value && !std::is_trivially_destructible<T>::value>{});
 }
 
 #endif
