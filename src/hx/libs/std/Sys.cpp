@@ -15,7 +15,7 @@
 
 #ifdef NEKO_WINDOWS
    #include <windows.h>
-   #include <direct.h>23
+   #include <direct.h>
    #include <conio.h>
    #include <locale.h>
 #else
