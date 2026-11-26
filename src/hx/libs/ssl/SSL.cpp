@@ -305,7 +305,7 @@ int _hx_ssl_send( Dynamic hssl, Array<unsigned char> buf, int p, int l ) {
 	if( p < 0 || l < 0 || p > dlen || p + l > dlen )
 		hx::Throw( HX_CSTRING("ssl_send") );
 	POSIX_LABEL(send_again);
-	const unsigned char *base = (const unsigned char *)&buf[0];
+	const unsigned char *base = (const unsigned char *)buf->Pointer();
 	dlen = mbedtls_ssl_write( ssl->s, base + p, l );
 	if ( is_ssl_blocking(dlen) ) {
 		HANDLE_EINTR(send_again);
@@ -320,7 +320,7 @@ int _hx_ssl_send( Dynamic hssl, Array<unsigned char> buf, int p, int l ) {
 void _hx_ssl_write( Dynamic hssl, Array<unsigned char> buf ) {
 	sslctx *ssl = val_ssl(hssl);
 	int len = buf->length;
-	unsigned char *cdata = &buf[0];
+	unsigned char *cdata = buf->Pointer();
 	while( len > 0 ) {
 		POSIX_LABEL( write_again );
 		int slen = mbedtls_ssl_write( ssl->s, cdata, len );
@@ -351,7 +351,7 @@ int _hx_ssl_recv( Dynamic hssl, Array<unsigned char> buf, int p, int l ) {
 	if( p < 0 || l < 0 || p > dlen || p + l > dlen )
 		hx::Throw( HX_CSTRING("ssl_recv") );
 
-	unsigned char *base = &buf[0];
+	unsigned char *base = buf->Pointer();
 	POSIX_LABEL(recv_again);
 	dlen = mbedtls_ssl_read( ssl->s, base + p, l );
 	if ( is_ssl_blocking(dlen) ) {
@@ -748,7 +748,7 @@ Dynamic _hx_ssl_cert_add_der( Dynamic hcert, Array<unsigned char> buf ){
 		cert->create( NULL );
 		isnew = 1;
 	}
-	if( (r = mbedtls_x509_crt_parse_der( cert->c, &buf[0], buf->length)) < 0 ){
+	if( (r = mbedtls_x509_crt_parse_der( cert->c, buf->Pointer(), buf->length)) < 0 ){
 		if( isnew )
 			cert->destroy();
 		ssl_error(r);
@@ -761,9 +761,9 @@ Dynamic _hx_ssl_key_from_der( Array<unsigned char> buf, bool pub ){
 	pk->create();
 	int r;
 	if( pub )
-		r = mbedtls_pk_parse_public_key( pk->k, &buf[0], buf->length );
+		r = mbedtls_pk_parse_public_key( pk->k, buf->Pointer(), buf->length );
 	else
-		r = mbedtls_pk_parse_key( pk->k, &buf[0], buf->length, NULL, 0 );
+		r = mbedtls_pk_parse_key( pk->k, buf->Pointer(), buf->length, NULL, 0 );
 	if( r != 0 ){
 		pk->destroy();
 		ssl_error(r);
@@ -808,7 +808,7 @@ Array<unsigned char> _hx_ssl_dgst_make( Array<unsigned char> buf, String alg ){
 	int size = mbedtls_md_get_size(md);
 	Array<unsigned char> out = Array_obj<int>::__new(size,size);
 	int r = -1;
-	if( r = mbedtls_md( md, &buf[0], buf->length, &out[0] ) != 0 )
+	if( r = mbedtls_md( md, buf->Pointer(), buf->length, out->Pointer() ) != 0 )
 		ssl_error(r);
 
 	return out;
@@ -825,11 +825,11 @@ Array<unsigned char> _hx_ssl_dgst_sign( Array<unsigned char> buf, Dynamic hpkey,
 	if( md == NULL )
 		hx::Throw( HX_CSTRING("Invalid hash algorithm") );
 
-	if( r = mbedtls_md( md, &buf[0], buf->length, hash ) != 0 )
+	if( r = mbedtls_md( md, buf->Pointer(), buf->length, hash ) != 0 )
 		ssl_error(r);
 
 	Array<unsigned char> result = Array_obj<unsigned char>::__new(MBEDTLS_MPI_MAX_SIZE,MBEDTLS_MPI_MAX_SIZE);
-	if( r = mbedtls_pk_sign( pk->k, mbedtls_md_get_type(md), hash, 0, &result[0], &olen, mbedtls_ctr_drbg_random, &ctr_drbg ) != 0 )
+	if( r = mbedtls_pk_sign( pk->k, mbedtls_md_get_type(md), hash, 0, result->Pointer(), &olen, mbedtls_ctr_drbg_random, &ctr_drbg ) != 0 )
 		ssl_error(r);
 
 	result[olen] = 0;
@@ -848,10 +848,10 @@ bool _hx_ssl_dgst_verify( Array<unsigned char> buf, Array<unsigned char> sign, D
 	if( md == NULL )
 		hx::Throw( HX_CSTRING("Invalid hash algorithm") );
 
-	if( r = mbedtls_md( md, &buf[0], buf->length, hash ) != 0 )
+	if( r = mbedtls_md( md, buf->Pointer(), buf->length, hash ) != 0 )
 		ssl_error(r);
 
-	if( r = mbedtls_pk_verify( pk->k, mbedtls_md_get_type(md), hash, 0, &sign[0], sign->length ) != 0 )
+	if( r = mbedtls_pk_verify( pk->k, mbedtls_md_get_type(md), hash, 0, sign->Pointer(), sign->length ) != 0 )
 		return false;
 
 	return true;

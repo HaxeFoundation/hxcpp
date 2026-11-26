@@ -533,7 +533,7 @@ String __hxcpp_char_array_to_utf8_string(Array<int> &inChars,int inFirst, int in
    if (inLen<=0)
       return String::emptyString;
 
-   int *base = &inChars[0];
+   int *base = inChars->Pointer();
    #ifdef HX_SMART_STRINGS
    bool hasBig = false;
    for(int i=0;i<inLen;i++)

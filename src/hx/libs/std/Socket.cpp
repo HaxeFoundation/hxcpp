@@ -250,7 +250,7 @@ int _hx_std_socket_send( Dynamic o, Array<unsigned char> buf, int p, int l )
    if( p < 0 || l < 0 || p > dlen || p + l > dlen )
       return 0;
 
-   const char *base = (const char *)&buf[0];
+   const char *base = (const char *)buf->Pointer();
    hx::EnterGCFreeZone();
    dlen = send(sock, base + p , l, MSG_NOSIGNAL);
    if( dlen == SOCKET_ERROR )
@@ -271,7 +271,7 @@ int _hx_std_socket_recv( Dynamic o, Array<unsigned char> buf, int p, int l )
    if( p < 0 || l < 0 || p > dlen || p + l > dlen )
       return 0;
 
-   char *base = (char *)&buf[0];
+   char *base = (char *)buf->Pointer();
    hx::EnterGCFreeZone();
    POSIX_LABEL(recv_again);
    dlen = recv(sock, base + p, l, MSG_NOSIGNAL);
@@ -316,7 +316,7 @@ void _hx_std_socket_write( Dynamic o, Array<unsigned char> buf )
 {
    SOCKET sock = val_sock(o);
    int datalen = buf->length;
-   const char *cdata = (const char *)&buf[0];
+   const char *cdata = (const char *)buf->Pointer();
    int pos = 0;
 
    hx::EnterGCFreeZone();
@@ -507,9 +507,9 @@ String _hx_std_host_to_string_ipv6( Array<unsigned char> ip )
    }
    if (!dynamic_inet_ntop)
       return String();
-   return String( dynamic_inet_ntop(AF_INET6, &ip[0], buf, 100) );
+   return String( dynamic_inet_ntop(AF_INET6, ip->Pointer(), buf, 100) );
    #else
-   return String( inet_ntop(AF_INET6, &ip[0], buf, 100) );
+   return String( inet_ntop(AF_INET6, ip->Pointer(), buf, 100) );
    #endif
 }
 
@@ -544,12 +544,12 @@ String _hx_std_host_reverse_ipv6( Array<unsigned char> host )
    struct hostent *h = 0;
    hx::EnterGCFreeZone();
    #if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(ANDROID) || defined(BLACKBERRY) || defined(__EMSCRIPTEN__)
-   h = gethostbyaddr((char *)&host[0],16,AF_INET6);
+   h = gethostbyaddr((char *)host->Pointer(),16,AF_INET6);
    #else
    struct hostent htmp;
    int errcode;
    char buf[1024];
-   gethostbyaddr_r((char *)&host[0],16,AF_INET6,&htmp,buf,1024,&h,&errcode);
+   gethostbyaddr_r((char *)host->Pointer(),16,AF_INET6,&htmp,buf,1024,&h,&errcode);
    #endif
    hx::ExitGCFreeZone();
    if( !h )
@@ -610,7 +610,7 @@ void _hx_std_socket_connect_ipv6( Dynamic o, Array<unsigned char> host, int port
    memset(&addr,0,sizeof(addr));
    addr.sin6_family = AF_INET6;
    addr.sin6_port = htons(port);
-   memcpy(&addr.sin6_addr,&host[0],16);
+   memcpy(&addr.sin6_addr,host->Pointer(),16);
 
    hx::EnterGCFreeZone();
    if( connect(val_sock(o),(struct sockaddr*)&addr,sizeof(addr)) != 0 )
@@ -834,7 +834,7 @@ void _hx_std_socket_bind_ipv6( Dynamic o, Array<unsigned char> host, int port )
    memset(&addr,0,sizeof(addr));
    addr.sin6_family = AF_INET6;
    addr.sin6_port = htons(port);
-   memcpy(&addr.sin6_addr,&host[0], 16);
+   memcpy(&addr.sin6_addr,host->Pointer(), 16);
    #ifndef NEKO_WINDOWS
    setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&opt,sizeof(opt));
    #endif
@@ -1317,7 +1317,7 @@ int _hx_std_socket_send_to( Dynamic o, Array<unsigned char> buf, int p, int l, D
 {
    SOCKET sock = val_sock(o);
 
-   const char *cdata = (const char *)&buf[0];
+   const char *cdata = (const char *)buf->Pointer();
    int dlen = buf->length;
    if( p < 0 || l < 0 || p > dlen || p + l > dlen )
       hx::Throw(HX_CSTRING("Invalid data position"));
@@ -1355,7 +1355,7 @@ int _hx_std_socket_recv_from( Dynamic o, Array<unsigned char> buf, int p, int l,
    int retry = 0;
    SOCKET sock = val_sock(o);
 
-   char *data = (char *)&buf[0];
+   char *data = (char *)buf->Pointer();
    int dlen = buf->length;
    if( p < 0 || l < 0 || p > dlen || p + l > dlen )
       hx::Throw(HX_CSTRING("Invalid data position"));

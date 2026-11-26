@@ -461,7 +461,7 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
          scriptResources[count].mData = 0;
          scriptResources[count].mName = String();
          
-         RegisterResources(&scriptResources[0]);
+         RegisterResources(scriptResources.data());
       }
       else
          throw "no resources tag";

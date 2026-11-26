@@ -268,7 +268,7 @@ Dynamic _hx_mysql_result_next(Dynamic handle)
                      HXTHROW("mysql_fetch_lengths");
                }
                Array<unsigned char> buf = Array_obj<unsigned char>::__new(lengths[i],lengths[i]);
-               memcpy(&buf[0],row[i],lengths[i]);
+               memcpy(buf->Pointer(),row[i],lengths[i]);
                v = gDataToBytes.call(buf);
                }
                break;

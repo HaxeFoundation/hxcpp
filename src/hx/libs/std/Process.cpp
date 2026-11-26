@@ -162,7 +162,7 @@ static String TQuoted(const T *ptr, int len)
    int qlen = (int)quoted.size();
    quoted.push_back('\0');
 
-   return String::create( &quoted[0], qlen );
+   return String::create( quoted.data(), qlen );
 }
 
 static String quoteString(String v)
@@ -312,7 +312,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
       dup2(input[0],0);
       dup2(output[1],1);
       dup2(error[1],2);
-      execvp(argv[0],(char* const*)&argv[0]);
+      execvp(argv[0],(char* const*)argv.data());
       fprintf(stderr,"Command not found : %S\n",cmd.wchar_str());
       exit(1);
    }
@@ -353,7 +353,7 @@ int _hx_std_process_stdout_read( Dynamic handle, Array<unsigned char> buf, int p
       return 0;
    vprocess *p = getProcess(handle);
 
-   unsigned char *dest = &buf[0];
+   unsigned char *dest = buf->Pointer();
    hx::EnterGCFreeZone();
    #ifdef NEKO_WINDOWS
    DWORD nbytes = 0;
@@ -384,7 +384,7 @@ int _hx_std_process_stderr_read( Dynamic handle, Array<unsigned char> buf, int p
       return 0;
    vprocess *p = getProcess(handle);
 
-   unsigned char *dest = &buf[0];
+   unsigned char *dest = buf->Pointer();
    hx::EnterGCFreeZone();
    #ifdef NEKO_WINDOWS
    DWORD nbytes = 0;
@@ -414,7 +414,7 @@ int _hx_std_process_stdin_write( Dynamic handle, Array<unsigned char> buf, int p
       return 0;
    vprocess *p = getProcess(handle);
 
-   unsigned char *src = &buf[0];
+   unsigned char *src = buf->Pointer();
 
 
    hx::EnterGCFreeZone();

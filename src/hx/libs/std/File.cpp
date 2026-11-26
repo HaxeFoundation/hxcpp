@@ -218,7 +218,7 @@ int _hx_std_file_read( Dynamic handle, Array<unsigned char> buf, int p, int n )
 
    hx::EnterGCFreeZone();
    // Attempt to increase the chances of pinning on the stack...
-   unsigned char *bufPtr = &buf[0];
+   unsigned char *bufPtr = buf->Pointer();
    while( len > 0 )
    {
       POSIX_LABEL(file_read_again);
@@ -380,7 +380,7 @@ String _hx_std_file_contents_string( String name )
    fclose(file);
    hx::ExitGCFreeZone();
 
-   return String::create(&buffer[0], buffer.size());
+   return String::create(buffer.data(), buffer.size());
 }
 
 
@@ -414,7 +414,7 @@ Array<unsigned char> _hx_std_file_contents_bytes( String name )
    hx::EnterGCFreeZone();
    if (len)
    {
-      char *dest = (char *)&buffer[0];
+      char *dest = (char *)buffer->Pointer();
 
       int p = 0;
       while( len > 0 )

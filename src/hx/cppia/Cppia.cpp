@@ -431,7 +431,7 @@ struct BlockExpr : public CppiaExpr
    {
       if (expressions.size()==0)
          return;
-      CppiaExpr **e = &expressions[0];
+      CppiaExpr **e = expressions.data();
       CppiaExpr **end = e+expressions.size();
       for(;e<end && !ctx->breakContReturn && !ctx->exception;e++)
       {
@@ -5990,7 +5990,7 @@ struct TVars : public CppiaVoidExpr
 
    void runVoid(CppiaCtx *ctx) HXCPP_OVERRIDE
    {
-      CppiaExpr **v = &vars[0];
+      CppiaExpr **v = vars.data();
       CppiaExpr **end = v + vars.size();
       for(;v<end && !ctx->breakContReturn && !ctx->exception;v++)
          (*v)->runVoid(ctx);
