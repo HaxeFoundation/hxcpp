@@ -11,7 +11,7 @@ import cpp.vm.Mutex;
 
 #if neko
 import neko.Lib;
-#else
+#elseif cpp
 import cpp.Lib;
 #end
 
@@ -65,7 +65,11 @@ class Log
          printMutex.release();
 
       if ((verbose || !terminate) && e != null)
+#if (cpp || neko)
          Lib.rethrow(e);
+#else
+         throw e;
+#end
 
       if (terminate)
          Tools.exit(1);
