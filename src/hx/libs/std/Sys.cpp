@@ -15,7 +15,7 @@
 
 #ifdef NEKO_WINDOWS
    #include <windows.h>
-   #include <direct.h>
+   #include <direct.h>23
    #include <conio.h>
    #include <locale.h>
 #else
@@ -245,6 +245,10 @@ bool _hx_std_set_cwd( String d )
    <li>[Linux]</li>
    <li>[BSD]</li>
    <li>[Mac]</li>
+   <li>[Android]</li>
+   <li>[iOS]</li>
+   <li>[tvOS]</li>
+   <li>[watchOS]</li>
    </ul>
    </doc>
 **/
@@ -256,18 +260,24 @@ String _hx_std_sys_string()
    return HX_CSTRING("Windows");
 #elif defined(NEKO_GNUKBSD)
    return HX_CSTRING("GNU/kFreeBSD");
+#elif defined(ANDROID)
+   return HX_CSTRING("Android");
+#elif defined(__EMSCRIPTEN__)
+   return HX_CSTRING("Emscripten");
 #elif defined(NEKO_LINUX)
    return HX_CSTRING("Linux");
 #elif defined(NEKO_BSD)
    return HX_CSTRING("BSD");
+#elif defined(IPHONE)
+   return HX_CSTRING("iOS");
+#elif defined(APPLETV)
+   return HX_CSTRING("tvOS");
+#elif defined(HX_APPLEWATCH)
+   return HX_CSTRING("watchOS");
 #elif defined(NEKO_MAC)
    return HX_CSTRING("Mac");
-#elif defined(ANDROID)
-   return HX_CSTRING("Android");
 #elif defined(BLACKBERRY)
    return HX_CSTRING("BlackBerry");
-#elif defined(__EMSCRIPTEN__)
-   return HX_CSTRING("Emscripten");
 #elif defined(EPPC)
    return HX_CSTRING("EPPC");
 #else
