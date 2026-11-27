@@ -426,6 +426,12 @@ class Function
 public:
    T *call;
 
+   #ifdef HXCPP_GC_GENERATIONAL
+   // Haxe versions without HaxeFoundation/haxe#13002 write barrier cpp.Function
+   // fields as objects. A null mPtr turns those barriers into no-ops.
+   static constexpr hx::Object *mPtr = 0;
+   #endif
+
    inline Function( ) { }
    inline Function( const Function &inRHS ) : call(inRHS.call) {  }
    inline Function( const Dynamic &inRHS) { call = inRHS==null()?0: (T*)inRHS->__GetHandle(); }
