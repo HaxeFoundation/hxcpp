@@ -9,6 +9,15 @@ class CustomObject {
 	public function new():Void {}
 }
 
+class CompactValue {
+	public var id:Int;
+	public var prev:CompactValue;
+	public function new(id:Int, prev:CompactValue) {
+		this.id = id;
+		this.prev = prev;
+	}
+}
+
 class TestGC extends Test {
 	function createDummy(val:Dynamic):Dynamic {
       return { dummy: val };
@@ -137,6 +146,25 @@ class TestGC extends Test {
 			Assert.isFalse( untyped __global__.__hxcpp_is_const_string(string) );
    }
    #end
+
+	// A compaction moves live objects into other blocks. With HXCPP_GC_MOVING and the default
+	// HXCPP_ALIGN_ALLOC, the alignment padding of each moved object was not charged against the
+	// destination hole, so a block filled by moved objects overran its end and corrupted the next
+	// block (#1167, #1414). Without HXCPP_GC_MOVING this is an ordinary full collection.
+	public function testCompactKeepsObjects() {
+		var prev:CompactValue = null;
+		final values = [for (i in 0...200000) prev = new CompactValue(i, prev)];
+		for (pass in 0...3) {
+			Gc.compact();
+			var bad = 0;
+			for (i in 0...values.length) {
+				final value = values[i];
+				if (value.id != i || value.prev != (i == 0 ? null : values[i - 1]))
+					bad++;
+			}
+			Assert.equals(0, bad, 'Compaction pass $pass corrupted $bad objects');
+		}
+	}
 
 	public function testLargeAlloc() {
 		var largeString = {

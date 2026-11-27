@@ -411,6 +411,7 @@ static void VisitLocalAlloc(LocalAllocator *inAlloc,hx::VisitContext *__inCtx);
 static void WaitForSafe(LocalAllocator *inAlloc);
 static void ReleaseFromSafe(LocalAllocator *inAlloc);
 static void ClearPooledAlloc(LocalAllocator *inAlloc);
+static void InitReferrersLocked(LocalAllocator *inAlloc);
 static void CollectFromThisThread(bool inMajor,bool inForceCompact);
 
 namespace hx
@@ -3145,6 +3146,10 @@ public:
       // Until we add ourselves, the collector will not wait
       //  on us - ie, we are assumed ot be in a GC free zone.
       std::lock_guard<std::recursive_mutex> lock(*gThreadStateChangeLock);
+      // The collector switches the gc mode and hands out or collects the referrer chunks of
+      //  the registered allocators under this lock, so decide here, under the same lock,
+      //  whether the new allocator needs one
+      InitReferrersLocked(inAlloc);
       mLocalAllocs.push(inAlloc);
       // TODO Attach debugger
    }
@@ -3451,7 +3456,11 @@ public:
    //  malloc/new.  This is not called very often, so the overhead should be minimal.
    //  However, gcc inlines this function!  requiring every alloc the have sjlj overhead.
    //  Making it virtual prevents the overhead.
-   virtual bool AllocMoreBlocks(bool &outForceCompact, bool inJustBorrowing)
+   //
+   // If outReserved is given, the first new block is handed to the caller already owned and
+   //  with its zero-lock held - the state GetNextFree returns blocks in - so that no other
+   //  thread can claim it before the caller does.
+   virtual bool AllocMoreBlocks(bool &outForceCompact, bool inJustBorrowing, BlockDataInfo **outReserved = 0)
    {
       enum { newBlockCount = 1<<(IMMIX_BLOCK_GROUP_BITS) };
 
@@ -3536,6 +3545,13 @@ public:
          BlockData *block = (BlockData *)(aligned + i*IMMIX_BLOCK_SIZE);
          BlockDataInfo *info = new BlockDataInfo(gid,block);
 
+         if (outReserved && !*outReserved)
+         {
+            info->mOwned = true;
+            info->mZeroLock = 1;
+            *outReserved = info;
+         }
+
          mAllBlocks.push(info);
          mFreeBlocks.push(info);
       }
@@ -3551,11 +3567,11 @@ public:
       #if defined(SHOW_MEM_EVENTS_VERBOSE) || defined(SHOW_FRAGMENTATION_BLOCKS)
       if (inJustBorrowing)
       {
-         GCLOG("Borrow Blocks %d = %d k\n", mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
+         GCLOG("Borrow Blocks %d = %d k\n", mAllBlocks.size(), (int)(GetWorkingMemory()>>10));
       }
       else
       {
-         GCLOG("Blocks %d = %d k\n", mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
+         GCLOG("Blocks %d = %d k\n", mAllBlocks.size(), (int)(GetWorkingMemory()>>10));
       }
       #endif
 
@@ -3609,11 +3625,15 @@ public:
          result = GetNextFree(inRequiredBytes);
          #endif
 
+         // Threads released from a collection, or that never had to stop, keep claiming free
+         //  blocks while this one holds the thread state lock, and can take every block that
+         //  AllocMoreBlocks adds before GetNextFree runs again. So when the heap has to grow
+         //  on this thread's behalf, have AllocMoreBlocks reserve one of the new blocks for it
+         //  rather than reporting the memory as exhausted when the race is lost.
          bool forceCompact = false;
          if (!result && allowMoreBlocks() && (!sgInternalEnable || GetWorkingMemory()<sWorkingMemorySize))
          {
-            if (AllocMoreBlocks(forceCompact,false))
-               result = GetNextFree(inRequiredBytes);
+            AllocMoreBlocks(forceCompact,false,&result);
          }
 
          if (!result)
@@ -3632,8 +3652,7 @@ public:
 
          if (!result)
          {
-            if (AllocMoreBlocks(forceCompact,false))
-               result = GetNextFree(inRequiredBytes);
+            AllocMoreBlocks(forceCompact,false,&result);
          }
 
          if (!result)
@@ -3704,9 +3723,11 @@ public:
        hx::ObjectIdMap::iterator id = hx::sObjectIdMap.find(inFrom);
        if (id!=hx::sObjectIdMap.end())
        {
-          hx::sIdObjectMap[id->second] = inTo;
-          hx::sObjectIdMap[inTo] = id->second;
+          int objectId = id->second;
+          // Erase before inserting - the insert can rehash the map and invalidate the iterator
           hx::sObjectIdMap.erase(id);
+          hx::sObjectIdMap[inTo] = objectId;
+          hx::sIdObjectMap[objectId] = inTo;
        }
 
        // Maybe do something faster with weakmaps
@@ -3802,7 +3823,14 @@ public:
                         }
 
                         #ifdef HXCPP_ALIGN_ALLOC
-                        destPos += ALIGN_PADDING(destPos);
+                        // The fit test above reserved allocSize + padding, so the padding has to
+                        //  come out of destLen as well, or destPos + destLen drifts past the end
+                        //  of the hole and a later object is written over the next block
+                        {
+                           int alignPad = ALIGN_PADDING(destPos);
+                           destPos += alignPad;
+                           destLen -= alignPad;
+                        }
                         #endif
 
                         int startRow = destPos>>IMMIX_LINE_BITS;
@@ -4010,9 +4038,14 @@ public:
 
                            // TODO - not copy + paste
 
-                        printf("Move!\n");
                            #ifdef HXCPP_ALIGN_ALLOC
-                           destPos += ALIGN_PADDING(destPos);
+                           // As in MoveBlocks: the padding was reserved by the fit test, so charge
+                           //  it against destLen too
+                           {
+                              int alignPad = ALIGN_PADDING(destPos);
+                              destPos += alignPad;
+                              destLen -= alignPad;
+                           }
                            #endif
 
                            int startRow = destPos>>IMMIX_LINE_BITS;
@@ -4204,7 +4237,7 @@ public:
    void *GetIDObject(int inIndex)
    {
       std::lock_guard<std::mutex> lock(*gSpecialObjectLock);
-      if (inIndex<0 || inIndex>hx::sIdObjectMap.size())
+      if (inIndex<0 || inIndex>=hx::sIdObjectMap.size())
          return 0;
       return hx::sIdObjectMap[inIndex];
    }
@@ -5046,6 +5079,10 @@ public:
       {
          #ifdef HXCPP_GC_MOVING
          sgTimeToNextTableUpdate = 7;
+         #elif defined(HX_GC_VERIFY_GENERATIONAL)
+         // The verification mark advances the mark id a second time in each collection, so the
+         //  count has to come down one sooner to keep the table update ahead of the 16 mark ids
+         sgTimeToNextTableUpdate = 14;
          #else
          sgTimeToNextTableUpdate = 15;
          #endif
@@ -5251,7 +5288,7 @@ public:
       #endif
 
       // Large alloc target
-      int blockSize =  mAllBlocks.size()<<IMMIX_BLOCK_BITS;
+      size_t blockSize = GetWorkingMemory();
       if (blockSize > mLargeAllocSpace)
          mLargeAllocSpace = blockSize;
       mLargeAllocForceRefresh = mLargeAllocated + mLargeAllocSpace;
@@ -5847,11 +5884,7 @@ public:
       {
          GCLOG("Uncleaned referrers\n");
       }
-
-      if (sGcMode==gcmGenerational)
-         mOldReferrers = hx::sGlobalChunks.alloc();
-      else
-         mOldReferrers = 0;
+      // mOldReferrers is assigned by AddLocal, under the thread state lock
       #endif
 
 
@@ -6049,6 +6082,11 @@ public:
 
       if (sgIsCollecting)
          CriticalGCError("Bad Allocation while collecting - from finalizer?");
+
+      // The collector neither waits for nor releases a thread in a GC-free zone, so waiting
+      //  for mCollectDone from inside one would block this thread for good
+      if (mGCFreeZone)
+         CriticalGCError("PauseForCollect called from a GC-free zone - was ExitGCFreeZone missed?");
 
       mReadyForCollect.Set();
       mCollectDone.Wait();
@@ -6485,6 +6523,14 @@ void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx)
 void ClearPooledAlloc(LocalAllocator *inAlloc)
 {
    inAlloc->Reset();
+}
+
+// Called with gThreadStateChangeLock held, as the allocator is registered
+void InitReferrersLocked(LocalAllocator *inAlloc)
+{
+   #ifdef HXCPP_GC_GENERATIONAL
+   inAlloc->mOldReferrers = sGcMode==gcmGenerational ? hx::sGlobalChunks.alloc() : 0;
+   #endif
 }
 
 #ifdef HXCPP_VISIT_ALLOCS

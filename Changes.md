@@ -21,6 +21,15 @@
 * Fixed critial error handler returning the wrong callstack
 * Fixed ARM64 library names on Mac
 * Fixed generational GC when used with HXCPP_ALIGN_ALLOC
+* Fixed heap corruption in the moving GC (HXCPP_GC_MOVING) with HXCPP_ALIGN_ALLOC: compaction did not charge the alignment padding of each moved object against the destination hole, so a block filled by moved objects overran its end
+* Fixed the cppia jit write barrier treating new objects as old on the main thread until the first collection, which could let a collection free objects that only the stack held (#1196)
+* Fixed HXCPP_GC_VERIFY reporting an unmarked row with the generational collector: the verification mark advanced the mark id twice per collection, so dead objects from 16 marks earlier could read as marked before the next table update cleared them (#1415)
+* Fixed the moving GC updating the object id map through an iterator that the insert of the new address could have invalidated
+* Fixed __hxcpp_id_obj reading one past the end of the id table for an id equal to its size
+* Fixed the large allocation collection threshold overflowing once the block heap passes 2GB with HXCPP_GC_BIG_BLOCKS
+* Fixed a crash in the next collection when a thread registered with the GC while a collection switched the generational collector on
+* Fixed a spurious "Memory exhausted" trap when other threads claimed every block that the collecting thread had just added to the heap
+* Fixed a thread hanging forever when it reached a GC safe point from inside a GC-free zone; it is now reported as a critical error (#947)
 * Fixed pthread structured being unaligned
 * Fixed cppia crash on functions with empty bodies
 * Fixed regression parsing integers which wrap around
