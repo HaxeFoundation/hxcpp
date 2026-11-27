@@ -95,7 +95,7 @@
    <setup name="msvc"/>
 
    <section if="static_link" >
-      <set name="MSVC_LIB_VERSION" value="-${MSVC_VER}" />
+      <set name="MSVC_LIB_VERSION" value="-${MSVC_VER}" if="MSVC_VER" />
    </section>
 
    <set name="LIBEXTRA" value="-19" if="MSVC19" />
