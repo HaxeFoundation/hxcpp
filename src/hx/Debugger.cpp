@@ -85,9 +85,11 @@ static void read_memory_barrier()
 const char *_hx_dbg_find_scriptable_class_name(String className);
 
 
-static std::mutex gMutex;
-static std::map<int, DebuggerContext *> gMap;
-static std::list<DebuggerContext *> gList;
+typedef std::map<int, DebuggerContext *> DebuggerContextMap;
+typedef std::list<DebuggerContext *> DebuggerContextList;
+HX_IMMORTAL(std::mutex, gMutex);
+HX_IMMORTAL(DebuggerContextMap, gMap);
+HX_IMMORTAL(DebuggerContextList, gList);
 
 class Breakpoints;
 Breakpoints *ReleaseBreakpointsLocked(Breakpoints *inBreakpoints);

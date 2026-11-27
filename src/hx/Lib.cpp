@@ -102,9 +102,9 @@ void hxFreeLibrary(Module inModule) { dlclose(inModule); }
 
 typedef std::map<std::string,Module> LoadedModule;
 
-static LoadedModule sgLoadedModule;
+HX_IMMORTAL(LoadedModule, sgLoadedModule);
 typedef std::vector<Module> ModuleList;
-static ModuleList sgOrderedModules;
+HX_IMMORTAL(ModuleList, sgOrderedModules);
 
 typedef hx::Object * (*prim_0)();
 typedef hx::Object * (*prim_1)(hx::Object *);
@@ -244,7 +244,7 @@ public:
 namespace
 {
 typedef std::map<String,ExternalPrimitive *> LoadedMap;
-LoadedMap sLoadedMap;
+HX_IMMORTAL_GLOBAL(LoadedMap, sLoadedMap);
 }
 
 
@@ -382,7 +382,7 @@ RegistrationMap *sgRegisteredPrims=0;
 
 
 
-static std::vector<String> sgLibPath;
+HX_IMMORTAL(std::vector<String>, sgLibPath);
 
 static bool sgLibPathIsInit = false;
 

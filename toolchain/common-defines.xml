@@ -9,6 +9,7 @@
  <flag value="-DHXCPP_VISIT_ALLOCS" tag="haxe" />
  <flag value="-DHXCPP_FLOAT32" if="HXCPP_FLOAT32" tag="haxe" />
  <flag value="-DHXCPP_CHECK_POINTER" if="HXCPP_CHECK_POINTER" tag="haxe" />
+ <flag value="-DHXCPP_IMMORTAL_STATICS" if="HXCPP_IMMORTAL_STATICS" tag="haxe" />
  <flag value="-DHXCPP_STACK_TRACE" if="HXCPP_STACK_TRACE" tag="haxe" />
  <flag value="-DHXCPP_TELEMETRY" if="HXCPP_TELEMETRY" tag="haxe" />
  <flag value="-DHXCPP_PROFILER" if="HXCPP_PROFILER" tag="haxe" />

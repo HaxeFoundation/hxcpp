@@ -16,7 +16,7 @@ int sgNativeNameSlotCount = 0;
 
 Array<Dynamic> gAllCppiaModules;
 
-std::vector<hx::Resource> scriptResources;
+HX_IMMORTAL_GLOBAL(std::vector<hx::Resource>, scriptResources);
 
 
 

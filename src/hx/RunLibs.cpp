@@ -10,7 +10,7 @@ extern "C"
 void __hxcpp_lib_main();
 
 
-std::string sgResultBuffer;
+HX_IMMORTAL_GLOBAL(std::string, sgResultBuffer);
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES const HX_CHAR *hxRunLibrary()
 {
