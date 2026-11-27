@@ -153,7 +153,9 @@ class BuildTool
          }
          else if (mDefines.exists("android"))
          {
-            arm64 = true;
+            // HXCPP_X86_64 is not counted as 64-bit above
+            m64 = mDefines.exists("HXCPP_X86_64");
+            arm64 = !m64;
          }
          else
          {
