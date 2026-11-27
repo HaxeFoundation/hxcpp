@@ -262,8 +262,6 @@ String _hx_std_sys_string()
    return HX_CSTRING("GNU/kFreeBSD");
 #elif defined(ANDROID)
    return HX_CSTRING("Android");
-#elif defined(__EMSCRIPTEN__)
-   return HX_CSTRING("Emscripten");
 #elif defined(NEKO_LINUX)
    return HX_CSTRING("Linux");
 #elif defined(NEKO_BSD)
@@ -278,6 +276,8 @@ String _hx_std_sys_string()
    return HX_CSTRING("Mac");
 #elif defined(BLACKBERRY)
    return HX_CSTRING("BlackBerry");
+#elif defined(__EMSCRIPTEN__)
+   return HX_CSTRING("Emscripten");
 #elif defined(EPPC)
    return HX_CSTRING("EPPC");
 #else
